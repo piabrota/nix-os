@@ -21,6 +21,11 @@ check:
 deploy user="deploy":
     nix run .#deploy-rs -- .#piabrota --hostname {{host}} --ssh-user {{user}} --skip-checks
 
+# write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/
+drawing:
+    cargo run -q --manifest-path drawings/Cargo.toml > docs/drawings/mu.svg
+    cargo run -q --manifest-path drawings/Cargo.toml -- desmos > docs/drawings/mu.desmos.json
+
 # print the specs of this machine
 specs:
     sh scripts/specs.sh

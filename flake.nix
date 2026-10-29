@@ -49,9 +49,31 @@
 
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
+        drawing = self.packages.${system}.mu-art;
       };
 
-      packages.${system}.deploy-rs = pkgs.deploy-rs;
+      packages.${system} = {
+        deploy-rs = pkgs.deploy-rs;
+        # The README drawing; its tests check that docs/drawings/ is its output.
+        mu-art = pkgs.rustPlatform.buildRustPackage {
+          pname = "mu-art";
+          version = "0.1.0";
+          src = pkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = pkgs.lib.fileset.unions [
+              ./drawings/Cargo.toml
+              ./drawings/Cargo.lock
+              ./drawings/src
+              ./docs/drawings/mu.svg
+              ./docs/drawings/mu.desmos.json
+            ];
+          };
+          cargoRoot = "drawings";
+          buildAndTestSubdir = "drawings";
+          cargoLock.lockFile = ./drawings/Cargo.lock;
+          meta.license = pkgs.lib.licenses.mpl20;
+        };
+      };
 
       devShells.${system}.default = pkgs.mkShell {
         packages = [ pkgs.deploy-rs pkgs.just pkgs.shellcheck ];
