@@ -27,6 +27,11 @@
 - The layout of this README comes from [picasso](https://github.com/h0ffmann/picasso), which took it
   from [Gabriel Volpe's `nix-config`](https://github.com/gvolpe/nix-config).
 
+## Use it for your own VPS
+
+Fork it: [`docs/FORK.md`](docs/FORK.md) lists what to change and the manual steps on Hostinger
+and GitHub (a NixOS VPS, a deploy key, three secrets, one first deploy).
+
 ## Recipes
 
 ```console
@@ -67,6 +72,7 @@ with that version.
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── drawings/                the Rust crate that draws docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
+├── docs/FORK.md             how to run your own VPS from a fork
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main)
 ├── justfile
