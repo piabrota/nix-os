@@ -18,11 +18,12 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | File | Is |
 |---|---|
 | `flake.nix`, `flake.lock` | The flake: `nixosConfigurations.piabrota` on `nixos-26.05`, the deploy-rs node `deploy.nodes.piabrota`, `checks` (the system and the deploy-rs checks), `packages.deploy-rs`. |
-| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the four modules below. |
+| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the five modules below. |
 | `piabrota.nix` | Users and Nix settings: the `h0ffmann` user (SSH key only, passwordless sudo), flakes on, the base packages. Nothing unfree: `allowUnfree` is off. |
 | `tools.nix` | Light CLI tools and defaults taken from [gvolpe/nix-config](https://github.com/gvolpe/nix-config), plus the size and memory limits. See "Resource budget". |
 | `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
 | `loco.nix` | `piabrota.loco.apps.<name>`: a [Loco](https://loco.rs) app as the sandboxed service `loco-<name>` with SQLite in `/var/lib/loco-<name>`, a daily `sqlite3 .backup`, nginx with ACME, ports 80 and 443. With no app it adds nothing. `checks.loco-example` builds it with a stand-in app. See [docs/LOCO.md](docs/LOCO.md). |
+| `site.nix`, `site/` | `piabrota.site`: the files in `site/` on `piabrota.art` and `www`, nginx with ACME, `/nixos` redirected to this repository. Off (`enable = false`) until DNS points at the VPS. `checks.site-example` builds it on. See [docs/SITE.md](docs/SITE.md). |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
 | `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size, and the total. `--by-size` sorts by size. |
@@ -30,12 +31,16 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `justfile` | `build`, `check`, `cves`, `deploy`, `specs`, `remote-specs`, `freeze`, `remote-freeze`, `drawing`. |
 | `drawings/`, `docs/drawings/` | The README drawing, 无 (*mu*): a Rust crate (pirsig's pen) that writes `mu.svg` and its Desmos state. `checks.drawing` fails if the committed files are not its output; run `just drawing` after changing `drawings/src/mu.rs`. |
 | `.github/workflows/cves.yml` | On every PR and push that changes more than Markdown, and each Monday: `vulnix --closure` on the built system, into the run summary. A report, not a gate: name matching gives false matches. `just cves` runs it here. |
-| `.claude/skills/`, `.mcp.json` | Four Nix skills vendored at pinned commits (their README lists them and their licences) and the mcp-nixos server. Refresh a skill by recopying upstream, never by editing its body. |
-| `.github/workflows/ci.yml` | On every PR and push that changes more than Markdown: `nix flake check`, `nixpkgs-fmt`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
+| `.claude/skills/`, `.mcp.json` | Four Nix skills and three frontend skills for `site/` (`frontend-design`, `web-design-guidelines`, `open-pencil`), vendored at pinned commits (their README lists them and their licences); the mcp-nixos and OpenPencil MCP servers. Refresh a skill by recopying upstream, never by editing its body. |
+| `.github/workflows/ci.yml` | On every PR and push that changes more than Markdown: `nix flake check`, `nixpkgs-fmt`, `statix` (rules in `statix.toml`), `deadnix`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
+| `.github/dependabot.yml` | One grouped PR a week that bumps the GitHub Actions the workflows use. Not nixpkgs: that is `nix flake update` in its own PR. |
+| `wiki/`, `.github/workflows/wiki.yml` | The GitHub wiki's pages, in pt-BR first (`Home`, `Arquitetura`, `Operacao`) with English mirrors (`Home-EN`, `Architecture`, `Operations`). `wiki.yml` copies `wiki/` to the wiki after a merge that changes it; never edit the wiki directly. Change each page and its mirror together. |
 | `.github/workflows/deploy.yml` | On a push to `main` that changes more than Markdown: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
 | `docs/LOCO.md` | How to add a Loco app: package it in its own flake, DNS, secrets on the box, declare it here. |
 | `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
 | `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |
+| `docs/SITE.md` | How to point DNS at the VPS and turn the static site on. |
+| `docs/MICROK8S.ptBR.md`, `docs/MICROK8S.md` | A survey for testing MicroK8s here (through nix-snapd) with the node in Nix and the workloads in their own workflow (2026-10-29), in pt-BR first and its English mirror. Research only. Change both together. |
 | `docs/KUBERNETES.ptBR.md`, `docs/KUBERNETES.md` | A survey of small Kubernetes distributions for this VPS (2026-10-29), in pt-BR first and its English mirror. Research only: the configuration runs none of them. Change both together. |
 | `docs/CLAUDE_PROJECT.ptBR.md`, `docs/CLAUDE_PROJECT.md` | How to set up a Claude Project on a fork, in pt-BR first and its English mirror. For people only: an agent working here does not act on them. Change both together. |
 | `LICENSE` | MPL-2.0. |
@@ -119,7 +124,7 @@ need NixOS):
 
 ```console
 just build        # nix build .#nixosConfigurations.piabrota.config.system.build.toplevel
-just check        # what CI runs: nix flake check, nixpkgs-fmt, shellcheck
+just check        # what CI runs: nix flake check, nixpkgs-fmt, statix, deadnix, shellcheck
 ```
 
 Add `--dry-run` to the `nix build` to see what would be built and fetched. Compare two builds:

@@ -51,11 +51,17 @@ with podman and Nomad for comparison. The short answer is not for now:
 - [`docs/KUBERNETES.ptBR.md`](docs/KUBERNETES.ptBR.md), em português
 - [`docs/KUBERNETES.md`](docs/KUBERNETES.md), in English
 
+The next step is a test of MicroK8s, with the node declared here and the workloads deployed
+apart:
+
+- [`docs/MICROK8S.ptBR.md`](docs/MICROK8S.ptBR.md), em português
+- [`docs/MICROK8S.md`](docs/MICROK8S.md), in English
+
 ## Recipes
 
 ```console
 just build          # build the system here, without deploying it
-just check          # what CI runs: nix flake check, nixpkgs-fmt, shellcheck
+just check          # what CI runs: nix flake check, nixpkgs-fmt, statix, deadnix, shellcheck
 just deploy         # deploy by hand, as CI does (DEPLOY_HOST=<ip>; a human only)
 just specs          # CPU, RAM, disk, kernel and NixOS generation of this machine
 just remote-specs   # the same, of the VPS, over SSH
@@ -91,21 +97,27 @@ with that version.
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
+├── site.nix, site/          the static site on piabrota.art (off until DNS points at the VPS)
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
 ├── drawings/                the Rust crate that draws docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
 ├── docs/LOCO.md             how to add a Loco app
+├── docs/SITE.md             how to turn the static site on
 ├── docs/FORK.ptBR.md        how to run your own VPS from a fork, in Portuguese
 ├── docs/FORK.md             the same, in English
 ├── docs/CLAUDE_PROJECT.ptBR.md  a Claude Project for a fork, in Portuguese
 ├── docs/CLAUDE_PROJECT.md   the same, in English
 ├── docs/KUBERNETES.ptBR.md  a survey of small Kubernetes for this VPS, in Portuguese
 ├── docs/KUBERNETES.md     the same, in English
+├── docs/MICROK8S.ptBR.md    a plan for testing MicroK8s here, in Portuguese
+├── docs/MICROK8S.md       the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (the same, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy)
-├── .claude/skills/          four vendored Nix skills for agents (their README), .mcp.json: mcp-nixos
+├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (the same, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
+├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
+├── wiki/                    the GitHub wiki's pages, in Portuguese and English
+├── .claude/skills/          vendored skills for agents, four Nix and three frontend (their README); .mcp.json: mcp-nixos, OpenPencil
 ├── justfile
 └── AGENTS.md                the rules for AI agents working here
 ```
@@ -120,6 +132,7 @@ $ nix flake show
 │       ├───deploy-schema: derivation 'jsonschema-deploy-system'
 │       ├───drawing: derivation 'mu-art-0.1.0'
 │       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
+│       ├───site-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 ├───deploy: unknown
 ├───devShells
@@ -152,4 +165,4 @@ $ nix flake show
 |---|---|
 | Everything in this repository, the drawing included | [MPL-2.0](LICENSE) |
 | `drawings/src/pen.rs` | MPL-2.0, from [h0ffmann/pirsig](https://github.com/h0ffmann/pirsig) at `450e4da` |
-| `.claude/skills/*/` | MIT, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |
+| `.claude/skills/*/` | MIT, or Apache-2.0 for `frontend-design`, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |

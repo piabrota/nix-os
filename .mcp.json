@@ -3,6 +3,9 @@
     "nixos": {
       "command": "nix",
       "args": ["run", "nixpkgs#mcp-nixos", "--"]
+    },
+    "open-pencil": {
+      "command": "openpencil-mcp"
     }
   }
 }

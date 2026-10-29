@@ -71,10 +71,16 @@
             }
           ];
         }).config.system.build.toplevel;
+        # The system with the static site on, so site.nix and site/ build in CI before DNS points
+        # piabrota.art at the box and the site is turned on. Never deployed.
+        site-example = (nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [ ./configuration.nix { piabrota.site.enable = true; } ];
+        }).config.system.build.toplevel;
       };
 
       packages.${system} = {
-        deploy-rs = pkgs.deploy-rs;
+        inherit (pkgs) deploy-rs;
         # The README drawing; its tests check that docs/drawings/ is its output.
         mu-art = pkgs.rustPlatform.buildRustPackage {
           pname = "mu-art";
