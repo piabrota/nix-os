@@ -1,0 +1,63 @@
+name: freeze
+
+# Like `pip freeze`, for the VPS: every package of the running system with its version and
+# size (scripts/freeze.sh), in the run summary and as the `freeze` artifact. Runs after each
+# deploy and by hand.
+on:
+  workflow_run:
+    workflows: [deploy]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH key and pinned host key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Freeze
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s < scripts/freeze.sh > freeze.txt
+          ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s -- --by-size < scripts/freeze.sh > by-size.txt
+          {
+            echo '### piabrota: what the running system holds'
+            echo
+            tail -n 1 freeze.txt
+            echo
+            echo '<details><summary>The 25 largest</summary>'
+            echo
+            echo '```'
+            head -n 25 by-size.txt
+            echo '```'
+            echo '</details>'
+            echo
+            echo '<details><summary>All, by name</summary>'
+            echo
+            echo '```'
+            cat freeze.txt
+            echo '```'
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freeze
+          path: |
+            freeze.txt
+            by-size.txt

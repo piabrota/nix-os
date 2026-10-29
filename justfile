@@ -30,6 +30,14 @@ drawing:
 specs:
     sh scripts/specs.sh
 
+# list every package of the running system with its size, like pip freeze (--by-size to sort by size)
+freeze *args:
+    sh scripts/freeze.sh {{args}}
+
+# the same, of the VPS, over SSH
+remote-freeze user="h0ffmann":
+    ssh {{user}}@{{host}} sh -s < scripts/freeze.sh
+
 # print the specs of the VPS over SSH
 remote-specs user="h0ffmann":
     ssh {{user}}@{{host}} sh -s < scripts/specs.sh

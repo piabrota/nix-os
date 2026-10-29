@@ -24,7 +24,9 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
-| `justfile` | `build`, `check`, `deploy`, `specs`, `remote-specs`, `drawing`. |
+| `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size, and the total. `--by-size` sorts by size. |
+| `.github/workflows/freeze.yml` | After each deploy and by hand: `scripts/freeze.sh` on the VPS, into the run summary and the `freeze` artifact. |
+| `justfile` | `build`, `check`, `deploy`, `specs`, `remote-specs`, `freeze`, `remote-freeze`, `drawing`. |
 | `drawings/`, `docs/drawings/` | The README drawing, 无 (*mu*): a Rust crate (pirsig's pen) that writes `mu.svg` and its Desmos state. `checks.drawing` fails if the committed files are not its output; run `just drawing` after changing `drawings/src/mu.rs`. |
 | `.github/workflows/ci.yml` | On every PR and push: `nix flake check`, `nixpkgs-fmt`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
 | `.github/workflows/deploy.yml` | On push to `main`: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
