@@ -14,8 +14,12 @@ build:
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix
     nix run nixpkgs#shellcheck -- scripts/*.sh
+
+# CVE report of the system closure (vulnix against the NVD; a report, many matches are false)
+cves: build
+    nix run --inputs-from . nixpkgs#vulnix -- --closure ./result || [ $? -eq 2 ]
 
 # deploy by hand, as CI does (needs SSH to the box as `user`; magic rollback included)
 deploy user="deploy":

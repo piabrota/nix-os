@@ -1,0 +1,36 @@
+name: cves
+
+# A report, not a gate: vulnix matches package names and versions against the NVD, so it also
+# lists CVEs that nixpkgs has patched or that belong to another program with the same name.
+# Read the summary of the run; a whitelist (vulnix --whitelist) can come later.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vulnix:
+    name: vulnix on the system closure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - run: nix build .#nixosConfigurations.piabrota.config.system.build.toplevel --no-update-lock-file
+      - name: vulnix (exit 2 means it found something; that is the report)
+        run: |
+          status=0
+          nix run --inputs-from . nixpkgs#vulnix -- --closure ./result > vulnix.txt || status=$?
+          {
+            echo '### vulnix on `'"$(readlink result)"'`'
+            echo '```'
+            cat vulnix.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat vulnix.txt
+          [ "$status" -le 2 ]

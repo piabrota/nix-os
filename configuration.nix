@@ -8,6 +8,7 @@
     ./piabrota.nix
     ./tools.nix
     ./deploy.nix
+    ./loco.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),
