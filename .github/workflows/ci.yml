@@ -17,7 +17,7 @@ jobs:
     name: flake check (builds the system)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       - run: nix flake check --no-update-lock-file --print-build-logs
       - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix
@@ -31,7 +31,7 @@ jobs:
     name: justfiles parse with Ubuntu's just
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y just
       - run: just --version
       - name: parse every justfile
