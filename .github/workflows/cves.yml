@@ -22,7 +22,7 @@ jobs:
     name: vulnix on the system closure
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       - run: nix build .#nixosConfigurations.piabrota.config.system.build.toplevel --no-update-lock-file
       - name: vulnix (exit 2 means it found something; that is the report)
