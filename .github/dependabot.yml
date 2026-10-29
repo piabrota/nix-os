@@ -1,0 +1,13 @@
+# Keeps the actions the workflows use current (actions/checkout, cachix/install-nix-action).
+# One grouped PR a week. nixpkgs is not here: update it with `nix flake update` in its own PR.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

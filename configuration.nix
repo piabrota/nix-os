@@ -1,6 +1,6 @@
 # NixOS system configuration for the Hostinger KVM template.
 # Built into a qcow2 by image.nix via nixpkgs' make-disk-image (no nixos-infect).
-{ config, lib, pkgs, modulesPath, ... }:
+{ lib, pkgs, modulesPath, ... }:
 {
   imports = [
     # virtio_scsi/virtio_blk etc. in the initrd so the image boots on Proxmox.
@@ -9,6 +9,7 @@
     ./tools.nix
     ./deploy.nix
     ./loco.nix
+    ./site.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),

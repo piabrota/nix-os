@@ -1,0 +1,3 @@
+# statix (CI and `just check`). The modules set options one per line (`services.x.y = ...`), so
+# a key like `services` repeats on purpose; nesting them all would hide which option a line sets.
+disabled = [ "repeated_keys" ]
