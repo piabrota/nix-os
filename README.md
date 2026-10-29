@@ -6,8 +6,8 @@
 
 <sub>无 · <i>mu</i> · the piabrota VPS · <a href="#in-one-minute">in one minute</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
 
-[![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
-[![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
+[![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
+[![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
 
@@ -29,8 +29,11 @@
 
 ## Use it for your own VPS
 
-Fork it: [`docs/FORK.md`](docs/FORK.md) lists what to change and the manual steps on Hostinger
-and GitHub (a NixOS VPS, a deploy key, three secrets, one first deploy).
+Fork it. The guide lists what to change and the manual steps on Hostinger and GitHub (a NixOS
+VPS, a deploy key, three secrets, one first deploy):
+
+- [`docs/FORK.ptBR.md`](docs/FORK.ptBR.md), em português
+- [`docs/FORK.md`](docs/FORK.md), in English
 
 ## Recipes
 
@@ -72,7 +75,8 @@ with that version.
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── drawings/                the Rust crate that draws docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
-├── docs/FORK.md             how to run your own VPS from a fork
+├── docs/FORK.ptBR.md        how to run your own VPS from a fork, in Portuguese
+├── docs/FORK.md             the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main)
 ├── justfile

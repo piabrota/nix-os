@@ -1,5 +1,7 @@
 # Use nix-os for your own VPS
 
+[Português](FORK.ptBR.md) (the first version; this page is its English mirror)
+
 nix-os runs one Hostinger VPS with NixOS and deploys it from GitHub. You can fork it and run your
 own VPS the same way. This page lists every change and every manual step. The steps that only you
 can do (on Hostinger, on GitHub, on your machine) are marked **manual**.
@@ -27,7 +29,7 @@ Edit these files in your fork:
 |---|---|
 | `piabrota.nix` | Rename the user `h0ffmann` to your user, and put your own SSH public key in `openssh.authorizedKeys.keys`. Change the user in `nix.settings.trusted-users` too. |
 | `.github/workflows/deploy.yml` | In `ssh_user`, `options: [deploy, h0ffmann]`: put your user in place of `h0ffmann`. |
-| `justfile` | `remote-specs` (and `remote-freeze`, if present): your user in place of `h0ffmann`. |
+| `justfile` | `remote-specs` and `remote-freeze`: your user in place of `h0ffmann`. |
 | `flake.nix` | `deploy.nodes.piabrota.hostname`: your domain or IP. CI uses the `DEPLOY_HOST` secret, so this is only the default for `just deploy`. |
 | `.github/FUNDING.yml` | Remove it, or put your own account. |
 | `README.md`, `docs/drawings/` | The drawing and the text describe this repository. Change them or keep them, with the credits. |

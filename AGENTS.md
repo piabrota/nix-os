@@ -29,7 +29,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `.github/workflows/ci.yml` | On every PR and push: `nix flake check`, `nixpkgs-fmt`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
 | `.github/workflows/deploy.yml` | On push to `main`: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
 | `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
-| `docs/FORK.md` | How to run your own VPS from a fork: what to change, and the manual steps on Hostinger and GitHub. Change it when a file it names changes. |
+| `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |
 | `LICENSE` | MPL-2.0. |
 
 `configuration.nix` refers to an `image.nix` that builds the qcow2 template. That file is not in
