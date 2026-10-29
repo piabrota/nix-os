@@ -35,6 +35,8 @@ just check          # what CI runs: nix flake check, nixpkgs-fmt, shellcheck
 just deploy         # deploy by hand, as CI does (DEPLOY_HOST=<ip>; a human only)
 just specs          # CPU, RAM, disk, kernel and NixOS generation of this machine
 just remote-specs   # the same, of the VPS, over SSH
+just freeze         # every package of the running system with its size, like pip freeze
+just remote-freeze  # the same, of the VPS, over SSH
 just drawing        # write docs/drawings/ again from drawings/
 ```
 
@@ -65,10 +67,11 @@ with that version.
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
+├── scripts/freeze.sh        every package of the system with its size, like pip freeze
 ├── drawings/                the Rust crate that draws docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main)
+├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main), freeze.yml (after each deploy)
 ├── justfile
 └── AGENTS.md                the rules for AI agents working here
 ```
