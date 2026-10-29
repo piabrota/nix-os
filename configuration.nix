@@ -6,6 +6,7 @@
     # virtio_scsi/virtio_blk etc. in the initrd so the image boots on Proxmox.
     "${modulesPath}/profiles/qemu-guest.nix"
     ./piabrota.nix
+    ./tools.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),
