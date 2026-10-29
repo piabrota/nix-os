@@ -1,0 +1,2 @@
+# Public half of the GitHub Actions deploy key (docs/DEPLOY.md, step 1). One key per line.
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2wwwTxHD9ogNDAJIzxvmz3+lek8pK5BWfIJqZegrFz github-actions-deploy

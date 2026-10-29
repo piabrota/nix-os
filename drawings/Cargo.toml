@@ -1,0 +1,14 @@
+[package]
+name = "nix-os-drawings"
+description = "Writes the README drawing: 无 (mu), brushed in its four strokes, as SVG and as a Desmos state"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+publish = false
+
+[[bin]]
+name = "mu-art"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { version = "1" }

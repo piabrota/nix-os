@@ -95,7 +95,7 @@ in
   documentation = {
     nixos.enable = false;
     doc.enable = false;
-    man.generateCaches = false;
+    man.cache.enable = false;
   };
   services.journald.extraConfig = ''
     SystemMaxUse=200M
