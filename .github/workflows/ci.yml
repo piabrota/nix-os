@@ -1,9 +1,12 @@
 name: ci
 
 on:
+  # A change to Markdown only builds nothing: it cannot change the system.
   pull_request:
+    paths-ignore: ['**.md']
   push:
     branches: [main]
+    paths-ignore: ['**.md']
   workflow_dispatch:
 
 permissions:

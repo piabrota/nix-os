@@ -29,10 +29,10 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `.github/workflows/freeze.yml` | After each deploy and by hand: `scripts/freeze.sh` on the VPS, into the run summary and the `freeze` artifact. |
 | `justfile` | `build`, `check`, `cves`, `deploy`, `specs`, `remote-specs`, `freeze`, `remote-freeze`, `drawing`. |
 | `drawings/`, `docs/drawings/` | The README drawing, 无 (*mu*): a Rust crate (pirsig's pen) that writes `mu.svg` and its Desmos state. `checks.drawing` fails if the committed files are not its output; run `just drawing` after changing `drawings/src/mu.rs`. |
-| `.github/workflows/cves.yml` | On every PR and push, and each Monday: `vulnix --closure` on the built system, into the run summary. A report, not a gate: name matching gives false matches. `just cves` runs it here. |
+| `.github/workflows/cves.yml` | On every PR and push that changes more than Markdown, and each Monday: `vulnix --closure` on the built system, into the run summary. A report, not a gate: name matching gives false matches. `just cves` runs it here. |
 | `.claude/skills/`, `.mcp.json` | Four Nix skills vendored at pinned commits (their README lists them and their licences) and the mcp-nixos server. Refresh a skill by recopying upstream, never by editing its body. |
-| `.github/workflows/ci.yml` | On every PR and push: `nix flake check`, `nixpkgs-fmt`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
-| `.github/workflows/deploy.yml` | On push to `main`: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
+| `.github/workflows/ci.yml` | On every PR and push that changes more than Markdown: `nix flake check`, `nixpkgs-fmt`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
+| `.github/workflows/deploy.yml` | On a push to `main` that changes more than Markdown: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
 | `docs/LOCO.md` | How to add a Loco app: package it in its own flake, DNS, secrets on the box, declare it here. |
 | `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
 | `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |

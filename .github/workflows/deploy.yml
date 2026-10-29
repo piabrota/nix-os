@@ -6,6 +6,8 @@ name: deploy
 on:
   push:
     branches: [main]
+    # A merge that changes only Markdown leaves the system as it is: nothing to deploy.
+    paths-ignore: ['**.md']
   workflow_dispatch:
     inputs:
       ssh_user:
