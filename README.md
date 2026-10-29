@@ -6,8 +6,8 @@
 
 <sub>无 · <i>mu</i> · the piabrota VPS · <a href="#in-one-minute">in one minute</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
 
-[![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
-[![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
+[![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
+[![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
 
@@ -26,6 +26,14 @@
   ([`AGENTS.md`](AGENTS.md), "Resource budget").
 - The layout of this README comes from [picasso](https://github.com/h0ffmann/picasso), which took it
   from [Gabriel Volpe's `nix-config`](https://github.com/gvolpe/nix-config).
+
+## Use it for your own VPS
+
+Fork it. The guide lists what to change and the manual steps on Hostinger and GitHub (a NixOS
+VPS, a deploy key, three secrets, one first deploy):
+
+- [`docs/FORK.ptBR.md`](docs/FORK.ptBR.md), em português
+- [`docs/FORK.md`](docs/FORK.md), in English
 
 ## Recipes
 
@@ -70,6 +78,8 @@ with that version.
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
 ├── drawings/                the Rust crate that draws docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
+├── docs/FORK.ptBR.md        how to run your own VPS from a fork, in Portuguese
+├── docs/FORK.md             the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main), freeze.yml (after each deploy)
 ├── justfile
