@@ -33,7 +33,6 @@ Edit these files in your fork:
 | `justfile` | `remote-specs` and `remote-freeze`: your user in place of `h0ffmann`. |
 | `flake.nix` | `deploy.nodes.piabrota.hostname`: your domain or IP. CI uses the `DEPLOY_HOST` secret, so this is only the default for `just deploy`. |
 | `site.nix`, `site/` | In `piabrota.site`, put your own `domain`, `aliases` and `redirects`, and your own files in `site/`. Keep `enable` off until DNS points at your VPS ([`SITE.md`](SITE.md)). |
-| `.github/FUNDING.yml` | Remove it, or put your own account. |
 | `README.md`, `docs/drawings/` | The drawing and the text describe this repository. Change them or keep them, with the credits. |
 
 Do not remove the settings that `AGENTS.md` lists under "Do not break the machine". Hostinger
