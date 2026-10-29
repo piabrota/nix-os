@@ -10,15 +10,24 @@ piabrota.art/nixos. The machine has little RAM and a small disk, so every change
 it adds to the system closure and to memory use. Nothing here is a desktop: no GUI, no fonts, no
 display server.
 
-Agents do not run on the VPS. You work in a clone elsewhere, and a human deploys.
+Agents do not run on the VPS. You work in a clone elsewhere and open a PR. A merge to `main` is
+the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 
 ## Files
 
 | File | Is |
 |---|---|
-| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the two modules below. |
+| `flake.nix`, `flake.lock` | The flake: `nixosConfigurations.piabrota` on `nixos-26.05`, the deploy-rs node `deploy.nodes.piabrota`, `checks` (the system and the deploy-rs checks), `packages.deploy-rs`. |
+| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the three modules below. |
 | `piabrota.nix` | Users and Nix settings: the `h0ffmann` user (SSH key only, passwordless sudo), flakes on, `allowUnfree` (for `claude-code`), the base packages. |
 | `tools.nix` | Light CLI tools and defaults taken from [gvolpe/nix-config](https://github.com/gvolpe/nix-config), plus the size and memory limits. See "Resource budget". |
+| `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
+| `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
+| `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
+| `justfile` | `build`, `check`, `deploy`, `specs`, `remote-specs`. |
+| `.github/workflows/ci.yml` | On every PR and push: `nix flake check`, `nixpkgs-fmt`, `shellcheck`, the justfile parse with Ubuntu's `just`. |
+| `.github/workflows/deploy.yml` | On push to `main`: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
+| `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
 | `LICENSE` | MPL-2.0. |
 
 `configuration.nix` refers to an `image.nix` that builds the qcow2 template. That file is not in
@@ -36,6 +45,9 @@ provisionable; do not remove or weaken them:
   panel's checks call them by name.
 - `services.openssh.enable`, the `h0ffmann` authorized key and `PasswordAuthentication = false`.
 - `boot.loader.grub.device = "/dev/sda"` and `fileSystems."/"`.
+- The `deploy` user, its key and `nix.settings.trusted-users` in `deploy.nix`, and
+  `magicRollback` in `flake.nix`: without them CI cannot deploy, or cannot undo a switch that
+  breaks SSH.
 
 Never change `system.stateVersion`.
 
@@ -75,24 +87,20 @@ Measured against nixos-26.05 (13050.08d3a97586f6) on 2026-10-29, adding `tools.n
 system closure 25.9 MiB smaller (1.49 GiB to 1.46 GiB): the tools add about 38 MiB, the removed
 documentation saves more.
 
-Garbage collection and the number of boot generations are not set yet. Add them in one module
-only, so that two modules do not define the same option.
+`deploy.nix` sets garbage collection (weekly, paths older than 14 days), `auto-optimise-store`,
+five boot generations and `max-jobs = 1`, `cores = 1`. Change them there, not in a second module.
 
 ## Build
 
-There is no flake yet. The configuration builds with the classic NixOS entry point. The
-`stateVersion` is 26.05, so these commands use the `nixos-26.05` channel; check which channel the
-VPS follows (`sudo nix-channel --list`) and use that one.
-
-Build and evaluate, from the repository root, on any machine with Nix (it does not need NixOS):
+The configuration is a flake. From the repository root, on any machine with Nix (it does not
+need NixOS):
 
 ```console
-NIXPKGS=https://channels.nixos.org/nixos-26.05/nixexprs.tar.xz
-nix build --impure --print-out-paths --expr \
-  "(import \"\${builtins.fetchTarball \"$NIXPKGS\"}/nixos\" { configuration = $PWD/configuration.nix; }).system"
+just build        # nix build .#nixosConfigurations.piabrota.config.system.build.toplevel
+just check        # what CI runs: nix flake check, nixpkgs-fmt, shellcheck
 ```
 
-Add `--dry-run` to see what would be built and fetched. Compare two builds:
+Add `--dry-run` to the `nix build` to see what would be built and fetched. Compare two builds:
 
 ```console
 nix run nixpkgs#dix -- <old-system-path> <new-system-path>
@@ -106,41 +114,32 @@ nix run nixpkgs#statix -- check <file>.nix
 nix run nixpkgs#deadnix -- --fail <file>.nix
 ```
 
-## Deploy (a human does this)
+Update nixpkgs with `nix flake update` in its own PR; CI runs with `--no-update-lock-file`.
 
-An agent never deploys. It prepares the change and its PR; the human runs one of the commands
-below.
+## Deploy
 
-Build on another machine and copy the result to the VPS. This keeps the compiler and the build
-dependencies off the small disk:
+An agent never deploys and never runs `just deploy`. It prepares the change and its PR; the merge
+to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 
-```console
-nix run nixpkgs#nixos-rebuild -- test --target-host h0ffmann@<vps> --sudo \
-  -I nixos-config=./configuration.nix -I nixpkgs=channel:nixos-26.05
-# if SSH and the guest agent still work:
-nix run nixpkgs#nixos-rebuild -- switch --target-host h0ffmann@<vps> --sudo \
-  -I nixos-config=./configuration.nix -I nixpkgs=channel:nixos-26.05
-```
+`deploy.yml` builds the system on the GitHub runner, and deploy-rs copies it to the VPS over SSH
+as the `deploy` user and activates it. The VPS compiles nothing; it fetches from
+`cache.nixos.org` what the cache has. If SSH does not answer within 60 seconds after the switch,
+deploy-rs rolls the VPS back (magic rollback). The secrets are `DEPLOY_SSH_KEY`, `DEPLOY_HOST`
+and `DEPLOY_KNOWN_HOSTS` in the `production` environment.
 
-Or on the VPS, from a clone of this repository:
-
-```console
-sudo nixos-rebuild test   -I nixos-config=$PWD/configuration.nix
-sudo nixos-rebuild switch -I nixos-config=$PWD/configuration.nix
-```
-
-`test` activates without adding a boot entry, so a reboot goes back to the last good system.
-After a `switch`, the activation script prints the `dix` diff of the change. To undo a bad switch:
+A human can deploy by hand with the same tool, for example the first time, before the `deploy`
+user exists: `DEPLOY_HOST=<ip> just deploy h0ffmann`. To undo a bad switch on the VPS:
 `sudo nixos-rebuild switch --rollback`, or pick an older generation in the GRUB menu on the
-serial console.
+serial console; then revert the commit on `main`, or the next deploy brings it back.
 
 ## Justfiles
 
-There is no justfile here yet. A justfile in this repository must run on the `just` that
-`apt install just` gives on Ubuntu 24.04 LTS (just 1.21.0). Do not use syntax that version does
-not know, such as the `[group(...)]` or `[positional-arguments]` attributes; use
-`set positional-arguments` instead. CI must parse every justfile with that version
-(`just --justfile <file> --summary`).
+A justfile in this repository must run on the `just` that `apt install just` gives on Ubuntu
+24.04 LTS (just 1.21.0). Do not use syntax that version does not know, such as the
+`[group(...)]` or `[positional-arguments]` attributes; use `set positional-arguments` instead.
+CI's `justfiles parse with Ubuntu's just` job (`ci.yml`, on `ubuntu-24.04`) parses every
+justfile with that version (`just --justfile <file> --summary`). Do not move it to a newer
+Ubuntu while 24.04 is supported.
 
 ## Commits and PRs
 

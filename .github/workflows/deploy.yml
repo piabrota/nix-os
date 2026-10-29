@@ -1,0 +1,57 @@
+name: deploy
+
+# Every push to main is deployed to the VPS. The runner builds the system, deploy-rs copies
+# it over SSH (the box pulls what cache.nixos.org has) and activates it. If the box cannot
+# be reached over SSH after the switch, deploy-rs rolls it back.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Secrets live in this environment; protect it in Settings > Environments.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+
+      - name: SSH key and pinned host key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Build and deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          nix run .#deploy-rs -- .#piabrota \
+            --hostname "$DEPLOY_HOST" \
+            --ssh-opts "-o StrictHostKeyChecking=yes -o BatchMode=yes" \
+            --skip-checks \
+            -- --no-update-lock-file --print-build-logs
+
+      - name: Machine specs after the deploy
+        if: always()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          {
+            echo '### piabrota after deploy of `'"$GITHUB_SHA"'`'
+            echo '```'
+            ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s < scripts/specs.sh
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

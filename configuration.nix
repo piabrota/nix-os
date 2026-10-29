@@ -7,6 +7,7 @@
     "${modulesPath}/profiles/qemu-guest.nix"
     ./piabrota.nix
     ./tools.nix
+    ./deploy.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),
