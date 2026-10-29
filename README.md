@@ -24,6 +24,9 @@
   answering. The VPS compiles nothing. [`docs/DEPLOY.md`](docs/DEPLOY.md) has the one-time setup.
 - The machine is small, so every change is judged by what it adds to the closure and to memory
   ([`AGENTS.md`](AGENTS.md), "Resource budget").
+- It is ready to host [Loco](https://loco.rs) apps (Rust and SQLite) behind nginx with HTTPS:
+  declare an app and the merge deploys it ([`docs/LOCO.md`](docs/LOCO.md)). Until then it adds
+  nothing to the system.
 - The layout of this README comes from [picasso](https://github.com/h0ffmann/picasso), which took it
   from [Gabriel Volpe's `nix-config`](https://github.com/gvolpe/nix-config).
 
@@ -43,6 +46,7 @@ just check          # what CI runs: nix flake check, nixpkgs-fmt, shellcheck
 just deploy         # deploy by hand, as CI does (DEPLOY_HOST=<ip>; a human only)
 just specs          # CPU, RAM, disk, kernel and NixOS generation of this machine
 just remote-specs   # the same, of the VPS, over SSH
+just cves           # CVE report of the system closure (vulnix; a report, not a gate)
 just freeze         # every package of the running system with its size, like pip freeze
 just remote-freeze  # the same, of the VPS, over SSH
 just drawing        # write docs/drawings/ again from drawings/
@@ -73,15 +77,18 @@ with that version.
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
+├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
 ├── drawings/                the Rust crate that draws docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
+├── docs/LOCO.md             how to add a Loco app
 ├── docs/FORK.ptBR.md        how to run your own VPS from a fork, in Portuguese
 ├── docs/FORK.md             the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main), freeze.yml (after each deploy)
+├── .github/workflows/       ci.yml (every PR and push), cves.yml (every PR and push, weekly), deploy.yml (push to main), freeze.yml (after each deploy)
+├── .claude/skills/          four vendored Nix skills for agents (their README), .mcp.json: mcp-nixos
 ├── justfile
 └── AGENTS.md                the rules for AI agents working here
 ```
@@ -95,6 +102,7 @@ $ nix flake show
 │       ├───deploy-activate: derivation 'deploy-rs-check-activate'
 │       ├───deploy-schema: derivation 'jsonschema-deploy-system'
 │       ├───drawing: derivation 'mu-art-0.1.0'
+│       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 ├───deploy: unknown
 ├───devShells
@@ -127,3 +135,4 @@ $ nix flake show
 |---|---|
 | Everything in this repository, the drawing included | [MPL-2.0](LICENSE) |
 | `drawings/src/pen.rs` | MPL-2.0, from [h0ffmann/pirsig](https://github.com/h0ffmann/pirsig) at `450e4da` |
+| `.claude/skills/*/` | MIT, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |

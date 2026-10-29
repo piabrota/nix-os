@@ -50,6 +50,27 @@
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
         drawing = self.packages.${system}.mu-art;
+        # The system with one stand-in Loco app, so the module and the hosting stack (nginx,
+        # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
+        loco-example = (nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            ./configuration.nix
+            {
+              piabrota.loco.apps.example = {
+                package = pkgs.runCommand "example-loco" { } ''
+                  mkdir -p $out/bin $out/share/example/config
+                  printf '#!/bin/sh\nexit 0\n' > $out/bin/example-cli
+                  chmod +x $out/bin/example-cli
+                  touch $out/share/example/config/production.yaml
+                '';
+                domain = "example.piabrota.art";
+                port = 5150;
+                environmentFile = "/var/lib/loco-secrets/example.env";
+              };
+            }
+          ];
+        }).config.system.build.toplevel;
       };
 
       packages.${system} = {
