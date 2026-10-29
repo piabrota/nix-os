@@ -14,7 +14,7 @@ build:
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix drawings/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh
@@ -27,10 +27,11 @@ cves: build
 deploy user="deploy":
     nix run .#deploy-rs -- .#piabrota --hostname {{host}} --ssh-user {{user}} --skip-checks
 
-# write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/
+# write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:
-    cargo run -q --manifest-path drawings/Cargo.toml > docs/drawings/mu.svg
-    cargo run -q --manifest-path drawings/Cargo.toml -- desmos > docs/drawings/mu.desmos.json
+    art=$(nix build .#mu-art --no-link --print-out-paths) && \
+    cat "$art/mu.svg" > docs/drawings/mu.svg && \
+    cat "$art/mu.desmos.json" > docs/drawings/mu.desmos.json
 
 # print the specs of this machine
 specs:

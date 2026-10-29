@@ -14,6 +14,7 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
+      drawing = import ./drawings { inherit (nixpkgs) lib; };
       # deploy-rs's lib with nixpkgs' deploy-rs binary, which cache.nixos.org has, so CI does
       # not compile it (the overlay the deploy-rs README gives for this).
       deployPkgs = import nixpkgs {
@@ -49,7 +50,15 @@
 
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
-        drawing = self.packages.${system}.mu-art;
+        # The drawing's tests pass and the committed files are its output (`just drawing`).
+        drawing = pkgs.runCommand "mu-art-check" { } ''
+          ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") drawing.failures}
+          ${pkgs.lib.optionalString (drawing.failures != [ ]) "exit 1"}
+          art=${self.packages.${system}.mu-art}
+          diff -u ${./docs/drawings/mu.svg} $art/mu.svg || { echo 'run `just drawing`' >&2; exit 1; }
+          diff -u ${./docs/drawings/mu.desmos.json} $art/mu.desmos.json || { echo 'run `just drawing`' >&2; exit 1; }
+          touch $out
+        '';
         # The system with one stand-in Loco app, so the module and the hosting stack (nginx,
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {
@@ -81,25 +90,12 @@
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
-        # The README drawing; its tests check that docs/drawings/ is its output.
-        mu-art = pkgs.rustPlatform.buildRustPackage {
-          pname = "mu-art";
-          version = "0.1.0";
-          src = pkgs.lib.fileset.toSource {
-            root = ./.;
-            fileset = pkgs.lib.fileset.unions [
-              ./drawings/Cargo.toml
-              ./drawings/Cargo.lock
-              ./drawings/src
-              ./docs/drawings/mu.svg
-              ./docs/drawings/mu.desmos.json
-            ];
-          };
-          cargoRoot = "drawings";
-          buildAndTestSubdir = "drawings";
-          cargoLock.lockFile = ./drawings/Cargo.lock;
-          meta.license = pkgs.lib.licenses.mpl20;
-        };
+        # The README drawing, in pure Nix (drawings/): mu.svg, mu.desmos.json and mu-check.svg.
+        mu-art = pkgs.linkFarm "mu-art" [
+          { name = "mu.svg"; path = pkgs.writeText "mu.svg" drawing.svg; }
+          { name = "mu.desmos.json"; path = pkgs.writeText "mu.desmos.json" drawing.desmos; }
+          { name = "mu-check.svg"; path = pkgs.writeText "mu-check.svg" drawing.checkSvg; }
+        ];
       };
 
       devShells.${system}.default = pkgs.mkShell {
