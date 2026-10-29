@@ -36,6 +36,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `docs/LOCO.md` | How to add a Loco app: package it in its own flake, DNS, secrets on the box, declare it here. |
 | `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
 | `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |
+| `docs/KUBERNETES.ptBR.md`, `docs/KUBERNETES.md` | A survey of small Kubernetes distributions for this VPS (2026-10-29), in pt-BR first and its English mirror. Research only: the configuration runs none of them. Change both together. |
 | `docs/CLAUDE_PROJECT.ptBR.md`, `docs/CLAUDE_PROJECT.md` | How to set up a Claude Project on a fork, in pt-BR first and its English mirror. For people only: an agent working here does not act on them. Change both together. |
 | `LICENSE` | MPL-2.0. |
 
