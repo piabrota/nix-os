@@ -25,4 +25,8 @@ in
   # The box never builds big things itself, but stop a stray build from eating all RAM.
   nix.settings.max-jobs = 1;
   nix.settings.cores = 1;
+  # A flake system pins its nixpkgs source (~200 MiB) into the closure for the registry and
+  # NIX_PATH. The box builds nothing, so `nix run nixpkgs#…` there can fetch it when needed.
+  nixpkgs.flake.setFlakeRegistry = false;
+  nixpkgs.flake.setNixPath = false;
 }

@@ -1,7 +1,5 @@
 { config, pkgs, ... }:
 {
-  nixpkgs.config.allowUnfree = true;
-
   services.openssh = {
     enable = true;
     settings.PasswordAuthentication = false;
@@ -18,7 +16,6 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   environment.systemPackages = with pkgs; [
-    claude-code
     git
     tmux
     vim

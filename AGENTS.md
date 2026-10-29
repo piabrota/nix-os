@@ -19,7 +19,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 |---|---|
 | `flake.nix`, `flake.lock` | The flake: `nixosConfigurations.piabrota` on `nixos-26.05`, the deploy-rs node `deploy.nodes.piabrota`, `checks` (the system and the deploy-rs checks), `packages.deploy-rs`. |
 | `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the three modules below. |
-| `piabrota.nix` | Users and Nix settings: the `h0ffmann` user (SSH key only, passwordless sudo), flakes on, `allowUnfree` (for `claude-code`), the base packages. |
+| `piabrota.nix` | Users and Nix settings: the `h0ffmann` user (SSH key only, passwordless sudo), flakes on, the base packages. Nothing unfree: `allowUnfree` is off. |
 | `tools.nix` | Light CLI tools and defaults taken from [gvolpe/nix-config](https://github.com/gvolpe/nix-config), plus the size and memory limits. See "Resource budget". |
 | `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
@@ -126,7 +126,7 @@ to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 as the `deploy` user and activates it. The VPS compiles nothing; it fetches from
 `cache.nixos.org` what the cache has. If SSH does not answer within 60 seconds after the switch,
 deploy-rs rolls the VPS back (magic rollback). The secrets are `DEPLOY_SSH_KEY`, `DEPLOY_HOST`
-and `DEPLOY_KNOWN_HOSTS` in the `production` environment.
+and `DEPLOY_KNOWN_HOSTS` in the `prod` environment.
 
 A human can deploy by hand with the same tool, for example the first time, before the `deploy`
 user exists: `DEPLOY_HOST=<ip> just deploy h0ffmann`. To undo a bad switch on the VPS:
