@@ -117,7 +117,7 @@ with that version.
 ├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (the same, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
-├── .claude/skills/          four vendored Nix skills for agents (their README), .mcp.json: mcp-nixos
+├── .claude/skills/          vendored skills for agents, four Nix and three frontend (their README); .mcp.json: mcp-nixos, OpenPencil
 ├── justfile
 └── AGENTS.md                the rules for AI agents working here
 ```
@@ -165,4 +165,4 @@ $ nix flake show
 |---|---|
 | Everything in this repository, the drawing included | [MPL-2.0](LICENSE) |
 | `drawings/src/pen.rs` | MPL-2.0, from [h0ffmann/pirsig](https://github.com/h0ffmann/pirsig) at `450e4da` |
-| `.claude/skills/*/` | MIT, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |
+| `.claude/skills/*/` | MIT, or Apache-2.0 for `frontend-design`, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |

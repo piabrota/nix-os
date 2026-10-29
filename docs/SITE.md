@@ -3,6 +3,15 @@
 `site.nix` serves the files in `site/` on `piabrota.art` and `www.piabrota.art`, through nginx
 with a Let's Encrypt certificate. It is off until DNS points at the VPS.
 
+| Desktop | Phone (390 px) |
+|---|---|
+| ![The site in light mode, desktop](images/site-desktop-light.png) | ![The site in light mode, phone](images/site-mobile-light.png) |
+| ![The site in dark mode, desktop](images/site-desktop-dark.png) | ![The site in dark mode, phone](images/site-mobile-dark.png) |
+
+The page follows the visitor's light or dark setting. To change its design, the agent skills
+`frontend-design`, `web-design-guidelines` and `open-pencil` are in `.claude/skills/`
+([their README](../.claude/skills/README.md)).
+
 ## Turn it on
 
 1. **Manual, Porkbun.** Today `piabrota.art` is a Porkbun URL forward (`pixie.porkbun.com`). Remove
