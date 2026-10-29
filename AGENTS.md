@@ -144,12 +144,16 @@ Ubuntu while 24.04 is supported.
 
 ## Commits and PRs
 
-- Commit messages, PR titles and PR bodies are in English.
+- **Hard rule: every PR is a bipr.** Write and open each PR with the `bipr` skill of
+  [h0ffmann/ptbr-writer](https://github.com/h0ffmann/ptbr-writer/blob/main/skills/bipr/SKILL.md):
+  the title in pt-BR, the body in pt-BR first and its English mirror after `---`, and the skill's
+  `footer.md` as the last line. Commit messages stay in English.
+- **Hard rule: no agent trail.** No commit, PR, issue, comment or file carries a mark of Claude or of
+  any other agent: no `Co-Authored-By:` agent trailer, no "Generated with" line other than the bipr
+  footer, no agent name as the commit author, no link to an agent session or project thread.
 - Work on a branch and open a PR. Do not push to `main`.
 - Name an agent's branch `claude/<project>-<goal-slug>`: the project, then the goal of the work in a
   few lowercase words joined by `-`, for example `claude/nix-os-gitops-deploys`. Never use a branch
   name made from a thread or session id, such as `claude/project-thread-wchbf1`.
-- Never write a link to a Claude session (`claude.ai/code/session_…`) in a commit, a PR, an issue
-  or a file. Leave out `Claude-Session:` trailers.
 - Never commit a secret, a private key or an `.age` file (`.gitignore` blocks the usual names).
 - The PR says what changed in the closure (the `dix` summary) and whether the build was run.
