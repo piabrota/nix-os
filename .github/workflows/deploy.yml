@@ -7,6 +7,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ssh_user:
+        # `h0ffmann` only for the first deploy, before the `deploy` user exists (docs/DEPLOY.md).
+        description: SSH user
+        type: choice
+        options: [deploy, h0ffmann]
+        default: deploy
 
 permissions:
   contents: read
@@ -37,9 +44,11 @@ jobs:
       - name: Build and deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
           nix run .#deploy-rs -- .#piabrota \
             --hostname "$DEPLOY_HOST" \
+            --ssh-user "$SSH_USER" \
             --ssh-opts "-o StrictHostKeyChecking=yes -o BatchMode=yes" \
             --skip-checks \
             -- --no-update-lock-file --print-build-logs
@@ -48,10 +57,11 @@ jobs:
         if: always()
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
           {
             echo '### piabrota after deploy of `'"$GITHUB_SHA"'`'
             echo '```'
-            ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s < scripts/specs.sh
+            ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" sh -s < scripts/specs.sh
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

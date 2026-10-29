@@ -73,16 +73,37 @@ deploy uses your own account. Before it, check that the VPS has nothing that is 
 repository: look at `/etc/nixos/` on the VPS (for example a `hardware-configuration.nix` or a
 change made there by hand). Add what is missing to the repository first.
 
-From your machine, with Nix, in a clone of this repository:
+Do it in one of two ways.
+
+**From GitHub (no Nix needed on your machine).** This needs the workflow on `main`, so merge
+first; the deploy of that merge fails at SSH and changes nothing.
+
+1. On the VPS, as `h0ffmann`, let the CI key log in as you for this one run:
+
+   ```sh
+   echo 'ssh-ed25519 AAAA… github-actions-deploy' >> ~/.ssh/authorized_keys
+   ```
+
+   The line is the one in `keys/deploy.pub`.
+2. In GitHub, open **Actions > deploy > Run workflow**, set **SSH user** to `h0ffmann`, and run
+   it. It deploys as you, and the system it activates has the `deploy` user.
+3. On the VPS, remove the line again, so the CI key is no longer `h0ffmann`'s:
+
+   ```sh
+   sed -i '/github-actions-deploy$/d' ~/.ssh/authorized_keys
+   ```
+
+**From your machine, with Nix**, in a clone of this repository:
 
 ```sh
 DEPLOY_HOST=<ip> just deploy h0ffmann
 ```
 
 This builds on your machine, copies to the VPS and activates, with the same rollback as CI.
-After it, `ssh deploy@<ip>` must work with the key of step 1. From then on, every merge to
+
+After either one, `ssh deploy@<ip>` works with the key of step 1. From then on, every merge to
 `main` deploys by itself, and you can start a deploy again from the **Actions** tab
-(`deploy`, **Run workflow**).
+(`deploy`, **Run workflow**, SSH user `deploy`).
 
 ## Every day
 
