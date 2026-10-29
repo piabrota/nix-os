@@ -45,6 +45,12 @@ with:
 - [`docs/CLAUDE_PROJECT.ptBR.md`](docs/CLAUDE_PROJECT.ptBR.md), em português
 - [`docs/CLAUDE_PROJECT.md`](docs/CLAUDE_PROJECT.md), in English
 
+Kubernetes on this machine: a survey of k3s, k0s, MicroK8s and KubeSolo against the KVM 1 plan,
+with podman and Nomad for comparison. The short answer is not for now:
+
+- [`docs/KUBERNETES.ptBR.md`](docs/KUBERNETES.ptBR.md), em português
+- [`docs/KUBERNETES.md`](docs/KUBERNETES.md), in English
+
 ## Recipes
 
 ```console
@@ -95,8 +101,10 @@ with that version.
 ├── docs/FORK.md             the same, in English
 ├── docs/CLAUDE_PROJECT.ptBR.md  a Claude Project for a fork, in Portuguese
 ├── docs/CLAUDE_PROJECT.md   the same, in English
+├── docs/KUBERNETES.ptBR.md  a survey of small Kubernetes for this VPS, in Portuguese
+├── docs/KUBERNETES.md     the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push), cves.yml (every PR and push, weekly), deploy.yml (push to main), freeze.yml (after each deploy)
+├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (the same, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy)
 ├── .claude/skills/          four vendored Nix skills for agents (their README), .mcp.json: mcp-nixos
 ├── justfile
 └── AGENTS.md                the rules for AI agents working here
