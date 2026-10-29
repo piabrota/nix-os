@@ -35,6 +35,12 @@ VPS, a deploy key, three secrets, one first deploy):
 - [`docs/FORK.ptBR.md`](docs/FORK.ptBR.md), em português
 - [`docs/FORK.md`](docs/FORK.md), in English
 
+To let a Claude Project work on your fork (pull requests only; a merge still deploys), set it up
+with:
+
+- [`docs/CLAUDE_PROJECT.ptBR.md`](docs/CLAUDE_PROJECT.ptBR.md), em português
+- [`docs/CLAUDE_PROJECT.md`](docs/CLAUDE_PROJECT.md), in English
+
 ## Recipes
 
 ```console
@@ -80,6 +86,8 @@ with that version.
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
 ├── docs/FORK.ptBR.md        how to run your own VPS from a fork, in Portuguese
 ├── docs/FORK.md             the same, in English
+├── docs/CLAUDE_PROJECT.ptBR.md  a Claude Project for a fork, in Portuguese
+├── docs/CLAUDE_PROJECT.md   the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR and push), deploy.yml (push to main), freeze.yml (after each deploy)
 ├── justfile

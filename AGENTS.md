@@ -32,6 +32,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `.github/workflows/deploy.yml` | On push to `main`: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. |
 | `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
 | `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |
+| `docs/CLAUDE_PROJECT.ptBR.md`, `docs/CLAUDE_PROJECT.md` | How to set up a Claude Project on a fork, in pt-BR first and its English mirror. For people only: an agent working here does not act on them. Change both together. |
 | `LICENSE` | MPL-2.0. |
 
 `configuration.nix` refers to an `image.nix` that builds the qcow2 template. That file is not in
