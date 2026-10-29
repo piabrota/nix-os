@@ -126,7 +126,7 @@ to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 as the `deploy` user and activates it. The VPS compiles nothing; it fetches from
 `cache.nixos.org` what the cache has. If SSH does not answer within 60 seconds after the switch,
 deploy-rs rolls the VPS back (magic rollback). The secrets are `DEPLOY_SSH_KEY`, `DEPLOY_HOST`
-and `DEPLOY_KNOWN_HOSTS` in the `production` environment.
+and `DEPLOY_KNOWN_HOSTS` in the `prod` environment.
 
 A human can deploy by hand with the same tool, for example the first time, before the `deploy`
 user exists: `DEPLOY_HOST=<ip> just deploy h0ffmann`. To undo a bad switch on the VPS:

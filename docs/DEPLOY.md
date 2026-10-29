@@ -48,7 +48,7 @@ ssh-keygen -t ed25519 -N '' -C github-actions-deploy -f piabrota-deploy
 
 ### 3. Add the secrets in GitHub
 
-In `piabrota/nix-os`, open **Settings > Environments**, create the environment `production`,
+In `piabrota/nix-os`, open **Settings > Environments**, create the environment `prod`,
 and add three secrets to it:
 
 | Secret | Value |
