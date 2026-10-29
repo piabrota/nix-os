@@ -101,7 +101,7 @@ with that version.
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
-├── drawings/                the Rust crate that draws docs/drawings/mu.svg
+├── drawings/                the pen and the drawing, in Nix, that draw docs/drawings/mu.svg
 ├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
 ├── docs/LOCO.md             how to add a Loco app
 ├── docs/SITE.md             how to turn the static site on
@@ -130,7 +130,7 @@ $ nix flake show
 │   └───x86_64-linux
 │       ├───deploy-activate: derivation 'deploy-rs-check-activate'
 │       ├───deploy-schema: derivation 'jsonschema-deploy-system'
-│       ├───drawing: derivation 'mu-art-0.1.0'
+│       ├───drawing: derivation 'mu-art-check'
 │       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       ├───site-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
@@ -145,7 +145,7 @@ $ nix flake show
 └───packages
     └───x86_64-linux
         ├───deploy-rs: package 'deploy-rs-1.0.0'
-        └───mu-art: package 'mu-art-0.1.0'
+        └───mu-art: package 'mu-art'
 ```
 
 ## Credits
@@ -153,8 +153,8 @@ $ nix flake show
 - The README layout follows [picasso](https://github.com/h0ffmann/picasso), and through it
   [gvolpe/nix-config](https://github.com/gvolpe/nix-config). Several tools in `tools.nix` come from
   gvolpe's list.
-- The drawing is made the way [pirsig](https://github.com/h0ffmann/pirsig)'s 無 is: `drawings/src/pen.rs`
-  is pirsig's pen, copied unchanged (MPL-2.0, by the same author). See
+- The drawing is made the way [pirsig](https://github.com/h0ffmann/pirsig)'s 無 is: `drawings/pen.nix`
+  is pirsig's pen, ported from Rust to Nix (MPL-2.0, by the same author). See
   [docs/drawings](docs/drawings/README.md).
 - The stroke order of 无 follows [KanjiVG](https://kanjivg.tagaini.net/) (© Ulrich Apel,
   CC BY-SA 3.0), used as a reference only.
@@ -164,5 +164,5 @@ $ nix flake show
 | What | License |
 |---|---|
 | Everything in this repository, the drawing included | [MPL-2.0](LICENSE) |
-| `drawings/src/pen.rs` | MPL-2.0, from [h0ffmann/pirsig](https://github.com/h0ffmann/pirsig) at `450e4da` |
+| `drawings/pen.nix` | MPL-2.0, ported from [h0ffmann/pirsig](https://github.com/h0ffmann/pirsig)'s Rust pen at `450e4da` |
 | `.claude/skills/*/` | MIT, or Apache-2.0 for `frontend-design`, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |
