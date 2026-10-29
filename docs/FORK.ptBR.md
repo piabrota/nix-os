@@ -34,7 +34,6 @@ Edite estes arquivos no seu fork:
 | `.github/workflows/deploy.yml` | Em `ssh_user`, na linha `options: [deploy, h0ffmann]`, troque `h0ffmann` pelo seu usuário. |
 | `justfile` | Em `remote-specs` e `remote-freeze`, troque `h0ffmann` pelo seu usuário. |
 | `flake.nix` | Em `deploy.nodes.piabrota.hostname`, ponha o seu domínio ou IP. O CI usa o secret `DEPLOY_HOST`, então esse valor só vale como padrão para o `just deploy`. |
-| `.github/FUNDING.yml` | Apague o arquivo ou ponha a sua conta. |
 | `README.md`, `docs/drawings/` | O desenho e o texto descrevem este repositório. Mude ou mantenha, com os créditos. |
 
 Não remova as configurações que o `AGENTS.md` lista em "Do not break the machine". A Hostinger
