@@ -22,8 +22,9 @@
   `main` deploys it. The GitHub runner builds, [deploy-rs](https://github.com/serokell/deploy-rs)
   copies the result over SSH and switches the VPS, and the VPS rolls back by itself if SSH stops
   answering. The VPS compiles nothing. [`docs/DEPLOY.md`](docs/DEPLOY.md) has the one-time setup.
-- The machine is small, so every change is judged by what it adds to the closure and to memory
-  ([`AGENTS.md`](AGENTS.md), "Resource budget").
+- The machine is small: Hostinger's **KVM 1** plan, with 1 vCPU core, 4 GB RAM, a 50 GB disk
+  and 4 TB of bandwidth a month (hPanel, 2026-10-29). Every change is judged by what it adds to
+  the closure and to memory ([`AGENTS.md`](AGENTS.md), "Resource budget").
 - It is ready to host [Loco](https://loco.rs) apps (Rust and SQLite) behind nginx with HTTPS:
   declare an app and the merge deploys it ([`docs/LOCO.md`](docs/LOCO.md)). Until then it adds
   nothing to the system.
