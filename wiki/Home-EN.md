@@ -20,7 +20,7 @@ here points to them.
 |---|---|
 | The rules for anyone changing the repository (people and agents) | [`AGENTS.md`](https://github.com/piabrota/nix-os/blob/main/AGENTS.md) |
 | How the deploy works, and the one-time setup | [`docs/DEPLOY.md`](https://github.com/piabrota/nix-os/blob/main/docs/DEPLOY.md) |
-| The static site on piabrota.art | [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md) |
+| The static site on www.piabrota.art, and DNS on Porkbun | [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md) |
 | Adding a Loco app | [`docs/LOCO.md`](https://github.com/piabrota/nix-os/blob/main/docs/LOCO.md) |
 | Running your own VPS from a fork | [`docs/FORK.md`](https://github.com/piabrota/nix-os/blob/main/docs/FORK.md) |
 | Kubernetes on this machine | [`docs/KUBERNETES.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBERNETES.md), [`docs/MICROK8S.md`](https://github.com/piabrota/nix-os/blob/main/docs/MICROK8S.md) |

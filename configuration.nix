@@ -65,6 +65,9 @@
   systemd.services.qemu-guest-agent.environment.PATH =
     lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/bin";
 
+  # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
+  piabrota.site.enable = true;
+
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";
 

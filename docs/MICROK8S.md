@@ -47,7 +47,7 @@ A `k8s.nix` module with `piabrota.k8s.enable`, off by default, like `site.nix`. 
 - reserves memory for the system in the kubelet (`--system-reserved=memory=512Mi`), so a pod
   cannot take `sshd` down.
 
-A `checks.k8s-example` builds the system with the flag on, like `checks.site-example`, so CI
+A `checks.k8s-example` builds the system with the flag on, like `checks.loco-example`, so CI
 catches a broken module before anyone turns the flag on.
 
 Why not a second `nixosConfiguration` or a separate deploy-rs profile: the VPS has one system

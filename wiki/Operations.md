@@ -26,9 +26,9 @@ except for the first deploy ([`docs/DEPLOY.md`](https://github.com/piabrota/nix-
   on the serial console.
 - Then revert the commit on `main`. If you don't, the next deploy brings the change back.
 
-## Turn on the site on piabrota.art
+## The site on www.piabrota.art
 
-Point DNS at the VPS, then turn on `piabrota.site.enable` in a PR. The steps are in
+The site is on. Both names, `piabrota.art` and `www`, must point at the VPS. The DNS steps are in
 [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md).
 
 ## Add an app

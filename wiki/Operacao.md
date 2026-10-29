@@ -26,9 +26,9 @@ a não ser no primeiro deploy ([`docs/DEPLOY.md`](https://github.com/piabrota/ni
   GRUB pelo console serial.
 - Depois, reverta o commit na `main`. Se não reverter, o próximo deploy traz a mudança de volta.
 
-## Ligar o site em piabrota.art
+## O site em www.piabrota.art
 
-Aponte o DNS para a VPS e depois ligue `piabrota.site.enable` num PR. Os passos estão em
+O site está ligado. Os dois nomes, `piabrota.art` e `www`, precisam apontar para a VPS. Os passos do DNS estão em
 [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md).
 
 ## Adicionar um app
