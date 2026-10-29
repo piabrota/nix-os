@@ -18,7 +18,9 @@ e `justfile` no mesmo commit.
 2. **Manual, Hostinger.** Crie uma VPS KVM e instale o template NixOS pelo hPanel
    (**VPS > OS & Panel > Operating System**). O `configuration.nix` foi escrito para esse
    template: GRUB em BIOS no `/dev/sda`, cloud-init e o QEMU guest agent. ⚠ O caminho do menu é
-   o do hPanel em 2026-10-29. A Hostinger pode mudar esse caminho.
+   o do hPanel em 2026-10-29. A Hostinger pode mudar esse caminho. A piabrota roda no plano
+   **KVM 1** (1 núcleo de vCPU, 4 GB de RAM, 50 GB de disco, 4 TB de banda por mês); a
+   configuração foi feita para ele.
 3. **Manual, Hostinger.** Tire um snapshot da VPS nova (**Snapshots & Backups**). Com o snapshot,
    você pode voltar a um sistema limpo.
 

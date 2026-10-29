@@ -67,8 +67,15 @@ in-process workers (docs/LOCO.md).
 
 ## Resource budget
 
-The exact RAM and disk of the plan are not recorded here. Read them on the machine
-(`free -h`, `df -h /`) before you rely on a number.
+The VPS is on Hostinger's **KVM 1** plan (hPanel, 2026-10-29, from the owner):
+
+| CPU | RAM | Disk | Bandwidth |
+|---|---|---|---|
+| 1 vCPU core | 4 GB | 50 GB | 4 TB a month |
+
+These are the plan's figures. What the system can use is less (the kernel, zram, the root
+partition). Read the machine's own numbers (`just remote-specs`, or the summary of the last
+`deploy` run) before you rely on a number, and change this table when the plan changes.
 
 Rules for anything you add:
 

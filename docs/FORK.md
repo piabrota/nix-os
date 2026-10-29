@@ -17,7 +17,8 @@ and `justfile` together.
 2. **Manual, Hostinger.** Get a KVM VPS and install the NixOS template from hPanel
    (**VPS > OS & Panel > Operating System**). `configuration.nix` is written for that template:
    BIOS GRUB on `/dev/sda`, cloud-init, the QEMU guest agent. ⚠ The menu path is how hPanel shows
-   it on 2026-10-29; Hostinger can move it.
+   it on 2026-10-29; Hostinger can move it. piabrota runs on the **KVM 1** plan (1 vCPU core,
+   4 GB RAM, 50 GB disk, 4 TB bandwidth a month); the configuration is sized for it.
 3. **Manual, Hostinger.** Take a snapshot of the new VPS (**Snapshots & Backups**), so that you
    can go back to a clean system.
 
