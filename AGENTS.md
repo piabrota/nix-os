@@ -146,5 +146,10 @@ Ubuntu while 24.04 is supported.
 
 - Commit messages, PR titles and PR bodies are in English.
 - Work on a branch and open a PR. Do not push to `main`.
+- Name an agent's branch `claude/<project>-<goal-slug>`: the project, then the goal of the work in a
+  few lowercase words joined by `-`, for example `claude/nix-os-gitops-deploys`. Never use a branch
+  name made from a thread or session id, such as `claude/project-thread-wchbf1`.
+- Never write a link to a Claude session (`claude.ai/code/session_…`) in a commit, a PR, an issue
+  or a file. Leave out `Claude-Session:` trailers.
 - Never commit a secret, a private key or an `.age` file (`.gitignore` blocks the usual names).
 - The PR says what changed in the closure (the `dix` summary) and whether the build was run.
