@@ -12,7 +12,7 @@
 | `tools.nix` | Light command-line tools, and the disk and memory limits. |
 | `deploy.nix` | The `deploy` user CI logs in as, garbage collection and the boot generation limit. |
 | `loco.nix` | [Loco](https://loco.rs) apps as sandboxed systemd services, with SQLite, nginx and HTTPS. |
-| `site.nix` | The static site from `site/` on www.piabrota.art, over HTTP and HTTPS; `piabrota.art` redirects to `www`. |
+| `site.nix` | The static site from `site/` (Gleam and Lustre, prerendered at build time; the VPS gets only the HTML and CSS) on www.piabrota.art, over HTTP and HTTPS; `piabrota.art` redirects to `www`. |
 
 ## From a pull request to the VPS
 

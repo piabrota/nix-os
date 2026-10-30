@@ -1,6 +1,6 @@
 # Vendored agent skills
 
-Community skills for agentic Nix work and for the static site in `site/`, copied so Claude Code (and any tool that reads
+Community skills for agentic Nix work and for the static site in `site/` (Gleam, prerendered), copied so Claude Code (and any tool that reads
 `.claude/skills/*/SKILL.md`) uses them here. They are the ones
 [picasso](https://github.com/h0ffmann/picasso/tree/main/.claude/skills) already vets that fit a
 single small VPS. Each `SKILL.md` is the upstream file with one added note under its front matter:
@@ -18,10 +18,10 @@ where it came from, and what differs in this repo. AGENTS.md wins wherever a ski
 
 `.mcp.json` adds [mcp-nixos](https://github.com/utensils/mcp-nixos) (`nix run nixpkgs#mcp-nixos`)
 for package and option lookups; prefer it over guessing an option name. It runs where the agent
-runs, never on the VPS. It also adds OpenPencil's MCP server (`openpencil-mcp`, from
-`npm install -g @open-pencil/mcp` or `bun add -g @open-pencil/mcp`), which drives the
-[OpenPencil](https://openpencil.dev) desktop app; the app must be open with a document loaded. It
-is local design tooling for `site/`, nothing the VPS runs.
+runs, never on the VPS. It also adds OpenPencil's MCP server (`@open-pencil/mcp@0.16.0`, started with `npx`; node from
+`nix develop .#site`), which drives the [OpenPencil](https://openpencil.dev) desktop app; the app
+must be open with a document loaded. `OPENPENCIL_MCP_ROOT` limits it to `site/design/`. It is
+local design tooling for `site/`, nothing the VPS runs.
 
 Hostinger's MCP server and agent skills are not here on purpose: a Hostinger API token has every
 right of the account (no scopes), so an agent holding one could reinstall or delete the VPS.

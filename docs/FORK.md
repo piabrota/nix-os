@@ -32,7 +32,7 @@ Edit these files in your fork:
 | `.github/workflows/deploy.yml` | In `ssh_user`, `options: [deploy, h0ffmann]`: put your user in place of `h0ffmann`. |
 | `justfile` | `remote-specs` and `remote-freeze`: your user in place of `h0ffmann`. |
 | `flake.nix` | `deploy.nodes.piabrota.hostname`: your domain or IP. CI uses the `DEPLOY_HOST` secret, so this is only the default for `just deploy`. |
-| `site.nix`, `site/` | In `piabrota.site`, put your own `domain`, `redirectFrom` and `redirects`, and your own files in `site/`. `configuration.nix` turns it on: set `piabrota.site.enable = false` there until DNS points at your VPS ([`SITE.md`](SITE.md)). |
+| `site.nix`, `site/` | In `piabrota.site`, put your own `domain`, `redirectFrom` and `redirects`, and write your own page in `site/src/` (Gleam; [`SITE.md`](SITE.md)). `configuration.nix` turns it on: set `piabrota.site.enable = false` there until DNS points at your VPS ([`SITE.md`](SITE.md)). |
 | `README.md`, `docs/drawings/` | The drawing and the text describe this repository. Change them or keep them, with the credits. |
 
 Do not remove the settings that `AGENTS.md` lists under "Do not break the machine". Hostinger

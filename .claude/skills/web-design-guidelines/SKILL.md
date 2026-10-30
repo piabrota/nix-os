@@ -14,7 +14,7 @@ metadata:
 >
 > In this repo: read `references/command.md` instead of fetching the URL below. Everything here is pinned, and a rule
 > list that changes on `main` between two reviews is not. The rules about React, hydration and forms do not apply to
-> `site/`, which is static HTML and CSS.
+> `site/`, which is Gleam prerendered to static HTML and CSS.
 
 # Web Interface Guidelines
 
