@@ -18,10 +18,10 @@
 
 ```
 PR ──► ci.yml: nix flake check (builda o sistema), nixpkgs-fmt, statix, deadnix, shellcheck
-   └─► cves.yml: relatório do vulnix sobre o sistema buildado
 merge na main ──► deploy.yml: o runner builda, o deploy-rs copia via SSH e ativa
                     └─► se o SSH não responder em 60 s, a VPS volta sozinha (magic rollback)
               └─► freeze.yml: a lista de pacotes da VPS no resumo da execução
+              └─► cves.yml: relatório do vulnix sobre o sistema buildado (e toda segunda)
               └─► wiki.yml: copia wiki/ para este wiki (se wiki/ mudou)
 ```
 

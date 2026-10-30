@@ -114,7 +114,7 @@ with that version.
 ├── docs/MICROK8S.ptBR.md    a plan for testing MicroK8s here, in Portuguese
 ├── docs/MICROK8S.md       the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (the same, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
+├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
 ├── .claude/skills/          vendored skills for agents, four Nix and three frontend (their README); .mcp.json: mcp-nixos, OpenPencil
