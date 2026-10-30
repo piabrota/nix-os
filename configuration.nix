@@ -13,6 +13,8 @@
     ./apps.nix
     # A trial of single-node Kubernetes (docs/KUBESOLO.md), turned on below.
     ./kubesolo.nix
+    # A Postgres-compatible database for rax's store (docs/PGX.md), turned on below.
+    ./pgx.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),
@@ -73,6 +75,9 @@
   # Single-node Kubernetes, on for a trial (kubesolo.nix, docs/KUBESOLO.md). Before the merge that
   # turns it on, take a Hostinger snapshot; to undo, see the rollback in docs/KUBESOLO.md.
   piabrota.kubesolo.enable = true;
+  # PGX, the Postgres that rax's store on KubeSolo uses instead of a PostgreSQL server or Docker
+  # (pgx.nix, docs/PGX.md). Not for data you keep: that stays in SQLite.
+  piabrota.pgx.enable = true;
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";

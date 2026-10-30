@@ -14,6 +14,7 @@
 | `loco.nix` | [Loco](https://loco.rs) apps as sandboxed systemd services, with SQLite, nginx and HTTPS. |
 | `site.nix` | The static site from `site/` (Gleam and Lustre, prerendered at build time; the VPS gets only the HTML and CSS) on www.piabrota.art, over HTTP and HTTPS; `piabrota.art` redirects to `www`. |
 | `kubesolo.nix` | [KubeSolo](https://github.com/portainer/kubesolo), a single-node Kubernetes, behind a flag that is off; its workloads live in `k8s/` and never go in through a deploy. See [`docs/KUBESOLO.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBESOLO.md). |
+| `pgx.nix` | [PGX](https://pgx.dev), a Postgres-compatible database in one process, instead of a PostgreSQL server or Docker: rax's store on KubeSolo. Only for data that can be rebuilt; the apps' data stays in SQLite. See [`docs/PGX.md`](https://github.com/piabrota/nix-os/blob/main/docs/PGX.md). |
 
 ## From a pull request to the VPS
 

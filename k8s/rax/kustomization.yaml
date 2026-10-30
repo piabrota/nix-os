@@ -1,4 +1,4 @@
-# rax-server on KubeSolo, API only: in-memory store, no Agent Substrate (docs/KUBESOLO.md,
+# rax-server on KubeSolo, API only: its store in PGX on the host, no Agent Substrate (docs/KUBESOLO.md,
 # "rax on KubeSolo"). Applied by hand over an SSH tunnel with `kubectl apply -k k8s/rax`;
 # deploy.yml ignores k8s/**, so a system deploy never touches it.
 apiVersion: kustomize.config.k8s.io/v1beta1
