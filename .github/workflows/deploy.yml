@@ -6,8 +6,9 @@ name: deploy
 on:
   push:
     branches: [main]
-    # A merge that changes only Markdown leaves the system as it is: nothing to deploy.
-    paths-ignore: ['**.md']
+    # A merge that changes only Markdown leaves the system as it is: nothing to deploy. k8s/ holds
+    # workloads for KubeSolo, applied over an SSH tunnel, never by a system deploy (docs/KUBESOLO.md).
+    paths-ignore: ['**.md', 'k8s/**']
   workflow_dispatch:
     inputs:
       ssh_user:
