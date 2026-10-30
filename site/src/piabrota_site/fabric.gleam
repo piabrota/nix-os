@@ -1,69 +1,78 @@
-//// Design A, "fabric": the org profile as a page. Dark, the logo's red, the projects as cards in
-//// the lanes of the profile's "How it fits" figure. Served at /.
+//// Design A, "fabric": the org profile as a page. The projects as cards in the lanes of the
+//// profile's "How it fits" figure, each with its state on its edge. Served at /.
 
+import gleam/int
 import gleam/list
-import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import piabrota_site/community
 import piabrota_site/data.{type Project}
 import piabrota_site/parts
 
 pub fn view() -> Element(msg) {
-  html.div([attribute.class("page")], [
-    html.header([attribute.class("top")], [
-      html.a([attribute.class("brand"), attribute.href("/")], [
-        parts.eye(36),
-        html.span([], [html.text(data.name)]),
+  html.div([], [
+    parts.top("fabric", [
+      html.div([], [
+        parts.eyebrow(data.kicker),
+        html.h1([], [
+          html.text("Open software, "),
+          html.span([], [html.text("made in Rio de Janeiro.")]),
+        ]),
+        html.p([attribute.class("lede")], [html.text(data.lede)]),
+        parts.status(),
+        parts.buttons(#("#projects", "See the projects ↓")),
+      ]),
+      html.figure([attribute.class("drawing")], [
+        parts.eye(176),
+        html.figcaption([], [html.text("the piabrota mark")]),
       ]),
     ]),
     html.main([], [
-      html.section([attribute.class("hero")], [
-        html.p([attribute.class("kicker")], [
-          html.text(string.uppercase(data.kicker)),
+      html.section([attribute.class("wrap"), attribute.id("projects")], [
+        parts.section_head("Projects", "from piabrota/.github"),
+        html.p([attribute.class("sub")], [
+          html.text(
+            "Each lane is a kind of work. The edge of a card says where the project stands.",
+          ),
         ]),
-        html.h1([], [html.text(data.headline)]),
-        html.p([attribute.class("lede")], [html.text(data.lede)]),
-        html.ul(
-          [attribute.class("pills")],
-          list.map(["FOSS", "Rust first", "MPL-2.0", "made in Rio"], fn(p) {
-            html.li([], [html.text(p)])
-          }),
-        ),
-      ]),
-      html.section([attribute.id("projects")], [
-        html.h2([], [html.text("Projects")]),
         ..list.map(data.lanes, fn(lane) {
-          html.section([attribute.class("lane")], [
-            html.h3([], [html.text(lane.label)]),
-            html.div(
-              [attribute.class("cards")],
-              list.map(parts.in_lane(lane.id), card),
-            ),
+          let projects = parts.in_lane(lane.id)
+          html.div([attribute.class("lane")], [
+            html.h3([], [
+              html.text(lane.label),
+              html.span([attribute.class("count")], [
+                html.text(int.to_string(list.length(projects))),
+              ]),
+            ]),
+            html.ul([attribute.class("cards")], list.map(projects, card)),
           ])
         })
       ]),
+      ..community.sections()
     ]),
-    html.footer([], [
-      html.p([], [
-        html.text("piabrota.art is served by "),
-        html.a([attribute.href(parts.nixos)], [html.text("nix-os")]),
-        html.text(", from /nix/store."),
-      ]),
-      html.p([], [html.text("Partnerships: " <> data.contact)]),
-      parts.switcher("fabric"),
-    ]),
+    parts.foot("fabric"),
   ])
 }
 
 fn card(p: Project) -> Element(msg) {
-  html.article([attribute.class("card")], [
-    html.h4([], [html.text(p.name)]),
-    html.p([attribute.class("meta")], [html.text(p.lang <> " · " <> p.licence)]),
-    html.p([attribute.class("blurb")], [html.text(p.blurb)]),
-    html.p([attribute.class("at " <> parts.state_class(p.state))], [
-      html.span([attribute.class("dot")], []),
-      parts.address(p),
-    ]),
-  ])
+  html.li(
+    [
+      attribute.class("card"),
+      attribute.data("state", parts.state_class(p.state)),
+    ],
+    [
+      html.div([attribute.class("card-head")], [
+        html.h4([], [html.text(p.name)]),
+        parts.pill(p.state),
+      ]),
+      html.p([attribute.class("blurb")], [html.text(p.blurb)]),
+      html.div([attribute.class("card-foot")], [
+        html.span([attribute.class("meta")], [
+          html.text(p.lang <> " · " <> p.licence),
+        ]),
+        parts.address(p),
+      ]),
+    ],
+  )
 }

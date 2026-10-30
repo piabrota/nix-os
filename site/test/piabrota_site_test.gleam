@@ -51,7 +51,7 @@ pub fn switcher_test() {
     assert string.contains(html, "href=\"/index/\"")
     assert string.contains(html, "href=\"/paths/\"")
     assert string.contains(html, "aria-current=\"page\"")
-    assert string.contains(html, "· " <> design <> "</a>")
+    assert string.contains(html, "</b> " <> design <> "</a>")
   })
 }
 
@@ -66,6 +66,48 @@ pub fn no_dead_path_test() {
   list.each(pages(), fn(p) {
     assert !string.contains(p.1, "href=\"/pirsig\"")
     assert !string.contains(p.1, "href=\"/alerts\"")
+  })
+}
+
+// Every page has its buttons: one primary, then GitHub and the sponsor link.
+pub fn buttons_test() {
+  list.each(pages(), fn(p) {
+    assert string.contains(p.1, "class=\"btn primary\"")
+    assert string.contains(p.1, "href=\"https://github.com/piabrota\"")
+    assert string.contains(p.1, "href=\"https://opencollective.com/piabrota\"")
+  })
+}
+
+// Every page lists the board with GitHub pills and websites, the partners with their logos, and
+// every fork, said PUBLIC.
+pub fn community_test() {
+  list.each(pages(), fn(p) {
+    list.each(data.people, fn(person) {
+      assert string.contains(
+        p.1,
+        "href=\"https://github.com/" <> person.login <> "\"",
+      )
+      assert string.contains(p.1, "href=\"" <> person.site <> "\"")
+    })
+    list.each(data.partners, fn(partner) {
+      assert string.contains(
+        p.1,
+        "src=\"https://avatars.githubusercontent.com/" <> partner.login,
+      )
+      assert string.contains(p.1, "href=\"" <> partner.site <> "\"")
+    })
+    assert data.forks != []
+    list.each(data.forks, fn(f) {
+      assert string.contains(
+        p.1,
+        "href=\"https://github.com/piabrota/" <> f.name <> "\"",
+      )
+      assert string.contains(
+        p.1,
+        "href=\"https://github.com/" <> f.parent <> "\"",
+      )
+    })
+    assert string.contains(p.1, "PUBLIC")
   })
 }
 
