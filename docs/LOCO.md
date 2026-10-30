@@ -16,7 +16,9 @@ app is declared, the module adds nothing to the system.
 | Firewall | 80 and 443 open, only once an app exists |
 | Variables | `PORT`, `NODE_PORT`, `BINDING`, `HOST`, `DATABASE_URL`, plus `environment`; secrets from `environmentFile` |
 
-No Postgres and no Redis: both are resident daemons that this machine cannot afford. Run
+No PostgreSQL server and no Redis: both are resident daemons that this machine cannot afford.
+The box does run [PGX](PGX.md), a Postgres-compatible engine, but for rax's store and other data
+you can lose: an app's own data stays in SQLite. Run
 background jobs in the same process: `workers.mode: BackgroundAsync`, or a SQLite queue
 (`queue.kind: Sqlite`) with `extraArgs = [ "--server-and-worker" ]`.
 
@@ -160,7 +162,8 @@ sudo sqlite3 /var/lib/loco-<app>/db.sqlite 'PRAGMA page_count; PRAGMA freelist_c
 PostgreSQL and MySQL, and its migrations are written in Rust, not in SQLite's dialect. A move is:
 
 1. Run the database somewhere else (a managed PostgreSQL, or another box): not on this VPS, where
-   a resident database server does not fit (AGENTS.md).
+   a resident database server does not fit (AGENTS.md). Not PGX either: it is v0.1 and, in its
+   own words, "not a production primary, a system of record".
 2. Point the app at it: `DATABASE_URL=postgres://...` in its `environmentFile`. The app runs its
    migrations there on start, creating the same tables.
 3. Copy the rows: stop the app, export from SQLite and import into the new database (for example

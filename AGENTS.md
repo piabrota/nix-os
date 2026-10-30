@@ -17,8 +17,8 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 
 | File | Is |
 |---|---|
-| `flake.nix`, `flake.lock` | The flake: `nixosConfigurations.piabrota` on `nixos-26.05`, the deploy-rs node `deploy.nodes.piabrota`, `checks` (the system and the deploy-rs checks), `packages.deploy-rs`, `packages.kubesolo`, `packages.site`, `packages.mockups`, `devShells.site` (gleam and node, for `site/` only). |
-| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the six modules below. |
+| `flake.nix`, `flake.lock` | The flake: `nixosConfigurations.piabrota` on `nixos-26.05`, the deploy-rs node `deploy.nodes.piabrota`, `checks` (the system, the deploy-rs checks, and `checks.pgx`, a VM test), `packages.deploy-rs`, `packages.kubesolo`, `packages.pgx`, `packages.site`, `packages.mockups`, `devShells.site` (gleam and node, for `site/` only). |
+| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the seven modules below. |
 | `piabrota.nix` | Users and Nix settings: the `h0ffmann` user (SSH key only, passwordless sudo), flakes on, the base packages. Nothing unfree: `allowUnfree` is off. |
 | `tools.nix` | Light CLI tools and defaults taken from [gvolpe/nix-config](https://github.com/gvolpe/nix-config), plus the size and memory limits. See "Resource budget". |
 | `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
@@ -26,7 +26,8 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `apps.nix`, `apps/notes/` | The Loco apps this box runs. Today one: `notes`, a sample CRUD on SQLite at `www.piabrota.art/notes` behind one password (`NOTES_PASSWORD` in `/var/lib/loco-secrets/notes.env` on the box, never here), built by `apps/notes/default.nix`. See [docs/LOCO.md](docs/LOCO.md). |
 | `site.nix`, `site/` | `piabrota.site`: the site in `site/`, three pages (the mockups' designs A at `/`, B at `/index/`, C at `/paths/`) from the facts in `mockups/data.nix`, Gleam and [Lustre](https://lustre.build) prerendered at build time by `site/default.nix` (as [piabrota/gramatico](https://github.com/piabrota/gramatico) does), on `www.piabrota.art`, over HTTP and HTTPS (`httpsOnly` turns HTTP into a redirect), nginx with ACME; `piabrota.art` redirects to `www`, and `/nixos` to this repository. On in `configuration.nix`; both names must point at the VPS. The VPS gets only the three pages, `site/static/` and `mu.svg`: the derivation has `allowedReferences = [ ]`, so gleam, node and the hex packages stay on the builder. `site/DESIGN.md` holds the look's rules (picasso's, in piabrota's colours); change it with the look. `site/design/` holds OpenPencil drafts, never built. See [docs/SITE.md](docs/SITE.md). |
 | `kubesolo.nix`, `kubesolo/package.nix` | `piabrota.kubesolo.enable`, off: [KubeSolo](https://github.com/portainer/kubesolo) as the unit `kubesolo` (state in `/var/lib/kubesolo`), from its static release binary (`kubesolo/package.nix`; not in nixpkgs), with `MemoryMax`/`CPUQuota`, the kubelet's `systemReserved`, and no port opened (the API is reached by SSH tunnel). Off, the system is unchanged. `checks.kubesolo-example` builds it on. Turn it on only in its own one-line PR, after a Hostinger snapshot. See [docs/KUBESOLO.md](docs/KUBESOLO.md). |
-| `k8s/` | Workloads for KubeSolo (`k8s/rax/`: rax-server, API only), applied by hand over an SSH tunnel with `kubectl apply -k`. `deploy.yml` ignores `k8s/**`; no workflow applies it. |
+| `pgx.nix`, `pgx/` | `piabrota.pgx.enable`, on: [PGX](https://pgx.dev), a Postgres-compatible engine in Rust (v0.1, AGPL-3.0), as the unit `pgx` (state in `/var/lib/pgx`, port 5432 with no port opened in the firewall, `pg_hba.conf` for loopback and KubeSolo's pods only, the password generated on the first start), from its release (`pgx/package.nix`, patched with `autoPatchelfHook`; not in nixpkgs), `--durability full`, `MemoryMax=256M`, the Loco apps' sandbox. A `pgx` command runs the CLI as the `pgx` user. For rax's store and other data you can lose, never an app's own data. `checks.pgx` (`pgx/test.nix`) boots it in a VM. See [docs/PGX.md](docs/PGX.md). |
+| `k8s/` | Workloads for KubeSolo (`k8s/rax/`: rax-server, API only, its store in PGX through the Secret `ax-store`, made by hand), applied by hand over an SSH tunnel with `kubectl apply -k`. `deploy.yml` ignores `k8s/**`; no workflow applies it. |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
 | `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size, and the total. `--by-size` sorts by size. |
@@ -46,6 +47,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |
 | `docs/MOCKUPS.ptBR.md`, `docs/MOCKUPS.md` | The homepage mockups and how to change them, in pt-BR first and its English mirror; the wiki's `Maquetes` and `Mockups` pages are the same. Change them together. |
 | `docs/SITE.md` | How to point DNS at the VPS and turn the static site on. |
+| `docs/PGX.ptBR.md`, `docs/PGX.md` | PGX here: what it is and is not, its cost, what `pgx.nix` does, using it, backups, updating, turning it off, in pt-BR first and its English mirror. Change both together, and with `pgx.nix`. |
 | `docs/KUBESOLO.ptBR.md`, `docs/KUBESOLO.md` | How to try KubeSolo here: what it is, its cost, turning it on, the SSH tunnel to the API, rax on it, and the rollback (revert PR, `nixos-rebuild switch --rollback` or GRUB, leftover state, Hostinger snapshot), in pt-BR first and its English mirror. Change both together, and with `kubesolo.nix`. |
 | `docs/MICROK8S.ptBR.md`, `docs/MICROK8S.md` | A survey for testing MicroK8s here (through nix-snapd) with the node in Nix and the workloads in their own workflow (2026-10-29), in pt-BR first and its English mirror. Research only. Change both together. |
 | `docs/KUBERNETES.ptBR.md`, `docs/KUBERNETES.md` | A survey of small Kubernetes distributions for this VPS (2026-10-29), in pt-BR first and its English mirror. Research only: the configuration runs none of them. Change both together. |
@@ -75,8 +77,9 @@ Never change `system.stateVersion`.
 
 Loco apps: never put a secret in `piabrota.loco.apps.<name>.environment` (it lands in the world-readable
 store); secrets go in the `environmentFile` on the box. Add an app only after its DNS record points at
-the VPS, or the ACME order fails on the deploy. Do not add Postgres or Redis for an app: SQLite and
-in-process workers (docs/LOCO.md).
+the VPS, or the ACME order fails on the deploy. Do not add a PostgreSQL server or Redis for an app: SQLite and
+in-process workers (docs/LOCO.md). PGX (`pgx.nix`) is for data you can lose, such as rax's store;
+an app's own data stays in SQLite.
 
 ## Resource budget
 
