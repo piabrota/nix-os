@@ -10,6 +10,7 @@
     ./deploy.nix
     ./loco.nix
     ./site.nix
+    ./apps.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),

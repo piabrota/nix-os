@@ -1,0 +1,16 @@
+{% extends "notes/base.html" %}
+{% block title %}edit{% endblock title %}
+{% block heading %}Notes <span>· edit</span>{% endblock heading %}
+{% block content %}
+<form class="note-form" method="post" action="/notes/{{ note.id }}">
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+  <label for="title">Title</label>
+  <input id="title" name="title" maxlength="200" value="{{ note.title }}" required>
+  <label for="content">Text</label>
+  <textarea id="content" name="content" rows="10" maxlength="20000">{{ note.content }}</textarea>
+  <div class="actions">
+    <button class="btn primary" type="submit">Save</button>
+    <a class="btn" href="/notes">Cancel</a>
+  </div>
+</form>
+{% endblock content %}

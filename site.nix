@@ -30,9 +30,15 @@ in
     root = mkOption {
       type = types.path;
       # Gleam runs on the builder; the box gets only the pages, static/ and mu.svg (site/default.nix).
-      default = pkgs.callPackage ./site { };
-      defaultText = lib.literalExpression "pkgs.callPackage ./site { }, the prerendered page";
+      default = pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; };
+      defaultText = lib.literalExpression "pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; }, the prerendered pages";
       description = "The directory nginx serves. Read-only: the store.";
+    };
+    analytics.measurementId = mkOption {
+      type = types.strMatching "(G-[A-Z0-9]+)?";
+      default = "";
+      example = "G-XXXXXXXXXX";
+      description = "Google Analytics 4 measurement ID. Empty: no analytics, and the pages load no script. Set: every page loads Google's tag (gtag.js). It is public: it ends up in every page's source.";
     };
     redirects = mkOption {
       type = types.attrsOf types.str;

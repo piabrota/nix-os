@@ -1,11 +1,18 @@
 # Loco (loco.rs) apps on this box: one sandboxed service per app, SQLite in its state
-# directory, nginx in front with Let's Encrypt. With no app declared it adds nothing, so the
+# directory, nginx in front with Let's Encrypt: on its own domain, or on a path of the site's. With no app declared it adds nothing, so the
 # box stays as small as it is until the first app lands. See docs/LOCO.md.
 { config, lib, pkgs, ... }:
 let
-  inherit (lib) mkIf mkOption types mapAttrs' nameValuePair;
+  inherit (lib) mkIf mkOption types mapAttrs' nameValuePair filterAttrs;
   cfg = config.piabrota.loco;
+  site = config.piabrota.site;
   hasApps = cfg.apps != { };
+  onDomain = filterAttrs (_: a: a.domain != null) cfg.apps;
+  onPath = filterAttrs (_: a: a.path != null) cfg.apps;
+  proxy = app: {
+    proxyPass = "http://127.0.0.1:${toString app.port}";
+    proxyWebsockets = true;
+  };
 
   appModule = { name, config, ... }: {
     options = {
@@ -25,9 +32,16 @@ let
         description = "Where Loco finds `config/production.yaml` and `assets/`. Read-only: the store.";
       };
       domain = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
+        default = null;
         example = "app.piabrota.art";
-        description = "The name nginx serves the app on. Its DNS A record must point at the box before the deploy, or ACME fails.";
+        description = "The name nginx serves the app on, with its own certificate. Its DNS A record must point at the box before the deploy, or ACME fails. Set this or `path`.";
+      };
+      path = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "/notes";
+        description = "A path on the static site's host (`piabrota.site.domain`) that nginx sends to the app, unchanged: the app's routes must start with it. No new DNS record or certificate. Set this or `domain`.";
       };
       port = mkOption {
         type = types.port;
@@ -73,10 +87,20 @@ in
   };
 
   config = mkIf hasApps (lib.mkMerge [{
-    assertions = [{
-      assertion = lib.length (lib.unique (lib.mapAttrsToList (_: a: a.port) cfg.apps)) == lib.length (lib.attrNames cfg.apps);
-      message = "piabrota.loco.apps: two apps share a port.";
-    }];
+    assertions = [
+      {
+        assertion = lib.length (lib.unique (lib.mapAttrsToList (_: a: a.port) cfg.apps)) == lib.length (lib.attrNames cfg.apps);
+        message = "piabrota.loco.apps: two apps share a port.";
+      }
+      {
+        assertion = lib.all (a: (a.domain == null) != (a.path == null)) (lib.attrValues cfg.apps);
+        message = "piabrota.loco.apps: each app needs exactly one of `domain` and `path`.";
+      }
+      {
+        assertion = onPath == { } || site.enable;
+        message = "piabrota.loco.apps: an app on a `path` needs the static site (piabrota.site.enable), whose host it shares.";
+      }
+    ];
 
     # One system user per app, so its nightly backup can run as that user: a root sqlite3 on a
     # WAL database leaves root-owned -shm/-wal files the app can no longer open.
@@ -133,7 +157,7 @@ in
               BINDING = "127.0.0.1";
               PORT = toString app.port;
               NODE_PORT = toString app.port;
-              HOST = "https://${app.domain}";
+              HOST = "https://${if app.domain != null then app.domain else site.domain}";
               DATABASE_URL = "sqlite://${state}/db.sqlite?mode=rwc";
             } // app.environment;
             serviceConfig = sandbox // {
@@ -174,16 +198,33 @@ in
         recommendedGzipSettings = true;
         recommendedOptimisation = true;
         serverTokens = false;
-        virtualHosts = mapAttrs'
-          (_: app: nameValuePair app.domain {
-            enableACME = true;
-            forceSSL = true;
-            locations."/" = {
-              proxyPass = "http://127.0.0.1:${toString app.port}";
-              proxyWebsockets = true;
-            };
+        virtualHosts = lib.mkMerge [
+          (mapAttrs'
+            (_: app: nameValuePair app.domain {
+              enableACME = true;
+              forceSSL = true;
+              locations."/" = proxy app;
+            })
+            onDomain)
+          # Apps on a path share the site's virtual host and certificate: the exact path and
+          # everything below it go to the app.
+          (lib.optionalAttrs (onPath != { }) {
+            ${site.domain}.locations = lib.mkMerge (lib.mapAttrsToList
+              (_: app:
+                let
+                  # The site answers on HTTP too (addSSL); an app never does: a password or a
+                  # session cookie must not cross in clear.
+                  secure = proxy app // {
+                    extraConfig = "if ($scheme = http) { return 301 https://$host$request_uri; }";
+                  };
+                in
+                {
+                  "= ${app.path}" = secure;
+                  "${app.path}/" = secure;
+                })
+              onPath);
           })
-          cfg.apps;
+        ];
       };
 
       security.acme = {

@@ -14,7 +14,7 @@ build:
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix site/data.nix drawings/*.nix mockups/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix site/data.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh

@@ -85,7 +85,7 @@
                   touch $out/share/example/config/production.yaml
                 '';
                 domain = "example.piabrota.art";
-                port = 5150;
+                port = 5151; # 5150 is the notes demo (apps.nix)
                 environmentFile = "/var/lib/loco-secrets/example.env";
               };
             }

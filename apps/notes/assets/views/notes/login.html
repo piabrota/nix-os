@@ -1,0 +1,11 @@
+{% extends "notes/base.html" %}
+{% block title %}sign in{% endblock title %}
+{% block heading %}Notes <span>· sign in</span>{% endblock heading %}
+{% block content %}
+<form class="note-form narrow" method="post" action="/notes/login">
+  {% if error %}<p class="form-error" role="alert">That is not the password.</p>{% endif %}
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+  <div class="actions"><button class="btn primary" type="submit">Sign in</button></div>
+</form>
+{% endblock content %}

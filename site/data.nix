@@ -1,7 +1,7 @@
 # The facts of the site as Gleam (src/piabrota_site/data.gleam), written from mockups/data.nix,
 # the same facts the mockups draw. default.nix writes the file on every build; `just site-data`
 # writes it for local work. It is not committed.
-{ lib, data }:
+{ lib, data, measurementId ? "" }:
 let
   str = s: "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
   state = { live = "Live"; coming = "Coming"; none = "NoSite"; };
@@ -59,6 +59,9 @@ in
   pub type Fork {
     Fork(name: String, parent: String, started: String, forked: String, description: String)
   }
+
+  /// The Google Analytics 4 measurement ID (piabrota.site.analytics.measurementId); "" for none.
+  pub const analytics_id = ${str measurementId}
 
   pub const name = ${str data.org.name}
 

@@ -133,6 +133,7 @@ with that version.
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
+├── apps.nix, apps/notes/    the Loco apps: a notes CRUD demo at www.piabrota.art/notes (docs/LOCO.md)
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
