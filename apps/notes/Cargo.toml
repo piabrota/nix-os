@@ -1,0 +1,36 @@
+[workspace]
+
+[package]
+name = "notes"
+version = "0.1.0"
+edition = "2021"
+publish = false
+default-run = "notes-cli"
+
+# Shared with migration/, so both use the same Loco.
+[workspace.dependencies]
+loco-rs = { version = "1.2" }
+
+[dependencies]
+loco-rs = { workspace = true }
+migration = { path = "migration" }
+sea-orm = { version = "2.0", features = [
+  "sqlx-sqlite",
+  "runtime-tokio-rustls",
+  "macros",
+] }
+async-trait = { version = "0.1" }
+axum = { version = "0.8" }
+axum-extra = { version = "0.10", features = ["cookie"] }
+chrono = { version = "0.4" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+tokio = { version = "1.45", default-features = false, features = ["rt-multi-thread"] }
+# the password wall (src/controllers/notes.rs)
+sha2 = { version = "0.10" }
+subtle = { version = "2.6" }
+time = { version = "0.3" }
+
+[[bin]]
+name = "notes-cli"
+path = "src/bin/main.rs"

@@ -1,0 +1,29 @@
+# On the box, with the environment loco.nix sets: PORT, BINDING, HOST and DATABASE_URL, and
+# NOTES_PASSWORD and NOTES_SECRET from /var/lib/loco-secrets/notes.env. No default for an address
+# or a database: a value missing from the environment stops the app at start.
+logger:
+  enable: true
+  pretty_backtrace: false
+  level: <%= get_env(name="LOG_LEVEL", default="info") %>
+  format: json
+
+server:
+  port: <%= get_env(name="PORT", default="5150") %>
+  binding: <%= get_env(name="BINDING", default="127.0.0.1") %>
+  host: <%= get_env(name="HOST") %>
+
+workers:
+  mode: BackgroundAsync
+
+database:
+  uri: <%= get_env(name="DATABASE_URL") %>
+  enable_logging: false
+  connect_timeout: 500
+  idle_timeout: 500
+  min_connections: 1
+  # SQLite takes one writer at a time; a few readers are enough for a demo.
+  max_connections: 4
+  # Pending migrations run when the app starts (docs/LOCO.md, "The database").
+  auto_migrate: true
+  dangerously_truncate: false
+  dangerously_recreate: false

@@ -1,6 +1,7 @@
 import gleam/list
 import gleam/string
 import gleeunit
+import lustre/element
 import piabrota_site/data
 import piabrota_site/page
 
@@ -111,14 +112,37 @@ pub fn community_test() {
   })
 }
 
+// No measurement ID, no tag; with one, Google's tag carries it twice (the script and the config).
+pub fn analytics_test() {
+  assert page.analytics("") == []
+  let tag =
+    page.analytics("G-TEST123")
+    |> list.map(element.to_string)
+    |> string.join("")
+  assert string.contains(
+    tag,
+    "src=\"https://www.googletagmanager.com/gtag/js?id=G-TEST123\"",
+  )
+  assert string.contains(tag, "gtag('config', 'G-TEST123')")
+}
+
 // Design C keeps the drawing.
 pub fn mu_test() {
   assert string.contains(page.paths(), "src=\"/mu.svg\"")
 }
 
-// Prerendered: no script, so every page works with JavaScript off.
+// Prerendered: no script, so every page works with JavaScript off; with a GA ID, only its tag.
 pub fn no_script_test() {
   list.each(pages(), fn(p) {
-    assert !string.contains(p.1, "<script")
+    case data.analytics_id {
+      "" -> {
+        assert !string.contains(p.1, "<script")
+      }
+      id -> {
+        // Only Google's two tags: the loader and its config.
+        assert list.length(string.split(p.1, "<script")) == 3
+        assert string.contains(p.1, "gtag/js?id=" <> id)
+      }
+    }
   })
 }

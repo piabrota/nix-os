@@ -62,8 +62,32 @@ fn document(design: String, title: String, body: Element(msg)) -> String {
         ),
       ]),
       html.link([attribute.rel("stylesheet"), attribute.href("/style.css")]),
+      ..analytics(data.analytics_id)
     ]),
     html.body([attribute.class(design)], [body]),
   ])
   |> element.to_document_string
+}
+
+/// Google's tag (gtag.js) for a GA4 measurement ID, or nothing when the ID is "": then the page
+/// loads no script at all. The ID comes from piabrota.site.analytics.measurementId (site.nix).
+pub fn analytics(id: String) -> List(Element(msg)) {
+  case id {
+    "" -> []
+    id -> [
+      html.script(
+        [
+          attribute.attribute("async", ""),
+          attribute.src("https://www.googletagmanager.com/gtag/js?id=" <> id),
+        ],
+        "",
+      ),
+      html.script(
+        [],
+        "window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', '"
+          <> id
+          <> "');",
+      ),
+    ]
+  }
 }

@@ -2,10 +2,10 @@
 # (A at index.html, B at index/, C at paths/); the output is those pages, static/ and the 无
 # drawing, nothing else. The facts come from ../mockups/data.nix, written as Gleam by data.nix. allowedReferences = [ ] fails the build if the
 # output names any store path, so gleam, node and the hex packages never reach the VPS closure.
-{ lib, stdenvNoCC, fetchurl, gleam, nodejs }:
+{ lib, stdenvNoCC, fetchurl, gleam, nodejs, measurementId ? "" }:
 let
   manifest = lib.importTOML ./manifest.toml;
-  dataGleam = import ./data.nix { inherit lib; data = import ../mockups/data.nix; };
+  dataGleam = import ./data.nix { inherit lib measurementId; data = import ../mockups/data.nix; };
   # Every hex package manifest.toml locks, at its checksum, so the build runs offline.
   hex = map
     (p: p // {

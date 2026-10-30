@@ -28,6 +28,15 @@ fonts stand in until they load. None of them is stored here. To change a design,
 `web-design-guidelines` and `open-pencil` are in `.claude/skills/`
 ([their README](../.claude/skills/README.md)), and `site/DESIGN.md` changes in the same PR.
 
+## Analytics
+
+`piabrota.site.analytics.measurementId = "G-…";` (in `configuration.nix`) adds Google Analytics 4
+to every page: Google's tag (`gtag.js`), built into the pages by `site/default.nix`. Empty, the
+default, means no analytics and no script at all. The ID is public (it is in every page's source),
+so it can be committed. ⚠ Google Analytics sets cookies and sends visits to Google: under the LGPD
+the page should say so, and a consent banner may be needed before it loads; neither is in the site
+yet.
+
 ## DNS on Porkbun
 
 Both names must point at the VPS before the site is turned on: on the first switch, Let's Encrypt

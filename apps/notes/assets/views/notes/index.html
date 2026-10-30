@@ -1,0 +1,36 @@
+{% extends "notes/base.html" %}
+{% block here_notes %} aria-current="page"{% endblock here_notes %}
+{% block heading %}Notes <span>· {{ notes | length }}</span>{% endblock heading %}
+{% block content %}
+<div class="section-head"><h2>New note</h2><span class="source">create</span></div>
+<form class="note-form" method="post" action="/notes">
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+  <label for="title">Title</label>
+  <input id="title" name="title" maxlength="200" required>
+  <label for="content">Text</label>
+  <textarea id="content" name="content" rows="5" maxlength="20000"></textarea>
+  <div class="actions"><button class="btn primary" type="submit">Save note</button></div>
+</form>
+
+<div class="section-head"><h2>All notes</h2><span class="source">read · update · delete</span></div>
+{% if notes | length == 0 %}
+<p class="sub">No notes yet. Write the first one above.</p>
+{% else %}
+<ul class="cards notes">
+  {% for note in notes %}
+  <li class="card" data-state="live">
+    <div class="card-head"><h4>{{ note.title }}</h4></div>
+    <p class="blurb">{{ note.content }}</p>
+    <div class="card-foot">
+      <span class="meta">updated {{ note.updated }} UTC</span>
+      <div class="actions small">
+        <a class="btn" href="/notes/{{ note.id }}/edit">Edit</a>
+        <form method="post" action="/notes/{{ note.id }}/delete"><button class="btn danger" type="submit">Delete</button></form>
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock content %}
+{% block foot %}<form method="post" action="/notes/logout"><button class="btn" type="submit">Sign out</button></form>{% endblock foot %}

@@ -79,7 +79,8 @@ sister sites load their icons; none is stored here. The names and logos are thei
 ## Motion
 
 One entrance, and only when the reader allows motion: the hero rises 8 px. Hover lifts a card
-2 px. No page loads JavaScript.
+2 px. No page loads JavaScript, except Google's analytics tag when
+`piabrota.site.analytics.measurementId` is set (`page.analytics`).
 
 ## Facts
 

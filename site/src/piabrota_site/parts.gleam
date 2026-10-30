@@ -179,7 +179,9 @@ pub fn foot(current: String) -> Element(msg) {
       html.p([], [
         html.text("piabrota.art is served by "),
         html.a([attribute.href(nixos)], [html.text("nix-os")]),
-        html.text(", from /nix/store. Partnerships: " <> data.contact <> "."),
+        html.text(", from /nix/store. Partnerships: " <> data.contact <> ". "),
+        html.a([attribute.href("/notes")], [html.text("Notes demo (Loco)")]),
+        html.text("."),
       ]),
       switcher(current),
     ]),

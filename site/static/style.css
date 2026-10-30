@@ -239,3 +239,25 @@ span.where { color: var(--muted); }
   .forks li { grid-template-columns: 1fr; gap: 4px; }
   .person { flex-direction: column; }
 }
+
+/* The notes demo (apps/notes) is served under /notes and wears this stylesheet. */
+.note-form { display: grid; gap: 8px; max-width: 720px; margin: 16px 0 40px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.note-form.narrow { max-width: 420px; }
+.note-form label { font: 600 12px/1 Inter, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+.note-form input, .note-form textarea {
+  font: 400 15px/1.5 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; width: 100%;
+}
+.note-form textarea { resize: vertical; min-height: 120px; }
+.note-form input:focus, .note-form textarea:focus { outline: 2px solid var(--accent-text); outline-offset: 1px; border-color: transparent; }
+.note-form .actions { margin-top: 12px; }
+.form-error { margin: 0; padding: 10px 14px; border-radius: 10px; color: var(--accent-text); border: 1px solid var(--accent-text); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+button.btn { cursor: pointer; }
+.btn.danger { color: var(--accent-text); }
+.btn.danger:hover { border-color: var(--accent-text); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.actions.small { margin: 0; gap: 8px; }
+.actions.small .btn { min-height: 36px; padding: 0 14px; font-size: 13px; }
+.actions.small form { margin: 0; }
+.notes-app .blurb { white-space: pre-wrap; }
+.notes-app .foot form { margin: 0; }
+.notes-app .card-foot { flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; }

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block title %}notes{% endblock title %} · piabrota</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Inter:wght@400;600&family=JetBrains+Mono&display=swap">
+  {# The site's own stylesheet, from the same host: the notes wear piabrota.art's look. #}
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="fabric notes-app">
+  <header class="top">
+    <div class="wrap bar">
+      <a class="brand" href="/"><span>piabrota</span></a>
+      <nav class="designs" aria-label="Notes">
+        <a href="/notes"{% block here_notes %}{% endblock here_notes %}><b>notes</b> demo</a>
+        <a href="/">site</a>
+      </nav>
+    </div>
+    <div class="wrap hero">
+      <div>
+        <p class="eyebrow">a Loco app on piabrota.art · CRUD on SQLite</p>
+        <h1>{% block heading %}Notes{% endblock heading %}</h1>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="wrap">
+      {% block content %}{% endblock content %}
+    </section>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <p>Served by <a href="/nixos">nix-os</a>: Loco and SQLite behind nginx, the database backed up every night.</p>
+      {% block foot %}{% endblock foot %}
+    </div>
+  </footer>
+</body>
+</html>

@@ -139,6 +139,7 @@ with that version.
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
+├── apps.nix, apps/notes/    the Loco apps: a notes CRUD demo at www.piabrota.art/notes (docs/LOCO.md)
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── kubesolo.nix, kubesolo/  KubeSolo (single-node Kubernetes) behind a flag that is off, and its package
 ├── k8s/rax/                 rax-server manifests for KubeSolo, applied by hand, never by a deploy
