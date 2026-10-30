@@ -58,7 +58,7 @@
       "col": 2,
       "type": "frontend",
       "label": "www.piabrota.art",
-      "sublabel": "the page, HTTP and HTTPS",
+      "sublabel": "designs A, B and C",
       "width": 170
     },
     {
@@ -103,7 +103,7 @@
       "col": 3,
       "type": "database",
       "label": "/nix/store",
-      "sublabel": "index.html, style.css",
+      "sublabel": "three pages, style.css",
       "width": 170
     }
   ],

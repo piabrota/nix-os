@@ -1,17 +1,23 @@
 # The static site on www.piabrota.art
 
-`site.nix` serves the page in `site/` (Gleam, prerendered at build time) on `www.piabrota.art`, over HTTP and HTTPS, through nginx
-with a Let's Encrypt certificate. `piabrota.art` answers with a 301 to `www`, keeping the scheme
-and the path. `configuration.nix` turns it on (`piabrota.site.enable = true`).
+`site.nix` serves the site in `site/` (Gleam, prerendered at build time) on `www.piabrota.art`,
+over HTTP and HTTPS, through nginx with a Let's Encrypt certificate. `piabrota.art` answers with a
+301 to `https://www.piabrota.art`, keeping the path (NixOS's `globalRedirect` points at HTTPS when
+the name has a certificate). `configuration.nix` turns it on (`piabrota.site.enable = true`).
 
-| Desktop | Phone (390 px) |
-|---|---|
-| ![The site in light mode, desktop](images/site-desktop-light.png) | ![The site in light mode, phone](images/site-mobile-light.png) |
-| ![The site in dark mode, desktop](images/site-desktop-dark.png) | ![The site in dark mode, phone](images/site-mobile-dark.png) |
+The site has three designs, the [mockups](MOCKUPS.md) built for real, each with a switcher to the
+other two:
 
-The page follows the visitor's light or dark setting. To change its design, the agent skills
-`frontend-design`, `web-design-guidelines` and `open-pencil` are in `.claude/skills/`
-([their README](../.claude/skills/README.md)).
+| Design | Desktop | Phone (390 px) |
+|---|---|---|
+| A · fabric, at `/` | ![Design A, fabric, desktop](images/site-fabric-desktop.png) | ![Design A, fabric, phone](images/site-fabric-mobile.png) |
+| B · index, at `/index/` | ![Design B, index, desktop](images/site-index-desktop.png) | ![Design B, index, phone](images/site-index-mobile.png) |
+| C · paths, at `/paths/`, light | ![Design C, paths, light, desktop](images/site-paths-desktop-light.png) | ![Design C, paths, light, phone](images/site-paths-mobile-light.png) |
+| C · paths, dark | ![Design C, paths, dark, desktop](images/site-paths-desktop-dark.png) | ![Design C, paths, dark, phone](images/site-paths-mobile-dark.png) |
+
+A is always dark and B always light; C follows the visitor's light or dark setting. To change a
+design, the agent skills `frontend-design`, `web-design-guidelines` and `open-pencil` are in
+`.claude/skills/` ([their README](../.claude/skills/README.md)).
 
 ## DNS on Porkbun
 
@@ -50,8 +56,8 @@ failed.
 | URL | Answer |
 |---|---|
 | `http://www.piabrota.art/` | the site |
-| `https://www.piabrota.art/` | the site |
-| `http://piabrota.art/<path>` | 301 to `http://www.piabrota.art/<path>` |
+| `https://www.piabrota.art/` | the site: design A; B at `/index/`, C at `/paths/` |
+| `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `…/nixos` | 302 to this repository, so the README link keeps working |
 
@@ -60,22 +66,34 @@ failed.
 
 ## Change the site
 
-The page is Gleam with [Lustre](https://lustre.build), prerendered once at build time, as
-[piabrota/gramatico](https://github.com/piabrota/gramatico) builds its site:
+The site is Gleam with [Lustre](https://lustre.build), prerendered once at build time, as
+[piabrota/gramatico](https://github.com/piabrota/gramatico) builds its site. It has the three
+designs of the [mockups](MOCKUPS.md), each a page, with a switcher at the foot of each:
+
+| URL | Design |
+|---|---|
+| `/` | A · fabric: the org profile as a page, the projects as cards in their lanes |
+| `/index/` | B · index: an editorial list, one numbered row a project |
+| `/paths/` | C · paths: 无 and the name, and a listing of what answers here and where the rest lives |
+
+The facts (the projects, their blurbs, where each meets the web) come from `mockups/data.nix`, the
+same file the mockups draw: the mockups and the site cannot disagree. Change a fact there.
 
 | Path | Is |
 |---|---|
-| `site/src/piabrota_site/app.gleam` | the page |
-| `site/src/piabrota_site/page.gleam` | the HTML document around it: head, theme colours, stylesheet |
-| `site/src/piabrota_site/prerender.gleam` | prints the page as HTML |
-| `site/test/` | gleeunit tests on the rendered page |
-| `site/static/` | copied as is next to `index.html` (`style.css`) |
+| `site/src/piabrota_site/fabric.gleam`, `index.gleam`, `paths.gleam` | the three pages |
+| `site/src/piabrota_site/parts.gleam` | what they share: the mark, a project's address, the switcher |
+| `site/src/piabrota_site/page.gleam` | the HTML document around each page: head, theme colour, stylesheet |
+| `site/src/piabrota_site/render/` | one module a page, which prints it as HTML |
+| `site/data.nix` | writes `src/piabrota_site/data.gleam` from `mockups/data.nix`; that file is not committed |
+| `site/test/` | gleeunit tests on the rendered pages |
+| `site/static/` | copied as is next to the pages (`style.css`, one body class a design) |
 | `site/gleam.toml`, `site/manifest.toml` | the Gleam project and its locked hex packages |
-| `site/default.nix` | the build: fetches each hex package at its `manifest.toml` checksum, checks the format, runs the tests, prerenders `index.html` |
+| `site/default.nix` | the build: fetches each hex package at its `manifest.toml` checksum, writes `data.gleam`, checks the format, runs the tests, prerenders the three pages, copies `static/` and the 无 drawing (`docs/drawings/mu.svg`) |
 | `site/design/` | OpenPencil drafts; never built or deployed |
 
 ```console
-just site-test    # gleam format and gleam test, in the site dev shell
+just site-test    # data.gleam, then gleam format and gleam test, in the site dev shell
 just site         # the build the VPS gets, into ./result-site
 ```
 
@@ -86,9 +104,10 @@ Edit the code and open a PR. The site is part of the system closure: a merge dep
 rollback brings the old page back with the old system.
 
 **What reaches the VPS.** Gleam, node and the hex packages run on the builder (the CI runner)
-only. The output is `index.html` and the files in `static/`; `site/default.nix` sets
+only. The output is the three pages, the files in `static/` and `mu.svg`, about 27 KiB;
+`site/default.nix` sets
 `allowedReferences = [ ]`, so the build fails if the output names any store path, and nothing of
-the toolchain can enter the system closure. The page loads no JavaScript.
+the toolchain can enter the system closure. No page loads JavaScript.
 
 ## Design with OpenPencil
 

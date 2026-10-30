@@ -48,12 +48,12 @@
 
 </details>
 
-![piabrota.art: a browser resolves the two A records on Porkbun, which point at the VPS; nginx answers piabrota.art with a 301 to https://www and serves www.piabrota.art over HTTP and HTTPS, with /nixos a 302 to the repository and a Let's Encrypt certificate per name; the page was built before the deploy, site/ in Gleam prerendered by Nix into /nix/store as index.html and style.css, which is nginx's root.](docs/img/piabrota-art.png)
+![piabrota.art: a browser resolves the two A records on Porkbun, which point at the VPS; nginx answers piabrota.art with a 301 to https://www and serves www.piabrota.art over HTTP and HTTPS, with /nixos a 302 to the repository and a Let's Encrypt certificate per name; the page was built before the deploy, site/ in Gleam prerendered by Nix into /nix/store as three pages and style.css, which is nginx's root.](docs/img/piabrota-art.png)
 
 <details open>
 <summary>How to read this figure</summary>
 
-**Takeaway.** The VPS serves two small files from the store; Gleam, node and the build never reach it.
+**Takeaway.** The VPS serves a few small files from the store; Gleam, node and the build never reach it.
 
 **How to read.** Top to bottom: the visitor, DNS, nginx on the VPS, and what was built before the deploy. Arrows say what a request is sent to, or what goes into what.
 

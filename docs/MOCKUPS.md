@@ -6,8 +6,9 @@ Three directions for the [piabrota.art](https://www.piabrota.art) homepage, each
 (1280 px) and phone (390 px) width. They are SVGs generated in pure Nix (`mockups/`), like the 无
 drawing in the README: no drawing program, nothing to install. The facts come from the org
 profile ([piabrota/.github](https://github.com/piabrota/.github), `profile/README.md`), copied into
-`mockups/data.nix`. They are drafts: the live page stays the one in `site/` until a PR writes the
-chosen direction in Gleam.
+`mockups/data.nix`. The site builds all three in Gleam, from the same
+`mockups/data.nix`: A at [www.piabrota.art](https://www.piabrota.art/), B at
+[/index/](https://www.piabrota.art/index/), C at [/paths/](https://www.piabrota.art/paths/).
 
 ## A · fabric
 

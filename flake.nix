@@ -101,6 +101,9 @@
           mockups.files);
         # The site, prerendered from Gleam (site/): index.html and static/, with no runtime.
         site = pkgs.callPackage ./site { };
+        # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
+        site-data = pkgs.writeText "data.gleam"
+          (import ./site/data.nix { inherit (pkgs) lib; data = import ./mockups/data.nix; });
         # The README drawing, in pure Nix (drawings/): mu.svg, mu.desmos.json and mu-check.svg.
         mu-art = pkgs.linkFarm "mu-art" [
           { name = "mu.svg"; path = pkgs.writeText "mu.svg" drawing.svg; }
