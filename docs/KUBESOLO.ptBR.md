@@ -41,7 +41,7 @@ juntos.
 | Download | O binário não está no cache.nixos.org: o runner baixa o `.tar.gz` (86 MB) do GitHub, e o deploy-rs copia os 188 MiB do runner para a VPS uma vez por versão. Nada é compilado em lugar nenhum |
 | Disco, em uso | `/var/lib/kubesolo` com o containerd, as imagens e o banco ⚠ tamanho não medido |
 | RAM | KubeSolo, containerd e shims ficam na unit `kubesolo`, limitada a `MemoryMax=1G`. Os pods ficam em `kubepods.slice`, que o kubelet limita à memória do nó menos `systemReserved` (1536 Mi aqui): os pods juntos não passam de uns 2,2 GiB ⚠ |
-| CPU | `CPUQuota=60%` e `CPUWeight=50` na unit; `systemReserved.cpu=300m` para o kubelet. O sshd e o nginx disputam a mesma vCPU com peso normal |
+| CPU | `CPUQuota=60%` e `CPUWeight=50` na unit. O sshd e o nginx disputam a mesma vCPU com peso normal. Sem `systemReserved.cpu`: o KubeSolo arredonda para CPUs inteiras e, com uma vCPU, sai na partida (`--system-reserved cpu=300m reserves 1 of this host's 1 CPUs, leaving none for workloads`; isso parou o primeiro deploy, em 2026-10-30, e o deploy-rs voltou atrás) |
 
 ## O que o módulo faz quando ligado
 

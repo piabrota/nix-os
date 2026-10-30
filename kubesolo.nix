@@ -70,8 +70,10 @@ in
         # The SSH tunnel ends on 127.0.0.1: put it in the API server certificate.
         apiServer.extraSANs = mkDefault [ "127.0.0.1" "localhost" ];
         # The kubelet caps kubepods.slice at the node's memory minus this, so pods together
-        # cannot take what sshd, nginx, the Loco apps and KubeSolo itself need.
-        kubelet.systemReserved = mkDefault { cpu = "300m"; memory = "1536Mi"; };
+        # cannot take what sshd, nginx, the Loco apps and KubeSolo itself need. No `cpu` entry:
+        # KubeSolo rounds it up to whole CPUs and, on this one-vCPU box, refuses to start ("reserves
+        # 1 of this host's 1 CPUs"). CPUQuota and CPUWeight below protect the CPU instead.
+        kubelet.systemReserved = mkDefault { memory = "1536Mi"; };
       };
       # One pod less; turn it on when a workload needs a PersistentVolumeClaim.
       storage.localPath.enabled = mkDefault false;

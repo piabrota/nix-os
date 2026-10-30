@@ -41,7 +41,7 @@ CNI plugins during the build. Being static, it needs no `patchelf` and no glibc.
 | Download | The binary is not on cache.nixos.org: the runner downloads the `.tar.gz` (86 MB) from GitHub, and deploy-rs copies the 188 MiB from the runner to the VPS once per version. Nothing is compiled anywhere |
 | Disk, in use | `/var/lib/kubesolo` with containerd, the images and the database ⚠ size not measured |
 | RAM | KubeSolo, containerd and the shims stay in the `kubesolo` unit, capped at `MemoryMax=1G`. Pods live in `kubepods.slice`, which the kubelet caps at the node's memory minus `systemReserved` (1536 Mi here): all pods together stay under about 2.2 GiB ⚠ |
-| CPU | `CPUQuota=60%` and `CPUWeight=50` on the unit; `systemReserved.cpu=300m` for the kubelet. sshd and nginx share the one vCPU at normal weight |
+| CPU | `CPUQuota=60%` and `CPUWeight=50` on the unit. sshd and nginx share the one vCPU at normal weight. No `systemReserved.cpu`: KubeSolo rounds it up to whole CPUs and, with one vCPU, exits at start (`--system-reserved cpu=300m reserves 1 of this host's 1 CPUs, leaving none for workloads`; this stopped the first deploy, 2026-10-30, and deploy-rs rolled it back) |
 
 ## What the module does when on
 
