@@ -24,7 +24,7 @@ here points to them.
 | The static site on www.piabrota.art, and DNS on Porkbun | [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md) |
 | Adding a Loco app | [`docs/LOCO.md`](https://github.com/piabrota/nix-os/blob/main/docs/LOCO.md) |
 | Running your own VPS from a fork | [`docs/FORK.md`](https://github.com/piabrota/nix-os/blob/main/docs/FORK.md) |
-| Kubernetes on this machine | [`docs/KUBERNETES.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBERNETES.md), [`docs/MICROK8S.md`](https://github.com/piabrota/nix-os/blob/main/docs/MICROK8S.md) |
+| Kubernetes on this machine | [`docs/KUBERNETES.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBERNETES.md), [`docs/MICROK8S.md`](https://github.com/piabrota/nix-os/blob/main/docs/MICROK8S.md), [`docs/KUBESOLO.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBESOLO.md) |
 
 The pages come from the repository's [`wiki/`](https://github.com/piabrota/nix-os/tree/main/wiki)
 folder and are copied here on every merge. Don't edit the wiki directly: the next copy erases the

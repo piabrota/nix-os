@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ax-system
+---
+# A ceiling for everything in the namespace, so rax cannot take the box from sshd and nginx.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ax-system
+spec:
+  hard:
+    requests.cpu: 250m
+    requests.memory: 256Mi
+    limits.cpu: "1"
+    limits.memory: 512Mi
+    pods: "4"
+    services.nodeports: "0"
+    services.loadbalancers: "0"

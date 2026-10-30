@@ -1,0 +1,111 @@
+# AX's test/e2e/manifests/ax-server.yaml, cut down for one small node: no PostgreSQL (memory://,
+# state is lost on restart), no Substrate token or pod-certificate volumes (KubeSolo has no
+# setting for those feature gates), and secrets readable only in this namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ax-server
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ax-server
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ax-server
+subjects:
+  - kind: ServiceAccount
+    name: ax-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ax-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ax-server
+  labels:
+    app.kubernetes.io/name: ax-server
+    app.kubernetes.io/part-of: ax
+spec:
+  replicas: 1
+  # memory:// lives in one process: never two at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ax-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ax-server
+    spec:
+      serviceAccountName: ax-server
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ax-server
+          image: rax-server
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--addr=:8080"
+            - "--store=memory://"
+          env:
+            - name: RUST_LOG
+              value: info
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+# ClusterIP only: reach it with `kubectl port-forward` over the SSH tunnel. A NodePort or a
+# LoadBalancer would be open to the internet past the NixOS firewall.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ax-server
+  labels:
+    app.kubernetes.io/name: ax-server
+    app.kubernetes.io/part-of: ax
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app.kubernetes.io/name: ax-server

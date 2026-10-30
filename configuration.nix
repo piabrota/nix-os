@@ -10,6 +10,8 @@
     ./deploy.nix
     ./loco.nix
     ./site.nix
+    # Off: adds nothing. A trial of single-node Kubernetes (docs/KUBESOLO.md).
+    ./kubesolo.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),

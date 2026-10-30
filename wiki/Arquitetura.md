@@ -13,6 +13,7 @@
 | `deploy.nix` | O usuário `deploy` que o CI usa, a coleta de lixo e o limite de gerações de boot. |
 | `loco.nix` | Apps [Loco](https://loco.rs) como serviços systemd isolados, com SQLite, nginx e HTTPS. |
 | `site.nix` | O site estático de `site/` (Gleam e Lustre, pré-renderizado no build; a VPS recebe só o HTML e o CSS) em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
+| `kubesolo.nix` | O [KubeSolo](https://github.com/portainer/kubesolo), um Kubernetes de um nó só, atrás de uma flag desligada; as cargas ficam em `k8s/` e nunca entram por um deploy. Veja [`docs/KUBESOLO.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBESOLO.ptBR.md). |
 
 ## Do pull request à VPS
 

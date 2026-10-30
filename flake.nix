@@ -91,10 +91,18 @@
             }
           ];
         }).config.system.build.toplevel;
+        # The system with KubeSolo on, so the module and the package build in CI before the
+        # owner turns the flag on (docs/KUBESOLO.md). Never deployed.
+        kubesolo-example = (nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [ ./configuration.nix { piabrota.kubesolo.enable = true; } ];
+        }).config.system.build.toplevel;
       };
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
+        # The KubeSolo release binary (kubesolo/package.nix); not in nixpkgs.
+        kubesolo = pkgs.callPackage ./kubesolo/package.nix { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })
