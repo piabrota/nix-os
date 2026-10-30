@@ -10,33 +10,57 @@ import piabrota_site/paths as paths_page
 
 /// Design A at the root.
 pub fn fabric() -> String {
-  document("fabric", "#0B0D12", fabric_page.view())
+  document("fabric", "piabrota", fabric_page.view())
 }
 
 /// Design B at /index/.
 pub fn index() -> String {
-  document("index", "#FAFAF7", index_page.view())
+  document("index", "piabrota · index", index_page.view())
 }
 
 /// Design C at /paths/.
 pub fn paths() -> String {
-  document("paths", "#FAFAF7", paths_page.view())
+  document("paths", "piabrota · paths", paths_page.view())
 }
 
-/// `design` names the body's class in style.css; `bar` colours the browser bar.
-fn document(design: String, bar: String, body: Element(msg)) -> String {
+/// `design` names the body's class in style.css. The fonts are the sister sites' (picasso,
+/// gramatico, closed-source), from Google Fonts; the system fonts stand in until they load.
+fn document(design: String, title: String, body: Element(msg)) -> String {
   let meta = fn(name, value) {
     html.meta([attribute.name(name), attribute.content(value)])
+  }
+  let theme = fn(colour, scheme) {
+    html.meta([
+      attribute.name("theme-color"),
+      attribute.content(colour),
+      attribute.attribute("media", "(prefers-color-scheme: " <> scheme <> ")"),
+    ])
   }
   html.html([attribute.lang("en")], [
     html.head([], [
       html.meta([attribute.charset("utf-8")]),
       meta("viewport", "width=device-width, initial-scale=1"),
-      html.title([], data.name),
-      meta("description", data.name <> ": " <> data.kicker),
-      meta("theme-color", bar),
+      html.title([], title),
+      meta("description", data.name <> ": " <> data.kicker <> ". " <> data.lede),
+      theme("#0B0D12", "dark"),
+      theme("#FFFFFF", "light"),
       // No favicon: an empty one stops the browser asking for /favicon.ico.
       html.link([attribute.rel("icon"), attribute.href("data:,")]),
+      html.link([
+        attribute.rel("preconnect"),
+        attribute.href("https://fonts.googleapis.com"),
+      ]),
+      html.link([
+        attribute.rel("preconnect"),
+        attribute.href("https://fonts.gstatic.com"),
+        attribute.crossorigin(""),
+      ]),
+      html.link([
+        attribute.rel("stylesheet"),
+        attribute.href(
+          "https://fonts.googleapis.com/css2?family=Fjalla+One&family=Inter:wght@400;600&family=JetBrains+Mono&display=swap",
+        ),
+      ]),
       html.link([attribute.rel("stylesheet"), attribute.href("/style.css")]),
     ]),
     html.body([attribute.class(design)], [body]),

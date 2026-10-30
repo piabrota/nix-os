@@ -8,16 +8,18 @@ the name has a certificate). `configuration.nix` turns it on (`piabrota.site.ena
 The site has three designs, the [mockups](MOCKUPS.md) built for real, each with a switcher to the
 other two:
 
-| Design | Desktop | Phone (390 px) |
-|---|---|---|
-| A · fabric, at `/` | ![Design A, fabric, desktop](images/site-fabric-desktop.png) | ![Design A, fabric, phone](images/site-fabric-mobile.png) |
-| B · index, at `/index/` | ![Design B, index, desktop](images/site-index-desktop.png) | ![Design B, index, phone](images/site-index-mobile.png) |
-| C · paths, at `/paths/`, light | ![Design C, paths, light, desktop](images/site-paths-desktop-light.png) | ![Design C, paths, light, phone](images/site-paths-mobile-light.png) |
-| C · paths, dark | ![Design C, paths, dark, desktop](images/site-paths-desktop-dark.png) | ![Design C, paths, dark, phone](images/site-paths-mobile-dark.png) |
+| Design | Desktop, dark | Desktop, light | Phone (390 px) |
+|---|---|---|---|
+| A · fabric, at `/` | ![Design A, fabric, dark](images/site-fabric-desktop-dark.png) | ![Design A, fabric, light](images/site-fabric-desktop-light.png) | ![Design A, fabric, phone](images/site-fabric-mobile-dark.png) |
+| B · index, at `/index/` | ![Design B, index, dark](images/site-index-desktop-dark.png) | ![Design B, index, light](images/site-index-desktop-light.png) | ![Design B, index, phone](images/site-index-mobile-dark.png) |
+| C · paths, at `/paths/` | ![Design C, paths, dark](images/site-paths-desktop-dark.png) | ![Design C, paths, light](images/site-paths-desktop-light.png) | ![Design C, paths, phone](images/site-paths-mobile-dark.png) |
 
-A is always dark and B always light; C follows the visitor's light or dark setting. To change a
-design, the agent skills `frontend-design`, `web-design-guidelines` and `open-pencil` are in
-`.claude/skills/` ([their README](../.claude/skills/README.md)).
+All three wear picasso's look in piabrota's colours, dark first and light when the visitor asks
+for it; the rules are [`site/DESIGN.md`](../site/DESIGN.md). The pages load the sister sites'
+fonts (Fjalla One, Inter, JetBrains Mono) from Google Fonts, so a visit asks Google for them; the
+system fonts stand in until they load. To change a design, the agent skills `frontend-design`,
+`web-design-guidelines` and `open-pencil` are in `.claude/skills/`
+([their README](../.claude/skills/README.md)), and `site/DESIGN.md` changes in the same PR.
 
 ## DNS on Porkbun
 
@@ -90,6 +92,7 @@ same file the mockups draw: the mockups and the site cannot disagree. Change a f
 | `site/static/` | copied as is next to the pages (`style.css`, one body class a design) |
 | `site/gleam.toml`, `site/manifest.toml` | the Gleam project and its locked hex packages |
 | `site/default.nix` | the build: fetches each hex package at its `manifest.toml` checksum, writes `data.gleam`, checks the format, runs the tests, prerenders the three pages, copies `static/` and the 无 drawing (`docs/drawings/mu.svg`) |
+| `site/DESIGN.md` | the look, in rules: tokens, type, shapes, layout, motion |
 | `site/design/` | OpenPencil drafts; never built or deployed |
 
 ```console
