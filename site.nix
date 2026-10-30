@@ -2,7 +2,7 @@
 # HTTP and HTTPS. piabrota.art answers with a redirect to www, keeping the scheme and the path.
 # Every name here must point at the box before the site is turned on, or the ACME order fails on
 # the deploy and deploy-rs rolls the switch back. See docs/SITE.md.
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkMerge mkOption types mapAttrs' nameValuePair genAttrs;
   cfg = config.piabrota.site;
@@ -29,11 +29,9 @@ in
     };
     root = mkOption {
       type = types.path;
-      default = lib.fileset.toSource {
-        root = ./site;
-        fileset = ./site;
-      };
-      defaultText = lib.literalExpression "./site, copied into the store";
+      # Gleam runs on the builder; the box gets only index.html and static/ (site/default.nix).
+      default = pkgs.callPackage ./site { };
+      defaultText = lib.literalExpression "pkgs.callPackage ./site { }, the prerendered page";
       description = "The directory nginx serves. Read-only: the store.";
     };
     redirects = mkOption {

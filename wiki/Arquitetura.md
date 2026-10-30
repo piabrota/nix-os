@@ -12,16 +12,16 @@
 | `tools.nix` | Ferramentas de linha de comando leves e os limites de disco e memória. |
 | `deploy.nix` | O usuário `deploy` que o CI usa, a coleta de lixo e o limite de gerações de boot. |
 | `loco.nix` | Apps [Loco](https://loco.rs) como serviços systemd isolados, com SQLite, nginx e HTTPS. |
-| `site.nix` | O site estático de `site/` em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
+| `site.nix` | O site estático de `site/` (Gleam e Lustre, pré-renderizado no build; a VPS recebe só o HTML e o CSS) em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
 
 ## Do pull request à VPS
 
 ```
 PR ──► ci.yml: nix flake check (builda o sistema), nixpkgs-fmt, statix, deadnix, shellcheck
-   └─► cves.yml: relatório do vulnix sobre o sistema buildado
 merge na main ──► deploy.yml: o runner builda, o deploy-rs copia via SSH e ativa
                     └─► se o SSH não responder em 60 s, a VPS volta sozinha (magic rollback)
               └─► freeze.yml: a lista de pacotes da VPS no resumo da execução
+              └─► cves.yml: relatório do vulnix sobre o sistema buildado (e toda segunda)
               └─► wiki.yml: copia wiki/ para este wiki (se wiki/ mudou)
 ```
 

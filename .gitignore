@@ -3,3 +3,4 @@ result
 *.key
 *.age
 secrets/
+result-*

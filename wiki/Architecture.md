@@ -12,16 +12,16 @@
 | `tools.nix` | Light command-line tools, and the disk and memory limits. |
 | `deploy.nix` | The `deploy` user CI logs in as, garbage collection and the boot generation limit. |
 | `loco.nix` | [Loco](https://loco.rs) apps as sandboxed systemd services, with SQLite, nginx and HTTPS. |
-| `site.nix` | The static site from `site/` on www.piabrota.art, over HTTP and HTTPS; `piabrota.art` redirects to `www`. |
+| `site.nix` | The static site from `site/` (Gleam and Lustre, prerendered at build time; the VPS gets only the HTML and CSS) on www.piabrota.art, over HTTP and HTTPS; `piabrota.art` redirects to `www`. |
 
 ## From a pull request to the VPS
 
 ```
 PR ──► ci.yml: nix flake check (builds the system), nixpkgs-fmt, statix, deadnix, shellcheck
-   └─► cves.yml: a vulnix report on the built system
 merge to main ──► deploy.yml: the runner builds, deploy-rs copies over SSH and activates
                     └─► if SSH does not answer within 60 s, the VPS rolls back by itself (magic rollback)
               └─► freeze.yml: the VPS's package list in the run summary
+              └─► cves.yml: a vulnix report on the built system (and every Monday)
               └─► wiki.yml: copies wiki/ to this wiki (when wiki/ changed)
 ```
 

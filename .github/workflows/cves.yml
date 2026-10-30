@@ -4,9 +4,8 @@ name: cves
 # lists CVEs that nixpkgs has patched or that belong to another program with the same name.
 # Read the summary of the run; a whitelist (vulnix --whitelist) can come later.
 on:
+  # After a merge, not on pull requests: a report a PR cannot act on only slows its checks down.
   # A change to Markdown only builds nothing: it cannot change the system.
-  pull_request:
-    paths-ignore: ['**.md']
   push:
     branches: [main]
     paths-ignore: ['**.md']

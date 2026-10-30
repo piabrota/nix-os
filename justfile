@@ -14,7 +14,7 @@ build:
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix drawings/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix drawings/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh
@@ -32,6 +32,14 @@ drawing:
     art=$(nix build .#mu-art --no-link --print-out-paths) && \
     cat "$art/mu.svg" > docs/drawings/mu.svg && \
     cat "$art/mu.desmos.json" > docs/drawings/mu.desmos.json
+
+# build the site (site/, Gleam prerendered by Nix) into ./result-site, as the VPS gets it
+site:
+    nix build .#site --out-link result-site --print-build-logs
+
+# format and test the site's Gleam code, in the site dev shell (gleam and node; never on the VPS)
+site-test:
+    nix develop .#site --command sh -c 'cd site && gleam format src test && gleam test'
 
 # print the specs of this machine
 specs:

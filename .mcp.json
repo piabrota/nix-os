@@ -5,7 +5,9 @@
       "args": ["run", "nixpkgs#mcp-nixos", "--"]
     },
     "open-pencil": {
-      "command": "openpencil-mcp"
+      "command": "npx",
+      "args": ["-y", "--package=@open-pencil/mcp@0.16.0", "openpencil-mcp"],
+      "env": { "OPENPENCIL_MCP_ROOT": "site/design" }
     }
   }
 }

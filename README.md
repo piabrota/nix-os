@@ -97,7 +97,7 @@ with that version.
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
-├── site.nix, site/          the static site on www.piabrota.art, HTTP and HTTPS
+├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
@@ -114,7 +114,7 @@ with that version.
 ├── docs/MICROK8S.ptBR.md    a plan for testing MicroK8s here, in Portuguese
 ├── docs/MICROK8S.md       the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (the same, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
+├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
 ├── .claude/skills/          vendored skills for agents, four Nix and three frontend (their README); .mcp.json: mcp-nixos, OpenPencil
@@ -136,7 +136,8 @@ $ nix flake show
 ├───deploy: unknown
 ├───devShells
 │   └───x86_64-linux
-│       └───default: development environment 'nix-shell'
+│       ├───default: development environment 'nix-shell'
+│       └───site: development environment 'nix-shell'
 ├───formatter
 │   └───x86_64-linux: package 'nixpkgs-fmt-1.3.0'
 ├───nixosConfigurations
@@ -144,7 +145,8 @@ $ nix flake show
 └───packages
     └───x86_64-linux
         ├───deploy-rs: package 'deploy-rs-1.0.0'
-        └───mu-art: package 'mu-art'
+        ├───mu-art: package 'mu-art'
+        └───site: package 'piabrota-site-1.0.0'
 ```
 
 ## Credits

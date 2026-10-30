@@ -84,6 +84,8 @@
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
+        # The site, prerendered from Gleam (site/): index.html and static/, with no runtime.
+        site = pkgs.callPackage ./site { };
         # The README drawing, in pure Nix (drawings/): mu.svg, mu.desmos.json and mu-check.svg.
         mu-art = pkgs.linkFarm "mu-art" [
           { name = "mu.svg"; path = pkgs.writeText "mu.svg" drawing.svg; }
@@ -92,8 +94,15 @@
         ];
       };
 
-      devShells.${system}.default = pkgs.mkShell {
-        packages = [ pkgs.deploy-rs pkgs.just pkgs.shellcheck ];
+      devShells.${system} = {
+        default = pkgs.mkShell {
+          packages = [ pkgs.deploy-rs pkgs.just pkgs.shellcheck ];
+        };
+        # Work on site/ (`just site`, `just site-serve`): gleam and node for the build, and node's
+        # npx for the OpenPencil MCP server (.mcp.json). Never on the VPS.
+        site = pkgs.mkShell {
+          packages = [ pkgs.gleam pkgs.nodejs pkgs.just ];
+        };
       };
 
       formatter.${system} = pkgs.nixpkgs-fmt;

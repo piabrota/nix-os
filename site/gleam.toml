@@ -1,0 +1,16 @@
+name = "piabrota_site"
+version = "1.0.0"
+target = "javascript"
+description = "The static site on www.piabrota.art, prerendered once at build time"
+licences = ["MPL-2.0"]
+repository = { type = "github", user = "piabrota", repo = "nix-os" }
+
+[javascript]
+runtime = "nodejs"
+
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+lustre = ">= 5.7.1 and < 6.0.0"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
