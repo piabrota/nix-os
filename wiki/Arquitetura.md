@@ -28,6 +28,38 @@ merge na main ──► deploy.yml: o runner builda, o deploy-rs copia via SSH e
 A VPS não compila nada: ela baixa do `cache.nixos.org` o que o cache tem. Cada deploy é uma
 geração nova, e o GRUB guarda as cinco últimas.
 
+## As figuras
+
+![Como o nix-os funciona: um pull request roda o ci.yml a cada push; o merge na main roda o deploy.yml, que builda o sistema no runner do GitHub; o deploy-rs copia o closure para a VPS via SSH e troca o sistema, e a VPS baixa os caminhos da store do cache.nixos.org; se o SSH ficar mudo por 60 s, o magic rollback volta o sistema antigo; depois da troca, o freeze.yml lista os pacotes da VPS, e o cves.yml roda o vulnix no mesmo push.](img/pt/how-nix-os-works.png)
+
+<details open>
+<summary>Como ler esta figura</summary>
+
+**Em uma frase.** Ninguém faz deploy à mão: o merge de um pull request é o deploy, e uma troca que corta o SSH se desfaz sozinha.
+
+**Como ler.** De cima para baixo, uma faixa por lugar onde o trabalho roda. As setas dizem o que passa ou o que vem depois; a borda vermelha marca onde você entra.
+
+**Fora da figura.** Os secrets e o environment `prod`, o `wiki.yml`, os pushes só de Markdown que pulam o build, e o deploy à mão (`just deploy`).
+
+**Fonte.** [`docs/archify/pt/how-nix-os-works.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/how-nix-os-works.json), a fonte da figura; `.github/workflows/`, `flake.nix` (`deploy.nodes.piabrota`, `magicRollback`), [`docs/DEPLOY.md`](https://github.com/piabrota/nix-os/blob/main/docs/DEPLOY.md).
+
+</details>
+
+![piabrota.art: um navegador resolve os dois registros A da Porkbun, que apontam para a VPS; o nginx responde ao piabrota.art com um 301 para https://www e serve o www.piabrota.art por HTTP e HTTPS, com /nixos num 302 para o repositório e um certificado do Let's Encrypt por nome; a página foi buildada antes do deploy, o site/ em Gleam pré-renderizado pelo Nix na /nix/store como index.html e style.css, que é o root do nginx.](img/pt/piabrota-art.png)
+
+<details open>
+<summary>Como ler esta figura</summary>
+
+**Em uma frase.** A VPS serve dois arquivos pequenos da store; o Gleam, o node e o build nunca chegam nela.
+
+**Como ler.** De cima para baixo: o visitante, o DNS, o nginx na VPS e o que foi buildado antes do deploy. As setas dizem para onde vai um pedido, ou o que entra em quê.
+
+**Fora da figura.** O desafio HTTP-01 do ACME, a opção `httpsOnly` e os apps Loco que dividiriam o nginx.
+
+**Fonte.** [`docs/archify/pt/piabrota-art.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/piabrota-art.json), a fonte da figura; `site.nix`, `site/default.nix`, [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md).
+
+</details>
+
 ## O que não pode quebrar
 
 O agente QEMU, o cloud-init, o SSH com a chave do `h0ffmann`, o GRUB em `/dev/sda`, o usuário

@@ -1,0 +1,162 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "piabrota.art: from a browser to the page in the store",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "piabrota-art.html"
+  },
+  "lanes": [
+    {
+      "id": "visitor",
+      "label": "Visitor"
+    },
+    {
+      "id": "dns",
+      "label": "Porkbun DNS"
+    },
+    {
+      "id": "nginx",
+      "label": "nginx on the VPS"
+    },
+    {
+      "id": "build",
+      "label": "Built before the deploy"
+    }
+  ],
+  "mainPath": [
+    "browser",
+    "records",
+    "www"
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "lane": "visitor",
+      "col": 0,
+      "type": "external",
+      "label": "a browser",
+      "sublabel": "http or https",
+      "width": 170
+    },
+    {
+      "id": "records",
+      "lane": "dns",
+      "col": 1,
+      "type": "backend",
+      "label": "two A records",
+      "sublabel": "piabrota.art and www",
+      "width": 170
+    },
+    {
+      "id": "www",
+      "lane": "nginx",
+      "col": 2,
+      "type": "frontend",
+      "label": "www.piabrota.art",
+      "sublabel": "the page, HTTP and HTTPS",
+      "width": 170
+    },
+    {
+      "id": "apex",
+      "lane": "nginx",
+      "col": 1,
+      "type": "backend",
+      "label": "piabrota.art",
+      "sublabel": "301 to https://www",
+      "width": 170
+    },
+    {
+      "id": "nixos",
+      "lane": "nginx",
+      "col": 3,
+      "type": "backend",
+      "label": "/nixos",
+      "sublabel": "302 to the repository",
+      "width": 170
+    },
+    {
+      "id": "acme",
+      "lane": "nginx",
+      "col": 4,
+      "type": "security",
+      "label": "Let's Encrypt",
+      "sublabel": "one certificate per name",
+      "width": 170
+    },
+    {
+      "id": "gleam",
+      "lane": "build",
+      "col": 2,
+      "type": "backend",
+      "label": "site/ in Gleam",
+      "sublabel": "prerendered by Nix",
+      "width": 170
+    },
+    {
+      "id": "store",
+      "lane": "build",
+      "col": 3,
+      "type": "database",
+      "label": "/nix/store",
+      "sublabel": "index.html, style.css",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "browser",
+      "to": "records",
+      "label": "resolve"
+    },
+    {
+      "id": "e2",
+      "from": "records",
+      "to": "www",
+      "label": "the VPS"
+    },
+    {
+      "id": "e3",
+      "from": "records",
+      "to": "apex",
+      "label": "the VPS",
+      "role": "branch"
+    },
+    {
+      "id": "e4",
+      "from": "apex",
+      "to": "www",
+      "label": "redirect"
+    },
+    {
+      "id": "e5",
+      "from": "www",
+      "to": "nixos",
+      "label": "one path"
+    },
+    {
+      "id": "e6",
+      "from": "acme",
+      "to": "www",
+      "label": "TLS"
+    },
+    {
+      "id": "e7",
+      "from": "gleam",
+      "to": "store",
+      "label": "build"
+    },
+    {
+      "id": "e8",
+      "from": "store",
+      "to": "www",
+      "label": "root",
+      "role": "branch"
+    }
+  ]
+}

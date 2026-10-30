@@ -14,6 +14,8 @@ where it came from, and what differs in this repo. AGENTS.md wins wherever a ski
 | `ultimate-nixos` | [kaynetik/skills](https://github.com/kaynetik/skills) | `3ecbe1424cd5` | MIT | NixOS modules, flakes and a hardening review of `configuration.nix` |
 | `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) | `ca45fc496a34` | Apache-2.0 | a deliberate visual direction for `site/`: palette, type, layout, copy |
 | `web-design-guidelines` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), rules from [vercel-labs/web-interface-guidelines](https://github.com/vercel-labs/web-interface-guidelines) | `1a2c79d4e6c4`, `434b7f913646` | MIT | an accessibility and UX review of `site/`; the rules are vendored in `references/command.md` instead of fetched |
+| `figure` | [piabrota/pirsig](https://github.com/piabrota/pirsig) | `main`, 2026-10-30 | MPL-2.0 | a figure in README.md or the wiki: an archify source, `just figure`, a reading card, in English and pt-BR |
+| `archify` | [tt-a1i/archify](https://github.com/tt-a1i/archify), a link into the submodule `vendor/archify` | `208acba8d412` | Apache-2.0 | the archify CLI and its schemas, which `just figure` runs |
 | `open-pencil` | [open-pencil/open-pencil](https://github.com/open-pencil/open-pencil) | `24461adec707` | MIT | drafting or inspecting a design in OpenPencil, through its CLI or the `open-pencil` MCP server |
 
 `.mcp.json` adds [mcp-nixos](https://github.com/utensils/mcp-nixos) (`nix run nixpkgs#mcp-nixos`)

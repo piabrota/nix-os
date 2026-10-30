@@ -13,6 +13,7 @@ here points to them.
 
 - [Architecture](Architecture): the pieces, and how a change reaches the VPS.
 - [Operations](Operations): day to day (build, check, roll back, turn the site on, add an app).
+- [Mockups](Mockups): three directions for the piabrota.art homepage, generated in Nix.
 
 ## In the repository
 
