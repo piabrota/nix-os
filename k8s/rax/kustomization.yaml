@@ -1,0 +1,14 @@
+# rax-server on KubeSolo, API only: in-memory store, no Agent Substrate (docs/KUBESOLO.md,
+# "rax on KubeSolo"). Applied by hand over an SSH tunnel with `kubectl apply -k k8s/rax`;
+# deploy.yml ignores k8s/**, so a system deploy never touches it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ax-system
+resources:
+  - namespace.yaml
+  - rax-server.yaml
+images:
+  # Imported into KubeSolo's containerd by hand (no registry). To pull from a registry instead,
+  # set newName (and digest) here, e.g. ghcr.io/piabrota/rax-server, once one is published.
+  - name: rax-server
+    newTag: dev

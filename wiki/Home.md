@@ -24,7 +24,7 @@ para eles.
 | O site estático em www.piabrota.art e o DNS na Porkbun | [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md) |
 | Adicionar um app Loco | [`docs/LOCO.md`](https://github.com/piabrota/nix-os/blob/main/docs/LOCO.md) |
 | Rodar a sua própria VPS a partir de um fork | [`docs/FORK.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/FORK.ptBR.md) |
-| Kubernetes nesta máquina | [`docs/KUBERNETES.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBERNETES.ptBR.md), [`docs/MICROK8S.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/MICROK8S.ptBR.md) |
+| Kubernetes nesta máquina | [`docs/KUBERNETES.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBERNETES.ptBR.md), [`docs/MICROK8S.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/MICROK8S.ptBR.md), [`docs/KUBESOLO.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBESOLO.ptBR.md) |
 
 As páginas vêm da pasta [`wiki/`](https://github.com/piabrota/nix-os/tree/main/wiki) do repositório
 e são copiadas para cá a cada merge. Não edite o wiki direto: a próxima cópia apaga a edição.

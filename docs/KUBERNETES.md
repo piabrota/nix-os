@@ -46,7 +46,7 @@ not in nixpkgs, there is no closure to measure.
   the apps leaves little headroom, and the one core is shared by the pods, nginx and the deploy
   activation. Its bundled Traefik and ServiceLB want ports 80 and 443, which nginx holds, so both
   have to go.
-- **KubeSolo.** The lightest on paper: one process, SQLite through Kine, no etcd and no
+- **KubeSolo.** Now packaged to try, behind a flag that is off: [`KUBESOLO.md`](KUBESOLO.md). The lightest on paper: one process, SQLite through Kine, no etcd and no
   scheduler. The 200 MB figure is Portainer's own, and the project says it does not pass CNCF
   conformance. It is not in nixpkgs: you would write the derivation and the systemd unit and keep
   them current. Worth watching, not yet worth carrying.

@@ -46,7 +46,7 @@ nixpkgs, não há closure para medir.
   mais as apps deixa pouca folga, e o único núcleo é dividido entre os pods, o nginx e a ativação
   do deploy. O Traefik e o ServiceLB que vêm com ele querem as portas 80 e 443, que são do nginx,
   então os dois precisam sair.
-- **KubeSolo.** O mais leve no papel: um processo, SQLite via Kine, sem etcd e sem scheduler.
+- **KubeSolo.** Agora empacotado para teste, atrás de uma flag desligada: [`KUBESOLO.ptBR.md`](KUBESOLO.ptBR.md). O mais leve no papel: um processo, SQLite via Kine, sem etcd e sem scheduler.
   Os 200 MB são da própria Portainer, e o projeto diz que não passa na conformidade da CNCF. Não
   está no nixpkgs: você escreveria a derivation e a unit systemd e as manteria em dia. Vale
   acompanhar, ainda não vale carregar.

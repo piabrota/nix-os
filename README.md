@@ -93,6 +93,12 @@ apart:
 - [`docs/MICROK8S.ptBR.md`](docs/MICROK8S.ptBR.md), em português
 - [`docs/MICROK8S.md`](docs/MICROK8S.md), in English
 
+KubeSolo is packaged here to try, behind a flag that is off (`kubesolo.nix`): how to turn it on,
+reach it, run rax on it, and roll it back:
+
+- [`docs/KUBESOLO.ptBR.md`](docs/KUBESOLO.ptBR.md), em português
+- [`docs/KUBESOLO.md`](docs/KUBESOLO.md), in English
+
 ## Recipes
 
 ```console
@@ -134,6 +140,8 @@ with that version.
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
+├── kubesolo.nix, kubesolo/  KubeSolo (single-node Kubernetes) behind a flag that is off, and its package
+├── k8s/rax/                 rax-server manifests for KubeSolo, applied by hand, never by a deploy
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
@@ -153,6 +161,8 @@ with that version.
 ├── docs/KUBERNETES.md     the same, in English
 ├── docs/MICROK8S.ptBR.md    a plan for testing MicroK8s here, in Portuguese
 ├── docs/MICROK8S.md       the same, in English
+├── docs/KUBESOLO.ptBR.md    trying KubeSolo here, and its rollback, in Portuguese
+├── docs/KUBESOLO.md       the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
@@ -171,6 +181,7 @@ $ nix flake show
 │       ├───deploy-activate: derivation 'deploy-rs-check-activate'
 │       ├───deploy-schema: derivation 'jsonschema-deploy-system'
 │       ├───drawing: derivation 'mu-art-check'
+│       ├───kubesolo-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       ├───mockups: derivation 'mockups-check'
 │       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
