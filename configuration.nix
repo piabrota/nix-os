@@ -11,7 +11,7 @@
     ./loco.nix
     ./site.nix
     ./apps.nix
-    # Off: adds nothing. A trial of single-node Kubernetes (docs/KUBESOLO.md).
+    # A trial of single-node Kubernetes (docs/KUBESOLO.md), turned on below.
     ./kubesolo.nix
   ];
 
@@ -70,6 +70,9 @@
 
   # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
   piabrota.site.enable = true;
+  # Single-node Kubernetes, on for a trial (kubesolo.nix, docs/KUBESOLO.md). Before the merge that
+  # turns it on, take a Hostinger snapshot; to undo, see the rollback in docs/KUBESOLO.md.
+  piabrota.kubesolo.enable = true;
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";
