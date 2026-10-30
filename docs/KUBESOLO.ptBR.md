@@ -146,13 +146,14 @@ estimativas que o rax ainda não rodou de ponta a ponta):
   `PodCertificateRequest`, mais a API `certificates.k8s.io/v1beta1`. O manifesto do `ax-server`
   monta volumes `podCertificate` e `clusterTrustBundle`. **O KubeSolo não tem configuração para
   feature gates** (nenhuma chave em `config.yaml` nem flag para isso) ⚠.
-- **PostgreSQL** para o AX (ou `--store memory://`, que perde tudo no restart).
+- **PostgreSQL** para o AX (ou `--store memory://`, que perde tudo no restart). Aqui é o
+  [PGX](PGX.ptBR.md), no host, e não um servidor PostgreSQL num pod.
 - **Tamanho**: 26 pods, ≈1,5 CPU e ≈2 GiB pedidos, 2 a 3 GiB em repouso, ≈6 GB de imagens no nó;
   mínimo estimado de 3 CPUs e 6 GB.
 
 **Isso não cabe no KVM 1** (1 vCPU, 4 GB, ao lado do KubeSolo, do nginx e do sshd), e o KubeSolo
-nem liga os feature gates. O que cabe é o **`rax-server` sozinho**: a API do AX com o store em
-memória, sem Substrate. Ele sobe sem Substrate ("running without substrate reconciliation", no
+nem liga os feature gates. O que cabe é o **`rax-server` sozinho**: a API do AX com o store no
+PGX do host, sem Substrate. Ele sobe sem Substrate ("running without substrate reconciliation", no
 `main.rs`) ⚠ não testado num cluster; aceita, lista e apaga Tasks, Workspaces e Models, mas não
 executa nenhuma tarefa. Serve para testar a API, o CLI `rax` e o caminho até o cluster.
 
@@ -164,7 +165,7 @@ executa nenhuma tarefa. Serve para testar a API, o CLI `rax` e o caminho até o 
 - `namespace.yaml`: o namespace `ax-system` e uma `ResourceQuota` (no máximo 512 Mi e 1 CPU de
   limites, 4 pods, nenhuma NodePort nem LoadBalancer).
 - `rax-server.yaml`: ServiceAccount, uma `Role` que lê secrets **só em `ax-system`** (o AX usa
-  `ClusterRole`), o Deployment (`--addr=:8080`, `--store=memory://`, `Recreate`, usuário 65534,
+  `ClusterRole`), o Deployment (`--addr=:8080`, a URL do store vinda do Secret `ax-store`, `Recreate`, usuário 65534,
   sistema de arquivos só de leitura, sem capabilities, seccomp `RuntimeDefault`, pede 50m/64Mi,
   limita a 500m/256Mi) e um Service `ClusterIP` na 8080.
 - `kustomization.yaml`: a imagem é `rax-server:dev`, importada à mão; troque por um registro em
@@ -201,7 +202,20 @@ musl ou distroless seriam uns 80 MB a menos.
 
 ### Rodar, chegar, tirar
 
+Primeiro o store: um banco no PGX, e a URL dele num Secret (nunca no repositório). Na VPS:
+
 ```console
+pgx create ax
+pgx url ax                     # postgres://postgres:<senha>@127.0.0.1:5432/ax
+ip -4 -br addr show cni0       # o host como os pods o veem, 10.42.0.1 ⚠ confira: ainda não visto
+```
+
+Depois, pelo túnel, com essa URL e o endereço do `cni0` no lugar de `127.0.0.1`:
+
+```console
+kubectl create namespace ax-system
+kubectl -n ax-system create secret generic ax-store \
+  --from-literal=url='postgres://postgres:<senha>@10.42.0.1:5432/ax?sslmode=disable'
 kubectl apply -k k8s/rax
 kubectl -n ax-system rollout status deploy/ax-server
 kubectl -n ax-system port-forward svc/ax-server 8080:8080   # pelo túnel da API

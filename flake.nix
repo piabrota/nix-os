@@ -97,12 +97,17 @@
           inherit system;
           modules = [ ./configuration.nix { piabrota.kubesolo.enable = true; } ];
         }).config.system.build.toplevel;
+        # pgx.nix in a VM: the unit starts in its sandbox, takes a password and keeps its data
+        # across a restart (pgx/test.nix).
+        pgx = pkgs.testers.runNixOSTest ./pgx/test.nix;
       };
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
         # The KubeSolo release binary (kubesolo/package.nix); not in nixpkgs.
         kubesolo = pkgs.callPackage ./kubesolo/package.nix { };
+        # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
+        pgx = pkgs.callPackage ./pgx/package.nix { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })

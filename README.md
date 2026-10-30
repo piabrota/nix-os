@@ -99,6 +99,12 @@ reach it, run rax on it, and roll it back:
 - [`docs/KUBESOLO.ptBR.md`](docs/KUBESOLO.ptBR.md), em português
 - [`docs/KUBESOLO.md`](docs/KUBESOLO.md), in English
 
+PGX, a Postgres-compatible engine in one process, runs here for what needs Postgres (rax's store)
+instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its cost and its limits:
+
+- [`docs/PGX.ptBR.md`](docs/PGX.ptBR.md), em português
+- [`docs/PGX.md`](docs/PGX.md), in English
+
 ## Recipes
 
 ```console
@@ -142,6 +148,7 @@ with that version.
 ├── apps.nix, apps/notes/    the Loco apps: a notes CRUD demo at www.piabrota.art/notes (docs/LOCO.md)
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── kubesolo.nix, kubesolo/  KubeSolo (single-node Kubernetes) behind a flag that is off, and its package
+├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
 ├── k8s/rax/                 rax-server manifests for KubeSolo, applied by hand, never by a deploy
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
@@ -164,6 +171,8 @@ with that version.
 ├── docs/MICROK8S.md       the same, in English
 ├── docs/KUBESOLO.ptBR.md    trying KubeSolo here, and its rollback, in Portuguese
 ├── docs/KUBESOLO.md       the same, in English
+├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
+├── docs/PGX.md            the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
