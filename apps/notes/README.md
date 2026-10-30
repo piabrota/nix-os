@@ -7,9 +7,9 @@ to set its password on the box, and how its database grows or moves.
 
 | Path | Is |
 |---|---|
-| `src/controllers/web.rs` | the pages and the password wall (`NOTES_PASSWORD`, `NOTES_SECRET`) |
+| `src/controllers/notes.rs` | the pages and the password wall (`NOTES_PASSWORD`, `NOTES_SECRET`) |
 | `assets/views/notes/` | the Tera views, in piabrota.art's stylesheet (`/style.css`) |
-| `migration/` | the SeaORM migrations: `users` (from the template, unused) and `notes` |
+| `src/models/notes.rs`, `migration/` | the `notes` table and its SeaORM migration |
 | `config/production.yaml` | read from the environment that `loco.nix` sets |
 
 Run it locally (needs Rust 1.94 or newer):
@@ -20,5 +20,5 @@ NOTES_PASSWORD=dev cargo loco start
 cargo test --lib          # the controller's unit tests
 ```
 
-The generated JSON API (`src/controllers/notes.rs`) and the account routes (`auth.rs`) are kept
-from the template but not mounted (`src/app.rs`).
+Of what `loco new` generates, only what the notes need is kept: no accounts, mailer, workers,
+tasks, JSON API or i18n.

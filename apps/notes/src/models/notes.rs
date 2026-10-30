@@ -1,28 +1,18 @@
-pub use super::_entities::notes::{ActiveModel, Entity, Model};
 use sea_orm::entity::prelude::*;
-pub type Notes = Entity;
+
+pub use super::_entities::notes::{ActiveModel, Entity, Model};
 
 #[async_trait::async_trait]
 impl ActiveModelBehavior for ActiveModel {
-    async fn before_save<C>(self, _db: &C, insert: bool) -> std::result::Result<Self, DbErr>
+    /// Loco's migration gives `created_at` and `updated_at` defaults on insert; an update
+    /// stamps `updated_at` here, unless the caller set it.
+    async fn before_save<C>(mut self, _db: &C, insert: bool) -> Result<Self, DbErr>
     where
         C: ConnectionTrait,
     {
         if !insert && self.updated_at.is_unchanged() {
-            let mut this = self;
-            this.updated_at = sea_orm::ActiveValue::Set(chrono::Utc::now().into());
-            Ok(this)
-        } else {
-            Ok(self)
+            self.updated_at = sea_orm::ActiveValue::Set(chrono::Utc::now().into());
         }
+        Ok(self)
     }
 }
-
-// implement your read-oriented logic here
-impl Model {}
-
-// implement your write-oriented logic here
-impl ActiveModel {}
-
-// implement your custom finders, selectors oriented logic here
-impl Entity {}

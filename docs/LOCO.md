@@ -102,8 +102,9 @@ on both: a password or a session cookie never crosses in clear.
 `apps.nix`: CRUD for notes on SQLite at <https://www.piabrota.art/notes>, behind one password. It
 was generated with `loco new` 1.2.0 (`--db sqlite --bg async --assets serverside`) and
 `cargo loco generate scaffold note title:string! content:text!`; the pages
-(`src/controllers/web.rs`, `assets/views/notes/`) are written by hand, server-rendered with Tera, in
-the site's stylesheet. The generated JSON API and the account routes are not mounted.
+(`src/controllers/notes.rs`, `assets/views/notes/`) are written by hand, server-rendered with Tera,
+in the site's stylesheet. Of the generated app only what the notes need is kept: no accounts,
+mailer, workers, JSON API or i18n.
 
 | Sign in | The notes | Edit |
 |---|---|---|

@@ -20,12 +20,7 @@ rustPlatform.buildRustPackage {
   };
   cargoLock.lockFile = ./Cargo.lock;
 
-  # Only the binary: the generated playground and tool are not needed on the box.
-  cargoBuildFlags = [ "--bin" "notes-cli" ];
-  # The unit tests of the controller (the password check, the form limits). The generated
-  # request tests need a database and a test config, so they run with `cargo test` locally.
-  cargoTestFlags = [ "--lib" ];
-  checkFlags = [ "controllers::web::" ];
+  # The controller's unit tests (the password check, the form limits) run in the build.
 
   postInstall = ''
     mkdir -p $out/share/notes
