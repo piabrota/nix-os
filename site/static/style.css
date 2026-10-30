@@ -1,8 +1,95 @@
-:root { color-scheme: light dark; --fg: #1b1b1b; --bg: #fafaf7; --muted: #6b6b6b; --link: #1682d4; }
-@media (prefers-color-scheme: dark) { :root { --fg: #ececec; --bg: #141414; --muted: #9a9a9a; --link: #6cb4ee; } }
-body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--fg);
-       font: 18px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { padding: 0 16px; max-width: 32rem; text-align: center; }
-h1 { font-size: 3rem; font-weight: 400; margin: 0; }
-p { color: var(--muted); }
-a { color: var(--link); }
+/* The three designs of piabrota.art, one body class each: fabric (A, /), index (B, /index/),
+   paths (C, /paths/). The mockups in docs/mockups/ are their drafts. No web fonts: Fjalla One and
+   JetBrains Mono are used when installed, the system fonts otherwise. */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.55 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: inherit; }
+h1, h2, h3, h4 { margin: 0; font-weight: 400; }
+.heading, h1, h2, h4 { font-family: "Fjalla One", "Arial Narrow", Inter, system-ui, sans-serif; }
+.where, code, .n, .prompt { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.page { max-width: 1152px; margin: 0 auto; padding: 0 16px; }
+.top { display: flex; align-items: center; justify-content: space-between; padding: 24px 0; }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-size: 22px; }
+.eye { display: block; }
+.designs { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; padding: 24px 0 40px; }
+.designs [aria-current="page"] { font-weight: 600; text-decoration: none; }
+
+/* A · fabric */
+body.fabric { --fg: #EDEFF3; --muted: #9AA3B2; --card: #14171F; --border: #2A303C; --red: #BC2318;
+  color: var(--fg); background: radial-gradient(60rem 30rem at 10% -10%, rgb(188 35 24 / 28%), transparent 70%), #0B0D12; }
+.fabric .brand span { font-family: "Fjalla One", "Arial Narrow", sans-serif; }
+.fabric .hero { padding: 48px 0 24px; max-width: 820px; }
+.fabric .kicker { color: var(--red); font-size: 13px; font-weight: 600; letter-spacing: .15em; margin: 0 0 16px; }
+.fabric h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.1; }
+.fabric .lede { color: var(--muted); font-size: clamp(16px, 2vw, 19px); max-width: 680px; }
+.fabric .pills { display: flex; flex-wrap: wrap; gap: 12px; list-style: none; padding: 0; margin: 24px 0 0; }
+.fabric .pills li { border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: 13px; }
+.fabric #projects { padding: 40px 0; }
+.fabric h2 { font-size: 30px; margin-bottom: 16px; }
+.fabric h3 { color: var(--muted); font: 600 12px/1 Inter, system-ui, sans-serif; letter-spacing: .15em; text-transform: uppercase; margin: 28px 0 12px; }
+.fabric .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+.fabric .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; }
+.fabric .card h4 { font-size: 21px; }
+.fabric .meta { color: var(--muted); font-size: 12px; margin: 2px 0 12px; }
+.fabric .blurb { color: var(--muted); font-size: 14px; margin: 0 0 16px; flex: 1; }
+.fabric .at { display: flex; align-items: center; gap: 10px; font-size: 12px; margin: 0; }
+.fabric .dot { width: 10px; height: 10px; border-radius: 50%; background: #5B6474; flex: none; }
+.fabric .live .dot { background: #2E9E4F; }
+.fabric .coming .dot { background: #D9A21B; }
+.fabric footer { border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; padding-top: 24px; }
+.fabric footer p { margin: 0 0 6px; }
+
+/* B · index */
+body.index { --fg: #1B1B1B; --muted: #6B6B6B; --rule: #DEDBD2; color: var(--fg); background: #FAFAF7; }
+.index .brand { font-size: 16px; font-weight: 600; }
+.index .top > a:last-child { color: var(--muted); font-size: 14px; text-decoration: none; }
+.index .wordmark { color: #BC2318; font-size: clamp(64px, 12vw, 150px); line-height: 1; letter-spacing: -.02em; margin: 40px 0 8px; }
+.index .kicker { color: var(--muted); font-size: clamp(15px, 2vw, 18px); margin: 0; padding-bottom: 24px; border-bottom: 2px solid var(--fg); }
+.index .rows { list-style: none; margin: 0; padding: 0; }
+.index .rows li { display: grid; grid-template-columns: 64px 1fr 300px; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--rule); }
+.index .n { color: var(--muted); font-size: 13px; padding-top: 10px; }
+.index .rows h2 { font-size: clamp(24px, 3vw, 30px); }
+.index .body p { color: var(--muted); font-size: 15px; margin: 4px 0 0; max-width: 620px; }
+.index .side { padding-top: 10px; font-size: 13px; }
+.index .side p { margin: 4px 0 0; }
+.index .live { color: #2E7D32; }
+.index .coming { color: #A86B00; }
+.index .none { color: var(--muted); }
+.index footer { color: var(--muted); font-size: 15px; padding-top: 32px; max-width: 640px; }
+@media (max-width: 700px) {
+  .index .top > a:last-child { display: none; }
+  .index .rows li { grid-template-columns: 32px 1fr; }
+  .index .side { grid-column: 2; padding-top: 0; }
+}
+
+/* C · paths: the first page's palette, light or dark with the visitor's setting */
+body.paths { --fg: #1B1B1B; --bg: #FAFAF7; --muted: #6B6B6B; --link: #1682D4;
+  color: var(--fg); background: var(--bg); color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { body.paths { --fg: #ECECEC; --bg: #141414; --muted: #9A9A9A; --link: #6CB4EE; } }
+.paths .column { max-width: 652px; margin: 0 auto; padding: 56px 16px 0; text-align: center; }
+.paths .mu { display: block; margin: 0 auto; }
+.paths .name { color: var(--muted); font-size: 18px; margin: 16px 0 40px; }
+.paths .terminal { text-align: left; background: #141414; color: #ECECEC; border-radius: 12px; padding: 16px 24px 8px; font-size: 13px;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; box-shadow: 0 0 0 1px rgb(127 127 127 / 25%); }
+.paths .dots { display: flex; gap: 8px; margin-bottom: 12px; }
+.paths .dots span { width: 10px; height: 10px; border-radius: 50%; background: #BC2318; }
+.paths .dots span:nth-child(2) { background: #E3B341; }
+.paths .dots span:nth-child(3) { background: #2E9E4F; }
+.paths .prompt { color: #9A9A9A; margin: 8px 0; }
+.paths .terminal ul { list-style: none; margin: 0 0 16px; padding: 0; }
+.paths .terminal li { display: grid; grid-template-columns: 1fr 9rem 6rem; gap: 12px; padding: 2px 0; }
+.paths .terminal a { color: #ECECEC; }
+.paths .who { color: #9A9A9A; }
+.paths .live { color: #4CC38A; text-align: right; }
+.paths .coming { color: #E3B341; text-align: right; }
+.paths .none { color: #9A9A9A; text-align: right; }
+.paths .links a, .paths .designs a { color: var(--link); }
+.paths .links { margin: 40px 0 0; font-size: 16px; }
+.paths .designs { justify-content: center; }
+@media (max-width: 560px) {
+  .paths .terminal { padding: 16px; }
+  .paths .terminal li { grid-template-columns: auto 1fr; gap: 6px; padding: 4px 0; }
+  .paths .terminal .where { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  .paths .who::after { content: " ·"; }
+  .paths .live, .paths .coming, .paths .none { text-align: left; }
+}

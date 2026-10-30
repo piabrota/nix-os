@@ -6,8 +6,9 @@ Três direções para a home de [piabrota.art](https://www.piabrota.art), cada u
 e celular (390 px). São SVGs gerados em Nix puro (`mockups/`), como o desenho 无 do README: nenhum
 programa de desenho, nada para instalar. Os fatos vêm do perfil da org
 ([piabrota/.github](https://github.com/piabrota/.github), `profile/README.md`), copiados em
-`mockups/data.nix`. São rascunhos: a página no ar continua a do `site/`, até um PR escrever a
-direção escolhida em Gleam.
+`mockups/data.nix`. O site builda as três em Gleam, a partir do mesmo
+`mockups/data.nix`: a A em [www.piabrota.art](https://www.piabrota.art/), a B em
+[/index/](https://www.piabrota.art/index/), a C em [/paths/](https://www.piabrota.art/paths/).
 
 ## A · fabric
 

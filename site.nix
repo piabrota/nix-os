@@ -1,5 +1,5 @@
 # A static site: the files in site/, served by nginx with Let's Encrypt on www.piabrota.art, over
-# HTTP and HTTPS. piabrota.art answers with a redirect to www, keeping the scheme and the path.
+# HTTP and HTTPS. piabrota.art answers with a redirect to https://www, keeping the path.
 # Every name here must point at the box before the site is turned on, or the ACME order fails on
 # the deploy and deploy-rs rolls the switch back. See docs/SITE.md.
 { config, lib, pkgs, ... }:
@@ -20,7 +20,7 @@ in
     redirectFrom = mkOption {
       type = types.listOf types.str;
       default = [ "piabrota.art" ];
-      description = "Names that answer with a 301 to `domain`, same scheme and path. Each needs its own DNS record; ACME checks them all.";
+      description = "Names that answer with a 301 to `domain` (HTTPS), same path. Each needs its own DNS record; ACME checks them all.";
     };
     httpsOnly = mkOption {
       type = types.bool;
@@ -29,7 +29,7 @@ in
     };
     root = mkOption {
       type = types.path;
-      # Gleam runs on the builder; the box gets only index.html and static/ (site/default.nix).
+      # Gleam runs on the builder; the box gets only the pages, static/ and mu.svg (site/default.nix).
       default = pkgs.callPackage ./site { };
       defaultText = lib.literalExpression "pkgs.callPackage ./site { }, the prerendered page";
       description = "The directory nginx serves. Read-only: the store.";

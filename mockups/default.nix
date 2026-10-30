@@ -5,10 +5,7 @@
 let
   s = import ./svg.nix { inherit lib; };
   data = import ./data.nix;
-  # Where a project meets the web, as the cards and rows print it.
-  where = p:
-    if p ? path then "piabrota.art${p.path}"
-    else p.site or (if p.repo or true then "github.com/piabrota/${p.name}" else "no repository yet");
+  inherit (data) where;
   args = { inherit lib s data where; };
   directions = {
     fabric = import ./fabric.nix args;

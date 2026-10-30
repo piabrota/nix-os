@@ -1,9 +1,11 @@
-# The site, prerendered: Gleam and Lustre (src/) run once on the builder and write index.html; the
-# output is that page and static/, nothing else. allowedReferences = [ ] fails the build if the
+# The site, prerendered: Gleam and Lustre (src/) run once on the builder and write the three pages
+# (A at index.html, B at index/, C at paths/); the output is those pages, static/ and the 无
+# drawing, nothing else. The facts come from ../mockups/data.nix, written as Gleam by data.nix. allowedReferences = [ ] fails the build if the
 # output names any store path, so gleam, node and the hex packages never reach the VPS closure.
 { lib, stdenvNoCC, fetchurl, gleam, nodejs }:
 let
   manifest = lib.importTOML ./manifest.toml;
+  dataGleam = import ./data.nix { inherit lib; data = import ../mockups/data.nix; };
   # Every hex package manifest.toml locks, at its checksum, so the build runs offline.
   hex = map
     (p: p // {
@@ -22,6 +24,8 @@ stdenvNoCC.mkDerivation {
     fileset = lib.fileset.unions [ ./gleam.toml ./manifest.toml ./src ./test ./static ];
   };
   nativeBuildInputs = [ gleam nodejs ];
+  inherit dataGleam;
+  passAsFile = [ "dataGleam" ];
 
   # What gleam deps download would write: each package in build/packages, and the list of them.
   configurePhase = ''
@@ -34,13 +38,18 @@ stdenvNoCC.mkDerivation {
       tar -xOf ${p.tarball} contents.tar.gz | tar -xzf - -C build/packages/${p.name}
       echo '${p.name} = "${p.version}"' >> build/packages/packages.toml
     '') hex}
+    cp $dataGleamPath src/piabrota_site/data.gleam
+    gleam format src/piabrota_site/data.gleam
     runHook postConfigure
   '';
 
   buildPhase = ''
     runHook preBuild
     gleam format --check src test
-    gleam run -m piabrota_site/prerender --no-print-progress > index.html
+    mkdir -p dist/index dist/paths
+    gleam run -m piabrota_site/render/fabric --no-print-progress > dist/index.html
+    gleam run -m piabrota_site/render/index --no-print-progress > dist/index/index.html
+    gleam run -m piabrota_site/render/paths --no-print-progress > dist/paths/index.html
     runHook postBuild
   '';
 
@@ -53,9 +62,9 @@ stdenvNoCC.mkDerivation {
 
   installPhase = ''
     runHook preInstall
-    mkdir -p $out
-    cp index.html $out/
+    cp -R dist $out
     cp -R static/. $out/
+    cp ${../docs/drawings/mu.svg} $out/mu.svg
     runHook postInstall
   '';
 

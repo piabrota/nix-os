@@ -14,7 +14,7 @@ build:
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix drawings/*.nix mockups/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix site/data.nix drawings/*.nix mockups/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh
@@ -37,8 +37,12 @@ drawing:
 site:
     nix build .#site --out-link result-site --print-build-logs
 
+# write site/src/piabrota_site/data.gleam from mockups/data.nix (not committed; the build writes its own)
+site-data:
+    cat "$(nix build .#site-data --no-link --print-out-paths)" > site/src/piabrota_site/data.gleam
+
 # format and test the site's Gleam code, in the site dev shell (gleam and node; never on the VPS)
-site-test:
+site-test: site-data
     nix develop .#site --command sh -c 'cd site && gleam format src test && gleam test'
 
 # write the homepage mockups (docs/mockups/*.svg, and the wiki's copy in wiki/mockups/) from mockups/*.nix

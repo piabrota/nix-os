@@ -45,12 +45,12 @@ geração nova, e o GRUB guarda as cinco últimas.
 
 </details>
 
-![piabrota.art: um navegador resolve os dois registros A da Porkbun, que apontam para a VPS; o nginx responde ao piabrota.art com um 301 para https://www e serve o www.piabrota.art por HTTP e HTTPS, com /nixos num 302 para o repositório e um certificado do Let's Encrypt por nome; a página foi buildada antes do deploy, o site/ em Gleam pré-renderizado pelo Nix na /nix/store como index.html e style.css, que é o root do nginx.](img/pt/piabrota-art.png)
+![piabrota.art: um navegador resolve os dois registros A da Porkbun, que apontam para a VPS; o nginx responde ao piabrota.art com um 301 para https://www e serve o www.piabrota.art por HTTP e HTTPS, com /nixos num 302 para o repositório e um certificado do Let's Encrypt por nome; a página foi buildada antes do deploy, o site/ em Gleam pré-renderizado pelo Nix na /nix/store como três páginas e style.css, que é o root do nginx.](img/pt/piabrota-art.png)
 
 <details open>
 <summary>Como ler esta figura</summary>
 
-**Em uma frase.** A VPS serve dois arquivos pequenos da store; o Gleam, o node e o build nunca chegam nela.
+**Em uma frase.** A VPS serve alguns arquivos pequenos da store; o Gleam, o node e o build nunca chegam nela.
 
 **Como ler.** De cima para baixo: o visitante, o DNS, o nginx na VPS e o que foi buildado antes do deploy. As setas dizem para onde vai um pedido, ou o que entra em quê.
 

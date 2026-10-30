@@ -1,8 +1,22 @@
 # What the homepage mockups show, from the org profile (piabrota/.github, profile/README.md,
 # 2026-10-30): the projects, their lanes in the "How it fits" figure, where each meets the web.
 # `path` is a path on piabrota.art; `site` an address elsewhere; `state` is live, coming or none;
-# `repo = false` when the project has no repository yet.
-{
+# `repo = false` when the project has no repository yet. site/data.nix writes the same facts as
+# Gleam for the live site, so the mockups and the site cannot disagree.
+rec {
+  # Where a project meets the web, as the cards and rows print it.
+  where = p:
+    if p ? path then "piabrota.art${p.path}"
+    else p.site or (if p.repo or true then "github.com/piabrota/${p.name}" else "no repository yet");
+
+  # What its address links to: a live path here, its own site, or its repository. "" for none,
+  # and for a path here that is not live yet, so the address is never a link to somewhere else.
+  href = p:
+    if p ? path then (if p.state == "live" then p.path else "")
+    else if p ? site then "https://${p.site}"
+    else if p.repo or true then "https://github.com/piabrota/${p.name}"
+    else "";
+
   org = {
     name = "piabrota";
     kicker = "open software fabric · made in RJ";
