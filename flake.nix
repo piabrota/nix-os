@@ -15,6 +15,7 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       drawing = import ./drawings { inherit (nixpkgs) lib; };
+      mockups = import ./mockups { inherit (nixpkgs) lib; mu = drawing.svg; };
       # deploy-rs's lib with nixpkgs' deploy-rs binary, which cache.nixos.org has, so CI does
       # not compile it (the overlay the deploy-rs README gives for this).
       deployPkgs = import nixpkgs {
@@ -59,6 +60,16 @@
           diff -u ${./docs/drawings/mu.desmos.json} $art/mu.desmos.json || { echo 'run `just drawing`' >&2; exit 1; }
           touch $out
         '';
+        # The mockups' tests pass and the committed files are their output (`just mockups`).
+        mockups = pkgs.runCommand "mockups-check" { } ''
+          ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}
+          ${pkgs.lib.optionalString (mockups.failures != [ ]) "exit 1"}
+          ${pkgs.lib.concatMapStrings (n: ''
+            diff -u ${./docs/mockups + "/${n}"} ${self.packages.${system}.mockups}/${n} || { echo 'run `just mockups`' >&2; exit 1; }
+            diff -u ${./wiki/mockups + "/${n}"} ${self.packages.${system}.mockups}/${n} || { echo 'run `just mockups`' >&2; exit 1; }
+          '') (builtins.attrNames mockups.files)}
+          touch $out
+        '';
         # The system with one stand-in Loco app, so the module and the hosting stack (nginx,
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {
@@ -84,6 +95,10 @@
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
+        # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
+        mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
+          (name: text: { inherit name; path = pkgs.writeText name text; })
+          mockups.files);
         # The site, prerendered from Gleam (site/): index.html and static/, with no runtime.
         site = pkgs.callPackage ./site { };
         # The README drawing, in pure Nix (drawings/): mu.svg, mu.desmos.json and mu-check.svg.

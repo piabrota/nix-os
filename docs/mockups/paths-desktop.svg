@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="734" viewBox="0 0 1280 734" font-family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" role="img" aria-label="Mockup C, paths: the piabrota.art homepage, 1280 px wide">
+<title>Mockup C, paths: the piabrota.art homepage, 1280 px wide</title>
+<defs><style>.l{stroke:#1B1B1B!important}.d{fill:#1B1B1B!important}</style></defs>
+<rect fill="#FAFAF7" height="734" width="1280" x="0" y="0"/>
+<svg x="565" y="70" viewBox="0 0 240 240" width="150" height="150" role="img" aria-label="无 (mu, no thing) brushed in its four strokes, by @h0ffmann">
+  <title>无 (mu, no thing) brushed in its four strokes, by @h0ffmann</title>
+  <desc>Drawn from the Desmos expressions of mu.desmos.json: cubic Béziers through hand-placed points, each piece at its brush width.</desc>
+  <style>.l{fill:none;stroke:#1f2328;stroke-linecap:round;stroke-linejoin:round}.d{fill:#1f2328;stroke:none}@media (prefers-color-scheme:dark){.l{stroke:#e6edf3}.d{fill:#e6edf3}}</style>
+  <g class="l">
+    <path d="M60.6 54 C60.967 53.872 61.127 53.688 61.305 53.467" stroke-width="12.87"/>
+    <path d="M61.305 53.467 C61.482 53.246 61.677 52.987 62.113 52.707" stroke-width="12.21"/>
+    <path d="M62.113 52.707 C62.548 52.428 63.224 52.128 64.364 51.824" stroke-width="11.55"/>
+    <path d="M64.364 51.824 C65.504 51.52 67.108 51.213 69.4 50.92" stroke-width="10.89"/>
+    <path d="M69.4 50.92 C71.692 50.627 74.785 50.31 78.372 49.982" stroke-width="10.065"/>
+    <path d="M78.372 49.982 C81.958 49.653 86.038 49.311 90.3 48.967" stroke-width="9.075"/>
+    <path d="M90.3 48.967 C94.563 48.624 99.008 48.278 103.328 47.94" stroke-width="8.085"/>
+    <path d="M103.328 47.94 C107.648 47.602 111.842 47.272 115.6 46.96" stroke-width="7.095"/>
+    <path d="M115.6 46.96 C119.358 46.648 123.369 46.318 127.425 45.987" stroke-width="6.655"/>
+    <path d="M127.425 45.987 C131.481 45.656 135.583 45.324 139.525 45.007" stroke-width="6.765"/>
+    <path d="M139.525 45.007 C143.467 44.691 147.248 44.391 150.663 44.124" stroke-width="6.875"/>
+    <path d="M150.663 44.124 C154.077 43.857 157.125 43.623 159.6 43.44" stroke-width="6.985"/>
+    <path d="M159.6 43.44 C162.075 43.257 164.08 43.087 165.745 42.942" stroke-width="7.645"/>
+    <path d="M165.745 42.942 C167.409 42.796 168.732 42.675 169.844 42.587" stroke-width="8.855"/>
+    <path d="M169.844 42.587 C170.955 42.5 171.855 42.448 172.671 42.44" stroke-width="10.065"/>
+    <path d="M172.671 42.44 C173.488 42.432 174.221 42.468 175 42.56" stroke-width="11.275"/>
+    <path d="M175 42.56 C175.779 42.652 176.341 42.858 176.753 43.124" stroke-width="12.045"/>
+    <path d="M176.753 43.124 C177.166 43.39 177.429 43.715 177.613 44.045" stroke-width="12.375"/>
+    <path d="M177.613 44.045 C177.796 44.375 177.899 44.71 177.991 44.994" stroke-width="12.705"/>
+    <path d="M177.991 44.994 C178.082 45.278 178.163 45.512 178.3 45.64" stroke-width="13.035"/>
+    <path d="M26.5 102.4 C26.912 102.29 26.97 102.139 27.016 101.957" stroke-width="14.96"/>
+    <path d="M27.016 101.957 C27.061 101.774 27.096 101.561 27.462 101.327" stroke-width="14.08"/>
+    <path d="M27.462 101.327 C27.829 101.094 28.528 100.839 29.903 100.575" stroke-width="13.2"/>
+    <path d="M29.903 100.575 C31.278 100.31 33.329 100.035 36.4 99.76" stroke-width="12.32"/>
+    <path d="M36.4 99.76 C39.471 99.485 43.642 99.178 48.509 98.852" stroke-width="11.33"/>
+    <path d="M48.509 98.852 C53.376 98.527 58.939 98.183 64.794 97.835" stroke-width="10.23"/>
+    <path d="M64.794 97.835 C70.649 97.487 76.796 97.134 82.832 96.79" stroke-width="9.13"/>
+    <path d="M82.832 96.79 C88.868 96.446 94.792 96.112 100.2 95.8" stroke-width="8.03"/>
+    <path d="M100.2 95.8 C105.608 95.488 111.36 95.168 117.216 94.848" stroke-width="7.453"/>
+    <path d="M117.216 94.848 C123.071 94.528 129.029 94.21 134.85 93.902" stroke-width="7.398"/>
+    <path d="M134.85 93.902 C140.671 93.595 146.354 93.3 151.659 93.026" stroke-width="7.343"/>
+    <path d="M151.659 93.026 C156.965 92.752 161.892 92.5 166.2 92.28" stroke-width="7.288"/>
+    <path d="M166.2 92.28 C170.508 92.06 174.507 91.826 178.205 91.603" stroke-width="7.838"/>
+    <path d="M178.205 91.603 C181.904 91.379 185.301 91.166 188.406 90.988" stroke-width="8.993"/>
+    <path d="M188.406 90.988 C191.511 90.809 194.324 90.664 196.854 90.578" stroke-width="10.148"/>
+    <path d="M196.854 90.578 C199.383 90.493 201.629 90.465 203.6 90.52" stroke-width="11.303"/>
+    <path d="M203.6 90.52 C205.571 90.575 207.072 90.763 208.241 91.022" stroke-width="12.32"/>
+    <path d="M208.241 91.022 C209.409 91.281 210.246 91.611 210.888 91.95" stroke-width="13.2"/>
+    <path d="M210.888 91.95 C211.529 92.289 211.976 92.638 212.366 92.933" stroke-width="14.08"/>
+    <path d="M212.366 92.933 C212.755 93.229 213.088 93.472 213.5 93.6" stroke-width="14.96"/>
+    <path d="M112.3 54 C112.273 54.642 112.27 55.375 112.269 56.252" stroke-width="15.29"/>
+    <path d="M112.269 56.252 C112.268 57.128 112.268 58.148 112.245 59.363" stroke-width="15.07"/>
+    <path d="M112.245 59.363 C112.222 60.577 112.176 61.986 112.083 63.642" stroke-width="14.85"/>
+    <path d="M112.083 63.642 C111.991 65.298 111.851 67.2 111.64 69.4" stroke-width="14.63"/>
+    <path d="M111.64 69.4 C111.429 71.6 111.225 74.281 110.994 77.255" stroke-width="14.3"/>
+    <path d="M110.994 77.255 C110.762 80.228 110.503 83.494 110.183 86.863" stroke-width="13.86"/>
+    <path d="M110.183 86.863 C109.862 90.231 109.479 93.703 109 97.089" stroke-width="13.42"/>
+    <path d="M109 97.089 C108.521 100.475 107.946 103.775 107.24 106.8" stroke-width="12.98"/>
+    <path d="M107.24 106.8 C106.534 109.825 105.769 112.85 104.925 115.858" stroke-width="12.375"/>
+    <path d="M104.925 115.858 C104.081 118.866 103.159 121.856 102.139 124.813" stroke-width="11.605"/>
+    <path d="M102.139 124.813 C101.119 127.769 100.002 130.691 98.768 133.561" stroke-width="10.835"/>
+    <path d="M98.768 133.561 C97.535 136.431 96.185 139.25 94.7 142" stroke-width="10.065"/>
+    <path d="M94.7 142 C93.215 144.75 91.602 147.489 89.874 150.19" stroke-width="9.24"/>
+    <path d="M89.874 150.19 C88.146 152.891 86.303 155.555 84.36 158.156" stroke-width="8.36"/>
+    <path d="M84.36 158.156 C82.417 160.757 80.372 163.295 78.241 165.745" stroke-width="7.48"/>
+    <path d="M78.241 165.745 C76.11 168.194 73.892 170.554 71.6 172.8" stroke-width="6.6"/>
+    <path d="M71.6 172.8 C69.308 175.046 66.501 177.372 63.496 179.658" stroke-width="5.61"/>
+    <path d="M63.496 179.658 C60.491 181.944 57.289 184.19 54.206 186.275" stroke-width="4.51"/>
+    <path d="M54.206 186.275 C51.124 188.36 48.162 190.285 45.638 191.93" stroke-width="3.41"/>
+    <path d="M45.638 191.93 C43.115 193.574 41.029 194.938 39.7 195.9" stroke-width="2.31"/>
+    <path d="M134.3 103.5 C134.401 103.913 134.573 104.291 134.781 104.738" stroke-width="15.125"/>
+    <path d="M134.781 104.738 C134.99 105.184 135.235 105.7 135.483 106.388" stroke-width="14.575"/>
+    <path d="M135.483 106.388 C135.73 107.075 135.98 107.934 136.198 109.069" stroke-width="14.025"/>
+    <path d="M136.198 109.069 C136.415 110.203 136.601 111.613 136.72 113.4" stroke-width="13.475"/>
+    <path d="M136.72 113.4 C136.839 115.188 136.89 117.525 136.907 120.18" stroke-width="12.98"/>
+    <path d="M136.907 120.18 C136.925 122.836 136.91 125.809 136.899 128.869" stroke-width="12.54"/>
+    <path d="M136.899 128.869 C136.887 131.928 136.879 135.073 136.911 138.073" stroke-width="12.1"/>
+    <path d="M136.911 138.073 C136.942 141.072 137.013 143.925 137.16 146.4" stroke-width="11.66"/>
+    <path d="M137.16 146.4 C137.307 148.875 137.419 151.359 137.543 153.794" stroke-width="11.385"/>
+    <path d="M137.543 153.794 C137.668 156.229 137.804 158.615 137.999 160.893" stroke-width="11.275"/>
+    <path d="M137.999 160.893 C138.194 163.17 138.447 165.341 138.805 167.345" stroke-width="11.165"/>
+    <path d="M138.805 167.345 C139.163 169.349 139.626 171.187 140.24 172.8" stroke-width="11.055"/>
+    <path d="M140.24 172.8 C140.854 174.413 141.459 175.839 142.129 177.107" stroke-width="10.89"/>
+    <path d="M142.129 177.107 C142.799 178.376 143.533 179.487 144.406 180.473" stroke-width="10.67"/>
+    <path d="M144.406 180.473 C145.279 181.458 146.291 182.317 147.515 183.082" stroke-width="10.45"/>
+    <path d="M147.515 183.082 C148.74 183.846 150.177 184.515 151.9 185.12" stroke-width="10.23"/>
+    <path d="M151.9 185.12 C153.623 185.725 155.826 186.16 158.289 186.474" stroke-width="10.01"/>
+    <path d="M158.289 186.474 C160.752 186.788 163.475 186.981 166.241 187.1" stroke-width="9.79"/>
+    <path d="M166.241 187.1 C169.007 187.219 171.816 187.265 174.448 187.286" stroke-width="9.57"/>
+    <path d="M174.448 187.286 C177.081 187.306 179.538 187.302 181.6 187.32" stroke-width="9.35"/>
+    <path d="M181.6 187.32 C183.663 187.338 185.647 187.329 187.535 187.282" stroke-width="9.57"/>
+    <path d="M187.535 187.282 C189.423 187.235 191.214 187.15 192.889 187.017" stroke-width="10.23"/>
+    <path d="M192.889 187.017 C194.564 186.885 196.123 186.704 197.548 186.464" stroke-width="10.89"/>
+    <path d="M197.548 186.464 C198.973 186.225 200.263 185.927 201.4 185.56" stroke-width="11.55"/>
+    <path d="M201.4 185.56 C202.537 185.193 203.472 184.795 204.26 184.347" stroke-width="11.88"/>
+    <path d="M204.26 184.347 C205.048 183.899 205.69 183.401 206.24 182.837" stroke-width="11.88"/>
+    <path d="M206.24 182.837 C206.79 182.274 207.248 181.644 207.67 180.93" stroke-width="11.88"/>
+    <path d="M207.67 180.93 C208.092 180.216 208.477 179.418 208.88 178.52" stroke-width="11.88"/>
+    <path d="M208.88 178.52 C209.283 177.622 209.6 176.416 209.853 175.076" stroke-width="11.055"/>
+    <path d="M209.853 175.076 C210.106 173.735 210.296 172.259 210.448 170.82" stroke-width="9.405"/>
+    <path d="M210.448 170.82 C210.599 169.381 210.711 167.978 210.808 166.784" stroke-width="7.755"/>
+    <path d="M210.808 166.784 C210.906 165.59 210.988 164.605 211.08 164" stroke-width="6.105"/>
+  </g>
+</svg>
+<text fill="#6B6B6B" font-size="18" text-anchor="middle" x="640" y="260">piabrota</text><rect fill="#141414" height="310" rx="12" width="620" x="330" y="310"/><circle cx="352" cy="330" fill="#BC2318" r="5"/><circle cx="370" cy="330" fill="#E3B341" r="5"/><circle cx="388" cy="330" fill="#2E9E4F" r="5"/><g font-family="'JetBrains Mono', ui-monospace, monospace" font-size="13"><text fill="#9A9A9A" x="354" y="366">$ ls piabrota.art/</text><text fill="#ECECEC" x="354" y="398">/pirsig</text><text fill="#9A9A9A" x="674" y="398">pirsig</text><text fill="#E3B341" x="883" y="398">coming</text><text fill="#ECECEC" x="354" y="420">/alerts</text><text fill="#9A9A9A" x="674" y="420">alerts</text><text fill="#E3B341" x="883" y="420">coming</text><text fill="#ECECEC" x="354" y="442">/nixos</text><text fill="#9A9A9A" x="674" y="442">nix-os</text><text fill="#4CC38A" x="897" y="442">live</text><text fill="#9A9A9A" x="354" y="482">$ ls elsewhere/</text><text fill="#ECECEC" x="354" y="514">piabrota.github.io/gramatico</text><text fill="#9A9A9A" x="674" y="514">gramatico</text><text fill="#4CC38A" x="897" y="514">live</text><text fill="#ECECEC" x="354" y="536">h0ffmann.github.io/closed-source</text><text fill="#9A9A9A" x="674" y="536">closed-source</text><text fill="#4CC38A" x="897" y="536">live</text><text fill="#ECECEC" x="354" y="558">github.com/piabrota/rax</text><text fill="#9A9A9A" x="674" y="558">rax</text><text fill="#9A9A9A" x="897" y="558">none</text><text fill="#ECECEC" x="354" y="580">no repository yet</text><text fill="#9A9A9A" x="674" y="580">ihero</text><text fill="#E3B341" x="883" y="580">coming</text></g><text fill="#1682D4" font-size="16" text-anchor="middle" text-decoration="underline" x="640" y="664">github · open collective · sponsors</text>
+</svg>

@@ -1,0 +1,157 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "How nix-os works: a merged pull request is the deploy",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "how-nix-os-works.html"
+  },
+  "lanes": [
+    {
+      "id": "you",
+      "label": "You"
+    },
+    {
+      "id": "gh",
+      "label": "GitHub Actions"
+    },
+    {
+      "id": "vps",
+      "label": "The VPS"
+    },
+    {
+      "id": "after",
+      "label": "After the deploy"
+    }
+  ],
+  "mainPath": [
+    "pr",
+    "ci",
+    "deploy",
+    "switch"
+  ],
+  "nodes": [
+    {
+      "id": "pr",
+      "lane": "you",
+      "col": 0,
+      "type": "external",
+      "label": "pull request",
+      "sublabel": "a branch, never main",
+      "width": 170
+    },
+    {
+      "id": "ci",
+      "lane": "gh",
+      "col": 1,
+      "type": "backend",
+      "label": "ci.yml",
+      "sublabel": "flake check, fmt, statix, deadnix",
+      "width": 170
+    },
+    {
+      "id": "deploy",
+      "lane": "gh",
+      "col": 2,
+      "type": "backend",
+      "label": "deploy.yml",
+      "sublabel": "builds the system on the runner",
+      "width": 170
+    },
+    {
+      "id": "switch",
+      "lane": "vps",
+      "col": 3,
+      "type": "backend",
+      "label": "deploy-rs switch",
+      "sublabel": "copies over SSH, activates",
+      "width": 170
+    },
+    {
+      "id": "cache",
+      "lane": "vps",
+      "col": 2,
+      "type": "database",
+      "label": "cache.nixos.org",
+      "sublabel": "what the VPS fetches",
+      "width": 170
+    },
+    {
+      "id": "rollback",
+      "lane": "vps",
+      "col": 4,
+      "type": "security",
+      "label": "magic rollback",
+      "sublabel": "no SSH in 60 s: old system",
+      "width": 170
+    },
+    {
+      "id": "freeze",
+      "lane": "after",
+      "col": 4,
+      "type": "backend",
+      "label": "freeze.yml",
+      "sublabel": "the VPS's package list",
+      "width": 170
+    },
+    {
+      "id": "cves",
+      "lane": "after",
+      "col": 3,
+      "type": "backend",
+      "label": "cves.yml",
+      "sublabel": "vulnix report, and weekly",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "pr",
+      "to": "ci",
+      "label": "every push"
+    },
+    {
+      "id": "e2",
+      "from": "ci",
+      "to": "deploy",
+      "label": "merge to main"
+    },
+    {
+      "id": "e3",
+      "from": "deploy",
+      "to": "switch",
+      "label": "the closure"
+    },
+    {
+      "id": "e4",
+      "from": "cache",
+      "to": "switch",
+      "label": "store paths"
+    },
+    {
+      "id": "e5",
+      "from": "switch",
+      "to": "rollback",
+      "label": "SSH silent?",
+      "role": "branch"
+    },
+    {
+      "id": "e6",
+      "from": "switch",
+      "to": "freeze",
+      "label": "after it"
+    },
+    {
+      "id": "e7",
+      "from": "deploy",
+      "to": "cves",
+      "label": "same push",
+      "role": "branch"
+    }
+  ]
+}

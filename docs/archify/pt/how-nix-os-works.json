@@ -1,0 +1,157 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Como o nix-os funciona: o merge de um pull request é o deploy",
+    "locale": "pt-BR",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "how-nix-os-works.html"
+  },
+  "lanes": [
+    {
+      "id": "you",
+      "label": "Você"
+    },
+    {
+      "id": "gh",
+      "label": "GitHub Actions"
+    },
+    {
+      "id": "vps",
+      "label": "A VPS"
+    },
+    {
+      "id": "after",
+      "label": "Depois do deploy"
+    }
+  ],
+  "mainPath": [
+    "pr",
+    "ci",
+    "deploy",
+    "switch"
+  ],
+  "nodes": [
+    {
+      "id": "pr",
+      "lane": "you",
+      "col": 0,
+      "type": "external",
+      "label": "pull request",
+      "sublabel": "uma branch, nunca a main",
+      "width": 170
+    },
+    {
+      "id": "ci",
+      "lane": "gh",
+      "col": 1,
+      "type": "backend",
+      "label": "ci.yml",
+      "sublabel": "flake check, fmt, statix, deadnix",
+      "width": 170
+    },
+    {
+      "id": "deploy",
+      "lane": "gh",
+      "col": 2,
+      "type": "backend",
+      "label": "deploy.yml",
+      "sublabel": "builda o sistema no runner",
+      "width": 170
+    },
+    {
+      "id": "switch",
+      "lane": "vps",
+      "col": 3,
+      "type": "backend",
+      "label": "deploy-rs troca",
+      "sublabel": "copia via SSH, ativa",
+      "width": 170
+    },
+    {
+      "id": "cache",
+      "lane": "vps",
+      "col": 2,
+      "type": "database",
+      "label": "cache.nixos.org",
+      "sublabel": "o que a VPS baixa",
+      "width": 170
+    },
+    {
+      "id": "rollback",
+      "lane": "vps",
+      "col": 4,
+      "type": "security",
+      "label": "magic rollback",
+      "sublabel": "sem SSH em 60 s: volta",
+      "width": 170
+    },
+    {
+      "id": "freeze",
+      "lane": "after",
+      "col": 4,
+      "type": "backend",
+      "label": "freeze.yml",
+      "sublabel": "a lista de pacotes da VPS",
+      "width": 170
+    },
+    {
+      "id": "cves",
+      "lane": "after",
+      "col": 3,
+      "type": "backend",
+      "label": "cves.yml",
+      "sublabel": "relatório do vulnix, e semanal",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "pr",
+      "to": "ci",
+      "label": "cada push"
+    },
+    {
+      "id": "e2",
+      "from": "ci",
+      "to": "deploy",
+      "label": "merge na main"
+    },
+    {
+      "id": "e3",
+      "from": "deploy",
+      "to": "switch",
+      "label": "o closure"
+    },
+    {
+      "id": "e4",
+      "from": "cache",
+      "to": "switch",
+      "label": "caminhos da store"
+    },
+    {
+      "id": "e5",
+      "from": "switch",
+      "to": "rollback",
+      "label": "SSH mudo?",
+      "role": "branch"
+    },
+    {
+      "id": "e6",
+      "from": "switch",
+      "to": "freeze",
+      "label": "depois"
+    },
+    {
+      "id": "e7",
+      "from": "deploy",
+      "to": "cves",
+      "label": "mesmo push",
+      "role": "branch"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ para eles.
 
 - [Arquitetura](Arquitetura): as peças e como uma mudança chega à VPS.
 - [Operação](Operacao): o dia a dia (buildar, conferir, voltar atrás, ligar o site, adicionar um app).
+- [Maquetes](Maquetes): três direções para a home de piabrota.art, geradas em Nix.
 
 ## No repositório
 

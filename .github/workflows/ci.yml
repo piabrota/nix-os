@@ -20,10 +20,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       - run: nix flake check --no-update-lock-file --print-build-logs
-      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix drawings/*.nix
+      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix site/default.nix drawings/*.nix mockups/*.nix
       - run: nix run nixpkgs#statix -- check .
       - run: nix run nixpkgs#deadnix -- --fail .
       - run: nix run nixpkgs#shellcheck -- scripts/*.sh
+      - name: figures match their sources (offline; the pin is read from the index)
+        run: nix shell nixpkgs#just -c just figure-check
 
   justfiles:
     # Project rule: every justfile runs on the just that Ubuntu LTS ships through apt

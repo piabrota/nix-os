@@ -1,0 +1,162 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "piabrota.art: do navegador à página na store",
+    "locale": "pt-BR",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "piabrota-art.html"
+  },
+  "lanes": [
+    {
+      "id": "visitor",
+      "label": "Visitante"
+    },
+    {
+      "id": "dns",
+      "label": "DNS da Porkbun"
+    },
+    {
+      "id": "nginx",
+      "label": "nginx na VPS"
+    },
+    {
+      "id": "build",
+      "label": "Buildado antes do deploy"
+    }
+  ],
+  "mainPath": [
+    "browser",
+    "records",
+    "www"
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "lane": "visitor",
+      "col": 0,
+      "type": "external",
+      "label": "um navegador",
+      "sublabel": "http ou https",
+      "width": 170
+    },
+    {
+      "id": "records",
+      "lane": "dns",
+      "col": 1,
+      "type": "backend",
+      "label": "dois registros A",
+      "sublabel": "piabrota.art e www",
+      "width": 170
+    },
+    {
+      "id": "www",
+      "lane": "nginx",
+      "col": 2,
+      "type": "frontend",
+      "label": "www.piabrota.art",
+      "sublabel": "a página, HTTP e HTTPS",
+      "width": 170
+    },
+    {
+      "id": "apex",
+      "lane": "nginx",
+      "col": 1,
+      "type": "backend",
+      "label": "piabrota.art",
+      "sublabel": "301 para https://www",
+      "width": 170
+    },
+    {
+      "id": "nixos",
+      "lane": "nginx",
+      "col": 3,
+      "type": "backend",
+      "label": "/nixos",
+      "sublabel": "302 para o repositório",
+      "width": 170
+    },
+    {
+      "id": "acme",
+      "lane": "nginx",
+      "col": 4,
+      "type": "security",
+      "label": "Let's Encrypt",
+      "sublabel": "um certificado por nome",
+      "width": 170
+    },
+    {
+      "id": "gleam",
+      "lane": "build",
+      "col": 2,
+      "type": "backend",
+      "label": "site/ em Gleam",
+      "sublabel": "pré-renderizado pelo Nix",
+      "width": 170
+    },
+    {
+      "id": "store",
+      "lane": "build",
+      "col": 3,
+      "type": "database",
+      "label": "/nix/store",
+      "sublabel": "index.html, style.css",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "browser",
+      "to": "records",
+      "label": "resolve"
+    },
+    {
+      "id": "e2",
+      "from": "records",
+      "to": "www",
+      "label": "a VPS"
+    },
+    {
+      "id": "e3",
+      "from": "records",
+      "to": "apex",
+      "label": "a VPS",
+      "role": "branch"
+    },
+    {
+      "id": "e4",
+      "from": "apex",
+      "to": "www",
+      "label": "redireciona"
+    },
+    {
+      "id": "e5",
+      "from": "www",
+      "to": "nixos",
+      "label": "um caminho"
+    },
+    {
+      "id": "e6",
+      "from": "acme",
+      "to": "www",
+      "label": "TLS"
+    },
+    {
+      "id": "e7",
+      "from": "gleam",
+      "to": "store",
+      "label": "build"
+    },
+    {
+      "id": "e8",
+      "from": "store",
+      "to": "www",
+      "label": "root",
+      "role": "branch"
+    }
+  ]
+}
