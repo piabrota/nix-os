@@ -31,8 +31,8 @@
 
     machine.systemctl("restart pgx.service")
     machine.wait_for_unit("pgx.service")
-    machine.wait_for_open_port(5432)
-    assert sql("SELECT x FROM t") == "42"
+    # The port opens before recovery ends ("the database system is starting up"): retry.
+    machine.wait_until_succeeds(f"psql '{url}' -Atc 'SELECT x FROM t' | grep -x 42")
 
     # The engine's memory watchdog sees the unit's MemoryMax.
     machine.succeed("journalctl -u pgx.service | grep 'memory watchdog: armed: limit=256 MB'")
