@@ -97,7 +97,7 @@ with that version.
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
-├── site.nix, site/          the static site on piabrota.art (off until DNS points at the VPS)
+├── site.nix, site/          the static site on www.piabrota.art, HTTP and HTTPS
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
@@ -132,7 +132,6 @@ $ nix flake show
 │       ├───deploy-schema: derivation 'jsonschema-deploy-system'
 │       ├───drawing: derivation 'mu-art-check'
 │       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
-│       ├───site-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 ├───deploy: unknown
 ├───devShells

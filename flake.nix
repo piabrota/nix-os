@@ -80,12 +80,6 @@
             }
           ];
         }).config.system.build.toplevel;
-        # The system with the static site on, so site.nix and site/ build in CI before DNS points
-        # piabrota.art at the box and the site is turned on. Never deployed.
-        site-example = (nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [ ./configuration.nix { piabrota.site.enable = true; } ];
-        }).config.system.build.toplevel;
       };
 
       packages.${system} = {

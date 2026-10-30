@@ -12,7 +12,7 @@
 | `tools.nix` | Ferramentas de linha de comando leves e os limites de disco e memória. |
 | `deploy.nix` | O usuário `deploy` que o CI usa, a coleta de lixo e o limite de gerações de boot. |
 | `loco.nix` | Apps [Loco](https://loco.rs) como serviços systemd isolados, com SQLite, nginx e HTTPS. |
-| `site.nix` | O site estático de `site/` em piabrota.art. Desligado até o DNS apontar para a VPS. |
+| `site.nix` | O site estático de `site/` em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
 
 ## Do pull request à VPS
 

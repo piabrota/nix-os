@@ -48,7 +48,7 @@ ele:
 - reserva memória para o sistema no kubelet (`--system-reserved=memory=512Mi`), para um pod não
   derrubar o `sshd`.
 
-Um `checks.k8s-example` builda o sistema com a flag ligada, como o `checks.site-example`, para o
+Um `checks.k8s-example` builda o sistema com a flag ligada, como o `checks.loco-example`, para o
 CI pegar um módulo quebrado antes de alguém ligar a flag.
 
 Por que não um segundo `nixosConfiguration` ou um perfil separado no deploy-rs: a VPS tem um só

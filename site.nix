@@ -1,23 +1,31 @@
-# A static site on the apex domain: the files in site/, served by nginx with Let's Encrypt.
-# Off by default. piabrota.art (and www) must point at the box before it is turned on, or the
-# ACME order fails on the deploy and deploy-rs rolls the switch back. See docs/SITE.md.
+# A static site: the files in site/, served by nginx with Let's Encrypt on www.piabrota.art, over
+# HTTP and HTTPS. piabrota.art answers with a redirect to www, keeping the scheme and the path.
+# Every name here must point at the box before the site is turned on, or the ACME order fails on
+# the deploy and deploy-rs rolls the switch back. See docs/SITE.md.
 { config, lib, ... }:
 let
-  inherit (lib) mkEnableOption mkIf mkOption types mapAttrs' nameValuePair;
+  inherit (lib) mkEnableOption mkIf mkMerge mkOption types mapAttrs' nameValuePair genAttrs;
   cfg = config.piabrota.site;
+  # addSSL serves the same files on HTTP and HTTPS; forceSSL answers HTTP with a redirect.
+  tls = if cfg.httpsOnly then { forceSSL = true; } else { addSSL = true; };
 in
 {
   options.piabrota.site = {
     enable = mkEnableOption "the static site in site/";
     domain = mkOption {
       type = types.str;
-      default = "piabrota.art";
+      default = "www.piabrota.art";
       description = "The name nginx serves the site on. Its DNS A record must point at the box.";
     };
-    aliases = mkOption {
+    redirectFrom = mkOption {
       type = types.listOf types.str;
-      default = [ "www.piabrota.art" ];
-      description = "More names for the same site; each needs its own DNS record, ACME checks them all.";
+      default = [ "piabrota.art" ];
+      description = "Names that answer with a 301 to `domain`, same scheme and path. Each needs its own DNS record; ACME checks them all.";
+    };
+    httpsOnly = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Redirect HTTP to HTTPS. Off: the site is served on both.";
     };
     root = mkOption {
       type = types.path;
@@ -43,15 +51,21 @@ in
       recommendedGzipSettings = true;
       recommendedOptimisation = true;
       serverTokens = false;
-      virtualHosts.${cfg.domain} = {
-        serverAliases = cfg.aliases;
-        enableACME = true;
-        forceSSL = true;
-        inherit (cfg) root;
-        locations = mapAttrs'
-          (path: url: nameValuePair "= ${path}" { return = "302 ${url}"; })
-          cfg.redirects;
-      };
+      virtualHosts = mkMerge [
+        {
+          ${cfg.domain} = tls // {
+            enableACME = true;
+            inherit (cfg) root;
+            locations = mapAttrs'
+              (path: url: nameValuePair "= ${path}" { return = "302 ${url}"; })
+              cfg.redirects;
+          };
+        }
+        (genAttrs cfg.redirectFrom (_: tls // {
+          enableACME = true;
+          globalRedirect = cfg.domain;
+        }))
+      ];
     };
 
     security.acme = {

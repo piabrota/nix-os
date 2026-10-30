@@ -23,7 +23,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `tools.nix` | Light CLI tools and defaults taken from [gvolpe/nix-config](https://github.com/gvolpe/nix-config), plus the size and memory limits. See "Resource budget". |
 | `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
 | `loco.nix` | `piabrota.loco.apps.<name>`: a [Loco](https://loco.rs) app as the sandboxed service `loco-<name>` with SQLite in `/var/lib/loco-<name>`, a daily `sqlite3 .backup`, nginx with ACME, ports 80 and 443. With no app it adds nothing. `checks.loco-example` builds it with a stand-in app. See [docs/LOCO.md](docs/LOCO.md). |
-| `site.nix`, `site/` | `piabrota.site`: the files in `site/` on `piabrota.art` and `www`, nginx with ACME, `/nixos` redirected to this repository. Off (`enable = false`) until DNS points at the VPS. `checks.site-example` builds it on. See [docs/SITE.md](docs/SITE.md). |
+| `site.nix`, `site/` | `piabrota.site`: the files in `site/` on `www.piabrota.art`, over HTTP and HTTPS (`httpsOnly` turns HTTP into a redirect), nginx with ACME; `piabrota.art` redirects to `www`, and `/nixos` to this repository. On in `configuration.nix`; both names must point at the VPS. See [docs/SITE.md](docs/SITE.md). |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
 | `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size, and the total. `--by-size` sorts by size. |
