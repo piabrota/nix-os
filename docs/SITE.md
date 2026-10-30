@@ -14,10 +14,17 @@ other two:
 | B · index, at `/index/` | ![Design B, index, dark](images/site-index-desktop-dark.png) | ![Design B, index, light](images/site-index-desktop-light.png) | ![Design B, index, phone](images/site-index-mobile-dark.png) |
 | C · paths, at `/paths/` | ![Design C, paths, dark](images/site-paths-desktop-dark.png) | ![Design C, paths, light](images/site-paths-desktop-light.png) | ![Design C, paths, phone](images/site-paths-mobile-dark.png) |
 
+Every design ends with the same three sections: the **board** (each person with a GitHub pill and
+their website), the **partners** (marola.dev and ouroboric, with their logos) and the **forks**,
+a PUBLIC inventory of every fork under piabrota, as h0ffmann/h0ffmann lists its own:
+
+![Design A, the whole page, dark: the projects, then the board, the partners and the forks](images/site-fabric-full-dark.png)
+
 All three wear picasso's look in piabrota's colours, dark first and light when the visitor asks
 for it; the rules are [`site/DESIGN.md`](../site/DESIGN.md). The pages load the sister sites'
-fonts (Fjalla One, Inter, JetBrains Mono) from Google Fonts, so a visit asks Google for them; the
-system fonts stand in until they load. To change a design, the agent skills `frontend-design`,
+fonts (Fjalla One, Inter, JetBrains Mono) from Google Fonts, and the avatars and partner logos from
+GitHub (`avatars.githubusercontent.com`), so a visit asks Google and GitHub for them; the system
+fonts stand in until they load. None of them is stored here. To change a design, the agent skills `frontend-design`,
 `web-design-guidelines` and `open-pencil` are in `.claude/skills/`
 ([their README](../.claude/skills/README.md)), and `site/DESIGN.md` changes in the same PR.
 

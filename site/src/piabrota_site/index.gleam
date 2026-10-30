@@ -7,6 +7,7 @@ import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import piabrota_site/community
 import piabrota_site/data.{type Project}
 import piabrota_site/parts
 
@@ -43,6 +44,7 @@ pub fn view() -> Element(msg) {
           ]),
         ]),
       ]),
+      ..community.sections()
     ]),
     parts.foot("index"),
   ])

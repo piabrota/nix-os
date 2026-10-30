@@ -203,3 +203,39 @@ span.where { color: var(--muted); }
   html { scroll-behavior: auto; }
   .btn, .card { transition: none; }
 }
+
+/* Board, partners, forks: every design ends with them (community.gleam). */
+.people { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 14px; }
+.person { display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.portrait { flex: none; border-radius: 50%; border: 1px solid var(--border); }
+.person h4 { font-size: 1.4rem; line-height: 1.15; }
+.about { margin: 4px 0 12px; color: var(--muted); font-size: 14px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.gh {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 14px 0 6px;
+  font: 400 12.5px/1 var(--mono); color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 999px; transition: border-color .15s ease;
+}
+.gh.site { padding-left: 14px; color: var(--accent-text); }
+.gh:hover { text-decoration: none; border-color: var(--accent-text); }
+.face { border-radius: 50%; display: block; }
+
+.partners { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.partner { display: flex; align-items: center; gap: 16px; padding: 16px 20px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
+.partner:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
+.logo { flex: none; border-radius: 12px; background: var(--bg); }
+.partner span { font-size: 13px; color: var(--muted); }
+.partner b { display: block; font: 400 1.35rem/1.15 var(--display); color: var(--text); margin-bottom: 2px; }
+#partners .credit { margin-top: 18px; }
+
+.forks { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.forks li { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.forks .year { font: 400 1.15rem/1.4 var(--display); color: var(--muted); }
+.fork-name { font: 400 14px/1.4 var(--mono); color: var(--text); }
+.fork-name .owner { color: var(--muted); }
+.says { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); }
+.mark { display: inline-block; margin-right: 8px; padding: 2px 8px; font: 400 11px/1.5 var(--mono); border: 1px solid var(--border); border-radius: 999px; color: var(--text); }
+@media (max-width: 560px) {
+  .forks li { grid-template-columns: 1fr; gap: 4px; }
+  .person { flex-direction: column; }
+}

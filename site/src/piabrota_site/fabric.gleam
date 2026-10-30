@@ -6,6 +6,7 @@ import gleam/list
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import piabrota_site/community
 import piabrota_site/data.{type Project}
 import piabrota_site/parts
 
@@ -48,24 +49,7 @@ pub fn view() -> Element(msg) {
           ])
         })
       ]),
-      html.section([attribute.class("wrap")], [
-        html.aside([attribute.class("credit")], [
-          html.p([], [
-            html.strong([], [html.text("Work with us. ")]),
-            html.text(
-              "Partnership or white label requests: " <> data.contact <> ".",
-            ),
-          ]),
-          html.div([attribute.class("actions")], [
-            parts.button(parts.sponsor, "Open Collective", True),
-            parts.button(
-              "https://github.com/sponsors/h0ffmann",
-              "GitHub Sponsors",
-              False,
-            ),
-          ]),
-        ]),
-      ]),
+      ..community.sections()
     ]),
     parts.foot("fabric"),
   ])

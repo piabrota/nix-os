@@ -78,6 +78,39 @@ pub fn buttons_test() {
   })
 }
 
+// Every page lists the board with GitHub pills and websites, the partners with their logos, and
+// every fork, said PUBLIC.
+pub fn community_test() {
+  list.each(pages(), fn(p) {
+    list.each(data.people, fn(person) {
+      assert string.contains(
+        p.1,
+        "href=\"https://github.com/" <> person.login <> "\"",
+      )
+      assert string.contains(p.1, "href=\"" <> person.site <> "\"")
+    })
+    list.each(data.partners, fn(partner) {
+      assert string.contains(
+        p.1,
+        "src=\"https://avatars.githubusercontent.com/" <> partner.login,
+      )
+      assert string.contains(p.1, "href=\"" <> partner.site <> "\"")
+    })
+    assert data.forks != []
+    list.each(data.forks, fn(f) {
+      assert string.contains(
+        p.1,
+        "href=\"https://github.com/piabrota/" <> f.name <> "\"",
+      )
+      assert string.contains(
+        p.1,
+        "href=\"https://github.com/" <> f.parent <> "\"",
+      )
+    })
+    assert string.contains(p.1, "PUBLIC")
+  })
+}
+
 // Design C keeps the drawing.
 pub fn mu_test() {
   assert string.contains(page.paths(), "src=\"/mu.svg\"")

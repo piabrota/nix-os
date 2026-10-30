@@ -16,6 +16,9 @@ let
     "href: ${str (data.href p)}"
     "state: ${state.${p.state}})"
   ];
+  person = p: "Person(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, place: ${str p.place}, site: ${str p.site})";
+  partner = p: "Partner(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, site: ${str p.site})";
+  fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, description: ${str f.description})";
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
 ''
@@ -45,6 +48,18 @@ in
     )
   }
 
+  pub type Person {
+    Person(login: String, name: String, about: String, place: String, site: String)
+  }
+
+  pub type Partner {
+    Partner(login: String, name: String, about: String, site: String)
+  }
+
+  pub type Fork {
+    Fork(name: String, parent: String, started: String, forked: String, description: String)
+  }
+
   pub const name = ${str data.org.name}
 
   pub const kicker = ${str data.org.kicker}
@@ -58,4 +73,10 @@ in
   pub const lanes = ${list lane data.lanes}
 
   pub const projects = ${list project data.projects}
+
+  pub const people = ${list person data.people}
+
+  pub const partners = ${list partner data.partners}
+
+  pub const forks = ${list fork data.forks}
 ''

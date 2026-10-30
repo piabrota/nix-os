@@ -59,6 +59,23 @@ font file is stored here.
 - A: cards in a grid of the profile's lanes. B: one table, picasso's standings. C: one terminal
   on `--surface`.
 
+## Board, partners, forks
+
+Every design ends with the same three sections (`src/piabrota_site/community.gleam`):
+
+- **Board**: a card a person, with the avatar, the name (or the `@login`), the line from their
+  public GitHub profile, and two pills: the GitHub pill (avatar and `@login`, mono) and the
+  website pill (the host, in `--accent-text`, `↗`).
+- **Partners**: a card a partner, with its logo, its name in Fjalla One and its one line, linked to
+  its site. Below them, the "Work with us" box: the one place with two buttons outside the hero.
+- **Forks, a PUBLIC inventory**: every fork under piabrota, as h0ffmann/h0ffmann lists its own:
+  the year it was forked, `piabrota/<name>` in mono, then two mono marks (`forked <day>`,
+  `started <year>`), where it came from, and its description. "PUBLIC" stays in capitals: GitHub
+  keeps a fork of a public repository public, and the capitals say so.
+
+Avatars and logos load from where GitHub publishes them (`avatars.githubusercontent.com`), as the
+sister sites load their icons; none is stored here. The names and logos are their owners' marks.
+
 ## Motion
 
 One entrance, and only when the reader allows motion: the hero rises 8 px. Hover lifts a card
@@ -66,7 +83,9 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 
 ## Facts
 
-Every fact comes from `mockups/data.nix` (the org profile), through `site/data.nix`. The words the
+Every fact comes from `mockups/data.nix` (the org profile, the people's and partners' GitHub
+profiles, and `gh repo list piabrota --fork` for the forks, each list with its date), through
+`site/data.nix`. Refresh the forks there when the org forks something. The words the
 page says in its own voice (headings, button labels, the lede of C) are in `src/`.
 
 ## Before you change the look
