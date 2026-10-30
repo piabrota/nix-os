@@ -147,13 +147,14 @@ estimates rax has not yet run end to end):
   `PodCertificateRequest`, plus the `certificates.k8s.io/v1beta1` API. The `ax-server` manifest
   mounts `podCertificate` and `clusterTrustBundle` volumes. **KubeSolo has no setting for feature
   gates** (no key in `config.yaml` and no flag for it) ⚠.
-- **PostgreSQL** for AX (or `--store memory://`, which loses everything on restart).
+- **PostgreSQL** for AX (or `--store memory://`, which loses everything on restart). Here it is
+  [PGX](PGX.md), on the host, not a PostgreSQL server in a pod.
 - **Size**: 26 pods, ≈1.5 CPU and ≈2 GiB requested, 2 to 3 GiB at idle, ≈6 GB of images on the
   node; an estimated minimum of 3 CPUs and 6 GB.
 
 **That does not fit on KVM 1** (1 vCPU, 4 GB, next to KubeSolo, nginx and sshd), and KubeSolo
-cannot turn the feature gates on. What fits is **`rax-server` alone**: AX's API with the in-memory
-store, without Substrate. It starts without Substrate ("running without substrate
+cannot turn the feature gates on. What fits is **`rax-server` alone**: AX's API with its store in
+PGX on the host, without Substrate. It starts without Substrate ("running without substrate
 reconciliation", in `main.rs`) ⚠ not tested on a cluster; it accepts, lists and deletes Tasks,
 Workspaces and Models, but runs no task. It is for testing the API, the `rax` CLI and the path to
 the cluster.
@@ -166,7 +167,7 @@ the cluster.
 - `namespace.yaml`: the `ax-system` namespace and a `ResourceQuota` (at most 512 Mi and 1 CPU of
   limits, 4 pods, no NodePort and no LoadBalancer).
 - `rax-server.yaml`: a ServiceAccount, a `Role` that reads secrets **only in `ax-system`** (AX
-  uses a `ClusterRole`), the Deployment (`--addr=:8080`, `--store=memory://`, `Recreate`, user
+  uses a `ClusterRole`), the Deployment (`--addr=:8080`, the store's URL from the Secret `ax-store`, `Recreate`, user
   65534, read-only filesystem, no capabilities, seccomp `RuntimeDefault`, requests 50m/64Mi,
   limits 500m/256Mi) and a `ClusterIP` Service on 8080.
 - `kustomization.yaml`: the image is `rax-server:dev`, imported by hand; switch to a registry in
@@ -204,7 +205,20 @@ musl or distroless it would be about 80 MB smaller.
 
 ### Run, reach, remove
 
+First the store: a database in PGX, and its URL as a Secret (never in the repository). On the VPS:
+
 ```console
+pgx create ax
+pgx url ax                     # postgres://postgres:<password>@127.0.0.1:5432/ax
+ip -4 -br addr show cni0       # the host as pods see it, 10.42.0.1 ⚠ check: not seen yet
+```
+
+Then, through the tunnel, with that URL and the host's `cni0` address instead of `127.0.0.1`:
+
+```console
+kubectl create namespace ax-system
+kubectl -n ax-system create secret generic ax-store \
+  --from-literal=url='postgres://postgres:<password>@10.42.0.1:5432/ax?sslmode=disable'
 kubectl apply -k k8s/rax
 kubectl -n ax-system rollout status deploy/ax-server
 kubectl -n ax-system port-forward svc/ax-server 8080:8080   # through the API tunnel
