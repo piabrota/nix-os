@@ -1,5 +1,5 @@
 # The rax tasks, as the CronJobs apply them. The agents' image is pinned by digest: this is
-# sha-32f1e1e, piabrota/agents' main on 2026-10-31. To update, take the digest from the newest
+# sha-70f5b16, piabrota/agents' main on 2026-10-31 (piabrota/agents#2). To update, take the digest from the newest
 # `image` run's summary in piabrota/agents, here, in both tasks. Each `spec` is written as
 # `rax get task -o yaml` prints it, so run.sh can tell a changed task from an unchanged one.
 apiVersion: v1
@@ -8,17 +8,19 @@ metadata:
   name: agents-tasks
   namespace: ax-system
 data:
-  deploy-doctor.yaml: |
+  # Every agent that watches GitHub, one after the other in one pod (`agent tick`): feedback,
+  # deploy-doctor, pr-reviewer, mentions, mirror-keeper, flake-annotator.
+  ops-tick.yaml: |
     apiVersion: ax.io/v1alpha1
     kind: Task
     metadata:
-      name: deploy-doctor
+      name: ops-tick
       atespace: ops
     spec:
-      image: ghcr.io/piabrota/agents@sha256:9ef79325884982d4beca8d41efd960923164cef00cef86b121512a97bbb751e5
+      image: ghcr.io/piabrota/agents@sha256:ef5e30d20983ebdef1020dee894343039a35aa0bd14b17bf19c127f653d78228
       command:
       - /opt/agents/bin/agent
-      - deploy-doctor
+      - tick
       resources:
         limits:
           cpu: 500m
@@ -30,7 +32,7 @@ data:
       name: health-digest
       atespace: ops
     spec:
-      image: ghcr.io/piabrota/agents@sha256:9ef79325884982d4beca8d41efd960923164cef00cef86b121512a97bbb751e5
+      image: ghcr.io/piabrota/agents@sha256:ef5e30d20983ebdef1020dee894343039a35aa0bd14b17bf19c127f653d78228
       command:
       - /opt/agents/bin/agent
       - health-digest

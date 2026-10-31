@@ -88,7 +88,7 @@ k8s: kubectl for KubeSolo on this box (kubesolo.nix, docs/KUBESOLO.md)
   rax-apply           kubectl apply -k k8s/ax-tasks and k8s/rax, then wait for the rollout
   tasks ...           kubectl in ax-tasks, where task pods run
   agents-secret-refresh  write the Secret ax-tasks/agents again from its env file
-  agent-run <name>    run deploy-doctor or health-digest now (its CronJob), print what rax did
+  agent-run <name>    run ops-tick or health-digest now (its CronJob), print what rax did
   agent-logs <name>   follow the agent's last run
   snapshot-now        take the box's health snapshot now and print it
   rax-logs            rax-server's log         rax-health      GET /healthz through a port-forward

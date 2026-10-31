@@ -65,7 +65,7 @@ in
       };
       units = mkOption {
         type = types.listOf types.str;
-        default = [ "sshd" "nginx" "loco-notes" "pgx" "pgx-kube-secrets" "kubesolo" "kubesolo-secret-agents" ];
+        default = [ "sshd" "nginx" "loco-notes" "pgx" "pgx-kube-secrets" "kubesolo" "kubesolo-secret-agents.path" ];
         description = "The units whose state and restarts it lists.";
       };
     };
@@ -307,9 +307,15 @@ in
             echo "# Health snapshot, $(date -u +%Y-%m-%d) at $(date -u +%H:%M) UTC"
             echo
             echo "## System"
-            echo "deployed: $(readlink /run/current-system)"
-            echo "booted:   $(readlink /run/booted-system)"
-            echo "uptime:   $(uptime)"
+            # After a deploy the running system is always newer than the booted one; only a new
+            # kernel asks for a reboot.
+            echo "NixOS: $(cat /run/current-system/nixos-version)"
+            if [ "$(readlink /run/current-system/kernel)" = "$(readlink /run/booted-system/kernel)" ]; then
+              echo "kernel: $(uname -r), the one it booted with: no reboot needed"
+            else
+              echo "kernel: a newer one is deployed than the running $(uname -r): it takes effect at the next reboot"
+            fi
+            echo "uptime: $(uptime)"
             echo
             echo "## Memory (MiB)"
             free -m

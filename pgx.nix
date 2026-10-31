@@ -17,7 +17,7 @@ let
   pki = "/var/lib/kubesolo/pki";
   # One Secret for each piabrota.pgx.kubeSecrets entry, by server-side apply (curl, no kubectl):
   # the namespace, the database if it is missing, and the URL with the pods' address for the host.
-  applySecret = name: { namespace, database }:
+  applySecret = name: { namespace, database, key }:
     let
       ns = lib.escapeShellArg namespace;
       db = lib.escapeShellArg database;
@@ -28,8 +28,8 @@ let
       url="''${url/@127.0.0.1:/@${podHost}:}?sslmode=disable"
       printf '{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"%s"}}' ${ns} \
         | apply /api/v1/namespaces/${ns}
-      printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s","namespace":"%s"},"type":"Opaque","data":{"url":"%s"}}' \
-        ${lib.escapeShellArg name} ${ns} "$(printf %s "$url" | base64 -w 0)" \
+      printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s","namespace":"%s"},"type":"Opaque","data":{"%s":"%s"}}' \
+        ${lib.escapeShellArg name} ${ns} ${lib.escapeShellArg key} "$(printf %s "$url" | base64 -w 0)" \
         | apply /api/v1/namespaces/${ns}/secrets/${lib.escapeShellArg name}
       echo "secret ${namespace}/${name}: the URL of database ${database}"
     '';
@@ -64,12 +64,17 @@ in
         options = {
           namespace = mkOption { type = types.str; description = "The Secret's namespace, created if missing."; };
           database = mkOption { type = types.str; description = "The PGX database, created if missing."; };
+          key = mkOption {
+            type = types.str;
+            default = "url";
+            description = "The Secret's one key. A pod that takes the Secret as its environment (envFrom) gets it as a variable of this name.";
+          };
         };
       });
       default = { };
       example = { ax-store = { namespace = "ax-system"; database = "ax"; }; };
       description = ''
-        Kubernetes Secrets in KubeSolo, each with one key, `url`: the database's URL with its
+        Kubernetes Secrets in KubeSolo, each with one key (`url` unless `key` says otherwise): the database's URL with its
         password, as pods reach it. The unit `pgx-kube-secrets` writes them on the box, so the
         password never enters the repository or the store.
       '';

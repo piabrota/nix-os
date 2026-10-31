@@ -1,14 +1,14 @@
-# The schedules. deploy-doctor every 15 minutes: without a new failed deploy it exits in seconds
-# without calling Claude. health-digest once a day at 09:30 UTC (06:30 in Brasília), ten minutes
+# The schedules. ops-tick every 10 minutes: each agent in it exits in seconds without calling Claude
+# when there is nothing new (no failed deploy, pull request head, mention or feedback). health-digest once a day at 09:30 UTC (06:30 in Brasília), ten minutes
 # after the box writes its health snapshot (kubesolo.nix, piabrota.kubesolo.healthSnapshot).
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: deploy-doctor
+  name: ops-tick
   namespace: ax-system
 spec:
-  schedule: "*/15 * * * *"
+  schedule: "*/10 * * * *"
   timeZone: Etc/UTC
   # A run still going keeps its pod: rax's resume leaves a running task alone, and this skips
   # starting a second Job meanwhile.
@@ -33,7 +33,7 @@ spec:
           containers:
             - name: rax
               image: rax-server
-              command: ["sh", "/tasks/run.sh", "deploy-doctor"]
+              command: ["sh", "/tasks/run.sh", "ops-tick"]
               env:
                 - name: HOME
                   value: /tmp

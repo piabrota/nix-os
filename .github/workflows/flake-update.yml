@@ -1,0 +1,123 @@
+name: flake update
+
+# Once a week (and by hand): `nix flake update` in its own pull request, as AGENTS.md asks, with the
+# closure difference (dix) between the system before and after and the inputs that moved. It acts as
+# piabrota-ops (the repository variable OPS_BOT_APP_ID and the secret OPS_BOT_KEY): a pull request
+# opened with GITHUB_TOKEN would not run CI. The label flake-update brings piabrota/agents'
+# flake-annotator, which comments with the risk. Nothing merges by itself: a merge is a deploy.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flake-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.OPS_BOT_APP_ID }}
+          private-key: ${{ secrets.OPS_BOT_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      - name: Skip if an update is open already
+        id: open
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --label flake-update --state open --json number --jq length)
+          echo "count=$n" >>"$GITHUB_OUTPUT"
+          [ "$n" = 0 ] || echo "An update pull request is open already: review or close it first."
+
+      - if: steps.open.outputs.count == '0'
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      - if: steps.open.outputs.count == '0'
+        uses: cachix/install-nix-action@v31
+
+      # The store the deploy builds into, restored: the old system is mostly there already.
+      - if: steps.open.outputs.count == '0'
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-flake-update-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          save: false
+
+      - name: Build the system as it is, update, build again
+        if: steps.open.outputs.count == '0'
+        id: update
+        run: |
+          system=.#nixosConfigurations.piabrota.config.system.build.toplevel
+          nix build "$system" -o old --print-build-logs
+          cp flake.lock old.lock
+          nix flake update
+          if git diff --quiet flake.lock; then
+            echo "Every input is current."
+            echo "changed=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          nix build "$system" -o new --print-build-logs
+          nix run nixpkgs#dix -- old new | sed -E 's/\x1b\[[0-9;]*m//g' >dix.txt || true
+          jq -r --slurpfile old old.lock '.nodes | to_entries[] | select(.value.locked.rev)
+            | .key as $k | ($old[0].nodes[$k].locked.rev // "none") as $was
+            | select($was != .value.locked.rev)
+            | "| `\($k)` | `\($was[:12])` | `\(.value.locked.rev[:12])` |"' flake.lock >inputs.md
+          echo "changed=true" >>"$GITHUB_OUTPUT"
+
+      - name: Open the pull request as piabrota-ops
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+        run: |
+          day=$(date -u +%Y-%m-%d)
+          branch="agents/flake-update-$day"
+          id=$(gh api "users/${SLUG}%5Bbot%5D" --jq .id)
+          git config user.name "${SLUG}[bot]"
+          git config user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add flake.lock
+          git commit -m "chore(flake): update inputs, $day"
+          git push origin "$branch"
+          gh label create flake-update --repo "$GITHUB_REPOSITORY" --color 1d76db \
+            --description "A weekly nix flake update, annotated by piabrota/agents" 2>/dev/null || true
+          dix=$(head -c 50000 dix.txt)
+          {
+            echo "Atualização semanal das entradas do flake (\`nix flake update\`). O sistema foi construído antes e depois; a diferença do closure (\`dix\`) e as entradas que mudaram estão abaixo. O CI constrói de novo; o merge faz o deploy."
+            echo
+            echo "| Entrada | Antes | Depois |"
+            echo "|---|---|---|"
+            cat inputs.md
+            echo
+            echo "<details><summary>dix</summary>"
+            echo
+            echo '```text'
+            echo "$dix"
+            echo '```'
+            echo
+            echo "</details>"
+            echo
+            echo "---"
+            echo
+            echo "The weekly update of the flake's inputs (\`nix flake update\`). The system was built before and after; the closure difference (\`dix\`, above) and the inputs that moved are in this pull request. CI builds it again; the merge deploys it."
+            echo
+            echo "| Input | Before | After |"
+            echo "|---|---|---|"
+            cat inputs.md
+          } >body.md
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --label flake-update \
+            --title "chore: atualiza as entradas do flake ($day)" --body-file body.md
