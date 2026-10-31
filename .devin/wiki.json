@@ -1,0 +1,130 @@
+{
+  "repo_notes": [
+    {
+      "content": "nix-os is the NixOS configuration of ONE small, live VPS (Hostinger KVM 1: 1 vCPU, 4 GB RAM, 50 GB disk), hostname srv2108887, serving www.piabrota.art. It is a flake with one system, nixosConfigurations.piabrota, on nixos-26.05. It is not a library or a template for many machines, though docs/FORK.md explains how to fork it for another VPS."
+    },
+    {
+      "content": "A merge to main IS the deploy: .github/workflows/deploy.yml builds the system on a GitHub runner (job `build`, which saves the Nix store in GitHub's Actions cache) and deploy-rs copies it over SSH as the `deploy` user and switches the VPS (job `deploy`). If SSH does not answer within 60 seconds after the switch, or a unit fails during activation, deploy-rs rolls the VPS back ('magic rollback'). The VPS never compiles. Changes under k8s/ and to Markdown do not deploy."
+    },
+    {
+      "content": "AGENTS.md is the source of truth for rules: the file table, 'Do not break the machine' (settings that keep the VPS reachable: qemu guest agent, cloud-init, OpenSSH, GRUB on /dev/sda, the deploy user, magic rollback; never change system.stateVersion), the resource budget, and the rules for commits and PRs. Prefer its wording when documenting rules."
+    },
+    {
+      "content": "Resource budget: every change is judged by what it adds to the system closure (measured with dix) and to resident memory. No GUI, fonts or desktop services; no heavy runtimes for small jobs; no resident daemons the host does not need. tools.nix removes the NixOS manual and caps the journal; deploy.nix sets garbage collection and keeps five boot generations."
+    },
+    {
+      "content": "The repository's own modules use the option namespace piabrota.*: piabrota.site (site.nix), piabrota.loco.apps.<name> (loco.nix), piabrota.pgx (pgx.nix, with kubeSecrets), piabrota.kubesolo (kubesolo.nix, with admins, secrets, healthSnapshot, hostName). configuration.nix imports them and turns them on."
+    },
+    {
+      "content": "Secrets never live in the repository (it is public). They are files on the box written by hand: /var/lib/loco-secrets/<app>.env for Loco apps, /var/lib/kubesolo-secrets/<name>.env for Kubernetes Secrets (piabrota.kubesolo.secrets), and PGX's generated password. Units read them with EnvironmentFile or systemd LoadCredential. Document where a secret lives and how it is written, never a value."
+    },
+    {
+      "content": "KubeSolo (single-node Kubernetes, kubesolo.nix) is on. Its API is closed to the internet and reached through an SSH tunnel, or on the box with kubectl as a member of the kubesolo-admin group, or the `k8s` shell (kubesolo/k8s.bash). Workloads live in k8s/ and are applied by hand with `kubectl apply -k` (the `rax-apply` helper), never by a deploy."
+    },
+    {
+      "content": "rax (github.com/piabrota/rax) is a Rust port of Google's AX orchestrator. Here it runs without Agent Substrate, as rax-server with `--runner=pod`: each rax task runs as a plain pod in the ax-tasks namespace, its store is PGX on the host. piabrota/agents' two agents (deploy-doctor, health-digest) run as rax tasks on CronJobs in k8s/agents, post on GitHub as the App piabrota-ops, and run Claude Code headless on a subscription token."
+    },
+    {
+      "content": "PGX (pgx.dev) is a Postgres-compatible engine in Rust used for data that can be lost (rax's store). Apps keep their own data in SQLite: no PostgreSQL server or Redis for an app."
+    },
+    {
+      "content": "Documentation is bilingual: pt-BR first with an English mirror (docs/X.ptBR.md and docs/X.md; wiki/ pages Home, Arquitetura, Operacao, Maquetes with Home-EN, Architecture, Operations, Mockups). Mirrors change together. This DeepWiki should be written in English and may cite either language's file."
+    },
+    {
+      "content": "Figures and drawings are generated, never hand-edited: archify figures from docs/archify/*.json (just figure), the homepage mockups from mockups/*.nix (just mockups), the README drawing from drawings/mu.nix (just drawing). CI fails when a committed output is stale."
+    },
+    {
+      "content": "Dates in the docs are real (the repository was built in late October 2026). Measurements carry their date; numbers marked with a warning sign were not measured on the machine."
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "What nix-os is: one live VPS as a flake, what it serves, how a merge becomes a deploy, the machine's size, and where to start reading (README.md, AGENTS.md)."
+    },
+    {
+      "title": "The flake and its modules",
+      "purpose": "flake.nix's outputs (nixosConfigurations, deploy, checks, packages, devShells) and configuration.nix with the modules it imports, the piabrota.* options each defines, and how they fit together.",
+      "parent": "Overview"
+    },
+    {
+      "title": "Users, tools and the resource budget",
+      "purpose": "piabrota.nix (the h0ffmann user, SSH key only, flakes) and tools.nix (the CLI tools, documentation removed, journald caps, zram), and the resource budget rules in AGENTS.md: closure size, dix, no GUI, no heavy runtimes.",
+      "parent": "The flake and its modules"
+    },
+    {
+      "title": "Do not break the machine",
+      "purpose": "The settings that keep the VPS reachable and provisionable by Hostinger (qemu guest agent with its PATH, cloud-init, OpenSSH, GRUB, the deploy user, magic rollback, stateVersion), why each exists, and how to undo a bad switch.",
+      "parent": "Overview"
+    },
+    {
+      "title": "Deploying",
+      "purpose": "deploy.yml's build and deploy jobs, deploy-rs and magic rollback, the Nix store cache, deploy.nix (the deploy user, garbage collection, generations), the secrets the workflow uses, and docs/DEPLOY.md's one-time setup."
+    },
+    {
+      "title": "CI and checks",
+      "purpose": "ci.yml (nix flake check, nixpkgs-fmt, statix, deadnix, shellcheck, figure-check), the justfile's recipes, the flake's checks (the system, deploy-rs, loco-example, kubesolo-example, the pgx VM test, mockups, drawing), cves.yml, freeze.yml and the scripts in scripts/.",
+      "parent": "Deploying"
+    },
+    {
+      "title": "The site",
+      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, nginx with ACME, the www redirect, and site/DESIGN.md's look."
+    },
+    {
+      "title": "Mockups, figures and drawings",
+      "purpose": "mockups/ (SVG in pure Nix), the archify figures (docs/archify, vendor/archify, just figure) and drawings/ (the mu drawing from Desmos equations), and the CI checks that keep their outputs in sync.",
+      "parent": "The site"
+    },
+    {
+      "title": "Loco apps",
+      "purpose": "loco.nix's piabrota.loco.apps option (a sandboxed unit per app, SQLite, nightly backups, nginx on a domain or a path), apps.nix and the notes demo in apps/notes, and docs/LOCO.md: adding an app, secrets on the box, growing SQLite."
+    },
+    {
+      "title": "PGX",
+      "purpose": "pgx.nix and pgx/: the release packaged with autoPatchelfHook, the pgx unit and its sandbox, pg_hba.conf for loopback and pods, the pgx CLI wrapper, kubeSecrets writing database URLs as Kubernetes Secrets, the VM test, and docs/PGX.md's cost and limits."
+    },
+    {
+      "title": "KubeSolo",
+      "purpose": "kubesolo.nix and kubesolo/package.nix: the single-node Kubernetes unit, its limits and the kubelet's reservations (and why no CPU reservation on one vCPU), the closed firewall and the SSH tunnel, hostName in /etc/hosts, and docs/KUBESOLO.md's state, cost and rollback."
+    },
+    {
+      "title": "kubectl and the k8s shell",
+      "purpose": "piabrota.kubesolo.admins: the kubesolo-admin group and the copied kubeconfig, kubectl on the box, and kubesolo/k8s.bash's aliases and helpers (rax-apply, agent-run, snapshot-now).",
+      "parent": "KubeSolo"
+    },
+    {
+      "title": "Secrets and snapshots from the box",
+      "purpose": "piabrota.kubesolo.secrets (Kubernetes Secrets from root-only env files, re-applied when the file changes) and piabrota.kubesolo.healthSnapshot (the daily health snapshot as a ConfigMap): server-side apply with curl and LoadCredential.",
+      "parent": "KubeSolo"
+    },
+    {
+      "title": "rax on KubeSolo",
+      "purpose": "k8s/rax and k8s/ax-tasks: rax-server with its store in PGX, the pod runner (--runner=pod), the ax-tasks namespace, its quota and RBAC, and the images pinned by digest.",
+      "parent": "KubeSolo"
+    },
+    {
+      "title": "The agents",
+      "purpose": "k8s/agents: the deploy-doctor and health-digest tasks and their CronJobs, how run.sh applies and resumes tasks, the agents' Secret and service account, and what they post on GitHub as piabrota-ops. The agents' code is in github.com/piabrota/agents.",
+      "parent": "rax on KubeSolo"
+    },
+    {
+      "title": "Kubernetes research",
+      "purpose": "docs/KUBERNETES.md and docs/MICROK8S.md: the surveys of small Kubernetes distributions for this VPS that led to KubeSolo. Research, not configuration.",
+      "parent": "KubeSolo"
+    },
+    {
+      "title": "Working on this repository",
+      "purpose": "AGENTS.md's rules for people and agents: branches, bipr pull requests (pt-BR then English), no agent trail and its one exception, never deploying by hand, never committing secrets, the justfiles that must run on Ubuntu 24.04's just, the bilingual docs and the wiki workflow."
+    },
+    {
+      "title": "Forking for your own VPS",
+      "purpose": "docs/FORK.md: what to change in a fork, the manual steps on Hostinger and GitHub, and the first deploy.",
+      "parent": "Working on this repository"
+    },
+    {
+      "title": "Claude and MCP setup",
+      "purpose": ".claude/skills (the vendored skills and their licences), .mcp.json (mcp-nixos, OpenPencil, DeepWiki) and docs/CLAUDE_PROJECT.md.",
+      "parent": "Working on this repository"
+    }
+  ]
+}

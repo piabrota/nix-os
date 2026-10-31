@@ -2,12 +2,26 @@
   "mcpServers": {
     "nixos": {
       "command": "nix",
-      "args": ["run", "nixpkgs#mcp-nixos", "--"]
+      "args": [
+        "run",
+        "nixpkgs#mcp-nixos",
+        "--"
+      ]
     },
     "open-pencil": {
       "command": "npx",
-      "args": ["-y", "--package=@open-pencil/mcp@0.16.0", "openpencil-mcp"],
-      "env": { "OPENPENCIL_MCP_ROOT": "site/design" }
+      "args": [
+        "-y",
+        "--package=@open-pencil/mcp@0.16.0",
+        "openpencil-mcp"
+      ],
+      "env": {
+        "OPENPENCIL_MCP_ROOT": "site/design"
+      }
+    },
+    "deepwiki": {
+      "type": "http",
+      "url": "https://mcp.deepwiki.com/mcp"
     }
   }
 }
