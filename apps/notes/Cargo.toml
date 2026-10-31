@@ -7,9 +7,11 @@ edition = "2021"
 publish = false
 default-run = "notes-cli"
 
-# Shared with migration/, so both use the same Loco.
+# Shared with migration/, so both use the same Loco. Only the features the app uses: the defaults
+# add JWT auth (RSA and elliptic-curve crypto), the in-memory cache and the job workers, 35 crates
+# of compile time for nothing here.
 [workspace.dependencies]
-loco-rs = { version = "1.2" }
+loco-rs = { version = "1.2", default-features = false, features = ["cli", "with-db", "db-sqlite"] }
 
 [dependencies]
 loco-rs = { workspace = true }
