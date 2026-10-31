@@ -300,14 +300,15 @@ it `Suspended`, a non-zero exit `Failed`. The agents in piabrota/agents run this
 
 ### The agents' schedule: `k8s/agents/`
 
-The agents run by themselves. Two CronJobs in `ax-system` run the `rax` CLI, which ships in the
+The agents run by themselves. Their memory is the database `agents` in PGX, as the Secret
+`ax-tasks/agents-memory` (`AGENTS_DB_URL`, `piabrota.pgx.kubeSecrets.agents-memory`). Two CronJobs in `ax-system` run the `rax` CLI, which ships in the
 rax-server image (piabrota/rax#11), against rax-server: each makes its task if it is missing (or
 again if its `spec` in `k8s/agents/tasks.yaml` changed, such as a new image digest) and resumes it,
 and rax-server runs the task as a pod in `ax-tasks`.
 
 | Agent | Schedule | Reads | Posts |
 |---|---|---|---|
-| `deploy-doctor` | every 15 minutes | failed `deploy` runs of the last day without an issue | an issue labelled `deploy-failure`, and a comment on the deploy's pull request |
+| `ops-tick` | every 10 minutes | everything the GitHub-watching agents watch, one after the other (`agent tick`): failed deploys, pull request heads, mentions of `@piabrota-ops`, docs without their mirror, `flake-update` pull requests, feedback | an issue per failed deploy and a fix pull request when the change broke it; a review comment per pull request; replies; mirror pull requests; risk comments; lessons in memory (piabrota/agents' README) |
 | `health-digest` | 09:30 UTC (06:30 in Brasília) | the ConfigMap `ax-tasks/health-snapshot` | a comment on the `health-digest` issue |
 
 The snapshot is written on the box at 09:20 UTC by the unit `health-snapshot` (a timer;
@@ -317,7 +318,7 @@ counted, and the pods. The task pods' service account, `ax-tasks/agents`, may re
 and nothing else.
 
 In the `k8s` shell, `rax-apply` applies `k8s/ax-tasks`, `k8s/rax` and `k8s/agents`; `agent-run
-deploy-doctor` runs one now; `agent-logs deploy-doctor` follows its last run; `snapshot-now` takes
+ops-tick` runs one now; `agent-logs ops-tick` follows its last run; `snapshot-now` takes
 and prints the snapshot.
 
 ### Run, reach, remove

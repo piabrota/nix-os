@@ -3,6 +3,10 @@ name: deploy
 # Every push to main is deployed to the VPS. The runner builds the system, deploy-rs copies
 # it over SSH (the box pulls what cache.nixos.org has) and activates it. If the box cannot
 # be reached over SSH after the switch, deploy-rs rolls it back.
+#
+# Run by hand on any other branch (`gh workflow run deploy.yml --ref drill/<name>`), it only
+# builds: a drill. A broken branch then fails like a real deploy, piabrota/agents' deploy-doctor
+# diagnoses it and proposes its fix against that branch, and the VPS is never touched.
 on:
   push:
     branches: [main]
@@ -24,7 +28,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: deploy
+  group: deploy-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -57,6 +61,8 @@ jobs:
 
   deploy:
     needs: build
+    # Only main reaches the VPS; any other branch is a drill and stops at the build.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Secrets live in this environment; protect it in Settings > Environments.
     environment: prod

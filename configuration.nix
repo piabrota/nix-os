@@ -89,6 +89,8 @@
   piabrota.pgx.enable = true;
   # rax's store URL as the Secret ax-system/ax-store (k8s/rax), written on the box from `pgx url ax`.
   piabrota.pgx.kubeSecrets.ax-store = { namespace = "ax-system"; database = "ax"; };
+  # piabrota/agents' memory, as AGENTS_DB_URL in every task pod (k8s/rax: --pod-env-from-secret).
+  piabrota.pgx.kubeSecrets.agents-memory = { namespace = "ax-tasks"; database = "agents"; key = "AGENTS_DB_URL"; };
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";
