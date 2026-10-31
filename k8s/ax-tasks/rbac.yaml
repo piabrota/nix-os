@@ -1,0 +1,25 @@
+# rax-server's service account (k8s/rax, in ax-system) runs task pods here: create, read and delete
+# pods, and nothing else in this namespace (not its Secrets: pods read those through envFrom).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rax-server-pods
+  namespace: ax-tasks
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rax-server-pods
+  namespace: ax-tasks
+subjects:
+  - kind: ServiceAccount
+    name: ax-server
+    namespace: ax-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rax-server-pods

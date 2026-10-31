@@ -54,6 +54,25 @@ in
         resolver fails to look it up through systemd-resolved ("lookup <name>: Try again").
       '';
     };
+    secrets = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          namespace = mkOption { type = types.str; description = "The Secret's namespace, created if missing."; };
+          envFile = mkOption {
+            type = types.str;
+            description = "A root-only file on the box with KEY=VALUE lines (no quotes; # comments).";
+          };
+        };
+      });
+      default = { };
+      example = { agents = { namespace = "ax-tasks"; envFile = "/var/lib/kubesolo-secrets/agents.env"; }; };
+      description = ''
+        Kubernetes Secrets written from env files on the box, one key per line, so credentials
+        never enter the repository or the store. The unit `kubesolo-secret-<name>` applies the
+        Secret when the file appears or changes (a path unit watches it) and at boot; without the
+        file it does nothing.
+      '';
+    };
     admins = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -71,119 +90,186 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
-        message = "piabrota.kubesolo: the packaged binary is the x86_64 release.";
-      }
-      {
-        # Upstream: no other container engine on the host, or the networking fights.
-        assertion = !(config.virtualisation.docker.enable || config.virtualisation.podman.enable || config.virtualisation.containerd.enable);
-        message = "piabrota.kubesolo: KubeSolo runs its own containerd; turn docker, podman and containerd off.";
-      }
-    ];
+  config = lib.mkMerge [
+    (mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
+          message = "piabrota.kubesolo: the packaged binary is the x86_64 release.";
+        }
+        {
+          # Upstream: no other container engine on the host, or the networking fights.
+          assertion = !(config.virtualisation.docker.enable || config.virtualisation.podman.enable || config.virtualisation.containerd.enable);
+          message = "piabrota.kubesolo: KubeSolo runs its own containerd; turn docker, podman and containerd off.";
+        }
+      ];
 
-    piabrota.kubesolo.settings = {
-      path = mkDefault "/var/lib/kubesolo";
-      network = {
-        # Forwarding IPv6 on the host would stop it accepting router advertisements, which
-        # cloud-init's network may rely on. Pods get IPv4 only.
-        disableIPv6 = mkDefault true;
-        # On: every Service of type LoadBalancer gets the public IP, past the NixOS firewall
-        # (kube-proxy's DNAT runs before the INPUT chain). Reach pods by port-forward instead.
-        loadBalancer.enabled = mkDefault false;
+      piabrota.kubesolo.settings = {
+        path = mkDefault "/var/lib/kubesolo";
+        network = {
+          # Forwarding IPv6 on the host would stop it accepting router advertisements, which
+          # cloud-init's network may rely on. Pods get IPv4 only.
+          disableIPv6 = mkDefault true;
+          # On: every Service of type LoadBalancer gets the public IP, past the NixOS firewall
+          # (kube-proxy's DNAT runs before the INPUT chain). Reach pods by port-forward instead.
+          loadBalancer.enabled = mkDefault false;
+        };
+        kubernetes = {
+          # The SSH tunnel ends on 127.0.0.1: put it in the API server certificate.
+          apiServer.extraSANs = mkDefault [ "127.0.0.1" "localhost" ];
+          # The kubelet caps kubepods.slice at the node's memory minus this, so pods together
+          # cannot take what sshd, nginx, the Loco apps and KubeSolo itself need. No `cpu` entry:
+          # KubeSolo rounds it up to whole CPUs and, on this one-vCPU box, refuses to start ("reserves
+          # 1 of this host's 1 CPUs"). CPUQuota and CPUWeight below protect the CPU instead.
+          kubelet.systemReserved = mkDefault { memory = "1536Mi"; };
+        };
+        # One pod less; turn it on when a workload needs a PersistentVolumeClaim.
+        storage.localPath.enabled = mkDefault false;
+        d2k.enabled = mkDefault false;
+        metrics.enabled = mkDefault false;
+        logging.pprof = mkDefault false;
+        # The configuration is this module; nothing should change it over a socket.
+        api.enabled = mkDefault false;
       };
-      kubernetes = {
-        # The SSH tunnel ends on 127.0.0.1: put it in the API server certificate.
-        apiServer.extraSANs = mkDefault [ "127.0.0.1" "localhost" ];
-        # The kubelet caps kubepods.slice at the node's memory minus this, so pods together
-        # cannot take what sshd, nginx, the Loco apps and KubeSolo itself need. No `cpu` entry:
-        # KubeSolo rounds it up to whole CPUs and, on this one-vCPU box, refuses to start ("reserves
-        # 1 of this host's 1 CPUs"). CPUQuota and CPUWeight below protect the CPU instead.
-        kubelet.systemReserved = mkDefault { memory = "1536Mi"; };
+
+      # Pod networking: a bridge (cni0) with kube-proxy's iptables rules on top.
+      boot.kernelModules = [ "br_netfilter" "overlay" ];
+      boot.kernel.sysctl = {
+        "net.ipv4.ip_forward" = 1;
+        "net.bridge.bridge-nf-call-iptables" = 1;
       };
-      # One pod less; turn it on when a workload needs a PersistentVolumeClaim.
-      storage.localPath.enabled = mkDefault false;
-      d2k.enabled = mkDefault false;
-      metrics.enabled = mkDefault false;
-      logging.pprof = mkDefault false;
-      # The configuration is this module; nothing should change it over a socket.
-      api.enabled = mkDefault false;
-    };
 
-    # Pod networking: a bridge (cni0) with kube-proxy's iptables rules on top.
-    boot.kernelModules = [ "br_netfilter" "overlay" ];
-    boot.kernel.sysctl = {
-      "net.ipv4.ip_forward" = 1;
-      "net.bridge.bridge-nf-call-iptables" = 1;
-    };
+      # Pods reach the API server and CoreDNS through cni0; the NixOS firewall would drop that.
+      # Nothing is opened to the outside: 6443 (API), 10250 (kubelet) and 10443 (webhook) stay
+      # closed, and the API is reached through an SSH tunnel.
+      networking.firewall.trustedInterfaces = [ "cni0" ];
 
-    # Pods reach the API server and CoreDNS through cni0; the NixOS firewall would drop that.
-    # Nothing is opened to the outside: 6443 (API), 10250 (kubelet) and 10443 (webhook) stay
-    # closed, and the API is reached through an SSH tunnel.
-    networking.firewall.trustedInterfaces = [ "cni0" ];
+      networking.hosts = mkIf (cfg.hostName != null) { "127.0.0.1" = [ cfg.hostName ]; };
 
-    networking.hosts = mkIf (cfg.hostName != null) { "127.0.0.1" = [ cfg.hostName ]; };
-
-    users.groups.kubesolo-admin = mkIf (cfg.admins != [ ]) { members = cfg.admins; };
-    environment.systemPackages = mkIf (cfg.admins != [ ]) [ pkgs.kubectl k8sShell ];
-    # A kubeconfig in the environment that only the group can read: for everyone else kubectl says
-    # permission denied, as it would without it.
-    environment.variables.KUBECONFIG = mkIf (cfg.admins != [ ]) adminKubeconfig;
-    systemd.tmpfiles.rules = mkIf (cfg.admins != [ ]) [ "d /run/kubesolo-admin 0750 root kubesolo-admin -" ];
-    # KubeSolo writes its admin kubeconfig on the first start and when it re-signs; copy it then, and
-    # on every boot. The copy points at 127.0.0.1, which the API certificate covers (extraSANs).
-    systemd.services.kubesolo-admin-kubeconfig = mkIf (cfg.admins != [ ]) {
-      description = "KubeSolo's admin kubeconfig for the kubesolo-admin group";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "kubesolo.service" "systemd-tmpfiles-setup.service" ];
-      serviceConfig.Type = "oneshot";
-      script = ''
-        src=${cfg.settings.path}/pki/admin/admin.kubeconfig
-        [ -f "$src" ] || exit 0
-        ${pkgs.gnused}/bin/sed -E 's#(server: https://)[^:/]+(:6443)#\1127.0.0.1\2#' "$src" > ${adminKubeconfig}.new
-        chown root:kubesolo-admin ${adminKubeconfig}.new
-        chmod 0640 ${adminKubeconfig}.new
-        mv ${adminKubeconfig}.new ${adminKubeconfig}
-      '';
-    };
-    systemd.paths.kubesolo-admin-kubeconfig = mkIf (cfg.admins != [ ]) {
-      wantedBy = [ "multi-user.target" ];
-      pathConfig.PathChanged = "${cfg.settings.path}/pki/admin/admin.kubeconfig";
-    };
-
-    systemd.services.kubesolo = {
-      description = "KubeSolo, single-node Kubernetes (trial)";
-      documentation = [ "https://github.com/portainer/kubesolo" ];
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network-online.target" "firewall.service" ];
-      wants = [ "network-online.target" ];
-      # What it runs by name: iptables and nft (kube-proxy, CNI), modprobe, mount, ip.
-      path = with pkgs; [ iptables nftables kmod util-linux iproute2 ];
-      # No ProtectSystem, PrivateTmp, NoNewPrivileges, SystemCallFilter and the like: containerd
-      # and the kubelet run inside this unit and every pod inherits its namespaces and seccomp
-      # filters, and the kubelet needs mounts that propagate to the host. The limits that are
-      # safe are the resource ones below, the closed firewall and the settings that turn off
-      # what listens (load balancer, d2k, metrics, pprof, the config API).
-      serviceConfig = {
-        ExecStart = "${lib.getExe cfg.package} --config=${configFile}";
-        Restart = "always";
-        RestartSec = 5;
-        # As upstream's unit: the shims start here and manage containers in kubepods.slice; the
-        # default KillMode would kill them on a restart and duplicate every pod (upstream #197).
-        # It also means stopping the unit leaves pods running; see the rollback in the docs.
-        KillMode = "process";
-        Delegate = true;
-        OOMScoreAdjust = -500;
-        LimitNOFILE = 65535;
-        StateDirectory = "kubesolo";
-        StateDirectoryMode = "0700";
-        MemoryMax = cfg.memoryMax;
-        CPUQuota = cfg.cpuQuota;
-        CPUWeight = 50;
-        IOWeight = 50;
+      users.groups.kubesolo-admin = mkIf (cfg.admins != [ ]) { members = cfg.admins; };
+      environment.systemPackages = mkIf (cfg.admins != [ ]) [ pkgs.kubectl k8sShell ];
+      # A kubeconfig in the environment that only the group can read: for everyone else kubectl says
+      # permission denied, as it would without it.
+      environment.variables.KUBECONFIG = mkIf (cfg.admins != [ ]) adminKubeconfig;
+      systemd.tmpfiles.rules = mkIf (cfg.admins != [ ]) [ "d /run/kubesolo-admin 0750 root kubesolo-admin -" ];
+      # KubeSolo writes its admin kubeconfig on the first start and when it re-signs; copy it then, and
+      # on every boot. The copy points at 127.0.0.1, which the API certificate covers (extraSANs).
+      systemd.services.kubesolo-admin-kubeconfig = mkIf (cfg.admins != [ ]) {
+        description = "KubeSolo's admin kubeconfig for the kubesolo-admin group";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "kubesolo.service" "systemd-tmpfiles-setup.service" ];
+        serviceConfig.Type = "oneshot";
+        script = ''
+          src=${cfg.settings.path}/pki/admin/admin.kubeconfig
+          [ -f "$src" ] || exit 0
+          ${pkgs.gnused}/bin/sed -E 's#(server: https://)[^:/]+(:6443)#\1127.0.0.1\2#' "$src" > ${adminKubeconfig}.new
+          chown root:kubesolo-admin ${adminKubeconfig}.new
+          chmod 0640 ${adminKubeconfig}.new
+          mv ${adminKubeconfig}.new ${adminKubeconfig}
+        '';
       };
-    };
-  };
+      systemd.paths.kubesolo-admin-kubeconfig = mkIf (cfg.admins != [ ]) {
+        wantedBy = [ "multi-user.target" ];
+        pathConfig.PathChanged = "${cfg.settings.path}/pki/admin/admin.kubeconfig";
+      };
+
+      systemd.services.kubesolo = {
+        description = "KubeSolo, single-node Kubernetes (trial)";
+        documentation = [ "https://github.com/portainer/kubesolo" ];
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network-online.target" "firewall.service" ];
+        wants = [ "network-online.target" ];
+        # What it runs by name: iptables and nft (kube-proxy, CNI), modprobe, mount, ip.
+        path = with pkgs; [ iptables nftables kmod util-linux iproute2 ];
+        # No ProtectSystem, PrivateTmp, NoNewPrivileges, SystemCallFilter and the like: containerd
+        # and the kubelet run inside this unit and every pod inherits its namespaces and seccomp
+        # filters, and the kubelet needs mounts that propagate to the host. The limits that are
+        # safe are the resource ones below, the closed firewall and the settings that turn off
+        # what listens (load balancer, d2k, metrics, pprof, the config API).
+        serviceConfig = {
+          ExecStart = "${lib.getExe cfg.package} --config=${configFile}";
+          Restart = "always";
+          RestartSec = 5;
+          # As upstream's unit: the shims start here and manage containers in kubepods.slice; the
+          # default KillMode would kill them on a restart and duplicate every pod (upstream #197).
+          # It also means stopping the unit leaves pods running; see the rollback in the docs.
+          KillMode = "process";
+          Delegate = true;
+          OOMScoreAdjust = -500;
+          LimitNOFILE = 65535;
+          StateDirectory = "kubesolo";
+          StateDirectoryMode = "0700";
+          MemoryMax = cfg.memoryMax;
+          CPUQuota = cfg.cpuQuota;
+          CPUWeight = 50;
+          IOWeight = 50;
+        };
+      };
+    })
+
+    (mkIf cfg.enable {
+      # Each Secret by server-side apply with curl and the admin certificate, handed over by systemd
+      # with the env file (LoadCredential) to a unit with no user of its own. Not a oneshot: a deploy
+      # does not wait for it, and an API still starting is retried every 30 s. It ends once applied,
+      # so the path unit can start it again when the file changes.
+      systemd.services = lib.mapAttrs'
+        (name: s: lib.nameValuePair "kubesolo-secret-${name}" {
+          description = "Kubernetes Secret ${s.namespace}/${name} from ${s.envFile}";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "kubesolo.service" ];
+          unitConfig.ConditionPathExists = s.envFile;
+          startLimitIntervalSec = 0;
+          path = [ pkgs.curl pkgs.jq ];
+          script = ''
+            set -o pipefail
+            apply() {
+              curl -fsS -o /dev/null -X PATCH \
+                --cacert "$CREDENTIALS_DIRECTORY/ca" --cert "$CREDENTIALS_DIRECTORY/crt" --key "$CREDENTIALS_DIRECTORY/key" \
+                -H 'Content-Type: application/apply-patch+yaml' --data-binary @- \
+                "https://127.0.0.1:6443$1?fieldManager=kubesolo-secrets&force=true"
+            }
+            data=$(jq -Rn '[inputs | select(test("^\\s*(#|$)") | not)
+              | capture("^(?<k>[A-Za-z_][A-Za-z0-9_.-]*)=(?<v>.*)$") | {(.k): (.v | @base64)}] | add // {}' \
+              < "$CREDENTIALS_DIRECTORY/env")
+            jq -n --arg ns ${lib.escapeShellArg s.namespace} '{apiVersion: "v1", kind: "Namespace", metadata: {name: $ns}}' \
+              | apply /api/v1/namespaces/${lib.escapeShellArg s.namespace}
+            jq -n --arg ns ${lib.escapeShellArg s.namespace} --arg name ${lib.escapeShellArg name} --argjson data "$data" \
+              '{apiVersion: "v1", kind: "Secret", type: "Opaque", metadata: {name: $name, namespace: $ns}, data: $data}' \
+              | apply /api/v1/namespaces/${lib.escapeShellArg s.namespace}/secrets/${lib.escapeShellArg name}
+            echo "secret ${s.namespace}/${name}: $(jq -r 'keys | join(", ")' <<<"$data")"
+          '';
+          serviceConfig = {
+            DynamicUser = true;
+            Restart = "on-failure";
+            RestartSec = 30;
+            LoadCredential = [
+              "env:${s.envFile}"
+              "ca:${cfg.settings.path}/pki/ca/ca.crt"
+              "crt:${cfg.settings.path}/pki/admin/admin.crt"
+              "key:${cfg.settings.path}/pki/admin/admin.key"
+            ];
+            CapabilityBoundingSet = "";
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            ProtectKernelTunables = true;
+            ProtectKernelModules = true;
+            ProtectControlGroups = true;
+            RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+            SystemCallArchitectures = "native";
+            SystemCallFilter = [ "@system-service" "~@privileged" ];
+          };
+        })
+        cfg.secrets;
+      systemd.paths = lib.mapAttrs'
+        (name: s: lib.nameValuePair "kubesolo-secret-${name}" {
+          wantedBy = [ "multi-user.target" ];
+          pathConfig.PathChanged = s.envFile;
+        })
+        cfg.secrets;
+      systemd.tmpfiles.rules = lib.mapAttrsToList (_: s: "d ${dirOf s.envFile} 0700 root root -") cfg.secrets;
+    })
+  ];
 }

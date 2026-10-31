@@ -39,8 +39,13 @@ kubesolo-log() { journalctl -u kubesolo -f; }
 
 # rax-server (k8s/rax, docs/KUBESOLO.md "rax on KubeSolo").
 rax-apply() {
-  kubectl apply -k "$NIXOS_REPO/k8s/rax" && kubectl -n ax-system rollout status deploy/ax-server
+  kubectl apply -k "$NIXOS_REPO/k8s/ax-tasks" &&
+    kubectl apply -k "$NIXOS_REPO/k8s/rax" &&
+    kubectl -n ax-system rollout status deploy/ax-server
 }
+# The task pods (ax-tasks, --runner=pod) and the Secret they all get.
+alias tasks='kubectl --namespace ax-tasks'
+agents-secret-refresh() { sudo systemctl restart kubesolo-secret-agents; }
 rax-logs() { kubectl -n ax-system logs deploy/ax-server -f --tail=50; }
 rax-health() {
   kubectl -n ax-system port-forward svc/ax-server 18080:8080 >/dev/null &
@@ -69,7 +74,9 @@ k8s: kubectl for KubeSolo on this box (kubesolo.nix, docs/KUBESOLO.md)
   ax ...              kubectl in ax-system
 
   kubesolo-status     units, node, memory      kubesolo-log    the node's log, followed
-  rax-apply           kubectl apply -k k8s/rax, then wait for the rollout
+  rax-apply           kubectl apply -k k8s/ax-tasks and k8s/rax, then wait for the rollout
+  tasks ...           kubectl in ax-tasks, where task pods run
+  agents-secret-refresh  write the Secret ax-tasks/agents again from its env file
   rax-logs            rax-server's log         rax-health      GET /healthz through a port-forward
   ax-secret-refresh   write the Secret ax-store again (pgx-kube-secrets)
   ax-pgcheck          a pod that connects to PGX with that Secret
