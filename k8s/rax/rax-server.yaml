@@ -1,8 +1,8 @@
 # AX's test/e2e/manifests/ax-server.yaml, cut down for one small node: the store is PGX on the host
 # (pgx.nix, docs/PGX.md) instead of a PostgreSQL server, no Substrate token or pod-certificate
 # volumes (KubeSolo has no setting for those feature gates), and secrets readable only in this
-# namespace. The store's URL, with its password, is the Secret ax-store, made by hand and never
-# committed (docs/KUBESOLO.md, "rax on KubeSolo").
+# namespace. The store's URL, with its password, is the Secret ax-store, written on the box by
+# pgx.nix (piabrota.pgx.kubeSecrets) and never committed (docs/KUBESOLO.md, "rax on KubeSolo").
 apiVersion: v1
 kind: ServiceAccount
 metadata:

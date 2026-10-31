@@ -205,20 +205,15 @@ musl or distroless it would be about 80 MB smaller.
 
 ### Run, reach, remove
 
-First the store: a database in PGX, and its URL as a Secret (never in the repository). On the VPS:
+The store comes with the deploy: `piabrota.pgx.kubeSecrets.ax-store` (`configuration.nix`) has
+the unit `pgx-kube-secrets` create the database `ax` in PGX, if it is missing, and write its URL,
+with the password and the host as pods see it (`cni0`, 10.42.0.1), as the Secret
+`ax-system/ax-store`. The password stays on the box, never in the repository. Check it on the VPS
+with `systemctl status pgx-kube-secrets`.
+
+Then, through the tunnel:
 
 ```console
-pgx create ax
-pgx url ax                     # postgres://postgres:<password>@127.0.0.1:5432/ax
-ip -4 -br addr show cni0       # the host as pods see it, 10.42.0.1 ⚠ check: not seen yet
-```
-
-Then, through the tunnel, with that URL and the host's `cni0` address instead of `127.0.0.1`:
-
-```console
-kubectl create namespace ax-system
-kubectl -n ax-system create secret generic ax-store \
-  --from-literal=url='postgres://postgres:<password>@10.42.0.1:5432/ax?sslmode=disable'
 kubectl apply -k k8s/rax
 kubectl -n ax-system rollout status deploy/ax-server
 kubectl -n ax-system port-forward svc/ax-server 8080:8080   # through the API tunnel
@@ -236,6 +231,10 @@ not sit on the internet.
 kubectl delete -k k8s/rax --wait
 kubectl get ns ax-system      # NotFound
 ```
+
+That also deletes the Secret. To bring rax back without a deploy, write it again on the VPS with
+`sudo systemctl restart pgx-kube-secrets`. The PR that turns KubeSolo off removes
+`piabrota.pgx.kubeSecrets.ax-store` too, or the build stops at an assertion.
 
 ## Rollback
 

@@ -47,6 +47,11 @@ here holds stores you could rebuild, such as rax's tasks.
 - The same sandbox as the Loco apps: no capabilities, read-only system, private `/tmp` and
   devices, `@system-service` system calls.
 - Puts a `pgx` command on the path that runs the CLI as the `pgx` user.
+- For each `piabrota.pgx.kubeSecrets.<name>` (today `ax-store`), the unit `pgx-kube-secrets` creates
+  the database if it is missing and writes its URL (the password, the host `10.42.0.1`,
+  `sslmode=disable`) as a Kubernetes Secret with one key, `url`, by server-side apply with `curl`
+  and KubeSolo's admin certificate (handed over by systemd's `LoadCredential`; no `kubectl` on the
+  box). It does not hold up a deploy: it retries every 30 s until the API answers.
 
 `checks.pgx` (`pgx/test.nix`) boots a VM with the module, creates a database, connects over TCP
 with the password and without it, restarts the unit, finds the row again and reads the memory
@@ -64,8 +69,8 @@ pgx drop ax               # remove it
 ```
 
 Any PostgreSQL client or driver works with that URL. From a pod, replace `127.0.0.1` with the
-host's `cni0` address (10.42.0.1 ⚠ to check with `ip -4 -br addr show cni0`). rax on KubeSolo
-takes the URL from a Secret: [`KUBESOLO.md`](KUBESOLO.md), "Run, reach, remove".
+host's `cni0` address (10.42.0.1, seen on the box). rax on KubeSolo
+takes the URL from a Secret that `pgx.nix` writes: [`KUBESOLO.md`](KUBESOLO.md), "Run, reach, remove".
 
 **Tested with rax**: `cargo test -p rax-store` from piabrota/rax with `RAX_TEST_POSTGRES_URL`
 pointed at PGX 0.1.2, 11 of 11 (the conformance suite, concurrent schema creation, advisory
