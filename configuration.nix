@@ -77,6 +77,8 @@
   piabrota.kubesolo.enable = true;
   # The name cloud-init gives the box, so `kubectl logs` and `port-forward` work (kubesolo.nix).
   piabrota.kubesolo.hostName = "srv2108887";
+  # kubectl and the `k8s` shell without sudo (kubesolo.nix, docs/KUBESOLO.md "kubectl").
+  piabrota.kubesolo.admins = [ "h0ffmann" ];
   # PGX, the Postgres that rax's store on KubeSolo uses instead of a PostgreSQL server or Docker
   # (pgx.nix, docs/PGX.md). Not for data you keep: that stays in SQLite.
   piabrota.pgx.enable = true;

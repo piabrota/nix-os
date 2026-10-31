@@ -12,6 +12,13 @@ let
     apiVersion = "kubesolo.io/v1alpha1";
     kind = "Config";
   } // cfg.settings);
+  # The admin kubeconfig (root only) copied for the users in `admins`, with the API at 127.0.0.1.
+  adminKubeconfig = "/run/kubesolo-admin/kubeconfig";
+  k8sShell = pkgs.writeShellScriptBin "k8s" ''
+    export KUBECONFIG=${adminKubeconfig}
+    export NIXOS_REPO=''${NIXOS_REPO:-$HOME/nix-os}
+    exec ${pkgs.bashInteractive}/bin/bash --rcfile ${./kubesolo/k8s.bash} -i
+  '';
 in
 {
   options.piabrota.kubesolo = {
@@ -45,6 +52,16 @@ in
         cloud-init sets it). Written to /etc/hosts as 127.0.0.1: the API server reaches the kubelet
         by that name for `kubectl logs`, `exec` and `port-forward`, and KubeSolo's static musl
         resolver fails to look it up through systemd-resolved ("lookup <name>: Try again").
+      '';
+    };
+    admins = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "h0ffmann" ];
+      description = ''
+        Users who run kubectl without sudo. They join the group kubesolo-admin, which reads a copy of
+        the admin kubeconfig in /run/kubesolo-admin (refreshed when KubeSolo rewrites it), and get
+        kubectl and the `k8s` shell (kubesolo/k8s.bash). That copy is full access to the cluster.
       '';
     };
     cpuQuota = mkOption {
@@ -108,6 +125,33 @@ in
     networking.firewall.trustedInterfaces = [ "cni0" ];
 
     networking.hosts = mkIf (cfg.hostName != null) { "127.0.0.1" = [ cfg.hostName ]; };
+
+    users.groups.kubesolo-admin = mkIf (cfg.admins != [ ]) { members = cfg.admins; };
+    environment.systemPackages = mkIf (cfg.admins != [ ]) [ pkgs.kubectl k8sShell ];
+    # A kubeconfig in the environment that only the group can read: for everyone else kubectl says
+    # permission denied, as it would without it.
+    environment.variables.KUBECONFIG = mkIf (cfg.admins != [ ]) adminKubeconfig;
+    systemd.tmpfiles.rules = mkIf (cfg.admins != [ ]) [ "d /run/kubesolo-admin 0750 root kubesolo-admin -" ];
+    # KubeSolo writes its admin kubeconfig on the first start and when it re-signs; copy it then, and
+    # on every boot. The copy points at 127.0.0.1, which the API certificate covers (extraSANs).
+    systemd.services.kubesolo-admin-kubeconfig = mkIf (cfg.admins != [ ]) {
+      description = "KubeSolo's admin kubeconfig for the kubesolo-admin group";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "kubesolo.service" "systemd-tmpfiles-setup.service" ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        src=${cfg.settings.path}/pki/admin/admin.kubeconfig
+        [ -f "$src" ] || exit 0
+        ${pkgs.gnused}/bin/sed -E 's#(server: https://)[^:/]+(:6443)#\1127.0.0.1\2#' "$src" > ${adminKubeconfig}.new
+        chown root:kubesolo-admin ${adminKubeconfig}.new
+        chmod 0640 ${adminKubeconfig}.new
+        mv ${adminKubeconfig}.new ${adminKubeconfig}
+      '';
+    };
+    systemd.paths.kubesolo-admin-kubeconfig = mkIf (cfg.admins != [ ]) {
+      wantedBy = [ "multi-user.target" ];
+      pathConfig.PathChanged = "${cfg.settings.path}/pki/admin/admin.kubeconfig";
+    };
 
     systemd.services.kubesolo = {
       description = "KubeSolo, single-node Kubernetes (trial)";
