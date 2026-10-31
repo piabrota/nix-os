@@ -36,6 +36,17 @@ in
       default = "1G";
       description = "systemd MemoryMax of the unit: KubeSolo, containerd and the shims. Pods run in kubepods.slice; `settings.kubernetes.kubelet.systemReserved` bounds them.";
     };
+    hostName = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "srv2108887";
+      description = ''
+        The host name the box runs with (`hostname`), when it is not networking.hostName (here
+        cloud-init sets it). Written to /etc/hosts as 127.0.0.1: the API server reaches the kubelet
+        by that name for `kubectl logs`, `exec` and `port-forward`, and KubeSolo's static musl
+        resolver fails to look it up through systemd-resolved ("lookup <name>: Try again").
+      '';
+    };
     cpuQuota = mkOption {
       type = types.str;
       default = "60%";
@@ -95,6 +106,8 @@ in
     # Nothing is opened to the outside: 6443 (API), 10250 (kubelet) and 10443 (webhook) stay
     # closed, and the API is reached through an SSH tunnel.
     networking.firewall.trustedInterfaces = [ "cni0" ];
+
+    networking.hosts = mkIf (cfg.hostName != null) { "127.0.0.1" = [ cfg.hostName ]; };
 
     systemd.services.kubesolo = {
       description = "KubeSolo, single-node Kubernetes (trial)";

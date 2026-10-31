@@ -66,6 +66,12 @@ is the closed firewall, the resource limits, and the settings that turn off what
 every pod (the project's issue #197); the consequence is that stopping the unit does **not** stop
 the pods (see the rollback).
 
+`piabrota.kubesolo.hostName` puts the box's host name in `/etc/hosts` (as `127.0.0.1`). The API
+server reaches the kubelet by that name for `kubectl logs`, `exec` and `port-forward`, and
+KubeSolo's static musl resolver does not get it from systemd-resolved: without the entry those
+fail with `lookup srv2108887: Try again` (seen 2026-10-31). Here the name is cloud-init's, not
+`networking.hostName`; on a fork, set it to what `hostname` prints.
+
 `checks.kubesolo-example` builds the system with the flag on, so CI catches a broken module before
 anyone turns it on.
 

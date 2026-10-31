@@ -75,6 +75,8 @@
   # Single-node Kubernetes, on for a trial (kubesolo.nix, docs/KUBESOLO.md). Before the merge that
   # turns it on, take a Hostinger snapshot; to undo, see the rollback in docs/KUBESOLO.md.
   piabrota.kubesolo.enable = true;
+  # The name cloud-init gives the box, so `kubectl logs` and `port-forward` work (kubesolo.nix).
+  piabrota.kubesolo.hostName = "srv2108887";
   # PGX, the Postgres that rax's store on KubeSolo uses instead of a PostgreSQL server or Docker
   # (pgx.nix, docs/PGX.md). Not for data you keep: that stays in SQLite.
   piabrota.pgx.enable = true;

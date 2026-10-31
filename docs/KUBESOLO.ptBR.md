@@ -66,6 +66,12 @@ fechado, os limites de recurso e as opções que desligam o que escuta. `KillMod
 `Delegate=yes` vêm da unit do upstream: sem eles, um restart duplica todos os pods (issue #197 do
 projeto); a consequência é que parar a unit **não** para os pods (veja o rollback).
 
+`piabrota.kubesolo.hostName` põe o nome da máquina no `/etc/hosts` (como `127.0.0.1`). O API
+server chega ao kubelet por esse nome para `kubectl logs`, `exec` e `port-forward`, e o resolvedor
+musl estático do KubeSolo não o obtém do systemd-resolved: sem a entrada, eles falham com
+`lookup srv2108887: Try again` (visto em 2026-10-31). Aqui o nome é o do cloud-init, não o
+`networking.hostName`; num fork, use o que o `hostname` imprime.
+
 `checks.kubesolo-example` constrói o sistema com a flag ligada, então o CI pega um módulo quebrado
 antes de alguém ligá-lo.
 
