@@ -57,7 +57,7 @@ adds only its own package.
 
    ```console
    sudo install -d -m 700 /var/lib/loco-secrets
-   echo "JWT_SECRET=$(openssl rand -hex 32)" | sudo tee /var/lib/loco-secrets/myapp.env
+   echo "JWT_SECRET=$(od -An -tx1 -N32 /dev/urandom | tr -d ' \n')" | sudo tee /var/lib/loco-secrets/myapp.env
    sudo chmod 600 /var/lib/loco-secrets/myapp.env
    ```
 
@@ -116,7 +116,8 @@ The password and the cookie secret are on the box, never in this repository:
 
 ```console
 sudo install -d -m 700 /var/lib/loco-secrets
-printf 'NOTES_PASSWORD=%s\nNOTES_SECRET=%s\n' '<the password>' "$(openssl rand -hex 32)" \
+printf 'NOTES_PASSWORD=%s\nNOTES_SECRET=%s\n' '<the password>' \
+  "$(od -An -tx1 -N32 /dev/urandom | tr -d ' \n')" \
   | sudo tee /var/lib/loco-secrets/notes.env >/dev/null
 sudo chmod 600 /var/lib/loco-secrets/notes.env
 sudo systemctl restart loco-notes

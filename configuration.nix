@@ -78,6 +78,8 @@
   # PGX, the Postgres that rax's store on KubeSolo uses instead of a PostgreSQL server or Docker
   # (pgx.nix, docs/PGX.md). Not for data you keep: that stays in SQLite.
   piabrota.pgx.enable = true;
+  # rax's store URL as the Secret ax-system/ax-store (k8s/rax), written on the box from `pgx url ax`.
+  piabrota.pgx.kubeSecrets.ax-store = { namespace = "ax-system"; database = "ax"; };
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";
