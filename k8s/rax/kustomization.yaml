@@ -8,7 +8,9 @@ resources:
   - namespace.yaml
   - rax-server.yaml
 images:
-  # Imported into KubeSolo's containerd by hand (no registry). To pull from a registry instead,
-  # set newName (and digest) here, e.g. ghcr.io/piabrota/rax-server, once one is published.
+  # Published by piabrota/rax's CI (.github/workflows/image.yml, linux/amd64), pinned by digest:
+  # this is sha-78632e9, rax's main on 2026-10-31. To update, take the digest from the newest
+  # `image` run's summary in piabrota/rax.
   - name: rax-server
-    newTag: dev
+    newName: ghcr.io/piabrota/rax-server
+    digest: sha256:5aba431748913cdefb645f50628dad39c46c3ab478e3046075dad3fea26df3cc
