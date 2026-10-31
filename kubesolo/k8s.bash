@@ -41,8 +41,19 @@ kubesolo-log() { journalctl -u kubesolo -f; }
 rax-apply() {
   kubectl apply -k "$NIXOS_REPO/k8s/ax-tasks" &&
     kubectl apply -k "$NIXOS_REPO/k8s/rax" &&
+    kubectl apply -k "$NIXOS_REPO/k8s/agents" &&
     kubectl -n ax-system rollout status deploy/ax-server
 }
+# The agents (k8s/agents): run one now instead of waiting for its schedule, and read its last run.
+agent-run() {
+  local job
+  job="$1-now-$(date +%s)"
+  kubectl -n ax-system create job --from="cronjob/$1" "$job" &&
+    kubectl -n ax-system wait --for=condition=complete "job/$job" --timeout=120s &&
+    kubectl -n ax-system logs "job/$job"
+}
+agent-logs() { kubectl -n ax-tasks logs -f "$(kubectl -n ax-tasks get pods -l "ax.io/task=$1" -o name | tail -n 1)"; }
+snapshot-now() { sudo systemctl start health-snapshot && kubectl -n ax-tasks get configmap health-snapshot -o 'jsonpath={.data.snapshot\.md}'; }
 # The task pods (ax-tasks, --runner=pod) and the Secret they all get.
 alias tasks='kubectl --namespace ax-tasks'
 agents-secret-refresh() { sudo systemctl restart kubesolo-secret-agents; }
@@ -77,6 +88,9 @@ k8s: kubectl for KubeSolo on this box (kubesolo.nix, docs/KUBESOLO.md)
   rax-apply           kubectl apply -k k8s/ax-tasks and k8s/rax, then wait for the rollout
   tasks ...           kubectl in ax-tasks, where task pods run
   agents-secret-refresh  write the Secret ax-tasks/agents again from its env file
+  agent-run <name>    run deploy-doctor or health-digest now (its CronJob), print what rax did
+  agent-logs <name>   follow the agent's last run
+  snapshot-now        take the box's health snapshot now and print it
   rax-logs            rax-server's log         rax-health      GET /healthz through a port-forward
   ax-secret-refresh   write the Secret ax-store again (pgx-kube-secrets)
   ax-pgcheck          a pod that connects to PGX with that Secret

@@ -67,6 +67,8 @@ spec:
             - "--runner=pod"
             - "--pod-namespace=ax-tasks"
             - "--pod-env-from-secret=agents"
+            # k8s/ax-tasks/rbac.yaml: reads the health snapshot only.
+            - "--pod-service-account=agents"
             # Claude Code headless, the agents' process, needs more than the 256Mi default.
             - "--pod-memory-limit=768Mi"
             - "--pod-cpu-limit=500m"

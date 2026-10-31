@@ -82,6 +82,8 @@
   # The agents' credentials (piabrota/agents), written by hand on the box, as the Secret
   # ax-tasks/agents that every task pod gets (k8s/ax-tasks, docs/KUBESOLO.md "Agents").
   piabrota.kubesolo.secrets.agents = { namespace = "ax-tasks"; envFile = "/var/lib/kubesolo-secrets/agents.env"; };
+  # The box's daily health for the health-digest agent, as the ConfigMap ax-tasks/health-snapshot.
+  piabrota.kubesolo.healthSnapshot.enable = true;
   # PGX, the Postgres that rax's store on KubeSolo uses instead of a PostgreSQL server or Docker
   # (pgx.nix, docs/PGX.md). Not for data you keep: that stays in SQLite.
   piabrota.pgx.enable = true;

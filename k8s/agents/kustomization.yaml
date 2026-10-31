@@ -1,0 +1,16 @@
+# piabrota/agents on rax: the two tasks and the CronJobs that run them (docs/KUBESOLO.md, "Agents").
+# Each CronJob, in ax-system, runs the `rax` CLI from the rax-server image: it applies its task (an
+# unchanged one is left alone; a changed one, such as a new image, is deleted and made again) and
+# resumes it, and rax-server runs the task as a pod in ax-tasks. Apply after k8s/ax-tasks and
+# k8s/rax: `rax-apply` in the `k8s` shell does all three. No `namespace:` here: the objects name
+# their own.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - tasks.yaml
+  - cronjobs.yaml
+images:
+  # The same digest as k8s/rax: the CLI comes in the server's image (piabrota/rax#11).
+  - name: rax-server
+    newName: ghcr.io/piabrota/rax-server
+    digest: sha256:94c8fd5b2c4badb089b28e2be20164a1148810cbeef011cd6557aee44d97fedd

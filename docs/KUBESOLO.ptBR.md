@@ -294,6 +294,28 @@ piabrota/rax#10, o "pod runner" do README dele): um resume roda a task uma vez, 
 
   As chaves que os agentes leem estão no README do piabrota/agents.
 
+### O horário dos agentes: `k8s/agents/`
+
+Os agentes rodam sozinhos. Dois CronJobs no `ax-system` rodam o CLI `rax`, que vem na imagem do
+rax-server (piabrota/rax#11), contra o rax-server: cada um cria a sua task se faltar (ou de novo se o
+`spec` dela em `k8s/agents/tasks.yaml` mudou, como um digest novo da imagem) e dá resume, e o
+rax-server roda a task como um pod no `ax-tasks`.
+
+| Agente | Horário | Lê | Posta |
+|---|---|---|---|
+| `deploy-doctor` | a cada 15 minutos | os runs de `deploy` que falharam no último dia sem issue | uma issue com a label `deploy-failure`, e um comentário no PR do deploy |
+| `health-digest` | 09:30 UTC (06:30 em Brasília) | o ConfigMap `ax-tasks/health-snapshot` | um comentário na issue `health-digest` |
+
+O snapshot é gravado na máquina às 09:20 UTC pela unit `health-snapshot` (um timer;
+`piabrota.kubesolo.healthSnapshot`): o sistema implantado, uptime e carga, memória, disco, units
+com falha, o estado e os restarts das units que importam, os erros do journal do último dia
+contados, e os pods. A service account dos pods de task, `ax-tasks/agents`, lê esse ConfigMap e
+nada mais.
+
+No shell `k8s`, o `rax-apply` aplica `k8s/ax-tasks`, `k8s/rax` e `k8s/agents`; `agent-run
+deploy-doctor` roda um agora; `agent-logs deploy-doctor` acompanha o último run; `snapshot-now` tira
+e imprime o snapshot.
+
 ### Rodar, chegar, tirar
 
 O store vem com o deploy: `piabrota.pgx.kubeSecrets.ax-store` (`configuration.nix`) faz a unit

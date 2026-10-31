@@ -298,6 +298,28 @@ it `Suspended`, a non-zero exit `Failed`. The agents in piabrota/agents run this
 
   The keys the agents read are in piabrota/agents' README.
 
+### The agents' schedule: `k8s/agents/`
+
+The agents run by themselves. Two CronJobs in `ax-system` run the `rax` CLI, which ships in the
+rax-server image (piabrota/rax#11), against rax-server: each makes its task if it is missing (or
+again if its `spec` in `k8s/agents/tasks.yaml` changed, such as a new image digest) and resumes it,
+and rax-server runs the task as a pod in `ax-tasks`.
+
+| Agent | Schedule | Reads | Posts |
+|---|---|---|---|
+| `deploy-doctor` | every 15 minutes | failed `deploy` runs of the last day without an issue | an issue labelled `deploy-failure`, and a comment on the deploy's pull request |
+| `health-digest` | 09:30 UTC (06:30 in Brasília) | the ConfigMap `ax-tasks/health-snapshot` | a comment on the `health-digest` issue |
+
+The snapshot is written on the box at 09:20 UTC by the unit `health-snapshot` (a timer;
+`piabrota.kubesolo.healthSnapshot`): the deployed system, uptime and load, memory, disk, failed
+units, the state and restarts of the units that matter, the journal's errors of the last day
+counted, and the pods. The task pods' service account, `ax-tasks/agents`, may read that ConfigMap
+and nothing else.
+
+In the `k8s` shell, `rax-apply` applies `k8s/ax-tasks`, `k8s/rax` and `k8s/agents`; `agent-run
+deploy-doctor` runs one now; `agent-logs deploy-doctor` follows its last run; `snapshot-now` takes
+and prints the snapshot.
+
 ### Run, reach, remove
 
 The store comes with the deploy: `piabrota.pgx.kubeSecrets.ax-store` (`configuration.nix`) has
