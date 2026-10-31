@@ -9,7 +9,7 @@ receitas: `just`.
 |---|---|
 | Buildar o sistema sem fazer deploy | `just build` |
 | Rodar o que o CI roda | `just check` |
-| Ver quanto uma mudança acrescenta ao sistema | `nix run nixpkgs#dix -- <sistema-antigo> <sistema-novo>` |
+| Ver quanto uma mudança acrescenta ao sistema | `nix run nixpkgs#dix -- diff <sistema-antigo> <sistema-novo>` |
 | Ver CPU, RAM, disco e a geração da VPS | `just remote-specs` |
 | Listar os pacotes da VPS com o tamanho de cada um | `just remote-freeze` |
 | Relatório de CVEs do sistema | `just cves` |
