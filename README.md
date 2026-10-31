@@ -175,7 +175,7 @@ with that version.
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
 ├── docs/PGX.md            the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
+├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
 ├── .claude/skills/          vendored skills for agents, four Nix, three frontend, figure and archify (their README); .mcp.json: mcp-nixos, OpenPencil, DeepWiki

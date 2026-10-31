@@ -1,0 +1,101 @@
+name: Code smell report
+
+# A report, not a gate, as in h0ffmann/astrbot_dw_ext_br_south_disaster: fuck-u-code (pinned, its
+# checksum checked) scores the code from 0 (best) to 100 and lists the worst files, in the run
+# summary and in one comment on the pull request that each run updates. It reads the Rust (the
+# notes app) and the shell (scripts/, kubesolo/k8s.bash); not Nix or Gleam, which CI's statix,
+# deadnix and nixpkgs-fmt cover. Vendored code is left out: the skills, archify, build output.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  TOOL_URL: https://github.com/Done-0/fuck-u-code/releases/download/v1.0.0-beta.1/fuck-u-code-linux-amd64
+  TOOL_SHA256: 0b6a47e09d764133772142d8bce89e50b51f31e0bab668eb54769921d2f76a0f
+
+jobs:
+  report:
+    name: fuck-u-code report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Get the tool and check its checksum
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/fuck-u-code" "$TOOL_URL"
+          echo "$TOOL_SHA256  $RUNNER_TEMP/fuck-u-code" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/fuck-u-code"
+
+      - name: Analyze the code
+        id: analyze
+        run: |
+          "$RUNNER_TEMP/fuck-u-code" analyze . --markdown --lang en-US --top 10 \
+            --exclude "**/.claude/**" --exclude "**/vendor/**" --exclude "**/node_modules/**" \
+            --exclude "**/target/**" --exclude "**/build/**" > report.md
+          head -20 report.md
+          SCORE=$(grep -oE '[0-9]+(\.[0-9]+)? */ *100' report.md | head -1 | grep -oE '^[0-9.]+')
+          if [ -z "$SCORE" ]; then
+            echo "::error::The report has no score."
+            exit 1
+          fi
+          echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add the report to the pull request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        env:
+          SCORE: ${{ steps.analyze.outputs.score }}
+        with:
+          script: |
+            const fs = require('fs');
+            const score = Number(process.env.SCORE);
+            const levels = [
+              [5, '🌱', 'Clean'],
+              [15, '🌸', 'Good'],
+              [25, '😐', 'Acceptable'],
+              [40, '😷', 'Poor'],
+              [55, '💩', 'Code smell'],
+              [65, '🤕', 'Bad'],
+              [75, '☣️', 'Very bad'],
+              [85, '🧟', 'Serious'],
+              [95, '☢️', 'Critical'],
+              [Infinity, '🪦', 'Do not maintain'],
+            ];
+            const [, emoji, level] = levels.find(([limit]) => score < limit);
+            const advice = score < 55 ? 'You can merge.' : 'Do a refactor before you merge.';
+            const marker = '<!-- code-smell-report -->';
+            const report = fs.readFileSync('report.md', 'utf8').slice(0, 60000);
+            const body = [
+              marker,
+              `## ${emoji} Code smell report`,
+              '',
+              '| Item | Value |',
+              '| :--- | :--- |',
+              `| **Score** (0 is the best) | \`${score.toFixed(2)} / 100\` |`,
+              `| **Level** | ${level} |`,
+              `| **Advice** | ${advice} |`,
+              '',
+              `<details><summary>Full report</summary>\n\n${report}\n\n</details>`,
+              '',
+              '*The report comes from [fuck-u-code](https://github.com/Done-0/fuck-u-code). It does not stop a merge.*',
+            ].join('\n');
+            const issue = { owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number };
+            const comments = await github.paginate(github.rest.issues.listComments, issue);
+            const old = comments.find((c) => c.user.type === 'Bot' && c.body.includes(marker));
+            if (old) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: old.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...issue, body });
+            }
