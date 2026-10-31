@@ -126,11 +126,20 @@ is the closed firewall, the resource limits, and the settings that turn off what
 every pod (the project's issue #197); the consequence is that stopping the unit does **not** stop
 the pods (see the rollback).
 
-`piabrota.kubesolo.hostName` puts the box's host name in `/etc/hosts` (as `127.0.0.1`). The API
-server reaches the kubelet by that name for `kubectl logs`, `exec` and `port-forward`, and
-KubeSolo's static musl resolver does not get it from systemd-resolved: without the entry those
-fail with `lookup srv2108887: Try again` (seen 2026-10-31). Here the name is cloud-init's, not
-`networking.hostName`; on a fork, set it to what `hostname` prints.
+**The node is the host name.** KubeSolo registers the node under `hostname`, and the node's
+certificate holds that name. `configuration.nix` sets `networking.hostName = "srv2108887"`, the
+name Hostinger gave the VPS, and the `kubesolo` unit restarts when it changes. Without it NixOS
+writes `nixos` to `/etc/hostname`; cloud-init set `srv2108887` on the first boot but keeps
+`/etc/hostname` on the next ones, so the reboot of 2026-10-31 came up as `nixos`: KubeSolo
+registered a second node, `nixos`, its certificate (`system:node:srv2108887`) was refused for it,
+and both nodes went NotReady. After the fix deploys, remove the stray node once:
+`kubectl delete node nixos`. On a fork, set `networking.hostName` to the name the provider gives.
+
+The API server reaches the kubelet by that name for `kubectl logs`, `exec` and `port-forward`, and
+KubeSolo's static musl resolver does not get it from systemd-resolved; NixOS maps
+`networking.hostName` in `/etc/hosts`, which it reads first. (Without the entry those fail with
+`lookup srv2108887: Try again`, seen 2026-10-31.) `piabrota.kubesolo.hostName` adds a name for a
+box whose `hostname` is not `networking.hostName`.
 
 `checks.kubesolo-example` builds the system with the flag on, so CI catches a broken module before
 anyone turns it on.

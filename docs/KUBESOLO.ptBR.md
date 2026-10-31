@@ -126,11 +126,20 @@ fechado, os limites de recurso e as opções que desligam o que escuta. `KillMod
 `Delegate=yes` vêm da unit do upstream: sem eles, um restart duplica todos os pods (issue #197 do
 projeto); a consequência é que parar a unit **não** para os pods (veja o rollback).
 
-`piabrota.kubesolo.hostName` põe o nome da máquina no `/etc/hosts` (como `127.0.0.1`). O API
-server chega ao kubelet por esse nome para `kubectl logs`, `exec` e `port-forward`, e o resolvedor
-musl estático do KubeSolo não o obtém do systemd-resolved: sem a entrada, eles falham com
-`lookup srv2108887: Try again` (visto em 2026-10-31). Aqui o nome é o do cloud-init, não o
-`networking.hostName`; num fork, use o que o `hostname` imprime.
+**O nó é o nome da máquina.** O KubeSolo registra o nó com o `hostname`, e o certificado do nó
+guarda esse nome. O `configuration.nix` define `networking.hostName = "srv2108887"`, o nome que a
+Hostinger deu à VPS, e a unit `kubesolo` reinicia quando ele muda. Sem isso o NixOS grava `nixos`
+no `/etc/hostname`; o cloud-init pôs `srv2108887` no primeiro boot, mas respeita o `/etc/hostname`
+nos seguintes, e o reboot de 2026-10-31 voltou como `nixos`: o KubeSolo registrou um segundo nó,
+`nixos`, o certificado (`system:node:srv2108887`) foi recusado para ele, e os dois nós ficaram
+NotReady. Depois que a correção entrar, apague o nó perdido uma vez: `kubectl delete node nixos`.
+Num fork, defina `networking.hostName` com o nome que o provedor dá.
+
+O API server chega ao kubelet por esse nome para `kubectl logs`, `exec` e `port-forward`, e o
+resolvedor musl estático do KubeSolo não o obtém do systemd-resolved; o NixOS mapeia o
+`networking.hostName` no `/etc/hosts`, que ele lê antes. (Sem a entrada eles falham com
+`lookup srv2108887: Try again`, visto em 2026-10-31.) O `piabrota.kubesolo.hostName` acrescenta um
+nome para uma máquina cujo `hostname` não é o `networking.hostName`.
 
 `checks.kubesolo-example` constrói o sistema com a flag ligada, então o CI pega um módulo quebrado
 antes de alguém ligá-lo.
