@@ -9,8 +9,8 @@ resources:
   - rax-server.yaml
 images:
   # Published by piabrota/rax's CI (.github/workflows/image.yml, linux/amd64), pinned by digest:
-  # this is sha-78632e9, rax's main on 2026-10-31. To update, take the digest from the newest
-  # `image` run's summary in piabrota/rax.
+  # this is sha-458aae3, rax's main on 2026-10-31 with the pod runner (piabrota/rax#10). To update,
+  # take the digest from the newest `image` run's summary in piabrota/rax.
   - name: rax-server
     newName: ghcr.io/piabrota/rax-server
-    digest: sha256:5aba431748913cdefb645f50628dad39c46c3ab478e3046075dad3fea26df3cc
+    digest: sha256:c4dbe0967b97776938e0fe2b8557b6bd537fb48bbedf18c61879afcfd2da64f1

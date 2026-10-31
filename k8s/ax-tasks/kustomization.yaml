@@ -1,0 +1,10 @@
+# Where rax-server runs tasks as pods (--runner=pod, piabrota/rax's "pod runner"): the namespace, its
+# quota, and the Role that lets rax-server (in ax-system) manage pods here and nowhere else. The
+# Secret `agents` (the agents' credentials) is written on the box by kubesolo.nix
+# (piabrota.kubesolo.secrets), never committed. Apply it before k8s/rax: `kubectl apply -k
+# k8s/ax-tasks`. No `namespace:` here: it would move the RoleBinding's subject out of ax-system.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - rbac.yaml

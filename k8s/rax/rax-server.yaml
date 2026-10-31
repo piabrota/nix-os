@@ -3,6 +3,8 @@
 # volumes (KubeSolo has no setting for those feature gates), and secrets readable only in this
 # namespace. The store's URL, with its password, is the Secret ax-store, written on the box by
 # pgx.nix (piabrota.pgx.kubeSecrets) and never committed (docs/KUBESOLO.md, "rax on KubeSolo").
+# There is no Substrate here: tasks run as plain pods in ax-tasks (--runner=pod, k8s/ax-tasks), each
+# with the Secret `agents` as its environment.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -62,6 +64,12 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "--addr=:8080"
+            - "--runner=pod"
+            - "--pod-namespace=ax-tasks"
+            - "--pod-env-from-secret=agents"
+            # Claude Code headless, the agents' process, needs more than the 256Mi default.
+            - "--pod-memory-limit=768Mi"
+            - "--pod-cpu-limit=500m"
           env:
             - name: RUST_LOG
               value: info

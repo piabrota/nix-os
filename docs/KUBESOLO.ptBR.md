@@ -20,7 +20,7 @@ máquina rodando o KubeSolo.
 | `kubectl logs`, `exec`, `port-forward` | Funcionam, com o nome da máquina no `/etc/hosts` | 2026-10-31, #33 |
 | PGX (Postgres para os pods) | Ligado, porta 5432, banco `ax`. Um pod conecta com o Secret: `ax\|PostgreSQL 18.6 (pgrust 0.3)` | 2026-10-30, #30 |
 | Secret `ax-system/ax-store` | Gravado na máquina por todo deploy (`pgx-kube-secrets`), nunca no repositório | 2026-10-31, #31 |
-| rax-server (a API do AX, em Rust) | Imagem publicada pelo piabrota/rax#9 em `ghcr.io/piabrota/rax-server` e fixada por digest em `k8s/rax/`. ⚠ Ainda não aplicada: `kubectl apply -k k8s/rax` ("Rodar, chegar, tirar") | imagem 2026-10-31 |
+| rax-server (a API do AX, em Rust) | Rodando no `ax-system` (`/healthz` ok), com o store no PGX. Desde o piabrota/rax#10 roda as tasks como pods no `ax-tasks` (`--runner=pod`): "Agentes" | 2026-10-31 |
 | Agent Substrate, tasks | Não aqui: pedem gVisor e feature gates que o KubeSolo não liga. O rax roda só como API e store | |
 
 Medido na máquina, 2026-10-31, só com o CoreDNS rodando:
@@ -269,6 +269,30 @@ piabrota/rax#9 publica `ghcr.io/piabrota/rax-server` pela CI do rax, e o `k8s/ra
 
 A imagem do `Dockerfile.server` tem 34 MB para baixar e 135 MB no nó (medidos pelo rax); sobre
 musl ou distroless seriam uns 80 MB a menos.
+
+### Agentes: tasks como pods
+
+Não há Substrate aqui, então o rax-server roda cada task como um pod comum (`--runner=pod`,
+piabrota/rax#10, o "pod runner" do README dele): um resume roda a task uma vez, um pod que sai com
+0 a deixa `Suspended`, uma saída diferente de 0, `Failed`. Os agentes do piabrota/agents rodam assim.
+
+- `k8s/ax-tasks/`: o namespace `ax-tasks`, uma quota (dois pods, 1 CPU e 1536 Mi de limites
+  juntos: dois agentes de 768 Mi) e uma Role que deixa a service account do rax-server criar, ler e
+  apagar pods ali e nada mais. Aplique antes do `k8s/rax` (o `rax-apply` do shell `k8s` faz os dois).
+- `k8s/rax/rax-server.yaml`: `--runner=pod --pod-namespace=ax-tasks --pod-env-from-secret=agents
+  --pod-memory-limit=768Mi --pod-cpu-limit=500m`.
+- O Secret `ax-tasks/agents`: todo pod de task recebe as chaves dele como variáveis de ambiente.
+  Ele é gravado na máquina a partir de `/var/lib/kubesolo-secrets/agents.env` pela unit
+  `kubesolo-secret-agents` (`piabrota.kubesolo.secrets`), que roda quando o arquivo aparece ou
+  muda, e no boot. Nunca no repositório:
+
+  ```console
+  sudo install -m 600 /dev/null /var/lib/kubesolo-secrets/agents.env
+  sudoedit /var/lib/kubesolo-secrets/agents.env     # linhas CHAVE=VALOR, sem aspas
+  systemctl status kubesolo-secret-agents            # "secret ax-tasks/agents: <as chaves>"
+  ```
+
+  As chaves que os agentes leem estão no README do piabrota/agents.
 
 ### Rodar, chegar, tirar
 

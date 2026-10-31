@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ax-tasks
+---
+# The ceiling for every task together: two at a time at the agents' 768Mi, so tasks cannot take
+# the box from sshd, nginx and the node. A run the quota refuses stays Pending and is retried.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ax-tasks
+  namespace: ax-tasks
+spec:
+  hard:
+    pods: "2"
+    limits.cpu: "1"
+    limits.memory: 1536Mi
+    requests.cpu: "1"
+    requests.memory: 1536Mi
+    services: "0"
+    services.nodeports: "0"
+    services.loadbalancers: "0"
