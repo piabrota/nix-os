@@ -20,6 +20,8 @@ on:
 
 permissions:
   contents: read
+  # cache-nix-action deletes this workflow's older caches.
+  actions: write
 
 concurrency:
   group: deploy
@@ -33,6 +35,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
+      # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here, so
+      # without this every run compiles apps/notes (445 crates) again. The store is saved to GitHub's
+      # Actions cache after a successful run and restored at the start of the next: the newest cache
+      # of ci or deploy on this branch, else main's (a PR reads main's caches, not the reverse). Older
+      # caches of this workflow and branch are deleted after the save, to stay in the 10 GB quota.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-deploy-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-deploy-
+          purge-created: 0
+          purge-primary-key: never
 
       - name: SSH key and pinned host key
         env:

@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: read
+  # cache-nix-action deletes this workflow's older caches.
+  actions: write
 
 jobs:
   flake:
@@ -19,6 +21,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
+      # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here, so
+      # without this every run compiles apps/notes (445 crates) again. The store is saved to GitHub's
+      # Actions cache after a successful run and restored at the start of the next: the newest cache
+      # of ci or deploy on this branch, else main's (a PR reads main's caches, not the reverse). Older
+      # caches of this workflow and branch are deleted after the save, to stay in the 10 GB quota.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-ci-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-ci-
+          purge-created: 0
+          purge-primary-key: never
       - run: nix flake check --no-update-lock-file --print-build-logs
       - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix kubesolo.nix kubesolo/package.nix pgx.nix pgx/package.nix pgx/test.nix site/default.nix site/data.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
       - run: nix run nixpkgs#statix -- check .
