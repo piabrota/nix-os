@@ -316,6 +316,11 @@ rax-server roda a task como um pod no `ax-tasks`.
 | `ops-tick` | a cada 10 minutos | tudo o que os agentes do GitHub olham, um depois do outro (`agent tick`): deploys que falharam, heads de pull requests, menções a `@piabrota-ops`, docs sem o espelho, pull requests `flake-update`, feedback | uma issue por deploy que falhou e um pull request de correção quando a mudança o quebrou; um comentário de revisão por pull request; respostas; pull requests de espelho; comentários de risco; lições na memória (README do piabrota/agents) |
 | `health-digest` | 09:30 UTC (06:30 em Brasília) | o ConfigMap `ax-tasks/health-snapshot` | um comentário na issue `health-digest` |
 
+Um deploy que falha também é diagnosticado fora da máquina: o `.github/workflows/deploy-doctor.yml`
+roda o mesmo deploy-doctor num runner do GitHub quando o `deploy` falha, então uma falha que derruba
+o KubeSolo, e com ele este horário, ainda ganha a sua issue. Cada run é reportado uma vez, pelo
+doctor que chegar primeiro.
+
 O snapshot é gravado na máquina às 09:20 UTC pela unit `health-snapshot` (um timer;
 `piabrota.kubesolo.healthSnapshot`): o sistema implantado, uptime e carga, memória, disco, units
 com falha, o estado e os restarts das units que importam, os erros do journal do último dia

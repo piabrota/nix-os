@@ -1,6 +1,7 @@
 # The rax tasks, as the CronJobs apply them. The agents' image is pinned by digest: this is
 # sha-70f5b16, piabrota/agents' main on 2026-10-31 (piabrota/agents#2). To update, take the digest from the newest
-# `image` run's summary in piabrota/agents, here, in both tasks. Each `spec` is written as
+# `image` run's summary in piabrota/agents, here, in both tasks, and in
+# .github/workflows/deploy-doctor.yml. Each `spec` is written as
 # `rax get task -o yaml` prints it, so run.sh can tell a changed task from an unchanged one.
 apiVersion: v1
 kind: ConfigMap

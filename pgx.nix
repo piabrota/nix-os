@@ -171,6 +171,22 @@ in
             -H 'Content-Type: application/apply-patch+yaml' --data-binary @- \
             "https://127.0.0.1:6443$1?fieldManager=pgx&force=true"
         }
+        # A deploy that restarts KubeSolo leaves its API down for a while. Wait for it instead of
+        # failing: a unit that fails while the system switches makes deploy-rs roll the deploy back
+        # (2026-10-31, #47). After 10 minutes, give up quietly; the next start applies.
+        up=
+        for _ in $(seq 60); do
+          if curl -fsS -o /dev/null --cacert "$CREDENTIALS_DIRECTORY/ca" --cert "$CREDENTIALS_DIRECTORY/crt" \
+            --key "$CREDENTIALS_DIRECTORY/key" https://127.0.0.1:6443/readyz; then
+            up=1
+            break
+          fi
+          sleep 10
+        done
+        if [ -z "$up" ]; then
+          echo "the Kubernetes API did not answer in 10 minutes: nothing applied"
+          exit 0
+        fi
       '' + lib.concatStrings (lib.mapAttrsToList applySecret cfg.kubeSecrets);
       serviceConfig = {
         User = "pgx";
