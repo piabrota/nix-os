@@ -1,0 +1,38 @@
+name: deploy doctor
+
+# piabrota/agents' deploy-doctor, on a GitHub runner, as soon as a deploy fails. The VPS runs the
+# same agent every 10 minutes (k8s/agents), but inside KubeSolo: when the failure is the cluster
+# itself, as after the reboot of 2026-10-31, the VPS's doctor cannot start. This one needs nothing
+# from the VPS. Both report a run once (the issue's title names it), so they never post twice.
+#
+# It needs the repository secret CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`) besides the App's
+# OPS_BOT_APP_ID and OPS_BOT_KEY; without the token it warns and leaves the run to the VPS.
+on:
+  workflow_run:
+    workflows: [deploy]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  diagnose:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run deploy-doctor
+        env:
+          # The image k8s/agents/tasks.yaml pins: keep the two digests the same.
+          IMAGE: ghcr.io/piabrota/agents@sha256:ef5e30d20983ebdef1020dee894343039a35aa0bd14b17bf19c127f653d78228
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_APP_ID: ${{ vars.OPS_BOT_APP_ID }}
+          OPS_BOT_KEY: ${{ secrets.OPS_BOT_KEY }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] || [ -z "$GH_APP_ID" ] || [ -z "$OPS_BOT_KEY" ]; then
+            echo "::warning::CLAUDE_CODE_OAUTH_TOKEN, OPS_BOT_APP_ID or OPS_BOT_KEY is missing: the VPS's doctor will diagnose this run when it can."
+            exit 0
+          fi
+          GH_APP_PRIVATE_KEY_B64=$(printf '%s' "$OPS_BOT_KEY" | base64 -w0)
+          export GH_APP_PRIVATE_KEY_B64
+          # Only the last hours: the run that triggered this, and any the VPS missed meanwhile.
+          docker run --rm -e CLAUDE_CODE_OAUTH_TOKEN -e GH_APP_ID -e GH_APP_PRIVATE_KEY_B64 \
+            -e REPO="$GITHUB_REPOSITORY" -e LOOKBACK_HOURS=6 "$IMAGE" deploy-doctor

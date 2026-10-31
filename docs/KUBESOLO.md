@@ -320,6 +320,11 @@ and rax-server runs the task as a pod in `ax-tasks`.
 | `ops-tick` | every 10 minutes | everything the GitHub-watching agents watch, one after the other (`agent tick`): failed deploys, pull request heads, mentions of `@piabrota-ops`, docs without their mirror, `flake-update` pull requests, feedback | an issue per failed deploy and a fix pull request when the change broke it; a review comment per pull request; replies; mirror pull requests; risk comments; lessons in memory (piabrota/agents' README) |
 | `health-digest` | 09:30 UTC (06:30 in Brasília) | the ConfigMap `ax-tasks/health-snapshot` | a comment on the `health-digest` issue |
 
+A failed deploy is also diagnosed off the box: `.github/workflows/deploy-doctor.yml` runs the
+same deploy-doctor on a GitHub runner when `deploy` fails, so a failure that takes KubeSolo down,
+and with it this schedule, still gets its issue. Each run is reported once, whichever doctor is
+first.
+
 The snapshot is written on the box at 09:20 UTC by the unit `health-snapshot` (a timer;
 `piabrota.kubesolo.healthSnapshot`): the deployed system, uptime and load, memory, disk, failed
 units, the state and restarts of the units that matter, the journal's errors of the last day
