@@ -3,12 +3,66 @@
 [Português](KUBESOLO.ptBR.md) (the first version; this page is its English mirror)
 
 How to try [KubeSolo](https://github.com/portainer/kubesolo) on this VPS, and how to go back. The
-module is `kubesolo.nix`, behind `piabrota.kubesolo.enable`, which is **off**: off, the built
-system is identical to the one before (the same store path). The design follows
+module is `kubesolo.nix`, behind `piabrota.kubesolo.enable`, off by default (off, the built
+system is identical to the one before: the same store path) and **on** in `configuration.nix`
+since 2026-10-30. The design follows
 [`MICROK8S.md`](MICROK8S.md): the node lives in this repository, the workloads live in `k8s/` and
 go in through an SSH tunnel, never through a system deploy.
 
-Written on 2026-10-30. ⚠ marks what was not checked on a machine running KubeSolo.
+Written on 2026-10-30, the state brought up to date on 2026-10-31. ⚠ marks what was not checked
+on a machine running KubeSolo.
+
+## Where it stands (2026-10-31)
+
+| Piece | State | Since |
+|---|---|---|
+| KubeSolo v1.2.3 | **On**, node `srv2108887` Ready. The first deploy (#27) failed on the CPU reservation and rolled back; #28 fixed it | 2026-10-30, #28 |
+| `kubectl logs`, `exec`, `port-forward` | Work, once the host name is in `/etc/hosts` | 2026-10-31, #33 |
+| PGX (Postgres for pods) | On, port 5432, database `ax`. A pod connects with the Secret: `ax\|PostgreSQL 18.6 (pgrust 0.3)` | 2026-10-30, #30 |
+| Secret `ax-system/ax-store` | Written on the box by every deploy (`pgx-kube-secrets`), never in the repository | 2026-10-31, #31 |
+| rax-server (AX's API, in Rust) | **Not running**: its image is not published yet. piabrota/rax#9 publishes it to `ghcr.io/piabrota/rax-server`; then `k8s/rax/kustomization.yaml` pins its digest and `kubectl apply -k k8s/rax` runs it | ⚠ pending |
+| Agent Substrate, tasks | Not here: they need gVisor and feature gates KubeSolo does not set. rax runs as an API and a store only | |
+
+Measured on the box, 2026-10-31, with only CoreDNS running:
+
+| | Value |
+|---|---|
+| RAM, whole system | 965 MiB used of 3.8 GiB (2.9 GiB available) |
+| `kubesolo` unit | 278 MiB of process memory (`anon`), plus 325 MiB of page cache the kernel can take back; `MemoryMax=1G` |
+| Pods (`kubepods.slice`) | 22 MiB (CoreDNS) |
+| `pgx` unit | 50 MiB |
+| Disk | `/var/lib/kubesolo` 726 MiB, `/var/lib/pgx` 63 MiB; `/` 5.1 GiB used of 50 GiB |
+| CPU | Load 0.00 idle |
+
+## kubectl
+
+The admin kubeconfig is `/var/lib/kubesolo/pki/admin/admin.kubeconfig`, readable by root only.
+It is full access to the cluster: keep any copy of it at mode 600.
+
+**On the VPS**, simplest. `kubectl` is not installed; `nix shell` fetches it for the session:
+
+```console
+nix shell nixpkgs#kubectl
+install -d -m 700 ~/.kube
+sudo install -m 600 -o "$USER" /var/lib/kubesolo/pki/admin/admin.kubeconfig ~/.kube/config
+kubectl get nodes
+```
+
+Copy it again if KubeSolo ever re-signs its certificates. Without the copy, use
+`sudo -E kubectl` with `KUBECONFIG` set to the file above.
+
+**From your computer**, through an SSH tunnel: the next section. The API listens on every address
+(`*:6443`), and the firewall keeps 6443 closed, so the tunnel is the only way in from outside.
+
+Useful commands:
+
+```console
+kubectl get pods -A                                  # everything running
+kubectl -n ax-system get secret ax-store             # the store Secret (never print .data)
+kubectl -n kube-system logs deploy/coredns --tail=5  # logs
+sudo systemctl restart pgx-kube-secrets              # write the Secret again
+journalctl -u kubesolo -f                            # the node's own log
+```
 
 ## What it is
 
@@ -39,8 +93,8 @@ CNI plugins during the build. Being static, it needs no `patchelf` and no glibc.
 | Closure, flag off | **0**: `system.build.toplevel` is the same path as before (`w0mb8vfj…`), evaluated here |
 | Closure, flag on | **≈ +191 MiB**: the binary (188.3 MiB) plus `nftables` and the libraries of it the system does not have yet (jansson, gmp, libedit: at most 2.4 MiB, from `nix path-info` against cache.nixos.org). `iptables`, `kmod`, `util-linux` and `iproute2` are in the system already ⚠ `dix` did not run: the system is x86_64 and the machine here does not build x86_64 |
 | Download | The binary is not on cache.nixos.org: the runner downloads the `.tar.gz` (86 MB) from GitHub, and deploy-rs copies the 188 MiB from the runner to the VPS once per version. Nothing is compiled anywhere |
-| Disk, in use | `/var/lib/kubesolo` with containerd, the images and the database ⚠ size not measured |
-| RAM | KubeSolo, containerd and the shims stay in the `kubesolo` unit, capped at `MemoryMax=1G`. Pods live in `kubepods.slice`, which the kubelet caps at the node's memory minus `systemReserved` (1536 Mi here): all pods together stay under about 2.2 GiB ⚠ |
+| Disk, in use | `/var/lib/kubesolo` with containerd, the images and the database: 726 MiB with CoreDNS only (2026-10-31) |
+| RAM | KubeSolo, containerd and the shims stay in the `kubesolo` unit, capped at `MemoryMax=1G`. Pods live in `kubepods.slice`, which the kubelet caps at the node's memory minus `systemReserved` (1536 Mi here): all pods together stay under about 2.2 GiB. Measured: 278 MiB for the unit's processes, 22 MiB of pods ("Where it stands") |
 | CPU | `CPUQuota=60%` and `CPUWeight=50` on the unit. sshd and nginx share the one vCPU at normal weight. No `systemReserved.cpu`: KubeSolo rounds it up to whole CPUs and, with one vCPU, exits at start (`--system-reserved cpu=300m reserves 1 of this host's 1 CPUs, leaving none for workloads`; this stopped the first deploy, 2026-10-30, and deploy-rs rolled it back) |
 
 ## What the module does when on
@@ -76,6 +130,8 @@ fail with `lookup srv2108887: Try again` (seen 2026-10-31). Here the name is clo
 anyone turns it on.
 
 ## Turning it on
+
+Done on 2026-10-30 (#27, then #28). The steps, for a fork or after turning it off:
 
 1. **Take a Hostinger snapshot first** (rollback step (d)).
 2. Open a one-line PR in `configuration.nix`, next to `piabrota.site.enable`:
@@ -114,8 +170,8 @@ export KUBECONFIG=~/.kube/piabrota.yaml
 kubectl get nodes
 ```
 
-⚠ If the API does not listen on 127.0.0.1 (only on the node IP), use `-L 6443:<vps-ip>:6443` in
-the tunnel; the certificate covers the node IP and, with this module's config, `127.0.0.1`.
+The API listens on every address (`*:6443`, seen on the box), and its certificate covers
+`127.0.0.1` through this module's config, so the tunnel above works as is.
 
 ## A first workload
 
@@ -186,8 +242,8 @@ PR adds no workflow that applies the manifests. When there is one, it follows `M
 
 ### The image
 
-The VPS compiles nothing, so the image arrives built. Today rax publishes no image and does not
-package `rax-server` in Nix. Two paths:
+The VPS compiles nothing, so the image arrives built. The path taken is the second one below:
+piabrota/rax#9 publishes `ghcr.io/piabrota/rax-server` from rax's CI. Two paths:
 
 1. **Build elsewhere and import** (no registry). On an x86_64 machine with Docker, in a rax
    checkout:
@@ -204,7 +260,8 @@ package `rax-server` in Nix. Two paths:
 2. **Publish to a registry**: a workflow in the rax repository that builds the image (from the
    Dockerfile, or in Nix with `dockerTools.buildLayeredImage` over a `rustPlatform.buildRustPackage`,
    which rax does not have yet) and pushes it to `ghcr.io/piabrota/rax-server`. Then
-   `k8s/rax/kustomization.yaml` gets `newName` and `digest`. ⚠ It does not exist yet.
+   `k8s/rax/kustomization.yaml` gets `newName` and `digest`. The workflow is piabrota/rax#9 (from the
+   Dockerfile, linux/amd64); ⚠ no image is published yet.
 
 The `Dockerfile.server` image is 34 MB to download and 135 MB on the node (measured by rax); on
 musl or distroless it would be about 80 MB smaller.
