@@ -37,32 +37,38 @@ Medido na máquina, 2026-10-31, só com o CoreDNS rodando:
 ## kubectl
 
 O kubeconfig de admin é `/var/lib/kubesolo/pki/admin/admin.kubeconfig`, que só o root lê. Ele dá
-acesso total ao cluster: guarde qualquer cópia com modo 600.
+acesso total ao cluster.
 
-**Na VPS**, o mais simples. O `kubectl` não vem instalado; o `nix shell` o traz para a sessão:
+**Na VPS**, como um dos `piabrota.kubesolo.admins` (`h0ffmann` aqui): o `kubectl` vem instalado e
+funciona sem `sudo`. Esses usuários estão no grupo `kubesolo-admin`, que lê uma cópia do kubeconfig
+de admin em `/run/kubesolo-admin/kubeconfig` (modo 0640, a API em `127.0.0.1`), e o `KUBECONFIG`
+aponta para ela em todo shell de login. A unit `kubesolo-admin-kubeconfig` grava a cópia no boot e
+de novo sempre que o KubeSolo reescreve o original (uma path unit o vigia). Um membro novo do grupo
+entra de novo para ganhá-lo. Um `~/.kube/config` antigo não é mais usado; apague.
 
 ```console
-nix shell nixpkgs#kubectl
-install -d -m 700 ~/.kube
-sudo install -m 600 -o "$USER" /var/lib/kubesolo/pki/admin/admin.kubeconfig ~/.kube/config
 kubectl get nodes
 ```
 
-Copie de novo se o KubeSolo um dia reassinar os certificados. Sem a cópia, use `sudo -E kubectl`
-com o `KUBECONFIG` apontando para o arquivo acima.
+**O shell `k8s`**: `k8s` abre um bash com o completion do kubectl, aliases curtos e as tarefas desta
+máquina (`kubesolo/k8s.bash`); o prompt começa com `k8s` e o namespace que o `kn` definiu.
+O `k8s-help` os lista:
+
+| | |
+|---|---|
+| `k …` | `kubectl`, no namespace que `kn <ns>` define (`kn` sozinho limpa); o completion funciona |
+| `kg` `kd` `kl` `klf` | get, describe, logs, `logs -f --tail=100` |
+| `kx` `kpf` `ka` `kdel` | `exec -it`, port-forward, apply, delete |
+| `kgp` `kga` `kev` | pods, tudo, eventos, em todos os namespaces |
+| `ax …` | `kubectl` no `ax-system` |
+| `kubesolo-status`, `kubesolo-log` | as units, o nó e a memória; o log do nó, acompanhado |
+| `rax-apply`, `rax-logs`, `rax-health` | `kubectl apply -k k8s/rax` e espera; o log dele; `GET /healthz` por um port-forward |
+| `ax-secret-refresh`, `ax-pgcheck` | grava o Secret `ax-store` de novo; um pod que conecta ao PGX com ele |
+
+O `rax-apply` lê o `k8s/rax` de `$NIXOS_REPO`, por padrão `~/nix-os`.
 
 **Do seu computador**, por um túnel SSH: a seção seguinte. A API escuta em todos os endereços
 (`*:6443`), e o firewall mantém a 6443 fechada, então o túnel é a única entrada de fora.
-
-Comandos úteis:
-
-```console
-kubectl get pods -A                                  # tudo o que roda
-kubectl -n ax-system get secret ax-store             # o Secret do store (nunca imprima o .data)
-kubectl -n kube-system logs deploy/coredns --tail=5  # logs
-sudo systemctl restart pgx-kube-secrets              # grava o Secret de novo
-journalctl -u kubesolo -f                            # o log do próprio nó
-```
 
 ## O que é
 
