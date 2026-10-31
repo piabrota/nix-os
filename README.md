@@ -10,6 +10,7 @@
 [![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/piabrota/nix-os)
 
 </div>
 
@@ -177,7 +178,8 @@ with that version.
 ├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
-├── .claude/skills/          vendored skills for agents, four Nix, three frontend, figure and archify (their README); .mcp.json: mcp-nixos, OpenPencil
+├── .claude/skills/          vendored skills for agents, four Nix, three frontend, figure and archify (their README); .mcp.json: mcp-nixos, OpenPencil, DeepWiki
+├── .devin/wiki.json         how DeepWiki writes this repository's wiki (deepwiki.com/piabrota/nix-os); scripts/deepwiki-check.jq checks it in CI
 ├── justfile
 └── AGENTS.md                the rules for AI agents working here
 ```

@@ -18,6 +18,7 @@ check:
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh kubesolo/k8s.bash
+    nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
 
 # CVE report of the system closure (vulnix against the NVD; a report, many matches are false)
 cves: build
