@@ -51,6 +51,11 @@
   services.cloud-init.settings.ssh.emit_keys_to_console = false;
   # cloud-init owns IP assignment, so DHCP must be off (otherwise it races cloud-init).
   networking.useDHCP = lib.mkForce false;
+  # The name Hostinger gave the VPS. Without it NixOS writes `nixos` to /etc/hostname, and cloud-init,
+  # which set srv2108887 on the first boot, keeps whatever /etc/hostname says on the next ones
+  # ("assuming user maintained hostname"): the 2026-10-31 reboot came up as `nixos`, and KubeSolo,
+  # whose node and certificate are srv2108887's, stopped (docs/KUBESOLO.md). This keeps the two in step.
+  networking.hostName = "srv2108887";
 
   # hVPS drives provisioning by running bare-name commands (sh, cloud-init, chpasswd, ...)
   # through the guest agent, which resolves them on the *agent's* PATH. NixOS gives services a
@@ -75,8 +80,6 @@
   # Single-node Kubernetes, on for a trial (kubesolo.nix, docs/KUBESOLO.md). Before the merge that
   # turns it on, take a Hostinger snapshot; to undo, see the rollback in docs/KUBESOLO.md.
   piabrota.kubesolo.enable = true;
-  # The name cloud-init gives the box, so `kubectl logs` and `port-forward` work (kubesolo.nix).
-  piabrota.kubesolo.hostName = "srv2108887";
   # kubectl and the `k8s` shell without sudo (kubesolo.nix, docs/KUBESOLO.md "kubectl").
   piabrota.kubesolo.admins = [ "h0ffmann" ];
   # The agents' credentials (piabrota/agents), written by hand on the box, as the Secret

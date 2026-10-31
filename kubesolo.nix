@@ -48,8 +48,8 @@ in
       default = null;
       example = "srv2108887";
       description = ''
-        The host name the box runs with (`hostname`), when it is not networking.hostName (here
-        cloud-init sets it). Written to /etc/hosts as 127.0.0.1: the API server reaches the kubelet
+        The host name the box runs with (`hostname`), when it is not networking.hostName (NixOS maps
+        that one in /etc/hosts itself). Written to /etc/hosts as 127.0.0.1: the API server reaches the kubelet
         by that name for `kubectl logs`, `exec` and `port-forward`, and KubeSolo's static musl
         resolver fails to look it up through systemd-resolved ("lookup <name>: Try again").
       '';
@@ -190,6 +190,8 @@ in
 
       systemd.services.kubesolo = {
         description = "KubeSolo, single-node Kubernetes (trial)";
+        # The node is named after the host: a new name needs KubeSolo started again to take it.
+        restartTriggers = [ config.networking.hostName ];
         documentation = [ "https://github.com/portainer/kubesolo" ];
         wantedBy = [ "multi-user.target" ];
         after = [ "network-online.target" "firewall.service" ];
