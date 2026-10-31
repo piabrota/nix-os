@@ -9,8 +9,9 @@ resources:
   - rax-server.yaml
 images:
   # Published by piabrota/rax's CI (.github/workflows/image.yml, linux/amd64), pinned by digest:
-  # this is sha-458aae3, rax's main on 2026-10-31 with the pod runner (piabrota/rax#10). To update,
-  # take the digest from the newest `image` run's summary in piabrota/rax.
+  # this is sha-2037585, rax's main on 2026-10-31: the pod runner (piabrota/rax#10) and the `rax`
+  # CLI in the image (piabrota/rax#11), which k8s/agents' CronJobs run. To update, take the digest
+  # from the newest `image` run's summary in piabrota/rax, here and in k8s/agents.
   - name: rax-server
     newName: ghcr.io/piabrota/rax-server
-    digest: sha256:c4dbe0967b97776938e0fe2b8557b6bd537fb48bbedf18c61879afcfd2da64f1
+    digest: sha256:94c8fd5b2c4badb089b28e2be20164a1148810cbeef011cd6557aee44d97fedd

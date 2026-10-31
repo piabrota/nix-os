@@ -1,0 +1,56 @@
+# The rax tasks, as the CronJobs apply them. The agents' image is pinned by digest: this is
+# sha-32f1e1e, piabrota/agents' main on 2026-10-31. To update, take the digest from the newest
+# `image` run's summary in piabrota/agents, here, in both tasks. Each `spec` is written as
+# `rax get task -o yaml` prints it, so run.sh can tell a changed task from an unchanged one.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agents-tasks
+  namespace: ax-system
+data:
+  deploy-doctor.yaml: |
+    apiVersion: ax.io/v1alpha1
+    kind: Task
+    metadata:
+      name: deploy-doctor
+      atespace: ops
+    spec:
+      image: ghcr.io/piabrota/agents@sha256:9ef79325884982d4beca8d41efd960923164cef00cef86b121512a97bbb751e5
+      command:
+      - /opt/agents/bin/agent
+      - deploy-doctor
+      resources:
+        limits:
+          cpu: 500m
+          memory: 768Mi
+  health-digest.yaml: |
+    apiVersion: ax.io/v1alpha1
+    kind: Task
+    metadata:
+      name: health-digest
+      atespace: ops
+    spec:
+      image: ghcr.io/piabrota/agents@sha256:9ef79325884982d4beca8d41efd960923164cef00cef86b121512a97bbb751e5
+      command:
+      - /opt/agents/bin/agent
+      - health-digest
+      resources:
+        limits:
+          cpu: 500m
+          memory: 768Mi
+  # One run: make the task if it is missing, or again if its spec here changed (rax tasks cannot be
+  # changed, and `rax apply` refuses an existing one even unchanged), then resume it.
+  run.sh: |
+    set -eu
+    rax() { command rax --server ax-server.ax-system.svc:8080 -a ops "$@"; }
+    spec() { sed -n '/^spec:/,/^status:/p' | sed '/^status:/d'; }
+    want=$(spec <"/tasks/$1.yaml")
+    have=$(rax get task "$1" -o yaml 2>/dev/null | spec) || have=
+    if [ -z "$have" ]; then
+      rax apply -f "/tasks/$1.yaml"
+    elif [ "$have" != "$want" ]; then
+      echo "task $1 changed: making it again"
+      rax delete task "$1"
+      rax apply -f "/tasks/$1.yaml"
+    fi
+    rax resume task "$1"

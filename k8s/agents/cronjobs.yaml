@@ -1,0 +1,109 @@
+# The schedules. deploy-doctor every 15 minutes: without a new failed deploy it exits in seconds
+# without calling Claude. health-digest once a day at 09:30 UTC (06:30 in Brasília), ten minutes
+# after the box writes its health snapshot (kubesolo.nix, piabrota.kubesolo.healthSnapshot).
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: deploy-doctor
+  namespace: ax-system
+spec:
+  schedule: "*/15 * * * *"
+  timeZone: Etc/UTC
+  # A run still going keeps its pod: rax's resume leaves a running task alone, and this skips
+  # starting a second Job meanwhile.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rax
+              image: rax-server
+              command: ["sh", "/tasks/run.sh", "deploy-doctor"]
+              env:
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests: {cpu: 10m, memory: 16Mi}
+                limits: {cpu: 100m, memory: 64Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - {name: tasks, mountPath: /tasks, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: tasks
+              configMap:
+                name: agents-tasks
+            - name: tmp
+              emptyDir: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: health-digest
+  namespace: ax-system
+spec:
+  schedule: "30 9 * * *"
+  timeZone: Etc/UTC
+  # A run still going keeps its pod: rax's resume leaves a running task alone, and this skips
+  # starting a second Job meanwhile.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rax
+              image: rax-server
+              command: ["sh", "/tasks/run.sh", "health-digest"]
+              env:
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests: {cpu: 10m, memory: 16Mi}
+                limits: {cpu: 100m, memory: 64Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - {name: tasks, mountPath: /tasks, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: tasks
+              configMap:
+                name: agents-tasks
+            - name: tmp
+              emptyDir: {}

@@ -54,6 +54,21 @@ in
         resolver fails to look it up through systemd-resolved ("lookup <name>: Try again").
       '';
     };
+    healthSnapshot = {
+      enable = mkEnableOption "a daily snapshot of the box's health as a ConfigMap, for piabrota/agents' health-digest";
+      namespace = mkOption { type = types.str; default = "ax-tasks"; description = "The ConfigMap's namespace."; };
+      name = mkOption { type = types.str; default = "health-snapshot"; description = "The ConfigMap's name; its key is `snapshot.md`."; };
+      onCalendar = mkOption {
+        type = types.str;
+        default = "*-*-* 09:20:00 UTC";
+        description = "When to take it (systemd OnCalendar): before the digest's CronJob (k8s/agents).";
+      };
+      units = mkOption {
+        type = types.listOf types.str;
+        default = [ "sshd" "nginx" "loco-notes" "pgx" "pgx-kube-secrets" "kubesolo" "kubesolo-secret-agents" ];
+        description = "The units whose state and restarts it lists.";
+      };
+    };
     secrets = mkOption {
       type = types.attrsOf (types.submodule {
         options = {
@@ -270,6 +285,90 @@ in
         })
         cfg.secrets;
       systemd.tmpfiles.rules = lib.mapAttrsToList (_: s: "d ${dirOf s.envFile} 0700 root root -") cfg.secrets;
+    })
+
+    (mkIf (cfg.enable && cfg.healthSnapshot.enable) {
+      # What the box looks like once a day, as Markdown in a ConfigMap that the agents' service
+      # account may read (k8s/ax-tasks/rbac.yaml). Written as the Secrets are: curl, server-side
+      # apply, the admin certificate through LoadCredential, no user of its own; the journal through
+      # the systemd-journal group.
+      systemd.services.health-snapshot = {
+        description = "The box's health as the ConfigMap ${cfg.healthSnapshot.namespace}/${cfg.healthSnapshot.name}";
+        after = [ "kubesolo.service" ];
+        path = [ pkgs.curl pkgs.jq pkgs.procps pkgs.coreutils pkgs.gnugrep pkgs.gawk config.systemd.package ];
+        script = ''
+          set -o pipefail
+          api() {
+            curl -fsS --cacert "$CREDENTIALS_DIRECTORY/ca" --cert "$CREDENTIALS_DIRECTORY/crt" \
+              --key "$CREDENTIALS_DIRECTORY/key" "$@"
+          }
+          snapshot=$(mktemp)
+          {
+            echo "# Health snapshot, $(date -u +%Y-%m-%d) at $(date -u +%H:%M) UTC"
+            echo
+            echo "## System"
+            echo "deployed: $(readlink /run/current-system)"
+            echo "booted:   $(readlink /run/booted-system)"
+            echo "uptime:   $(uptime)"
+            echo
+            echo "## Memory (MiB)"
+            free -m
+            echo
+            echo "## Disk"
+            df -h /
+            echo
+            echo "## Failed units"
+            systemctl --failed --no-legend --plain | awk '{print $1}' | grep . || echo "none"
+            echo
+            echo "## Units that matter"
+            for u in ${lib.escapeShellArgs cfg.healthSnapshot.units}; do
+              echo "$u: $(systemctl is-active "$u") (restarts: $(systemctl show "$u" -p NRestarts --value))"
+            done
+            echo
+            echo "## Journal errors in the last 24 hours (count, message)"
+            journalctl -p err --since -24h -o cat --no-pager | cut -c1-200 | sort | uniq -c | sort -rn | head -n 30 | grep . || echo "none"
+            echo
+            echo "## Kubernetes pods"
+            api https://127.0.0.1:6443/api/v1/pods | jq -r '.items[]
+              | "\(.metadata.namespace)/\(.metadata.name): \(.status.phase), restarts \([.status.containerStatuses[]?.restartCount] | add // 0)"'
+          } >"$snapshot"
+          jq -n --rawfile s "$snapshot" --arg ns ${lib.escapeShellArg cfg.healthSnapshot.namespace} --arg name ${lib.escapeShellArg cfg.healthSnapshot.name} \
+            '{apiVersion: "v1", kind: "ConfigMap", metadata: {name: $name, namespace: $ns}, data: {"snapshot.md": $s}}' |
+            api -o /dev/null -X PATCH -H 'Content-Type: application/apply-patch+yaml' --data-binary @- \
+              "https://127.0.0.1:6443/api/v1/namespaces/${cfg.healthSnapshot.namespace}/configmaps/${cfg.healthSnapshot.name}?fieldManager=health-snapshot&force=true"
+          echo "configmap ${cfg.healthSnapshot.namespace}/${cfg.healthSnapshot.name}: $(wc -l <"$snapshot") lines"
+          rm -f "$snapshot"
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          DynamicUser = true;
+          SupplementaryGroups = [ "systemd-journal" ];
+          LoadCredential = [
+            "ca:${cfg.settings.path}/pki/ca/ca.crt"
+            "crt:${cfg.settings.path}/pki/admin/admin.crt"
+            "key:${cfg.settings.path}/pki/admin/admin.key"
+          ];
+          CapabilityBoundingSet = "";
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+          SystemCallArchitectures = "native";
+          SystemCallFilter = [ "@system-service" "~@privileged" ];
+        };
+      };
+      systemd.timers.health-snapshot = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = cfg.healthSnapshot.onCalendar;
+          Persistent = true;
+        };
+      };
     })
   ];
 }
