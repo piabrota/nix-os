@@ -143,7 +143,7 @@ just check        # what CI runs: nix flake check, nixpkgs-fmt, statix, deadnix,
 Add `--dry-run` to the `nix build` to see what would be built and fetched. Compare two builds:
 
 ```console
-nix run nixpkgs#dix -- <old-system-path> <new-system-path>
+nix run nixpkgs#dix -- diff <old-system-path> <new-system-path>
 ```
 
 Lint the Nix files you changed:

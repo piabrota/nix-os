@@ -9,7 +9,7 @@ every recipe: `just`.
 |---|---|
 | Build the system without deploying it | `just build` |
 | Run what CI runs | `just check` |
-| See what a change adds to the system | `nix run nixpkgs#dix -- <old-system> <new-system>` |
+| See what a change adds to the system | `nix run nixpkgs#dix -- diff <old-system> <new-system>` |
 | See the VPS's CPU, RAM, disk and generation | `just remote-specs` |
 | List the VPS's packages with their sizes | `just remote-freeze` |
 | CVE report of the system | `just cves` |

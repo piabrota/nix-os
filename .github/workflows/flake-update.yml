@@ -71,7 +71,8 @@ jobs:
             exit 0
           fi
           nix build "$system" -o new --print-build-logs
-          nix run nixpkgs#dix -- old new | sed -E 's/\x1b\[[0-9;]*m//g' >dix.txt || true
+          # dix 3 takes a subcommand; without it, it prints its usage and the diff comes out empty.
+          nix run nixpkgs#dix -- --color=never diff old new >dix.txt
           jq -r --slurpfile old old.lock '.nodes | to_entries[] | select(.value.locked.rev)
             | .key as $k | ($old[0].nodes[$k].locked.rev // "none") as $was
             | select($was != .value.locked.rev)
