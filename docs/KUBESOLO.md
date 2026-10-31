@@ -20,7 +20,7 @@ on a machine running KubeSolo.
 | `kubectl logs`, `exec`, `port-forward` | Work, once the host name is in `/etc/hosts` | 2026-10-31, #33 |
 | PGX (Postgres for pods) | On, port 5432, database `ax`. A pod connects with the Secret: `ax\|PostgreSQL 18.6 (pgrust 0.3)` | 2026-10-30, #30 |
 | Secret `ax-system/ax-store` | Written on the box by every deploy (`pgx-kube-secrets`), never in the repository | 2026-10-31, #31 |
-| rax-server (AX's API, in Rust) | **Not running**: its image is not published yet. piabrota/rax#9 publishes it to `ghcr.io/piabrota/rax-server`; then `k8s/rax/kustomization.yaml` pins its digest and `kubectl apply -k k8s/rax` runs it | ⚠ pending |
+| rax-server (AX's API, in Rust) | Image published by piabrota/rax#9 to `ghcr.io/piabrota/rax-server` and pinned by digest in `k8s/rax/`. ⚠ Not applied yet: `kubectl apply -k k8s/rax` ("Run, reach, remove") | image 2026-10-31 |
 | Agent Substrate, tasks | Not here: they need gVisor and feature gates KubeSolo does not set. rax runs as an API and a store only | |
 
 Measured on the box, 2026-10-31, with only CoreDNS running:
@@ -232,8 +232,8 @@ the cluster.
   uses a `ClusterRole`), the Deployment (`--addr=:8080`, the store's URL from the Secret `ax-store`, `Recreate`, user
   65534, read-only filesystem, no capabilities, seccomp `RuntimeDefault`, requests 50m/64Mi,
   limits 500m/256Mi) and a `ClusterIP` Service on 8080.
-- `kustomization.yaml`: the image is `rax-server:dev`, imported by hand; switch to a registry in
-  `images:` when there is one.
+- `kustomization.yaml`: the image is `ghcr.io/piabrota/rax-server`, pinned by digest (`sha-78632e9`,
+  2026-10-31), published by rax's CI.
 
 `deploy.yml` ignores `k8s/**`: a merge that only touches `k8s/` does not switch the system. This
 PR adds no workflow that applies the manifests. When there is one, it follows `MICROK8S.md`: a
@@ -243,7 +243,7 @@ PR adds no workflow that applies the manifests. When there is one, it follows `M
 ### The image
 
 The VPS compiles nothing, so the image arrives built. The path taken is the second one below:
-piabrota/rax#9 publishes `ghcr.io/piabrota/rax-server` from rax's CI. Two paths:
+piabrota/rax#9 publishes `ghcr.io/piabrota/rax-server` from rax's CI, and `k8s/rax/` pins its digest. Two paths:
 
 1. **Build elsewhere and import** (no registry). On an x86_64 machine with Docker, in a rax
    checkout:
@@ -260,8 +260,9 @@ piabrota/rax#9 publishes `ghcr.io/piabrota/rax-server` from rax's CI. Two paths:
 2. **Publish to a registry**: a workflow in the rax repository that builds the image (from the
    Dockerfile, or in Nix with `dockerTools.buildLayeredImage` over a `rustPlatform.buildRustPackage`,
    which rax does not have yet) and pushes it to `ghcr.io/piabrota/rax-server`. Then
-   `k8s/rax/kustomization.yaml` gets `newName` and `digest`. The workflow is piabrota/rax#9 (from the
-   Dockerfile, linux/amd64); ⚠ no image is published yet.
+   `k8s/rax/kustomization.yaml` gets `newName` and `digest`. Done: piabrota/rax#9 (from the Dockerfile,
+   linux/amd64), first published as `sha-78632e9`. The package must be public, or the node cannot
+   pull it: it has no registry credentials.
 
 The `Dockerfile.server` image is 34 MB to download and 135 MB on the node (measured by rax); on
 musl or distroless it would be about 80 MB smaller.

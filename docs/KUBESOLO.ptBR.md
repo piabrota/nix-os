@@ -20,7 +20,7 @@ máquina rodando o KubeSolo.
 | `kubectl logs`, `exec`, `port-forward` | Funcionam, com o nome da máquina no `/etc/hosts` | 2026-10-31, #33 |
 | PGX (Postgres para os pods) | Ligado, porta 5432, banco `ax`. Um pod conecta com o Secret: `ax\|PostgreSQL 18.6 (pgrust 0.3)` | 2026-10-30, #30 |
 | Secret `ax-system/ax-store` | Gravado na máquina por todo deploy (`pgx-kube-secrets`), nunca no repositório | 2026-10-31, #31 |
-| rax-server (a API do AX, em Rust) | **Não roda**: a imagem ainda não foi publicada. O piabrota/rax#9 a publica em `ghcr.io/piabrota/rax-server`; aí o `k8s/rax/kustomization.yaml` fixa o digest e o `kubectl apply -k k8s/rax` a roda | ⚠ pendente |
+| rax-server (a API do AX, em Rust) | Imagem publicada pelo piabrota/rax#9 em `ghcr.io/piabrota/rax-server` e fixada por digest em `k8s/rax/`. ⚠ Ainda não aplicada: `kubectl apply -k k8s/rax` ("Rodar, chegar, tirar") | imagem 2026-10-31 |
 | Agent Substrate, tasks | Não aqui: pedem gVisor e feature gates que o KubeSolo não liga. O rax roda só como API e store | |
 
 Medido na máquina, 2026-10-31, só com o CoreDNS rodando:
@@ -230,8 +230,8 @@ executa nenhuma tarefa. Serve para testar a API, o CLI `rax` e o caminho até o 
   `ClusterRole`), o Deployment (`--addr=:8080`, a URL do store vinda do Secret `ax-store`, `Recreate`, usuário 65534,
   sistema de arquivos só de leitura, sem capabilities, seccomp `RuntimeDefault`, pede 50m/64Mi,
   limita a 500m/256Mi) e um Service `ClusterIP` na 8080.
-- `kustomization.yaml`: a imagem é `rax-server:dev`, importada à mão; troque por um registro em
-  `images:` quando houver um.
+- `kustomization.yaml`: a imagem é `ghcr.io/piabrota/rax-server`, fixada por digest (`sha-78632e9`,
+  2026-10-31), publicada pela CI do rax.
 
 O `deploy.yml` ignora `k8s/**`: um merge que só mexe em `k8s/` não troca o sistema. Este PR não
 traz workflow que aplique os manifestos. Quando houver, segue o `MICROK8S.ptBR.md`: um `k8s.yml`
@@ -240,7 +240,7 @@ num ambiente `k8s` separado do `prod`, que abre o túnel SSH e roda `kubectl app
 ### A imagem
 
 A VPS não compila nada, então a imagem chega pronta. O caminho escolhido é o segundo abaixo: o
-piabrota/rax#9 publica `ghcr.io/piabrota/rax-server` pela CI do rax. Dois caminhos:
+piabrota/rax#9 publica `ghcr.io/piabrota/rax-server` pela CI do rax, e o `k8s/rax/` fixa o digest. Dois caminhos:
 
 1. **Construir fora e importar** (sem registro). Numa máquina x86_64 com Docker, no checkout do
    rax:
@@ -257,8 +257,9 @@ piabrota/rax#9 publica `ghcr.io/piabrota/rax-server` pela CI do rax. Dois caminh
 2. **Publicar num registro**: um workflow no repositório do rax que construa a imagem (pelo
    Dockerfile, ou em Nix com `dockerTools.buildLayeredImage` sobre um `rustPlatform.buildRustPackage`,
    que o rax ainda não tem) e a mande para `ghcr.io/piabrota/rax-server`. Aí `k8s/rax/kustomization.yaml`
-   ganha `newName` e `digest`. O workflow é o piabrota/rax#9 (pelo Dockerfile, linux/amd64); ⚠
-   nenhuma imagem publicada ainda.
+   ganha `newName` e `digest`. Feito: o piabrota/rax#9 (pelo Dockerfile,
+   linux/amd64), publicada pela primeira vez como `sha-78632e9`. O pacote tem de ser público, senão
+   o nó não consegue puxá-la: não há credenciais de registro.
 
 A imagem do `Dockerfile.server` tem 34 MB para baixar e 135 MB no nó (medidos pelo rax); sobre
 musl ou distroless seriam uns 80 MB a menos.
