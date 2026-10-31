@@ -28,18 +28,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # Built in its own job, without the prod environment: the build never sees the deploy key, and a
+  # deploy that fails to reach the VPS (an SSH timeout) is retried with "Re-run failed jobs",
+  # without building again.
+  build:
     runs-on: ubuntu-latest
-    # Secrets live in this environment; protect it in Settings > Environments.
-    environment: prod
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here, so
-      # without this every run compiles apps/notes (445 crates) again. The store is saved to GitHub's
-      # Actions cache after a successful run and restored at the start of the next: the newest cache
-      # of ci or deploy on this branch, else main's (a PR reads main's caches, not the reverse). Older
-      # caches of this workflow and branch are deleted after the save, to stay in the 10 GB quota.
+      # without this every run compiles apps/notes (about 400 crates) again. The store is saved to
+      # GitHub's Actions cache after a successful build and restored at the start of the next: the
+      # newest cache of ci or deploy on this branch, else main's (a PR reads main's caches, not the
+      # reverse). Older caches of this workflow and branch are deleted after the save, to stay in
+      # the 10 GB quota.
       - uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.os }}-deploy-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
@@ -48,6 +50,24 @@ jobs:
           purge-prefixes: nix-${{ runner.os }}-deploy-
           purge-created: 0
           purge-primary-key: never
+      - name: Build the system
+        run: |
+          nix build .#deploy.nodes.piabrota.profiles.system.path \
+            --no-link --no-update-lock-file --print-build-logs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Secrets live in this environment; protect it in Settings > Environments.
+    environment: prod
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      # The store the build job saved, by its exact key; deploy-rs then finds the system built.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-deploy-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          save: false
 
       - name: SSH key and pinned host key
         env:
