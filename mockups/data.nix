@@ -39,9 +39,12 @@ rec {
     { id = "play"; label = "play"; }
   ];
 
+  # logo: the repository's own logo, at a pinned commit, never stored here. glyph: the text mark of a
+  # repository that has no logo yet, as the org profile prints it.
   projects = [
     {
       name = "mu";
+      logo = "https://raw.githubusercontent.com/piabrota/mu/d8762696790b97e874cbd9a580ceb957ecb23c6e/docs/drawings/mu.svg";
       lane = "company";
       blurb = "The company chart: the dogma, the standards, the journal and the index of the org's repositories.";
       lang = "Markdown, Bash";
@@ -51,6 +54,7 @@ rec {
     }
     {
       name = "dojo";
+      glyph = "道場";
       lane = "company";
       blurb = "The umbrella: every product as a submodule at a pinned commit, the routing table and its own tooling. It holds no product code.";
       lang = "Bash";
@@ -60,6 +64,7 @@ rec {
     }
     {
       name = ".github";
+      logo = "https://avatars.githubusercontent.com/piabrota?s=128";
       lane = "company";
       blurb = "The org's profile, with the project table, the fabric figure and the funding links.";
       lang = "Markdown";
@@ -69,6 +74,7 @@ rec {
     }
     {
       name = "pirsig";
+      logo = "https://raw.githubusercontent.com/piabrota/pirsig/b7dd1da2ac886845b14bb90e5d8d34976cfc95cb/docs/drawings/pirsig.svg";
       lane = "think";
       blurb = "A second brain: PARA and a Zettelkasten slip-box in one place. Desktop app, REST API and the psg CLI.";
       lang = "Rust";
@@ -79,6 +85,7 @@ rec {
     }
     {
       name = "gramatico";
+      logo = "https://raw.githubusercontent.com/piabrota/gramatico/d57371af30553ad66f63537e52c1f34112e2f86b/site/static/favicon.svg";
       lane = "think";
       blurb = "Rewrites technical text in Brazilian Portuguese so that it reads once. A Claude Code plugin.";
       lang = "Rust";
@@ -89,6 +96,7 @@ rec {
     }
     {
       name = "closed-source";
+      logo = "https://raw.githubusercontent.com/h0ffmann/closed-source/6b3aae557f69ab89ec747364311978928dd0ca71/site/static/icons/favicon.svg";
       lane = "think";
       owner = "h0ffmann";
       blurb = "The god that failed: a book on why closed source failed as a protection, for science first.";
@@ -100,6 +108,7 @@ rec {
     }
     {
       name = "skills";
+      logo = "https://raw.githubusercontent.com/h0ffmann/skills/bcccf4950e100ed0ae25291143f963ee09390a08/docs/drawings/waza.svg";
       lane = "think";
       owner = "h0ffmann";
       blurb = "A swiss army knife of agent skills.";
@@ -111,6 +120,7 @@ rec {
     }
     {
       name = "alerts";
+      logo = "https://raw.githubusercontent.com/piabrota/alerts/40d244f5e83bdb3700493de6612528982509f2a8/desktop/app/icons/icon.png";
       lane = "host";
       blurb = "Alerts from official sources only, to Discord and an Atom feed with CAP 1.2. First: floods in the south of Brazil.";
       lang = "Rust";
@@ -121,6 +131,7 @@ rec {
     }
     {
       name = "rax";
+      logo = "https://raw.githubusercontent.com/piabrota/rax/b87c790db8d8cd1537bd79176fead0a0f8960bc9/docs/drawings/cosmos.svg";
       lane = "host";
       blurb = "Rustic Agentic Runtime: a pure-Rust port of AX, the declarative orchestrator for agentic tasks.";
       lang = "Rust";
@@ -130,6 +141,7 @@ rec {
     }
     {
       name = "agents";
+      glyph = "🤖";
       lane = "host";
       blurb = "Small agents that watch nix-os and its VPS, and report on GitHub as piabrota-ops. They open pull requests and never merge.";
       lang = "Bash";
@@ -139,6 +151,7 @@ rec {
     }
     {
       name = "nix-os";
+      logo = "https://raw.githubusercontent.com/piabrota/nix-os/8975d2c9354c09e9cae27819efce009741ffe22e/docs/drawings/mu.svg";
       lane = "host";
       blurb = "The NixOS configuration of the small VPS that serves piabrota.art. Judged by its closure.";
       lang = "Nix";
@@ -149,6 +162,7 @@ rec {
     }
     {
       name = "astrbot_dw_ext_br_south_disaster";
+      logo = "https://raw.githubusercontent.com/h0ffmann/astrbot_dw_ext_br_south_disaster/a6675479bebcacb92b1d18f4931a7065a1f70178/extension.png";
       lane = "host";
       owner = "h0ffmann";
       blurb = "South of Brazil (RS, SC, PR) disaster extension for AstrBot plugin astrbot_plugin_disaster_warning";
@@ -159,6 +173,7 @@ rec {
     }
     {
       name = "astrbot_dw_ext_br_south_waterq";
+      logo = "https://raw.githubusercontent.com/h0ffmann/astrbot_dw_ext_br_south_waterq/12b71ac048ad29b83bfc6aaa0149e011c66886ce/extension.png";
       lane = "host";
       owner = "h0ffmann";
       blurb = "Bathing water quality alerts for the South of Brazil (RS, SC, PR). An extension for astrbot_plugin_disaster_warning.";
@@ -169,6 +184,7 @@ rec {
     }
     {
       name = "ihero";
+      glyph = "🎶";
       lane = "play";
       blurb = "A FOSS music player and game, in Rust. Coming: the repository holds only its licence.";
       lang = "Rust, planned";

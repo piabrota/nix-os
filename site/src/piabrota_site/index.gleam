@@ -13,7 +13,7 @@ import piabrota_site/parts
 
 pub fn view() -> Element(msg) {
   html.div([], [
-    parts.top("index", [
+    parts.top("index", "en", [
       html.div([], [
         parts.eyebrow(
           "index · " <> int.to_string(list.length(data.projects)) <> " projects",
@@ -22,12 +22,12 @@ pub fn view() -> Element(msg) {
           html.text(string.uppercase(data.name)),
         ]),
         html.p([attribute.class("lede")], [html.text(data.lede)]),
-        parts.metrics(),
-        parts.status(),
-        parts.buttons(#("#inventory", "Read the inventory ↓")),
+        parts.metrics("en"),
+        parts.status("en"),
+        parts.buttons(#("#inventory", "Read the inventory ↓"), "en"),
       ]),
     ]),
-    html.main([], community.sections()),
-    parts.foot("index"),
+    html.main([], community.sections("en")),
+    parts.foot("index", "en"),
   ])
 }

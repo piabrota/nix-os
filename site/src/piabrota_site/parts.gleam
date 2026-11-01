@@ -9,6 +9,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/svg
 import piabrota_site/data.{type Project, type State, Coming, Live, NoSite}
+import piabrota_site/i18n
 
 /// The three designs, each at its own path: A at the root, B and C below it.
 pub const designs = [
@@ -63,17 +64,51 @@ pub fn eye(size: Int) -> Element(msg) {
 }
 
 /// The top band: the mark and the name, the switcher, then the page's own hero.
-pub fn top(current: String, hero: List(Element(msg))) -> Element(msg) {
+pub fn top(
+  current: String,
+  lang: String,
+  hero: List(Element(msg)),
+) -> Element(msg) {
   html.header([attribute.class("top")], [
     html.div([attribute.class("wrap bar")], [
       html.a([attribute.class("brand"), attribute.href("/")], [
         eye(30),
         html.span([], [html.text(data.name)]),
       ]),
+      languages(lang),
       switcher(current),
     ]),
+    notice(lang),
     html.div([attribute.class("wrap hero")], hero),
   ])
+}
+
+/// The languages, the current one marked. Each links to design A in that language.
+fn languages(lang: String) -> Element(msg) {
+  html.nav(
+    [
+      attribute.class("langs"),
+      attribute.aria_label(i18n.t(lang, "aria.languages")),
+    ],
+    {
+      use #(code, name, href) <- list.map(i18n.languages)
+      let here = case code == lang {
+        True -> [attribute.aria_current("page")]
+        False -> []
+      }
+      html.a([attribute.href(href), attribute.lang(code), ..here], [
+        html.text(name),
+      ])
+    },
+  )
+}
+
+/// Which text wins, and whether a native reader checked this one. English has no notice.
+fn notice(lang: String) -> Element(msg) {
+  case i18n.t(lang, "notice") {
+    "" -> element.none()
+    text -> html.p([attribute.class("wrap notice")], [html.text(text)])
+  }
 }
 
 /// The switcher: the three designs as one segmented pill, the current one filled.
@@ -106,33 +141,35 @@ pub fn button(href: String, label: String, primary: Bool) -> Element(msg) {
 }
 
 /// The hero's buttons: where to go next.
-pub fn buttons(first: #(String, String)) -> Element(msg) {
+pub fn buttons(first: #(String, String), lang: String) -> Element(msg) {
   html.div([attribute.class("actions")], [
     button(first.0, first.1, True),
     button(github, "GitHub ↗", False),
-    button(sponsor, "Sponsor ♥", False),
+    button(sponsor, i18n.t(lang, "button.sponsor"), False),
   ])
 }
 
 /// The hero's status pills: how many projects are live, coming, without a site.
-pub fn status() -> Element(msg) {
-  html.ul([attribute.class("status"), attribute.aria_label("Status")], {
-    use state <- list.map([Live, Coming, NoSite])
-    let n = list.count(data.projects, fn(p) { p.state == state })
-    html.li([attribute.class("is-" <> state_class(state))], [
-      html.span([attribute.class("dot")], []),
-      html.b([], [html.text(int.to_string(n))]),
-      html.text(" " <> state_name(state)),
-    ])
-  })
+pub fn status(lang: String) -> Element(msg) {
+  html.ul(
+    [
+      attribute.class("status"),
+      attribute.aria_label(i18n.t(lang, "aria.status")),
+    ],
+    {
+      use state <- list.map([Live, Coming, NoSite])
+      let n = list.count(data.projects, fn(p) { p.state == state })
+      html.li([attribute.class("is-" <> state_class(state))], [
+        html.span([attribute.class("dot")], []),
+        html.b([], [html.text(int.to_string(n))]),
+        html.text(" " <> state_name(state, lang)),
+      ])
+    },
+  )
 }
 
-pub fn state_name(state: State) -> String {
-  case state {
-    Live -> "live"
-    Coming -> "coming"
-    NoSite -> "no site yet"
-  }
+pub fn state_name(state: State, lang: String) -> String {
+  i18n.t(lang, "state." <> state_class(state))
 }
 
 pub fn state_class(state: State) -> String {
@@ -144,24 +181,24 @@ pub fn state_class(state: State) -> String {
 }
 
 /// The hero's numbers, closed-source's: each counted from the facts, never typed.
-pub fn metrics() -> Element(msg) {
+pub fn metrics(lang: String) -> Element(msg) {
   html.dl([attribute.class("metrics")], {
     use #(n, label) <- list.map([
-      #(list.length(data.projects), "FOSS projects"),
+      #(list.length(data.projects), "projects"),
       #(list.length(data.forks), "forks"),
       #(list.length(data.people), "people"),
       #(list.length(data.dogma), "invariants"),
     ])
     html.div([], [
-      html.dt([], [html.text(label)]),
+      html.dt([], [html.text(i18n.t(lang, "metric." <> label))]),
       html.dd([], [html.text(int.to_string(n))]),
     ])
   })
 }
 
 /// A project's state, in words first and colour second.
-pub fn pill(state: State) -> Element(msg) {
-  html.span([attribute.class("pill")], [html.text(state_name(state))])
+pub fn pill(state: State, lang: String) -> Element(msg) {
+  html.span([attribute.class("pill")], [html.text(state_name(state, lang))])
 }
 
 /// The project's address, a link when there is somewhere to go.
@@ -189,17 +226,39 @@ pub fn in_lane(lane: String) -> List(Project) {
 }
 
 /// The foot: who serves the page, how to reach the org, and the switcher again.
-pub fn foot(current: String) -> Element(msg) {
+pub fn foot(current: String, lang: String) -> Element(msg) {
   html.footer([attribute.class("foot")], [
     html.div([attribute.class("wrap")], [
       html.p([], [
-        html.text("piabrota.art is served by "),
+        html.text(i18n.t(lang, "foot.a")),
         html.a([attribute.href(nixos)], [html.text("nix-os")]),
-        html.text(", from /nix/store. Partnerships: " <> data.contact <> ". "),
-        html.a([attribute.href("/notes")], [html.text("Notes demo (Loco)")]),
+        html.text(i18n.t(lang, "foot.b") <> data.contact <> ". "),
+        html.a([attribute.href("/notes")], [
+          html.text(i18n.t(lang, "foot.notes")),
+        ]),
         html.text("."),
       ]),
       switcher(current),
     ]),
   ])
+}
+
+/// A project's mark: its repository's logo, or the text mark of a repository that has none yet.
+pub fn logo(p: Project) -> Element(msg) {
+  case p.logo {
+    "" ->
+      html.span(
+        [attribute.class("project-logo glyph"), attribute.aria_hidden(True)],
+        [html.text(p.glyph)],
+      )
+    src ->
+      html.img([
+        attribute.src(src),
+        attribute.alt(p.name <> " logo"),
+        attribute.width(44),
+        attribute.height(44),
+        attribute.class("project-logo"),
+        attribute.attribute("loading", "lazy"),
+      ])
+  }
 }

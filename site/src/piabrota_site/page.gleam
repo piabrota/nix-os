@@ -5,27 +5,38 @@ import lustre/element.{type Element}
 import lustre/element/html
 import piabrota_site/data
 import piabrota_site/fabric as fabric_page
+import piabrota_site/i18n
 import piabrota_site/index as index_page
 import piabrota_site/paths as paths_page
 
 /// Design A at the root.
 pub fn fabric() -> String {
-  document("fabric", "piabrota", fabric_page.view())
+  fabric_in("en")
+}
+
+/// Design A in a language: English at the root, the others at /<lang>/.
+pub fn fabric_in(lang: String) -> String {
+  document("fabric", lang, "piabrota", fabric_page.view(lang))
 }
 
 /// Design B at /index/.
 pub fn index() -> String {
-  document("index", "piabrota · index", index_page.view())
+  document("index", "en", "piabrota · index", index_page.view())
 }
 
 /// Design C at /paths/.
 pub fn paths() -> String {
-  document("paths", "piabrota · paths", paths_page.view())
+  document("paths", "en", "piabrota · paths", paths_page.view())
 }
 
 /// `design` names the body's class in style.css. The fonts are the sister sites' (picasso,
 /// gramatico, closed-source), from Google Fonts; the system fonts stand in until they load.
-fn document(design: String, title: String, body: Element(msg)) -> String {
+fn document(
+  design: String,
+  lang: String,
+  title: String,
+  body: Element(msg),
+) -> String {
   let meta = fn(name, value) {
     html.meta([attribute.name(name), attribute.content(value)])
   }
@@ -36,12 +47,19 @@ fn document(design: String, title: String, body: Element(msg)) -> String {
       attribute.attribute("media", "(prefers-color-scheme: " <> scheme <> ")"),
     ])
   }
-  html.html([attribute.lang("en")], [
+  html.html([attribute.lang(lang)], [
     html.head([], [
       html.meta([attribute.charset("utf-8")]),
       meta("viewport", "width=device-width, initial-scale=1"),
       html.title([], title),
-      meta("description", data.name <> ": " <> data.kicker <> ". " <> data.lede),
+      meta(
+        "description",
+        data.name
+          <> ": "
+          <> i18n.fact(lang, "org.kicker", data.kicker)
+          <> ". "
+          <> i18n.fact(lang, "org.lede", data.lede),
+      ),
       theme("#0B0D12", "dark"),
       theme("#FFFFFF", "light"),
       // No favicon: an empty one stops the browser asking for /favicon.ico.
