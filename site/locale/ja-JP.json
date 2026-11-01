@@ -67,10 +67,10 @@
   "lane.play": "遊ぶ",
   "layer.mu.role": "会社の 地図",
   "layer.mu.name": "mu",
-  "layer.mu.text": "ルール、憲章（けんしょう）、標準、リポジトリの 一覧が あります。",
-  "layer.dojo.role": "全体を まとめる リポジトリ",
+  "layer.mu.text": "ルール、憲章（けんしょう）、標準、リポジトリの 一覧が あります。mu は dojo に ルールを 渡します。",
+  "layer.dojo.role": "共通の 層",
   "layer.dojo.name": "dojo",
-  "layer.dojo.text": "製品を 決まった 版で まとめます。道案内の 表も あります。製品の コードは ありません。",
+  "layer.dojo.text": "全体を まとめる リポジトリです。すべての リポジトリを 決まった 版で まとめます。道案内の 表も あります。ルールは mu から 受け取ります。製品の コードは ありません。",
   "layer.the products.role": "製品ごとに 1つの リポジトリ",
   "layer.the products.name": "製品",
   "layer.the products.text": "製品ごとに README、ライセンス、チェックが あります。製品を 変えるときは その リポジトリで 変えます。",
@@ -121,5 +121,7 @@
   "partner.ouroboric-dev": "自分で よくなる オープンな 工場です。憲章、標準、日誌、ブランドが あります。",
   "closed.lane": "今は クローズドソース",
   "closed.tag": "クローズドソース",
-  "project.chaceon": "WW3 を Rust で 書き直した ものです。WW3 は 波の 物理モデルです。ondaseventos.ufsc.br と NOAA が WW3 を 使っています。"
+  "project.chaceon": "WW3 を Rust で 書き直した ものです。WW3 は 波の 物理モデルです。ondaseventos.ufsc.br と NOAA が WW3 を 使っています。",
+  "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/fabric.png",
+  "structure.alt": "piabrota の 図です。dojo は 共通の 層です。mu から ルールを 受け取り、下の すべての リポジトリを まとめます。"
 }

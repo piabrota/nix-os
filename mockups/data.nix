@@ -207,8 +207,8 @@ rec {
 
   # The company's shape, as mu and dojo say it (2026-11-01).
   structure = [
-    { name = "mu"; role = "the company chart"; text = "The dogma, the charter, the standards and the index of the repositories."; href = "https://github.com/piabrota/mu"; }
-    { name = "dojo"; role = "the umbrella"; text = "Every product as a submodule at a pinned commit, and one routing table. No product code."; href = "https://github.com/piabrota/dojo"; }
+    { name = "dojo"; role = "the common layer"; text = "The umbrella: every repository as a submodule at a pinned commit, and one routing table. It inherits the rules from mu, and it holds no product code."; href = "https://github.com/piabrota/dojo"; }
+    { name = "mu"; role = "the company chart"; text = "The dogma, the charter, the standards and the index of the repositories. It gives dojo the rules."; href = "https://github.com/piabrota/mu"; }
     { name = "the products"; role = "each in its own repository"; text = "Each has its own README, licence and checks. A change to a product is made in that repository."; href = "#inventory"; }
     { name = "pirsig"; role = "the brain"; text = "Smart notes, PARA and a track record of the high-level decisions."; href = "https://github.com/piabrota/pirsig"; }
   ];

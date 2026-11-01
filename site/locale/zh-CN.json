@@ -67,10 +67,10 @@
   "lane.play": "娱乐",
   "layer.mu.role": "公司的总图",
   "layer.mu.name": "mu",
-  "layer.mu.text": "这里有规则、章程、标准和仓库索引。",
-  "layer.dojo.role": "总仓库",
+  "layer.mu.text": "这里有规则、章程、标准和仓库索引。mu 把规则交给 dojo。",
+  "layer.dojo.role": "公共层",
   "layer.dojo.name": "dojo",
-  "layer.dojo.text": "dojo 把每个产品固定在一个版本。dojo 有一张路由表。dojo 没有产品代码。",
+  "layer.dojo.text": "总仓库：dojo 把每个仓库固定在一个版本。dojo 有一张路由表。dojo 使用 mu 的规则。dojo 没有产品代码。",
   "layer.the products.role": "每个产品一个仓库",
   "layer.the products.name": "产品",
   "layer.the products.text": "每个产品都有自己的 README、许可证和检查。要改产品，就在它的仓库里改。",
@@ -121,5 +121,7 @@
   "partner.ouroboric-dev": "会自我改进的开放工厂。有章程、标准、日志和品牌。",
   "closed.lane": "暂时闭源",
   "closed.tag": "闭源",
-  "project.chaceon": "用 Rust 重写的 WW3。WW3 是波浪物理模型。ondaseventos.ufsc.br 和 NOAA 使用 WW3。"
+  "project.chaceon": "用 Rust 重写的 WW3。WW3 是波浪物理模型。ondaseventos.ufsc.br 和 NOAA 使用 WW3。",
+  "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/fabric.png",
+  "structure.alt": "piabrota 的结构图：dojo 是公共层。dojo 接收 mu 的规则，并固定下面的每个仓库。"
 }
