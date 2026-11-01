@@ -118,5 +118,8 @@
   "project.astrbot_dw_ext_br_south_waterq": "ブラジル南部（RS、SC、PR）の 海水浴場の 水質の 警報です。astrbot_plugin_disaster_warning の 拡張です。",
   "project.ihero": "FOSS の 音楽プレーヤーと ゲームです。Rust で 作ります。もうすぐ 公開します。今は ライセンスだけ あります。",
   "partner.marola-dev": "ブラジルの 水の スーパーアプリ",
-  "partner.ouroboric-dev": "自分で よくなる オープンな 工場です。憲章、標準、日誌、ブランドが あります。"
+  "partner.ouroboric-dev": "自分で よくなる オープンな 工場です。憲章、標準、日誌、ブランドが あります。",
+  "closed.lane": "今は クローズドソース",
+  "closed.tag": "クローズドソース",
+  "project.chaceon": "WW3 を Rust で 書き直した ものです。WW3 は 波の 物理モデルです。ondaseventos.ufsc.br と NOAA が WW3 を 使っています。"
 }

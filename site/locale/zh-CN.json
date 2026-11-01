@@ -118,5 +118,8 @@
   "project.astrbot_dw_ext_br_south_waterq": "巴西南部（RS、SC、PR）海滩水质警报。它是 astrbot_plugin_disaster_warning 的扩展。",
   "project.ihero": "FOSS 音乐播放器和游戏，用 Rust 编写。即将推出：仓库现在只有许可证。",
   "partner.marola-dev": "巴西的水上超级应用",
-  "partner.ouroboric-dev": "会自我改进的开放工厂。有章程、标准、日志和品牌。"
+  "partner.ouroboric-dev": "会自我改进的开放工厂。有章程、标准、日志和品牌。",
+  "closed.lane": "暂时闭源",
+  "closed.tag": "闭源",
+  "project.chaceon": "用 Rust 重写的 WW3。WW3 是波浪物理模型。ondaseventos.ufsc.br 和 NOAA 使用 WW3。"
 }

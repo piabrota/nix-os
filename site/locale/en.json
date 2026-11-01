@@ -58,5 +58,7 @@
   "fork.from": "from ",
   "foot.a": "piabrota.art is served by ",
   "foot.b": ", from /nix/store. Partnerships: ",
-  "foot.notes": "Notes demo (Loco)"
+  "foot.notes": "Notes demo (Loco)",
+  "closed.lane": "closed source, for now",
+  "closed.tag": "closed source"
 }

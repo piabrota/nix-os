@@ -118,5 +118,8 @@
   "project.astrbot_dw_ext_br_south_waterq": "Alertas de balneabilidade do Sul do Brasil (RS, SC, PR). Uma extensão para o astrbot_plugin_disaster_warning.",
   "project.ihero": "Um player de música e jogo FOSS, em Rust. Em breve: o repositório só tem a licença.",
   "partner.marola-dev": "Super app brasileiro da água",
-  "partner.ouroboric-dev": "Fábricas abertas que melhoram a si mesmas. Carta, padrões, diário e marca."
+  "partner.ouroboric-dev": "Fábricas abertas que melhoram a si mesmas. Carta, padrões, diário e marca.",
+  "closed.lane": "código fechado, por enquanto",
+  "closed.tag": "código fechado",
+  "project.chaceon": "Port em Rust do WW3, o modelo de física de ondas usado pelo ondaseventos.ufsc.br e pela NOAA."
 }

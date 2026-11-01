@@ -21,6 +21,7 @@ let
     "pushed: ${str p.pushed}"
     "state: ${state.${p.state}})"
   ];
+  closed = p: "Closed(name: ${str p.name}, glyph: ${str p.glyph}, lang: ${str p.lang}, blurb: ${str p.blurb})";
   person = p: "Person(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, place: ${str p.place}, site: ${str p.site})";
   partner = p: "Partner(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, site: ${str p.site})";
   fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, lang: ${str f.lang}, licence: ${str f.licence}, sync: ${str f.sync}, description: ${str f.description})";
@@ -76,6 +77,10 @@ assert checked;
     )
   }
 
+  pub type Closed {
+    Closed(name: String, glyph: String, lang: String, blurb: String)
+  }
+
   pub type Person {
     Person(login: String, name: String, about: String, place: String, site: String)
   }
@@ -118,6 +123,8 @@ assert checked;
   pub const lanes = ${list lane data.lanes}
 
   pub const projects = ${list project data.projects}
+
+  pub const closed = ${list closed data.closed}
 
   pub const people = ${list person data.people}
 
