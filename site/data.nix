@@ -14,11 +14,16 @@ let
     "licence: ${str p.licence}"
     "where: ${str (data.where p)}"
     "href: ${str (data.href p)}"
+    "repo: ${str (data.repo p)}"
+    "origin: ${str (data.origin p)}"
+    "pushed: ${str p.pushed}"
     "state: ${state.${p.state}})"
   ];
   person = p: "Person(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, place: ${str p.place}, site: ${str p.site})";
   partner = p: "Partner(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, site: ${str p.site})";
-  fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, description: ${str f.description})";
+  fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, lang: ${str f.lang}, licence: ${str f.licence}, sync: ${str f.sync}, description: ${str f.description})";
+  layer = l: "Layer(name: ${str l.name}, role: ${str l.role}, text: ${str l.text}, href: ${str l.href})";
+  principle = x: "Principle(title: ${str x.title}, text: ${str x.text})";
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
 ''
@@ -44,6 +49,9 @@ in
       licence: String,
       where: String,
       href: String,
+      repo: String,
+      origin: String,
+      pushed: String,
       state: State,
     )
   }
@@ -57,7 +65,15 @@ in
   }
 
   pub type Fork {
-    Fork(name: String, parent: String, started: String, forked: String, description: String)
+    Fork(name: String, parent: String, started: String, forked: String, lang: String, licence: String, sync: String, description: String)
+  }
+
+  pub type Layer {
+    Layer(name: String, role: String, text: String, href: String)
+  }
+
+  pub type Principle {
+    Principle(title: String, text: String)
   }
 
   /// The Google Analytics 4 measurement ID (piabrota.site.analytics.measurementId); "" for none.
@@ -72,6 +88,12 @@ in
   pub const lede = ${str data.org.lede}
 
   pub const contact = ${str data.org.contact}
+
+  pub const structure = ${list layer data.structure}
+
+  pub const why = ${list principle data.why}
+
+  pub const dogma = ${list principle data.dogma}
 
   pub const lanes = ${list lane data.lanes}
 

@@ -1,5 +1,6 @@
-//// Design A, "fabric": the org profile as a page. The projects as cards in the lanes of the
-//// profile's "How it fits" figure, each with its state on its edge. Served at /.
+//// Design A, "fabric": the org as closed-source's page is built: the numbers, the tiles with their
+//// tags, the anchors, and the sections in order. The tiles sit in the lanes of the profile's
+//// "How it fits" figure. Served at /.
 
 import gleam/int
 import gleam/list
@@ -20,6 +21,7 @@ pub fn view() -> Element(msg) {
           html.span([], [html.text("made in Rio de Janeiro.")]),
         ]),
         html.p([attribute.class("lede")], [html.text(data.lede)]),
+        parts.metrics(),
         parts.status(),
         parts.buttons(#("#projects", "See the projects ↓")),
       ]),
@@ -33,7 +35,7 @@ pub fn view() -> Element(msg) {
         parts.section_head("Projects", "from piabrota/.github"),
         html.p([attribute.class("sub")], [
           html.text(
-            "Each lane is a kind of work. The edge of a card says where the project stands.",
+            "Each lane is a kind of work. Click a tile to open the project's site, or its repository when it has no site yet.",
           ),
         ]),
         ..list.map(data.lanes, fn(lane) {
@@ -45,7 +47,7 @@ pub fn view() -> Element(msg) {
                 html.text(int.to_string(list.length(projects))),
               ]),
             ]),
-            html.ul([attribute.class("cards")], list.map(projects, card)),
+            html.ul([attribute.class("tiles")], list.map(projects, tile)),
           ])
         })
       ]),
@@ -55,24 +57,37 @@ pub fn view() -> Element(msg) {
   ])
 }
 
-fn card(p: Project) -> Element(msg) {
+/// A tile: the tags, the name, the blurb. The name's link covers the whole tile, as on
+/// closed-source; `tile_href` always has somewhere to go.
+fn tile(p: Project) -> Element(msg) {
   html.li(
     [
-      attribute.class("card"),
+      attribute.class("tile"),
       attribute.data("state", parts.state_class(p.state)),
+      attribute.data("name", p.name),
     ],
     [
-      html.div([attribute.class("card-head")], [
-        html.h4([], [html.text(p.name)]),
+      html.div([attribute.class("tile-tags")], [
         parts.pill(p.state),
+        html.span([], [html.text(p.lang)]),
+        html.span([], [html.text(p.origin)]),
+      ]),
+      html.h4([], [
+        html.a([attribute.class("tile-link"), attribute.href(tile_href(p))], [
+          html.text(p.name),
+        ]),
       ]),
       html.p([attribute.class("blurb")], [html.text(p.blurb)]),
-      html.div([attribute.class("card-foot")], [
-        html.span([attribute.class("meta")], [
-          html.text(p.lang <> " · " <> p.licence),
-        ]),
-        parts.address(p),
+      html.span([attribute.class("meta")], [
+        html.text(p.licence <> " · " <> p.where),
       ]),
     ],
   )
+}
+
+fn tile_href(p: Project) -> String {
+  case p.href {
+    "" -> p.repo
+    href -> href
+  }
 }

@@ -2,8 +2,11 @@
 
 The look of www.piabrota.art (`site/`), in rules. It is picasso's look
 ([h0ffmann/picasso](https://github.com/h0ffmann/picasso), `site/static/style.css`) in piabrota's
-colours, the one piabrota/.github's figures already wear (`docs/archify/piabrota.css`). The sister
-sites, piabrota/gramatico and h0ffmann/closed-source, keep the same manner with their own palettes.
+colours, the one piabrota/.github's figures already wear (`docs/archify/piabrota.css`), and its page
+is built as [h0ffmann/closed-source](https://h0ffmann.github.io/closed-source/)'s is: numbers in the
+hero, tiles with tags, a bar of anchors, then detail in sections. The sister sites, piabrota/gramatico
+and h0ffmann/closed-source, keep the same manner with their own palettes. closed-source's tiles
+each have their own colour; here they do not, because this page has one red.
 
 ## One sentence
 
@@ -56,21 +59,35 @@ font file is stored here.
   the top left corner, as on picasso.
 - Content is at most 1040 px wide, with 20 px gutters; below 760 px the drawing moves above the
   title, and below 420 px the buttons fill the row.
-- A: cards in a grid of the profile's lanes. B: one table, picasso's standings. C: one terminal
-  on `--surface`.
+- A: tiles in a grid of the profile's lanes; mu's is the one filled tile, in `--accent`, across the
+  row. B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
+- **Tiles**, on A: tags (the state pill, the language, own or personal), the name in Fjalla One, the
+  blurb, the licence and the address. The name's link covers the tile. Hover scales it 1.5%.
+- **The numbers** in the hero are `<dl>` pairs, counted from the facts, never typed.
+- **The bar of anchors** stays at the top while the page scrolls, and scrolls sideways on a phone.
 
-## Board, partners, forks
+## What every design shares
 
-Every design ends with the same three sections (`src/piabrota_site/community.gleam`):
+Every design ends with the same sections, in this order (`src/piabrota_site/community.gleam`):
 
-- **Board**: a card a person, with the avatar, the name (or the `@login`), the line from their
-  public GitHub profile, and two pills: the GitHub pill (avatar and `@login`, mono) and the
-  website pill (the host, in `--accent-text`, `↗`).
+- **Structure**: a card a layer, the chart, the umbrella, the products and the brain, each with its
+  role in mono.
+- **Why it is open**: the three reasons of the org profile, word for word.
+- **Dogma**: the ten invariants of piabrota/mu, shortened only where a list or a link would not fit.
+  The list numbers them, in `--accent-text`.
+- **FOSS inventory**: one entry a project, closed-source's detail: the name, the state pill, the
+  blurb, four facts in a `<dl>` (origin, language, licence, last push), the repository link and the
+  address. The state colours the entry's 3 px edge. `own` is the org's; `personal` is a repository
+  that dojo pins and a person keeps.
+- **Board**: a card a person, with the avatar, the name (or the `@login`), the line from the org
+  profile's Board, the GitHub pill (avatar and `@login`, mono) and, when the person has a website,
+  the website pill (the host, in `--accent-text`, `↗`).
 - **Partners**: a card a partner, with its logo, its name in Fjalla One and its one line, linked to
   its site. Below them, the "Work with us" box: the one place with two buttons outside the hero.
 - **Forks, a PUBLIC inventory**: every fork under piabrota, as h0ffmann/h0ffmann lists its own:
-  the year it was forked, `piabrota/<name>` in mono, then two mono marks (`forked <day>`,
-  `started <year>`), where it came from, and its description. "PUBLIC" stays in capitals: GitHub
+  the year it was forked, `piabrota/<name>` in mono, then mono marks (`forked <day>`,
+  `started <year>`, the licence, the sync with upstream, the language), where it came from, and its
+  description. "PUBLIC" stays in capitals: GitHub
   keeps a fork of a public repository public, and the capitals say so.
 
 Avatars and logos load from where GitHub publishes them (`avatars.githubusercontent.com`), as the
@@ -84,9 +101,9 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 
 ## Facts
 
-Every fact comes from `mockups/data.nix` (the org profile, the people's and partners' GitHub
-profiles, and `gh repo list piabrota --fork` for the forks, each list with its date), through
-`site/data.nix`. Refresh the forks there when the org forks something. The words the
+Every fact comes from `mockups/data.nix` (the org profile, piabrota/mu's dogma, dojo's repos, GitHub
+for each repository, and `gh repo list piabrota --fork` for the forks, each list with its date),
+through `site/data.nix`. Refresh the forks there when the org forks something. The words the
 page says in its own voice (headings, button labels, the lede of C) are in `src/`.
 
 ## Before you change the look

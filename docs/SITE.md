@@ -5,7 +5,7 @@ over HTTP and HTTPS, through nginx with a Let's Encrypt certificate. `piabrota.a
 301 to `https://www.piabrota.art`, keeping the path (NixOS's `globalRedirect` points at HTTPS when
 the name has a certificate). `configuration.nix` turns it on (`piabrota.site.enable = true`).
 
-The site has three designs, the [mockups](MOCKUPS.md) built for real, each with a switcher to the
+The site has three designs, grown from the [mockups](MOCKUPS.md), each with a switcher to the
 other two:
 
 | Design | Desktop, dark | Desktop, light | Phone (390 px) |
@@ -14,11 +14,16 @@ other two:
 | B · index, at `/index/` | ![Design B, index, dark](images/site-index-desktop-dark.png) | ![Design B, index, light](images/site-index-desktop-light.png) | ![Design B, index, phone](images/site-index-mobile-dark.png) |
 | C · paths, at `/paths/` | ![Design C, paths, dark](images/site-paths-desktop-dark.png) | ![Design C, paths, light](images/site-paths-desktop-light.png) | ![Design C, paths, phone](images/site-paths-mobile-dark.png) |
 
-Every design ends with the same three sections: the **board** (each person with a GitHub pill and
-their website), the **partners** (marola.dev and ouroboric, with their logos) and the **forks**,
-a PUBLIC inventory of every fork under piabrota, as h0ffmann/h0ffmann lists its own:
+Design A is built as [closed-source's site](https://h0ffmann.github.io/closed-source/) is: numbers in
+the hero, tiles with tags, a bar of anchors, then detail in sections. Every design ends with the same
+sections: the **structure** (mu, the company chart; dojo, the umbrella; the products; pirsig, the
+brain), **why it is open**, the **dogma** (the ten invariants of piabrota/mu), the **FOSS inventory**
+(every project with its origin, language, licence, last push and links), the **board** (each person
+with a GitHub pill and their website, when they have one), the **partners** (marola.dev and
+ouroboric, with their logos) and the **forks**, a PUBLIC inventory of every fork under piabrota, as
+h0ffmann/h0ffmann lists its own:
 
-![Design A, the whole page, dark: the projects, then the board, the partners and the forks](images/site-fabric-full-dark.png)
+![Design A, the whole page, dark: the tiles, then the structure, the dogma, the inventory, the board, the partners and the forks](images/site-fabric-full-dark.png)
 
 All three wear picasso's look in piabrota's colours, dark first and light when the visitor asks
 for it; the rules are [`site/DESIGN.md`](../site/DESIGN.md). The pages load the sister sites'

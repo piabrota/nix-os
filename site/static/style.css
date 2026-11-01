@@ -110,7 +110,7 @@ main > section.wrap { padding-top: 56px; padding-bottom: 8px; }
 .where { font: 400 12.5px/1.4 var(--mono); overflow-wrap: anywhere; }
 span.where { color: var(--muted); }
 
-/* A · fabric: lanes of cards. */
+/* A · fabric: lanes of tiles, in closed-source's manner. */
 .lane { margin-top: 30px; }
 .lane h3 { display: flex; align-items: center; gap: 10px; font: 600 12px/1 Inter, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
 .count { font: 400 11px/1 var(--mono); letter-spacing: 0; color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 3px 7px; }
@@ -127,6 +127,26 @@ span.where { color: var(--muted); }
 .card-foot { display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid var(--border); }
 .meta { font-size: 12px; color: var(--muted); }
 
+.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.tile {
+  position: relative; display: flex; flex-direction: column; gap: 10px; min-height: 230px; padding: 20px 22px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.tile:hover { transform: scale(1.015); border-color: var(--accent-text); }
+.tile:focus-within { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+.tile-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tile-tags span:not(.pill) { padding: 4px 10px; font: 600 11px/1 Inter, sans-serif; color: var(--muted); background: var(--raised); border: 1px solid var(--border); border-radius: 999px; }
+.tile h4 { font-size: clamp(1.5rem, 2.8vw, 2rem); line-height: 1.08; overflow-wrap: anywhere; margin-top: 6px; }
+.tile-link { color: var(--text); }
+.tile-link:hover { text-decoration: none; }
+.tile-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.tile .meta { overflow-wrap: anywhere; }
+/* The one filled tile: the company chart. */
+.tile[data-name="mu"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
+.tile[data-name="mu"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
+.tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
+
 .credit {
   display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
   padding: 20px 24px; border-radius: var(--radius);
@@ -136,22 +156,8 @@ span.where { color: var(--muted); }
 .credit p { margin: 0; max-width: 56ch; }
 .credit .actions { margin: 0; }
 
-/* B · index: one table. */
+/* B · index: the wordmark. */
 .index .wordmark { font-size: clamp(3.4rem, 13vw, 8.5rem); line-height: .9; letter-spacing: .01em; color: var(--accent-text); }
-.table-scroll { overflow-x: auto; margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); }
-.repos { width: 100%; border-collapse: collapse; font-size: 14px; }
-.repos th, .repos td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-.repos thead th { font: 600 11px/1 Inter, sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); background: var(--surface); }
-.repos tbody tr { box-shadow: inset 3px 0 0 var(--state); }
-.repos tbody tr:last-child td { border-bottom: 0; }
-.repos tbody tr:hover { background: var(--surface); }
-.repos .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; width: 1%; }
-.repos .rank { font: 400 1.15rem/1.3 var(--display); color: var(--muted); }
-.repos tr:first-child .rank { color: var(--accent-text); }
-.repos .name { font: 400 1.3rem/1.2 var(--display); }
-.repos .desc { color: var(--muted); font-size: 13px; margin-top: 4px; max-width: 56ch; }
-.repos .when { white-space: nowrap; color: var(--muted); }
-.repos .where { white-space: nowrap; overflow-wrap: normal; }
 
 /* C · paths: a terminal on the surface. */
 .terminal { margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; font: 400 13px/1.6 var(--mono); }
@@ -183,8 +189,6 @@ span.where { color: var(--muted); }
   .drawing img { width: 120px; }
   .drawing .eye { width: 96px; }
   .drawing figcaption { display: none; }
-  .repos .opt { display: none; }
-  .repos th, .repos td { padding: 12px 10px; }
   .term-block li { grid-template-columns: minmax(0, 1fr) 7.5rem; }
   .term-block .where { grid-column: 1 / -1; }
 }
@@ -203,6 +207,43 @@ span.where { color: var(--muted); }
   html { scroll-behavior: auto; }
   .btn, .card { transition: none; }
 }
+
+/* The hero's numbers, closed-source's. */
+.metrics { display: flex; flex-wrap: wrap; gap: 12px 36px; margin: 24px 0 0; }
+.metrics div { display: flex; flex-direction: column-reverse; }
+.metrics dd { margin: 0; font: 400 2rem/1.1 var(--display); }
+.metrics dt { font-size: 13px; color: var(--muted); }
+
+/* What every design shares (community.gleam): the anchors stay at the top while the page scrolls. */
+.anchors { position: sticky; top: 0; z-index: 2; background: color-mix(in srgb, var(--bg) 92%, transparent); border-bottom: 1px solid var(--border); backdrop-filter: blur(8px); }
+.anchors .wrap { display: flex; gap: 4px 20px; overflow-x: auto; padding-top: 12px; padding-bottom: 12px; white-space: nowrap; scrollbar-width: none; }
+.anchors a { font-size: 13px; color: var(--muted); }
+.anchors a:hover { color: var(--text); }
+main > section.wrap { scroll-margin-top: 44px; }
+
+.layers { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.layer { padding: 18px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.role { font: 400 12px/1.4 var(--mono); color: var(--muted); }
+.layer h3 { font-size: 1.5rem; line-height: 1.2; margin-top: 4px; }
+.layer p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+
+.reasons { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 18px; }
+.reasons h3 { font-size: 1.35rem; }
+.reasons p { margin: 4px 0 0; max-width: 70ch; color: var(--muted); }
+
+.dogma { margin: 16px 0 0; padding-left: 1.6em; max-width: 78ch; }
+.dogma li { padding: 7px 0 7px 4px; color: var(--muted); }
+.dogma li::marker { font: 400 13px var(--mono); color: var(--accent-text); }
+.dogma strong { color: var(--text); font-weight: 600; }
+
+.inventory { list-style: none; counter-reset: entry; margin: 18px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.entry { padding: 18px 0 18px 14px; border-bottom: 1px solid var(--border); box-shadow: inset 3px 0 0 var(--state); }
+.entry h3 { font-size: 1.5rem; line-height: 1.15; overflow-wrap: anywhere; }
+.entry .blurb { margin-top: 6px; max-width: 76ch; }
+.entry dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px 20px; margin: 12px 0 0; }
+.entry dt { font: 600 11px/1.4 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.entry dd { margin: 0; font: 400 13px/1.5 var(--mono); overflow-wrap: anywhere; }
+.links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 10px; font-size: 13px; align-items: baseline; }
 
 /* Board, partners, forks: every design ends with them (community.gleam). */
 .people { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 14px; }
