@@ -143,6 +143,22 @@ pub fn state_class(state: State) -> String {
   }
 }
 
+/// The hero's numbers, closed-source's: each counted from the facts, never typed.
+pub fn metrics() -> Element(msg) {
+  html.dl([attribute.class("metrics")], {
+    use #(n, label) <- list.map([
+      #(list.length(data.projects), "FOSS projects"),
+      #(list.length(data.forks), "forks"),
+      #(list.length(data.people), "people"),
+      #(list.length(data.dogma), "invariants"),
+    ])
+    html.div([], [
+      html.dt([], [html.text(label)]),
+      html.dd([], [html.text(int.to_string(n))]),
+    ])
+  })
+}
+
 /// A project's state, in words first and colour second.
 pub fn pill(state: State) -> Element(msg) {
   html.span([attribute.class("pill")], [html.text(state_name(state))])

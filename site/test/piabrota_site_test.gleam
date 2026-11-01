@@ -88,7 +88,13 @@ pub fn community_test() {
         p.1,
         "href=\"https://github.com/" <> person.login <> "\"",
       )
-      assert string.contains(p.1, "href=\"" <> person.site <> "\"")
+      // A person without a website gets no pill.
+      case person.site {
+        "" -> Nil
+        site -> {
+          assert string.contains(p.1, "href=\"" <> site <> "\"")
+        }
+      }
     })
     list.each(data.partners, fn(partner) {
       assert string.contains(

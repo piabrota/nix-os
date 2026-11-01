@@ -24,6 +24,7 @@ pub fn view() -> Element(msg) {
             "Some projects answer here, on a path of piabrota.art; the rest live on their own sites or in their repositories.",
           ),
         ]),
+        parts.metrics(),
         parts.status(),
         parts.buttons(#("#ls", "List the paths ↓")),
       ]),
