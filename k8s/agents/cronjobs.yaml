@@ -1,6 +1,8 @@
 # The schedules. ops-tick every 10 minutes: each agent in it exits in seconds without calling Claude
 # when there is nothing new (no failed deploy, pull request head, mention or feedback). health-digest once a day at 09:30 UTC (06:30 in Brasília), ten minutes
 # after the box writes its health snapshot (kubesolo.nix, piabrota.kubesolo.healthSnapshot).
+# issue-worker hourly from 01:00 to 08:00 UTC (22:00 to 05:00 in Brasília): nights only, and its last
+# run ends before health-digest needs the second pod of the quota.
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -87,6 +89,59 @@ spec:
             - name: rax
               image: rax-server
               command: ["sh", "/tasks/run.sh", "health-digest"]
+              env:
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests: {cpu: 10m, memory: 16Mi}
+                limits: {cpu: 100m, memory: 64Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - {name: tasks, mountPath: /tasks, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: tasks
+              configMap:
+                name: agents-tasks
+            - name: tmp
+              emptyDir: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: issue-worker
+  namespace: ax-system
+spec:
+  schedule: "0 1-8 * * *"
+  timeZone: Etc/UTC
+  # A run still going keeps its pod: rax's resume leaves a running task alone, and this skips
+  # starting a second Job meanwhile.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rax
+              image: rax-server
+              command: ["sh", "/tasks/run.sh", "issue-worker"]
               env:
                 - name: HOME
                   value: /tmp

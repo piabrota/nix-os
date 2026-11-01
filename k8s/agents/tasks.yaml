@@ -41,6 +41,23 @@ data:
         limits:
           cpu: 500m
           memory: 768Mi
+  # One issue labelled agent-ready per run (piabrota/agents, "The issue worker"). The digest is the
+  # first image with issue-worker: it stays out of `ops-tick` because a run takes up to 40 minutes.
+  issue-worker.yaml: |
+    apiVersion: ax.io/v1alpha1
+    kind: Task
+    metadata:
+      name: issue-worker
+      atespace: ops
+    spec:
+      image: ghcr.io/piabrota/agents@sha256:PENDING_THE_MERGE_OF_PIABROTA_AGENTS_4
+      command:
+      - /opt/agents/bin/agent
+      - issue-worker
+      resources:
+        limits:
+          cpu: 500m
+          memory: 768Mi
   # One run: make the task if it is missing, or again if its spec here changed (rax tasks cannot be
   # changed, and `rax apply` refuses an existing one even unchanged), then resume it.
   run.sh: |

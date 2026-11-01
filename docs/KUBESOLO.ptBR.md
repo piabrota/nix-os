@@ -306,7 +306,7 @@ piabrota/rax#10, o "pod runner" do README dele): um resume roda a task uma vez, 
 ### O horário dos agentes: `k8s/agents/`
 
 Os agentes rodam sozinhos. A memória deles é o banco `agents` no PGX, como o Secret
-`ax-tasks/agents-memory` (`AGENTS_DB_URL`, `piabrota.pgx.kubeSecrets.agents-memory`). Dois CronJobs no `ax-system` rodam o CLI `rax`, que vem na imagem do
+`ax-tasks/agents-memory` (`AGENTS_DB_URL`, `piabrota.pgx.kubeSecrets.agents-memory`). Três CronJobs no `ax-system` rodam o CLI `rax`, que vem na imagem do
 rax-server (piabrota/rax#11), contra o rax-server: cada um cria a sua task se faltar (ou de novo se o
 `spec` dela em `k8s/agents/tasks.yaml` mudou, como um digest novo da imagem) e dá resume, e o
 rax-server roda a task como um pod no `ax-tasks`.
@@ -315,6 +315,7 @@ rax-server roda a task como um pod no `ax-tasks`.
 |---|---|---|---|
 | `ops-tick` | a cada 10 minutos | tudo o que os agentes do GitHub olham, um depois do outro (`agent tick`): deploys que falharam, heads de pull requests, menções a `@piabrota-ops`, docs sem o espelho, pull requests `flake-update`, feedback | uma issue por deploy que falhou e um pull request de correção quando a mudança o quebrou; um comentário de revisão por pull request; respostas; pull requests de espelho; comentários de risco; lições na memória (README do piabrota/agents) |
 | `health-digest` | 09:30 UTC (06:30 em Brasília) | o ConfigMap `ax-tasks/health-snapshot` | um comentário na issue `health-digest` |
+| `issue-worker` | de hora em hora, das 01:00 às 08:00 UTC (22:00 às 05:00 em Brasília) | a issue mais antiga com a etiqueta `agent-ready`, posta por quem pode escrever aqui | um pull request em `agents/issue-<n>`, nunca um merge; ou um comentário dizendo por quê, e a etiqueta `agent-blocked` (README do piabrota/agents) |
 
 Um deploy que falha também é diagnosticado fora da máquina: o `.github/workflows/deploy-doctor.yml`
 roda o mesmo deploy-doctor num runner do GitHub quando o `deploy` falha, então uma falha que derruba

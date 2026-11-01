@@ -310,7 +310,7 @@ it `Suspended`, a non-zero exit `Failed`. The agents in piabrota/agents run this
 ### The agents' schedule: `k8s/agents/`
 
 The agents run by themselves. Their memory is the database `agents` in PGX, as the Secret
-`ax-tasks/agents-memory` (`AGENTS_DB_URL`, `piabrota.pgx.kubeSecrets.agents-memory`). Two CronJobs in `ax-system` run the `rax` CLI, which ships in the
+`ax-tasks/agents-memory` (`AGENTS_DB_URL`, `piabrota.pgx.kubeSecrets.agents-memory`). Three CronJobs in `ax-system` run the `rax` CLI, which ships in the
 rax-server image (piabrota/rax#11), against rax-server: each makes its task if it is missing (or
 again if its `spec` in `k8s/agents/tasks.yaml` changed, such as a new image digest) and resumes it,
 and rax-server runs the task as a pod in `ax-tasks`.
@@ -319,6 +319,7 @@ and rax-server runs the task as a pod in `ax-tasks`.
 |---|---|---|---|
 | `ops-tick` | every 10 minutes | everything the GitHub-watching agents watch, one after the other (`agent tick`): failed deploys, pull request heads, mentions of `@piabrota-ops`, docs without their mirror, `flake-update` pull requests, feedback | an issue per failed deploy and a fix pull request when the change broke it; a review comment per pull request; replies; mirror pull requests; risk comments; lessons in memory (piabrota/agents' README) |
 | `health-digest` | 09:30 UTC (06:30 in Brasília) | the ConfigMap `ax-tasks/health-snapshot` | a comment on the `health-digest` issue |
+| `issue-worker` | hourly, 01:00 to 08:00 UTC (22:00 to 05:00 in Brasília) | the oldest issue labelled `agent-ready` by someone who can write here | a pull request on `agents/issue-<n>`, never a merge; or a comment saying why, and the label `agent-blocked` (piabrota/agents' README) |
 
 A failed deploy is also diagnosed off the box: `.github/workflows/deploy-doctor.yml` runs the
 same deploy-doctor on a GitHub runner when `deploy` fails, so a failure that takes KubeSolo down,
