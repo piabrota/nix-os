@@ -17,6 +17,9 @@ where it came from, and what differs in this repo. AGENTS.md wins wherever a ski
 | `figure` | [piabrota/pirsig](https://github.com/piabrota/pirsig) | `main`, 2026-10-30 | MPL-2.0 | a figure in README.md or the wiki: an archify source, `just figure`, a reading card, in English and pt-BR |
 | `archify` | [tt-a1i/archify](https://github.com/tt-a1i/archify), a link into the submodule `vendor/archify` | `208acba8d412` | Apache-2.0 | the archify CLI and its schemas, which `just figure` runs |
 | `open-pencil` | [open-pencil/open-pencil](https://github.com/open-pencil/open-pencil) | `24461adec707` | MIT | drafting or inspecting a design in OpenPencil, through its CLI or the `open-pencil` MCP server |
+| `cientifico` | [piabrota/gramatico](https://github.com/piabrota/gramatico) | `d57371af3055` | MPL-2.0 | the pt-BR text of `site/locale/` |
+| `easy-translate` | [h0ffmann/skills](https://github.com/h0ffmann/skills) | `bcccf4950e10` | MPL-2.0 | the zh-CN and ja-JP text of `site/locale/` |
+| `eli5` | [h0ffmann/skills](https://github.com/h0ffmann/skills) | `bcccf4950e10` | MPL-2.0 | keeping that text simple |
 
 `.mcp.json` adds [mcp-nixos](https://github.com/utensils/mcp-nixos) (`nix run nixpkgs#mcp-nixos`)
 for package and option lookups; prefer it over guessing an option name. It runs where the agent

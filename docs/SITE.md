@@ -87,6 +87,22 @@ failed.
 `piabrota.site.httpsOnly = true` turns plain HTTP into a redirect to HTTPS. Add redirects in
 `piabrota.site.redirects`, more names in `piabrota.site.redirectFrom`.
 
+
+## Languages
+
+Design A has four languages; designs B and C stay in English. English is the source, and it wins when two
+texts disagree. `en.json` holds the page's words, and the facts stay in `mockups/data.nix`. Each other file
+holds the same words and those facts in its language. A key that one of them lacks stops the build.
+
+| File | Rules |
+| --- | --- |
+| `pt-BR.json` | gramatico's `cientifico` skill |
+| `zh-CN.json` | controlled Simplified Chinese, from `easy-translate`, and simple in the manner of `eli5` |
+| `ja-JP.json` | Easy Japanese, from `easy-translate`, and simple in the manner of `eli5` |
+
+Change the source first, then each language. The zh-CN and ja-JP pages keep their banner until a native
+reader checks them. A fork's description stays as GitHub publishes it.
+
 ## Change the site
 
 The site is Gleam with [Lustre](https://lustre.build), prerendered once at build time, as
@@ -97,6 +113,7 @@ designs of the [mockups](MOCKUPS.md), each a page, with a switcher at the foot o
 |---|---|
 | `/` | A · fabric: the org profile as a page, the projects as cards in their lanes |
 | `/index/` | B · index: an editorial list, one numbered row a project |
+| `/pt-BR/`, `/zh-CN/`, `/ja-JP/` | design A in that language |
 | `/paths/` | C · paths: 无 and the name, and a listing of what answers here and where the rest lives |
 
 The facts (the projects, their blurbs, where each meets the web) come from `mockups/data.nix`, the
@@ -112,6 +129,7 @@ same file the mockups draw: the mockups and the site cannot disagree. Change a f
 | `site/test/` | gleeunit tests on the rendered pages |
 | `site/static/` | copied as is next to the pages (`style.css`, one body class a design) |
 | `site/gleam.toml`, `site/manifest.toml` | the Gleam project and its locked hex packages |
+| `site/locale/<lang>.json` | the site's words in each language; `site/data.nix` compiles them, and a key that one language lacks stops the build |
 | `site/default.nix` | the build: fetches each hex package at its `manifest.toml` checksum, writes `data.gleam`, checks the format, runs the tests, prerenders the three pages, copies `static/` and the 无 drawing (`docs/drawings/mu.svg`) |
 | `site/DESIGN.md` | the look, in rules: tokens, type, shapes, layout, motion |
 | `site/design/` | OpenPencil drafts; never built or deployed |

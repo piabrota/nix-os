@@ -46,10 +46,13 @@ stdenvNoCC.mkDerivation {
   buildPhase = ''
     runHook preBuild
     gleam format --check src test
-    mkdir -p dist/index dist/paths
+    mkdir -p dist/index dist/paths dist/pt-BR dist/zh-CN dist/ja-JP
     gleam run -m piabrota_site/render/fabric --no-print-progress > dist/index.html
     gleam run -m piabrota_site/render/index --no-print-progress > dist/index/index.html
     gleam run -m piabrota_site/render/paths --no-print-progress > dist/paths/index.html
+    gleam run -m piabrota_site/render/fabric_pt_br --no-print-progress > dist/pt-BR/index.html
+    gleam run -m piabrota_site/render/fabric_zh_cn --no-print-progress > dist/zh-CN/index.html
+    gleam run -m piabrota_site/render/fabric_ja_jp --no-print-progress > dist/ja-JP/index.html
     runHook postBuild
   '';
 

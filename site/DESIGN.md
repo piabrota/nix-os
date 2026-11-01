@@ -90,7 +90,9 @@ Every design ends with the same sections, in this order (`src/piabrota_site/comm
   description. "PUBLIC" stays in capitals: GitHub
   keeps a fork of a public repository public, and the capitals say so.
 
-Avatars and logos load from where GitHub publishes them (`avatars.githubusercontent.com`), as the
+The top band names the four languages. A project's card carries its repository's logo, loaded at a pinned commit from
+`raw.githubusercontent.com`; a repository with no logo yet shows its text mark. Partner cards share one
+height, so their logos line up. Avatars and logos load from where GitHub publishes them (`avatars.githubusercontent.com`), as the
 sister sites load their icons; none is stored here. The names and logos are their owners' marks.
 
 ## Motion

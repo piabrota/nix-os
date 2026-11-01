@@ -15,6 +15,8 @@ let
     "where: ${str (data.where p)}"
     "href: ${str (data.href p)}"
     "repo: ${str (data.repo p)}"
+    "logo: ${str (p.logo or "")}"
+    "glyph: ${str (p.glyph or "")}"
     "origin: ${str (data.origin p)}"
     "pushed: ${str p.pushed}"
     "state: ${state.${p.state}})"
@@ -24,8 +26,24 @@ let
   fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, lang: ${str f.lang}, licence: ${str f.licence}, sync: ${str f.sync}, description: ${str f.description})";
   layer = l: "Layer(name: ${str l.name}, role: ${str l.role}, text: ${str l.text}, href: ${str l.href})";
   principle = x: "Principle(title: ${str x.title}, text: ${str x.text})";
+  # The strings of every language, from locale/<lang>.json. en.json holds the page's words; each other
+  # file holds the same keys, and the facts of mockups/data.nix in its own language. A key that one
+  # language lacks stops the build.
+  languages = [ "en" "pt-BR" "zh-CN" "ja-JP" ];
+  locale = l: builtins.fromJSON (builtins.readFile (./locale + "/${l}.json"));
+  keys = l: builtins.attrNames (locale l);
+  checked = lib.all
+    (l:
+      lib.subtractLists (keys l) (keys "en") == [ ]
+      && lib.subtractLists (keys l) (keys "pt-BR") == [ ]
+      && lib.subtractLists (keys "pt-BR") (keys l) == [ ]
+      || throw "site/locale/${l}.json has different keys")
+    (lib.remove "en" languages);
+  clause = l: k: "    ${str l}, ${str k} -> ${str (locale l).${k}}\n";
+  clauses = lib.concatMapStrings (l: lib.concatMapStrings (clause l) (keys l)) languages;
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
+assert checked;
 ''
   //// Written by site/data.nix from mockups/data.nix (the org profile). Do not edit: change
   //// mockups/data.nix and run `just site-data`.
@@ -50,6 +68,8 @@ in
       where: String,
       href: String,
       repo: String,
+      logo: String,
+      glyph: String,
       origin: String,
       pushed: String,
       state: State,
@@ -104,4 +124,11 @@ in
   pub const partners = ${list partner data.partners}
 
   pub const forks = ${list fork data.forks}
+
+  /// One string of one language, "" when that language has no such key.
+  pub fn locale(lang: String, key: String) -> String {
+    case lang, key {
+  ${clauses}    _, _ -> ""
+    }
+  }
 ''
