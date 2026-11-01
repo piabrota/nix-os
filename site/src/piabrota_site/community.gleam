@@ -60,6 +60,15 @@ fn anchors(lang: String) -> Element(msg) {
 fn structure(lang: String) -> Element(msg) {
   html.section([attribute.class("wrap"), attribute.id("structure")], [
     head(lang, "structure"),
+    html.figure([attribute.class("fabric-figure")], [
+      html.img([
+        attribute.src(i18n.t(lang, "structure.image")),
+        attribute.alt(i18n.t(lang, "structure.alt")),
+        attribute.width(1188),
+        attribute.height(680),
+        attribute.attribute("loading", "lazy"),
+      ]),
+    ]),
     html.ul(
       [attribute.class("layers")],
       list.map(data.structure, fn(l: Layer) {

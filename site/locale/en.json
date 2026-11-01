@@ -60,5 +60,7 @@
   "foot.b": ", from /nix/store. Partnerships: ",
   "foot.notes": "Notes demo (Loco)",
   "closed.lane": "closed source, for now",
-  "closed.tag": "closed source"
+  "closed.tag": "closed source",
+  "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/fabric.png",
+  "structure.alt": "The piabrota fabric: dojo is the common layer, it takes the rules from mu and pins every repository below it."
 }

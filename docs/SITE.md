@@ -88,6 +88,12 @@ failed.
 `piabrota.site.redirects`, more names in `piabrota.site.redirectFrom`.
 
 
+## The structure figure
+
+The Structure section shows the org's fabric figure, drawn by archify in piabrota/.github. It loads from
+there at a pinned commit, in English or pt-BR, and no copy lives here. `structure.image` in
+`site/locale/<lang>.json` holds the address: change it when the figure changes.
+
 ## Closed projects
 
 `closed` in `mockups/data.nix` lists a project that is not FOSS yet. It gets a tile in design A, with no

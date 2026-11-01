@@ -67,10 +67,10 @@
   "lane.play": "tocar",
   "layer.mu.role": "o chart da empresa",
   "layer.mu.name": "mu",
-  "layer.mu.text": "O dogma, a carta, os padrões e o índice dos repositórios.",
-  "layer.dojo.role": "o umbrella",
+  "layer.mu.text": "O dogma, a carta, os padrões e o índice dos repositórios. O mu passa as regras ao dojo.",
+  "layer.dojo.role": "a camada comum",
   "layer.dojo.name": "dojo",
-  "layer.dojo.text": "Cada produto como submódulo em um commit fixado, e uma tabela de rotas. O dojo não guarda código de produto.",
+  "layer.dojo.text": "O umbrella: cada repositório como submódulo em um commit fixado, e uma tabela de rotas. O dojo herda as regras do mu e não guarda código de produto.",
   "layer.the products.role": "cada um no próprio repositório",
   "layer.the products.name": "os produtos",
   "layer.the products.text": "Cada produto tem README, licença e verificações próprios. Uma mudança em um produto acontece no repositório dele.",
@@ -121,5 +121,7 @@
   "partner.ouroboric-dev": "Fábricas abertas que melhoram a si mesmas. Carta, padrões, diário e marca.",
   "closed.lane": "código fechado, por enquanto",
   "closed.tag": "código fechado",
-  "project.chaceon": "Port em Rust do WW3, o modelo de física de ondas usado pelo ondaseventos.ufsc.br e pela NOAA."
+  "project.chaceon": "Port em Rust do WW3, o modelo de física de ondas usado pelo ondaseventos.ufsc.br e pela NOAA.",
+  "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/pt/fabric.png",
+  "structure.alt": "A fábrica piabrota: o dojo é a camada comum, recebe as regras do mu e fixa cada repositório abaixo dele."
 }
