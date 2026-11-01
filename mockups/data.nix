@@ -32,6 +32,17 @@ rec {
     links = [ "structure" "dogma" "inventory" "board" "forks" ];
   };
 
+  # Projects that are not FOSS yet. They stay out of `projects`: no repository link, no place in the
+  # FOSS inventory or its counts, and no place in the mockups.
+  closed = [
+    {
+      name = "chaceon";
+      glyph = "🌊";
+      lang = "Rust";
+      blurb = "Rust port of WW3, the wave physics model used by ondaseventos.ufsc.br and NOAA.";
+    }
+  ];
+
   lanes = [
     { id = "company"; label = "the company"; }
     { id = "think"; label = "think and write"; }

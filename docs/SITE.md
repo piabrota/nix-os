@@ -88,6 +88,11 @@ failed.
 `piabrota.site.redirects`, more names in `piabrota.site.redirectFrom`.
 
 
+## Closed projects
+
+`closed` in `mockups/data.nix` lists a project that is not FOSS yet. It gets a tile in design A, with no
+link. It stays out of the FOSS inventory, the counts and the mockups.
+
 ## Languages
 
 Design A has four languages; designs B and C stay in English. English is the source, and it wins when two
