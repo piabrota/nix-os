@@ -46,6 +46,14 @@ jobs:
         with:
           token: ${{ steps.app.outputs.token }}
 
+      # The runner has about 14 GB free, and the Nix store (Hermes's build, with its own nixpkgs, and
+      # the restored cache) outgrew it on 2026-11-02 ("No space left on device"). The image's
+      # toolchains that nothing here uses give back about 20 GB.
+      - name: Free disk space on the runner
+        if: steps.open.outputs.count == '0'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
       - if: steps.open.outputs.count == '0'
         uses: cachix/install-nix-action@v31
 
