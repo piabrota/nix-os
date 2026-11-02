@@ -6,17 +6,24 @@
 let
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
+  # Copied, not linked: a link into the input keeps its whole source (234 MiB) in the closure, and
+  # allowedReferences fails the build if a copy still points at it.
   # Left out, because they need Node, Go or Homebrew on the box: pr-lens, qmd, llm-wiki,
   # blogwatcher, archify.
-  optionalSkills = pkgs.linkFarm "hermes-optional-skills" (map
-    (path: { name = baseNameOf path; path = "${hermes-agent}/optional-skills/${path}"; })
-    [
-      "devops/watchers" # poll RSS, JSON APIs and GitHub, with dedup: bulletins and alerts
-      "research/rss-feeds" # read and discover feeds
-      "research/duckduckgo-search" # web search with no key (the ddgs extra)
-      "research/research-paper-writing" # papers, with the bundled arxiv and grounded-citations
-      "software-development/ast-grep" # structural code search (pkgs.ast-grep below)
-    ]);
+  skills = [
+    "devops/watchers" # poll RSS, JSON APIs and GitHub, with dedup: bulletins and alerts
+    "research/rss-feeds" # read and discover feeds
+    "research/duckduckgo-search" # web search with no key (the ddgs extra)
+    "research/research-paper-writing" # papers, with the bundled arxiv and grounded-citations
+    "software-development/ast-grep" # structural code search (pkgs.ast-grep below)
+  ];
+  optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
+    mkdir $out
+  '' + lib.concatMapStrings
+    (path: ''
+      cp -r ${hermes-agent}/optional-skills/${path} $out/${baseNameOf path}
+    '')
+    skills);
 in
 {
   imports = [ hermes-agent.nixosModules.default ];
