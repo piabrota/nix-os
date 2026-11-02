@@ -8,9 +8,15 @@
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Hermes Agent's package and NixOS module (hermes.nix). Its main branch is what it publishes;
+    # the lock pins a commit, and the weekly flake update moves it in a PR that CI builds.
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, deploy-rs }:
+  outputs = { self, nixpkgs, deploy-rs, hermes-agent }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -29,6 +35,7 @@
     {
       nixosConfigurations.piabrota = nixpkgs.lib.nixosSystem {
         inherit system;
+        specialArgs = { inherit hermes-agent; };
         modules = [ ./configuration.nix ];
       };
 
@@ -74,6 +81,7 @@
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {
           inherit system;
+          specialArgs = { inherit hermes-agent; };
           modules = [
             ./configuration.nix
             {
@@ -91,12 +99,6 @@
             }
           ];
         }).config.system.build.toplevel;
-        # The system with KubeSolo on, so the module and the package build in CI before the
-        # owner turns the flag on (docs/KUBESOLO.md). Never deployed.
-        kubesolo-example = (nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [ ./configuration.nix { piabrota.kubesolo.enable = true; } ];
-        }).config.system.build.toplevel;
         # pgx.nix in a VM: the unit starts in its sandbox, takes a password and keeps its data
         # across a restart (pgx/test.nix).
         pgx = pkgs.testers.runNixOSTest ./pgx/test.nix;
@@ -104,8 +106,6 @@
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
-        # The KubeSolo release binary (kubesolo/package.nix); not in nixpkgs.
-        kubesolo = pkgs.callPackage ./kubesolo/package.nix { };
         # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
         pgx = pkgs.callPackage ./pgx/package.nix { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.

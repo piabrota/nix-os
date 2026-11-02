@@ -11,10 +11,12 @@
     ./loco.nix
     ./site.nix
     ./apps.nix
-    # A trial of single-node Kubernetes (docs/KUBESOLO.md), turned on below.
-    ./kubesolo.nix
-    # A Postgres-compatible database for rax's store (docs/PGX.md), turned on below.
+    # A Postgres-compatible database (docs/PGX.md), turned on below.
     ./pgx.nix
+    # Hermes Agent, Nous Research's agent, on the chat platforms it has tokens for (docs/HERMES.md).
+    ./hermes.nix
+    # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
+    ./kubesolo-purge.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),
@@ -53,8 +55,8 @@
   networking.useDHCP = lib.mkForce false;
   # The name Hostinger gave the VPS. Without it NixOS writes `nixos` to /etc/hostname, and cloud-init,
   # which set srv2108887 on the first boot, keeps whatever /etc/hostname says on the next ones
-  # ("assuming user maintained hostname"): the 2026-10-31 reboot came up as `nixos`, and KubeSolo,
-  # whose node and certificate are srv2108887's, stopped (docs/KUBESOLO.md). This keeps the two in step.
+  # ("assuming user maintained hostname"): the 2026-10-31 reboot came up as `nixos`. This keeps the
+  # two in step.
   networking.hostName = "srv2108887";
 
   # hVPS drives provisioning by running bare-name commands (sh, cloud-init, chpasswd, ...)
@@ -77,23 +79,9 @@
 
   # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
   piabrota.site.enable = true;
-  # Single-node Kubernetes, on for a trial (kubesolo.nix, docs/KUBESOLO.md). Before the merge that
-  # turns it on, take a Hostinger snapshot; to undo, see the rollback in docs/KUBESOLO.md.
-  piabrota.kubesolo.enable = true;
-  # kubectl and the `k8s` shell without sudo (kubesolo.nix, docs/KUBESOLO.md "kubectl").
-  piabrota.kubesolo.admins = [ "h0ffmann" ];
-  # The agents' credentials (piabrota/agents), written by hand on the box, as the Secret
-  # ax-tasks/agents that every task pod gets (k8s/ax-tasks, docs/KUBESOLO.md "Agents").
-  piabrota.kubesolo.secrets.agents = { namespace = "ax-tasks"; envFile = "/var/lib/kubesolo-secrets/agents.env"; };
-  # The box's daily health for the health-digest agent, as the ConfigMap ax-tasks/health-snapshot.
-  piabrota.kubesolo.healthSnapshot.enable = true;
-  # PGX, the Postgres that rax's store on KubeSolo uses instead of a PostgreSQL server or Docker
-  # (pgx.nix, docs/PGX.md). Not for data you keep: that stays in SQLite.
+  # PGX, a Postgres instead of a PostgreSQL server or Docker (pgx.nix, docs/PGX.md). Not for data
+  # you keep: that stays in SQLite.
   piabrota.pgx.enable = true;
-  # rax's store URL as the Secret ax-system/ax-store (k8s/rax), written on the box from `pgx url ax`.
-  piabrota.pgx.kubeSecrets.ax-store = { namespace = "ax-system"; database = "ax"; };
-  # piabrota/agents' memory, as AGENTS_DB_URL in every task pod (k8s/rax: --pod-env-from-secret).
-  piabrota.pgx.kubeSecrets.agents-memory = { namespace = "ax-tasks"; database = "agents"; key = "AGENTS_DB_URL"; };
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";

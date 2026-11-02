@@ -3,7 +3,7 @@ name: Code smell report
 # A report, not a gate, as in h0ffmann/astrbot_dw_ext_br_south_disaster: fuck-u-code (pinned, its
 # checksum checked) scores the code from 0 (best) to 100 and lists the worst files, in the run
 # summary and in one comment on the pull request that each run updates. It reads the Rust (the
-# notes app) and the shell (scripts/, kubesolo/k8s.bash); not Nix or Gleam, which CI's statix,
+# notes app) and the shell (scripts/); not Nix or Gleam, which CI's statix,
 # deadnix and nixpkgs-fmt cover. Vendored code is left out: the skills, archify, build output.
 
 on:

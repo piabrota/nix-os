@@ -6,7 +6,7 @@
   name = "pgx";
 
   nodes.machine = { pkgs, ... }: {
-    imports = [ ../kubesolo.nix ../pgx.nix ];
+    imports = [ ../pgx.nix ];
     piabrota.pgx.enable = true;
     environment.systemPackages = [ pkgs.postgresql_18 ];
     virtualisation.memorySize = 1024;

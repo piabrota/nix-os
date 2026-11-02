@@ -1,6 +1,6 @@
 # PGX (pgx.dev), a lightweight Postgres-compatible engine, as the unit `pgx`: one process that
-# speaks the PostgreSQL 18 wire protocol and SQL, for the workloads here that need Postgres (rax's
-# store on KubeSolo) without a PostgreSQL server or Docker. State in /var/lib/pgx, port 5432, the
+# speaks the PostgreSQL 18 wire protocol and SQL, for the workloads here that need Postgres without
+# a PostgreSQL server or Docker. State in /var/lib/pgx, port 5432, the
 # superuser password generated on the first start (`pgx url <db>` shows it). PGX is v0.1 and says
 # it is for disposable databases: data you keep stays in SQLite (docs/LOCO.md). See docs/PGX.md.
 { config, lib, pkgs, ... }:
@@ -10,36 +10,13 @@ let
   home = "/var/lib/pgx";
   run = "/run/pgx";
   env = { PGX_HOME = home; PGX_RUN_DIR = run; };
-  # Who may connect over TCP, besides this host: KubeSolo's pods, when it is on.
-  clients = lib.optional config.piabrota.kubesolo.enable "10.42.0.0/16";
-  # This host as KubeSolo's pods see it: cni0's address (seen on the box, 2026-10-30).
-  podHost = "10.42.0.1";
-  pki = "/var/lib/kubesolo/pki";
-  # One Secret for each piabrota.pgx.kubeSecrets entry, by server-side apply (curl, no kubectl):
-  # the namespace, the database if it is missing, and the URL with the pods' address for the host.
-  applySecret = name: { namespace, database, key }:
-    let
-      ns = lib.escapeShellArg namespace;
-      db = lib.escapeShellArg database;
-    in
-    ''
-      pgx ls | grep -q "^"${db}" " || pgx create ${db} >/dev/null
-      url=$(pgx url ${db} | tail -n 1)
-      url="''${url/@127.0.0.1:/@${podHost}:}?sslmode=disable"
-      printf '{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"%s"}}' ${ns} \
-        | apply /api/v1/namespaces/${ns}
-      printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s","namespace":"%s"},"type":"Opaque","data":{"%s":"%s"}}' \
-        ${lib.escapeShellArg name} ${ns} ${lib.escapeShellArg key} "$(printf %s "$url" | base64 -w 0)" \
-        | apply /api/v1/namespaces/${ns}/secrets/${lib.escapeShellArg name}
-      echo "secret ${namespace}/${name}: the URL of database ${database}"
-    '';
-  hba = pkgs.writeText "pg_hba.conf" (''
+  hba = pkgs.writeText "pg_hba.conf" ''
     # Written by pgx.nix on every start. The socket's directory admits the pgx group only; TCP
     # needs the password.
     local  all  all                trust
     host   all  all  127.0.0.1/32  scram-sha-256
     host   all  all  ::1/128       scram-sha-256
-  '' + lib.concatMapStrings (net: "host   all  all  ${net}  scram-sha-256\n") clients);
+  '';
   # `pgx ls`, `pgx create ax`, `pgx url ax` for an admin: the CLI runs as the pgx user.
   cli = pkgs.writeShellScriptBin "pgx" ''
     exec /run/wrappers/bin/sudo -u pgx env PGX_HOME=${home} PGX_RUN_DIR=${run} ${lib.getExe cfg.package} "$@"
@@ -59,34 +36,9 @@ in
       default = "256M";
       description = "systemd MemoryMax of the unit. PGX's own memory watchdog reads this limit.";
     };
-    kubeSecrets = mkOption {
-      type = types.attrsOf (types.submodule {
-        options = {
-          namespace = mkOption { type = types.str; description = "The Secret's namespace, created if missing."; };
-          database = mkOption { type = types.str; description = "The PGX database, created if missing."; };
-          key = mkOption {
-            type = types.str;
-            default = "url";
-            description = "The Secret's one key. A pod that takes the Secret as its environment (envFrom) gets it as a variable of this name.";
-          };
-        };
-      });
-      default = { };
-      example = { ax-store = { namespace = "ax-system"; database = "ax"; }; };
-      description = ''
-        Kubernetes Secrets in KubeSolo, each with one key (`url` unless `key` says otherwise): the database's URL with its
-        password, as pods reach it. The unit `pgx-kube-secrets` writes them on the box, so the
-        password never enters the repository or the store.
-      '';
-    };
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = cfg.kubeSecrets == { } || config.piabrota.kubesolo.enable;
-      message = "piabrota.pgx.kubeSecrets needs piabrota.kubesolo.enable.";
-    }];
-
     users.users.pgx = {
       isSystemUser = true;
       group = "pgx";
@@ -102,12 +54,12 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       environment = env;
-      # The first start copies the release's base cluster. Listening on every address is the only
-      # way pods reach it: cni0 appears after this unit starts. The firewall opens no port, and
-      # pg_hba.conf (rewritten on every start) refuses any network but loopback and the pods'.
+      # The first start copies the release's base cluster, listening on loopback. (The box's own
+      # cluster was made listening on every address, for KubeSolo's pods; the firewall opens no
+      # port, and pg_hba.conf, rewritten on every start, refuses any network but loopback.)
       preStart = ''
         if [ ! -f ${home}/config.json ]; then
-          PGX_LISTEN='*' ${lib.getExe cfg.package} init --port 5432 --durability full
+          PGX_LISTEN=127.0.0.1 ${lib.getExe cfg.package} init --port 5432 --durability full
         fi
         install -m 600 ${hba} ${home}/data/pg_hba.conf
       '';
@@ -146,66 +98,6 @@ in
         RestrictSUIDSGID = true;
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
-        SystemCallArchitectures = "native";
-        SystemCallFilter = [ "@system-service" "~@privileged" ];
-      };
-    };
-
-    # Not a oneshot: the switch does not wait for it, so an API that is still starting cannot fail
-    # a deploy. It retries until the API answers, then stays active. As the pgx user, with
-    # KubeSolo's admin certificate handed over by systemd (LoadCredential), not read from its state.
-    systemd.services.pgx-kube-secrets = mkIf (cfg.kubeSecrets != { }) {
-      description = "Kubernetes Secrets with PGX databases' URLs";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "pgx.service" "kubesolo.service" ];
-      requires = [ "pgx.service" ];
-      wants = [ "kubesolo.service" ];
-      startLimitIntervalSec = 0;
-      path = [ cfg.package pkgs.curl pkgs.gnugrep pkgs.coreutils ];
-      environment = env;
-      script = ''
-        set -o pipefail
-        apply() {
-          curl -fsS -o /dev/null -X PATCH \
-            --cacert "$CREDENTIALS_DIRECTORY/ca" --cert "$CREDENTIALS_DIRECTORY/crt" --key "$CREDENTIALS_DIRECTORY/key" \
-            -H 'Content-Type: application/apply-patch+yaml' --data-binary @- \
-            "https://127.0.0.1:6443$1?fieldManager=pgx&force=true"
-        }
-        # A deploy that restarts KubeSolo leaves its API down for a while. Wait for it instead of
-        # failing: a unit that fails while the system switches makes deploy-rs roll the deploy back
-        # (2026-10-31, #47). After 10 minutes, give up quietly; the next start applies.
-        up=
-        for _ in $(seq 60); do
-          if curl -fsS -o /dev/null --cacert "$CREDENTIALS_DIRECTORY/ca" --cert "$CREDENTIALS_DIRECTORY/crt" \
-            --key "$CREDENTIALS_DIRECTORY/key" https://127.0.0.1:6443/readyz; then
-            up=1
-            break
-          fi
-          sleep 10
-        done
-        if [ -z "$up" ]; then
-          echo "the Kubernetes API did not answer in 10 minutes: nothing applied"
-          exit 0
-        fi
-      '' + lib.concatStrings (lib.mapAttrsToList applySecret cfg.kubeSecrets);
-      serviceConfig = {
-        User = "pgx";
-        Group = "pgx";
-        RemainAfterExit = true;
-        Restart = "on-failure";
-        RestartSec = 30;
-        ReadWritePaths = [ home ];
-        LoadCredential = [ "ca:${pki}/ca/ca.crt" "crt:${pki}/admin/admin.crt" "key:${pki}/admin/admin.key" ];
-        CapabilityBoundingSet = "";
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectControlGroups = true;
-        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
         SystemCallArchitectures = "native";
         SystemCallFilter = [ "@system-service" "~@privileged" ];
       };
