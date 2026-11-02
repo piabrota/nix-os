@@ -28,6 +28,25 @@ weekly flake update (`flake-update.yml`) moves it only in a PR that CI builds be
 The configuration lives in Nix: on NixOS, `hermes setup`, `hermes config set` and
 `hermes gateway install` refuse to change what the module manages. Change `hermes.nix` in a PR.
 
+## Add-ons
+
+All are declared in `hermes.nix`, so they arrive with a deploy and move with the flake input.
+
+| Add-on | Kind | What for |
+|---|---|---|
+| `mcp`, `ddgs` | extras | The MCP client (without it the servers below do nothing) and DuckDuckGo search, with no key |
+| DeepWiki, Context7 | remote MCP servers, no key | Questions about public repositories (piabrota, marola-dev, nixpkgs) and current library docs. Nothing runs on the box for them. |
+| `watchers`, `rss-feeds` | optional skills | Poll RSS, JSON APIs and GitHub with dedup on Hermes's cron: bathing-water bulletins, Defesa Civil and INMET alerts, ocean news |
+| `duckduckgo-search`, `research-paper-writing` | optional skills | Web search; papers, with the bundled `arxiv` and `grounded-citations` |
+| `ast-grep` | optional skill, plus `pkgs.ast-grep` | Structural code search |
+| `gh` | package | For the bundled `github` skill. Put a fine-grained token with read access only in the env file as `GITHUB_TOKEN`: it reads, and it cannot push or merge. |
+
+The optional skills are one read-only directory in `skills.external_dirs`, taken from the
+project's `optional-skills/` at the pinned commit. The bundled skills (`arxiv`, `github`,
+`obsidian`, `weekly-review-planning` and the rest) come with the package. Left out, because they
+need Node, Go or Homebrew on the box: `pr-lens`, `qmd`, `llm-wiki`, `blogwatcher`, `archify`. Left
+out for the box's size: voice, the `mlops` skills, a local browser and `computer-use`.
+
 ## One-time setup on the box
 
 Without the secrets file, activation only warns (`cannot read environmentFile`) and the gateway
@@ -45,6 +64,7 @@ starts with no platform, running only the scheduled jobs. A deploy never fails b
    CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
    TELEGRAM_BOT_TOKEN=123456:ABC...
    TELEGRAM_ALLOWED_USERS=<your numeric ID>
+   GITHUB_TOKEN=github_pat_...   # optional: read-only, for the github skill
    ```
 
    Instead of Telegram: `DISCORD_BOT_TOKEN` and `DISCORD_ALLOWED_USERS`, or `SLACK_BOT_TOKEN`,
