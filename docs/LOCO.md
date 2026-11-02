@@ -17,8 +17,8 @@ app is declared, the module adds nothing to the system.
 | Variables | `PORT`, `NODE_PORT`, `BINDING`, `HOST`, `DATABASE_URL`, plus `environment`; secrets from `environmentFile` |
 
 No PostgreSQL server and no Redis: both are resident daemons that this machine cannot afford.
-The box does run [PGX](PGX.md), a Postgres-compatible engine, but for rax's store and other data
-you can lose: an app's own data stays in SQLite. Run
+The box does run [PGX](PGX.md), a Postgres-compatible engine, but for data you can lose: an app's
+own data stays in SQLite. Run
 background jobs in the same process: `workers.mode: BackgroundAsync`, or a SQLite queue
 (`queue.kind: Sqlite`) with `extraArgs = [ "--server-and-worker" ]`.
 

@@ -4,8 +4,9 @@
 
 O [PGX](https://pgx.dev) ([pgrundev/pgx](https://github.com/pgrundev/pgx)) é um banco compatível
 com Postgres escrito em Rust: um processo que fala o protocolo e o SQL do PostgreSQL 18. Esta
-máquina o roda como a unit `pgx` (`pgx.nix`) para o que precisa de Postgres aqui, hoje o store do
-rax no KubeSolo, no lugar de um servidor PostgreSQL ou de um container Docker.
+máquina o roda como a unit `pgx` (`pgx.nix`), no lugar de um servidor PostgreSQL ou de um
+container Docker. Hoje nada na máquina o usa: o primeiro usuário, o store do rax no KubeSolo, saiu
+com o KubeSolo em 2026-11-02. Ele fica para a próxima carga que precisar de Postgres.
 
 ## O que ele é, e o que não é
 
@@ -20,7 +21,7 @@ rax no KubeSolo, no lugar de um servidor PostgreSQL ou de um container Docker.
 O perfil padrão do PGX desliga o `fsync`. Este módulo inicializa com `--durability full` (os
 padrões do PostgreSQL: `fsync`, `synchronous_commit` e `full_page_writes` ligados), o que o teste
 confere. Mesmo assim: **dado que você quer guardar vai para o SQLite**, como fazem os apps Loco
-([`LOCO.md`](LOCO.md)). Aqui o PGX guarda stores que dá para refazer, como as tasks do rax.
+([`LOCO.md`](LOCO.md)). Aqui o PGX guarda stores que dá para refazer, como uma fila de tarefas.
 
 ## Custo
 
@@ -40,18 +41,13 @@ confere. Mesmo assim: **dado que você quer guardar vai para o SQLite**, como fa
   `/run/pgx` (modo 0750, só o grupo `pgx`). Na primeira partida copia o cluster base
   (`pgx init --port 5432 --durability full`) e gera a senha do superusuário, que fica em
   `/var/lib/pgx/config.json`.
-- Escuta em todos os endereços, porta 5432: os pods chegam ao host pelo `cni0`, que só aparece
-  depois que o KubeSolo sobe. **O firewall não abre porta nenhuma**, e o `pg_hba.conf`, reescrito
-  a cada partida, admite o socket (só o grupo `pgx`) e, por TCP com a senha (`scram-sha-256`), o
-  loopback e, com o KubeSolo ligado, os pods (`10.42.0.0/16`).
+- Porta 5432. Um cluster novo escuta no loopback; o da máquina foi criado escutando em todos os
+  endereços, para os pods do KubeSolo. **O firewall não abre porta nenhuma**, e o `pg_hba.conf`,
+  reescrito a cada partida, admite o socket (só o grupo `pgx`) e, por TCP com a senha
+  (`scram-sha-256`), só o loopback.
 - A mesma sandbox dos apps Loco: sem capabilities, sistema só de leitura, `/tmp` e dispositivos
   privados, chamadas de sistema `@system-service`.
 - Põe no path um comando `pgx` que roda o CLI como o usuário `pgx`.
-- Para cada `piabrota.pgx.kubeSecrets.<nome>` (hoje `ax-store`), a unit `pgx-kube-secrets` cria o
-  banco se faltar e grava a URL dele (a senha, o host `10.42.0.1`, `sslmode=disable`) como um
-  Secret do Kubernetes com uma chave, `url`, por server-side apply com `curl` e o certificado de
-  admin do KubeSolo (entregue pelo `LoadCredential` do systemd; sem `kubectl` na máquina). Não
-  segura o deploy: tenta de novo a cada 30 s até a API responder.
 
 O `checks.pgx` (`pgx/test.nix`) sobe uma VM com o módulo, cria um banco, conecta por TCP com a
 senha e sem ela, reinicia a unit, acha a linha de novo e lê o limite de memória no log. A CI roda
@@ -68,9 +64,7 @@ pgx url ax                # a URL dele, com a senha: postgres://postgres:…@127
 pgx drop ax               # apaga
 ```
 
-Qualquer cliente ou driver PostgreSQL funciona com essa URL. De um pod, troque `127.0.0.1` pelo
-endereço do `cni0` no host (10.42.0.1, visto na máquina). O rax no
-KubeSolo pega a URL de um Secret que o `pgx.nix` grava: [`KUBESOLO.ptBR.md`](KUBESOLO.ptBR.md), "Rodar, chegar, tirar".
+Qualquer cliente ou driver PostgreSQL na máquina funciona com essa URL.
 
 **Testado com o rax**: `cargo test -p rax-store` do piabrota/rax com `RAX_TEST_POSTGRES_URL`
 apontando para o PGX 0.1.2, 11 de 11 (a suíte de conformidade, criação concorrente do schema,
@@ -91,7 +85,7 @@ PostgreSQL 18 e fica; leia as notas da release para o resto.
 
 Ponha `piabrota.pgx.enable = false` no `configuration.nix` e faça o merge: a unit e a release
 saem do sistema. O `/var/lib/pgx` fica no disco; apague à mão (`sudo rm -r /var/lib/pgx`) quando
-não servir mais. O pod do rax então não alcança o store até ganhar outro.
+não servir mais.
 
 ## Fontes
 

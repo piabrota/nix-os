@@ -4,8 +4,9 @@
 
 [PGX](https://pgx.dev) ([pgrundev/pgx](https://github.com/pgrundev/pgx)) is a Postgres-compatible
 database engine written in Rust: one process that speaks the PostgreSQL 18 wire protocol and SQL.
-This box runs it as the unit `pgx` (`pgx.nix`) for what needs Postgres here, today rax's store on
-KubeSolo, instead of a PostgreSQL server or a Docker container.
+This box runs it as the unit `pgx` (`pgx.nix`), instead of a PostgreSQL server or a Docker
+container. Today nothing on the box uses it: its first user, rax's store on KubeSolo, left with
+KubeSolo on 2026-11-02. It stays for the next workload that needs Postgres.
 
 ## What it is, and what it is not
 
@@ -20,7 +21,7 @@ KubeSolo, instead of a PostgreSQL server or a Docker container.
 PGX's default profile turns `fsync` off. This module initialises it with `--durability full`
 (PostgreSQL's defaults: `fsync`, `synchronous_commit` and `full_page_writes` on), which the test
 checks. Even so: **data you keep goes to SQLite**, as the Loco apps do ([`LOCO.md`](LOCO.md)). PGX
-here holds stores you could rebuild, such as rax's tasks.
+here holds stores you could rebuild, such as a task queue.
 
 ## Cost
 
@@ -40,18 +41,13 @@ here holds stores you could rebuild, such as rax's tasks.
   in `/run/pgx` (mode 0750, the `pgx` group only). On the first start it copies the base cluster
   (`pgx init --port 5432 --durability full`) and generates the superuser's password, which stays
   in `/var/lib/pgx/config.json`.
-- Listens on every address, port 5432: pods reach the host through `cni0`, which appears only
-  after KubeSolo starts. **The firewall opens no port**, and `pg_hba.conf`, rewritten on every
-  start, admits the socket (the `pgx` group only) and, over TCP with the password
-  (`scram-sha-256`), loopback and, with KubeSolo on, the pods (`10.42.0.0/16`).
+- Port 5432. A new cluster listens on loopback; the box's own was made listening on every
+  address, for KubeSolo's pods. **The firewall opens no port**, and `pg_hba.conf`, rewritten on
+  every start, admits the socket (the `pgx` group only) and, over TCP with the password
+  (`scram-sha-256`), loopback only.
 - The same sandbox as the Loco apps: no capabilities, read-only system, private `/tmp` and
   devices, `@system-service` system calls.
 - Puts a `pgx` command on the path that runs the CLI as the `pgx` user.
-- For each `piabrota.pgx.kubeSecrets.<name>` (today `ax-store`), the unit `pgx-kube-secrets` creates
-  the database if it is missing and writes its URL (the password, the host `10.42.0.1`,
-  `sslmode=disable`) as a Kubernetes Secret with one key, `url`, by server-side apply with `curl`
-  and KubeSolo's admin certificate (handed over by systemd's `LoadCredential`; no `kubectl` on the
-  box). It does not hold up a deploy: it retries every 30 s until the API answers.
 
 `checks.pgx` (`pgx/test.nix`) boots a VM with the module, creates a database, connects over TCP
 with the password and without it, restarts the unit, finds the row again and reads the memory
@@ -68,9 +64,7 @@ pgx url ax                # its URL, with the password: postgres://postgres:…@
 pgx drop ax               # remove it
 ```
 
-Any PostgreSQL client or driver works with that URL. From a pod, replace `127.0.0.1` with the
-host's `cni0` address (10.42.0.1, seen on the box). rax on KubeSolo
-takes the URL from a Secret that `pgx.nix` writes: [`KUBESOLO.md`](KUBESOLO.md), "Run, reach, remove".
+Any PostgreSQL client or driver on the box works with that URL.
 
 **Tested with rax**: `cargo test -p rax-store` from piabrota/rax with `RAX_TEST_POSTGRES_URL`
 pointed at PGX 0.1.2, 11 of 11 (the conformance suite, concurrent schema creation, advisory
@@ -92,7 +86,7 @@ stays; read the release notes for anything else.
 
 Set `piabrota.pgx.enable = false` in `configuration.nix` and merge: the unit and the release leave
 the system. `/var/lib/pgx` stays on the disk; remove it by hand (`sudo rm -r /var/lib/pgx`) when it
-is no longer wanted. rax's pod then fails to reach its store until it gets another one.
+is no longer wanted.
 
 ## Sources
 
