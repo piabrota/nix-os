@@ -134,7 +134,7 @@ with that version.
 |---|---|---|
 | [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-26.05) `nixos-26.05` | [`08d3a97`](https://github.com/NixOS/nixpkgs/commit/08d3a97586f6b6343b3b5e799980773629432610) (2026-10-28) | the system; `system.stateVersion` is 26.05 |
 | [deploy-rs](https://github.com/serokell/deploy-rs) | [`1cec052`](https://github.com/serokell/deploy-rs/commit/1cec0527bd09074bbee6d4461900ce5d58267217) (2026-10-19) | the activation and its rollback; the `deploy` binary comes from nixpkgs, so CI does not compile it |
-| [hermes-agent](https://github.com/NousResearch/hermes-agent) `main` | [`d9f15af`](https://github.com/NousResearch/hermes-agent/commit/d9f15af47bd7d608a0cb054013a4be1b90c0302c) (2026-11-02) | Hermes Agent's package and NixOS module (`hermes.nix`); its nixpkgs follows this one |
+| [hermes-agent](https://github.com/NousResearch/hermes-agent) `main` | [`d9f15af`](https://github.com/NousResearch/hermes-agent/commit/d9f15af47bd7d608a0cb054013a4be1b90c0302c) (2026-11-02) | Hermes Agent's package and NixOS module (`hermes.nix`); it keeps its own nixpkgs (unstable), for which its build is made |
 
 `flake.lock` is the truth; this table is what it held on 2026-10-29. Update with
 `nix flake update` in a pull request.

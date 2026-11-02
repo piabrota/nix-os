@@ -9,11 +9,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Hermes Agent's package and NixOS module (hermes.nix). Its main branch is what it publishes;
-    # the lock pins a commit, and the weekly flake update moves it in a PR that CI builds.
-    hermes-agent = {
-      url = "github:NousResearch/hermes-agent";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # the lock pins a commit, and the weekly flake update moves it in a PR that CI builds. It keeps
+    # its own nixpkgs (unstable): its build patches tools, patchelf among them, for that version, and
+    # the patches fail on nixos-26.05's (2026-11-02).
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs = { self, nixpkgs, deploy-rs, hermes-agent }:
