@@ -28,6 +28,25 @@ flake (`flake-update.yml`) só o move num PR que o CI constrói antes do merge.
 A configuração fica no Nix: no NixOS, `hermes setup`, `hermes config set` e
 `hermes gateway install` recusam mudar o que o módulo gerencia. Mude o `hermes.nix` num PR.
 
+## Complementos
+
+Todos ficam declarados no `hermes.nix`, então chegam com um deploy e andam junto com o input do flake.
+
+| Complemento | Tipo | Para quê |
+|---|---|---|
+| `mcp`, `ddgs` | extras | O cliente MCP (sem ele os servidores abaixo não fazem nada) e a busca do DuckDuckGo, sem chave |
+| DeepWiki, Context7 | servidores MCP remotos, sem chave | Perguntas sobre repositórios públicos (piabrota, marola-dev, nixpkgs) e documentação atual de bibliotecas. Nada roda na máquina por causa deles. |
+| `watchers`, `rss-feeds` | skills opcionais | Consultam RSS, APIs JSON e o GitHub sem repetir aviso, no cron do Hermes: boletins de balneabilidade, alertas da Defesa Civil e do INMET, notícias do mar |
+| `duckduckgo-search`, `research-paper-writing` | skills opcionais | Busca na web; artigos científicos, junto com as skills `arxiv` e `grounded-citations`, que já vêm no pacote |
+| `ast-grep` | skill opcional, mais o `pkgs.ast-grep` | Busca estrutural em código |
+| `gh` | pacote | Para a skill `github`, que já vem no pacote. Ponha um token fine-grained só com acesso de leitura no arquivo de ambiente como `GITHUB_TOKEN`: ela lê, e não consegue dar push nem fazer merge. |
+
+As skills opcionais formam um diretório só de leitura em `skills.external_dirs`, tirado do
+`optional-skills/` do projeto no commit fixado. As skills que vêm no pacote (`arxiv`, `github`,
+`obsidian`, `weekly-review-planning` e as outras) já estão lá. Ficaram de fora, porque pedem Node,
+Go ou Homebrew na máquina: `pr-lens`, `qmd`, `llm-wiki`, `blogwatcher`, `archify`. Ficaram de fora
+pelo tamanho da máquina: voz, as skills de `mlops`, um navegador local e o `computer-use`.
+
 ## Configurar uma vez na máquina
 
 Sem o arquivo de segredos, a ativação só avisa (`cannot read environmentFile`) e o gateway sobe sem
@@ -45,6 +64,7 @@ plataforma nenhuma, rodando só as tarefas agendadas. Um deploy nunca falha por 
    CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
    TELEGRAM_BOT_TOKEN=123456:ABC...
    TELEGRAM_ALLOWED_USERS=<seu ID numérico>
+   GITHUB_TOKEN=github_pat_...   # opcional: só leitura, para a skill github
    ```
 
    No lugar do Telegram: `DISCORD_BOT_TOKEN` e `DISCORD_ALLOWED_USERS`, ou `SLACK_BOT_TOKEN`,
