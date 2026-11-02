@@ -29,6 +29,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `kubesolo-purge.nix` | Temporary. KubeSolo ran here from 2026-10-30 to 2026-11-02 and was removed with `k8s/` and its docs (git history has them). This oneshot, `kubesolo-purge`, clears what it left on the box once: the pods, the mounts, `/var/lib/kubesolo`, `/var/lib/kubesolo-secrets`, `cni0`, the `KUBE-` and `CNI-` rules. It runs only while `/var/lib/kubesolo` exists and never fails. Delete it in a PR once that directory is gone. |
 | `pgx.nix`, `pgx/` | `piabrota.pgx.enable`, on: [PGX](https://pgx.dev), a Postgres-compatible engine in Rust (v0.1, AGPL-3.0), as the unit `pgx` (state in `/var/lib/pgx`, port 5432 with no port opened in the firewall, `pg_hba.conf` for loopback only, the password generated on the first start), from its release (`pgx/package.nix`, patched with `autoPatchelfHook`; not in nixpkgs), `--durability full`, `MemoryMax=256M`, the Loco apps' sandbox. A `pgx` command runs the CLI as the `pgx` user. For data you can lose, never an app's own data; nothing uses it since KubeSolo left. `checks.pgx` (`pgx/test.nix`) boots it in a VM. See [docs/PGX.md](docs/PGX.md). |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
+| `observer.nix`, `keys/observer.pub` | The `observer` account: SSH key only, no sudo, not a Nix trusted user, in `systemd-journal`. A coding agent's session logs in with it (`ssh piabrota-observer`, the private key on the owner's computer) to read logs and unit states while it debugs. It reads; it changes nothing on the box. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
 | `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size, and the total. `--by-size` sorts by size. |
 | `.github/workflows/freeze.yml` | After each deploy and by hand: `scripts/freeze.sh` on the VPS, into the run summary and the `freeze` artifact. |
@@ -161,7 +162,7 @@ Update nixpkgs with `nix flake update` in its own PR; CI runs with `--no-update-
 
 ## Deploy
 
-An agent never deploys and never runs `just deploy`. It prepares the change and its PR; the merge
+An agent never deploys and never runs `just deploy`. To look at the box while debugging, it may log in as `observer` (`observer.nix`) and run read-only commands; it never asks the owner for root access to fix something there: the fix goes in a PR. It prepares the change and its PR; the merge
 to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 
 `deploy.yml` builds the system on the GitHub runner, and deploy-rs copies it to the VPS over SSH

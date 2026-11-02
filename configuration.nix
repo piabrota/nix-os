@@ -8,6 +8,8 @@
     ./piabrota.nix
     ./tools.nix
     ./deploy.nix
+    # A read-only account for debugging from a coding agent's session (keys/observer.pub).
+    ./observer.nix
     ./loco.nix
     ./site.nix
     ./apps.nix
