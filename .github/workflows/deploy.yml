@@ -38,6 +38,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # The runner has about 14 GB free, and the Nix store (Hermes's build, with its own nixpkgs, and
+      # the restored cache) outgrew it on 2026-11-02 ("No space left on device"). The image's
+      # toolchains that nothing here uses give back about 20 GB.
+      - name: Free disk space on the runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
       - uses: cachix/install-nix-action@v31
       # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here, so
       # without this every run compiles apps/notes (about 400 crates) again. The store is saved to
@@ -53,6 +60,8 @@ jobs:
           purge-prefixes: nix-${{ runner.os }}-deploy-
           purge-created: 0
           purge-primary-key: never
+          # Collect garbage down to 4 GiB before saving, so the cache stays small enough to restore.
+          gc-max-store-size-linux: 4G
       - name: Build the system
         run: |
           nix build .#deploy.nodes.piabrota.profiles.system.path \
