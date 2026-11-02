@@ -94,14 +94,18 @@ apart:
 - [`docs/MICROK8S.ptBR.md`](docs/MICROK8S.ptBR.md), em português
 - [`docs/MICROK8S.md`](docs/MICROK8S.md), in English
 
-KubeSolo is packaged here to try, behind a flag that is off (`kubesolo.nix`): how to turn it on,
-reach it, run rax on it, and roll it back:
+KubeSolo ran here from 2026-10-30 to 2026-11-02 and was then removed; `kubesolo-purge.nix`
+clears what it left on the box, once. Git history has its module and its doc.
 
-- [`docs/KUBESOLO.ptBR.md`](docs/KUBESOLO.ptBR.md), em português
-- [`docs/KUBESOLO.md`](docs/KUBESOLO.md), in English
+[Hermes Agent](https://github.com/NousResearch/hermes-agent), Nous Research's agent, runs here as a
+NixOS service (`hermes.nix`), on Claude through the owner's subscription, and answers on the chat
+platforms it has tokens for: how it is set up, its secrets on the box, and how to check it:
 
-PGX, a Postgres-compatible engine in one process, runs here for what needs Postgres (rax's store)
-instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its cost and its limits:
+- [`docs/HERMES.ptBR.md`](docs/HERMES.ptBR.md), em português
+- [`docs/HERMES.md`](docs/HERMES.md), in English
+
+PGX, a Postgres-compatible engine in one process, runs here for the next workload that needs
+Postgres, instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its cost and its limits:
 
 - [`docs/PGX.ptBR.md`](docs/PGX.ptBR.md), em português
 - [`docs/PGX.md`](docs/PGX.md), in English
@@ -130,6 +134,7 @@ with that version.
 |---|---|---|
 | [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-26.05) `nixos-26.05` | [`08d3a97`](https://github.com/NixOS/nixpkgs/commit/08d3a97586f6b6343b3b5e799980773629432610) (2026-10-28) | the system; `system.stateVersion` is 26.05 |
 | [deploy-rs](https://github.com/serokell/deploy-rs) | [`1cec052`](https://github.com/serokell/deploy-rs/commit/1cec0527bd09074bbee6d4461900ce5d58267217) (2026-10-19) | the activation and its rollback; the `deploy` binary comes from nixpkgs, so CI does not compile it |
+| [hermes-agent](https://github.com/NousResearch/hermes-agent) `main` | [`d9f15af`](https://github.com/NousResearch/hermes-agent/commit/d9f15af47bd7d608a0cb054013a4be1b90c0302c) (2026-11-02) | Hermes Agent's package and NixOS module (`hermes.nix`); it keeps its own nixpkgs (unstable), for which its build is made |
 
 `flake.lock` is the truth; this table is what it held on 2026-10-29. Update with
 `nix flake update` in a pull request.
@@ -148,9 +153,9 @@ with that version.
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
 ├── apps.nix, apps/notes/    the Loco apps: a notes CRUD demo at www.piabrota.art/notes (docs/LOCO.md)
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
-├── kubesolo.nix, kubesolo/  KubeSolo (single-node Kubernetes) behind a flag that is off, and its package
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
-├── k8s/rax/                 rax-server manifests for KubeSolo, applied by hand, never by a deploy
+├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
+├── kubesolo-purge.nix       a oneshot that clears what KubeSolo left on the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
@@ -170,8 +175,8 @@ with that version.
 ├── docs/KUBERNETES.md     the same, in English
 ├── docs/MICROK8S.ptBR.md    a plan for testing MicroK8s here, in Portuguese
 ├── docs/MICROK8S.md       the same, in English
-├── docs/KUBESOLO.ptBR.md    trying KubeSolo here, and its rollback, in Portuguese
-├── docs/KUBESOLO.md       the same, in English
+├── docs/HERMES.ptBR.md      Hermes Agent here: setup, secrets, checks, in Portuguese
+├── docs/HERMES.md         the same, in English
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
 ├── docs/PGX.md            the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
@@ -193,7 +198,6 @@ $ nix flake show
 │       ├───deploy-activate: derivation 'deploy-rs-check-activate'
 │       ├───deploy-schema: derivation 'jsonschema-deploy-system'
 │       ├───drawing: derivation 'mu-art-check'
-│       ├───kubesolo-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       ├───mockups: derivation 'mockups-check'
 │       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
