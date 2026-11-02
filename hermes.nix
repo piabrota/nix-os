@@ -42,6 +42,15 @@ in
       provider = "anthropic";
       default = "claude-sonnet-5-5";
     };
+    # Sonnet and nothing else. Hermes's side tasks (compression, titles, the post-turn review) take
+    # the main model by default, and subagents inherit it; pinned here so an upstream default cannot
+    # move them. No fallback: if Anthropic fails, the turn fails rather than going to another model.
+    settings.fallback_providers = [ ];
+    settings.delegation = {
+      provider = "anthropic";
+      model = "claude-sonnet-5-5";
+      fallback_providers = [ ];
+    };
     settings.skills.external_dirs = [ "${optionalSkills}" ];
     # Remote MCP servers from the project's approved catalog (optional-mcps/), no key: nothing runs
     # on the box for them. DeepWiki answers about public repositories (piabrota, marola-dev,
