@@ -21,7 +21,7 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 |---|---|
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
 | Pacote | `minimal`, mais os extras `anthropic` (o SDK da Anthropic) e `messaging` (Telegram, Discord, Slack). O padrão do flake, `full`, traz uns 700 MB a mais (voz, Bedrock, Modal e afins). |
-| Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
+| Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-4-5` para subagentes e duas tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
 | Limites | `MemoryMax=1G` (um quarto da RAM) e `CPUWeight=50`: sshd, nginx e os apps ganham a CPU primeiro. |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
@@ -56,7 +56,9 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 
 | Ajuste | Valor | Por quê |
 |---|---|---|
-| `fallback_providers` (principal e `delegation`) | vazio | Sonnet e mais nada. Se a Anthropic falhar, o turno falha; ele nunca vai para outro modelo. As tarefas laterais e os subagentes usam o mesmo modelo. |
+| `fallback_providers` (principal e `delegation`) | vazio | Só modelos Claude. Se a Anthropic falhar, o turno falha; ele nunca vai para outro provedor. |
+| `model.default` | `claude-sonnet-5-5` | O Sonnet é o modelo de alto nível: planeja, escreve, revisa e decide. |
+| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub` | `claude-haiku-4-5` | O Haiku é o modelo de baixo nível: subagentes (greps simples, consultas, listas) e duas tarefas laterais baratas. O Hermes não tem roteador por chamada: o Sonnet decide delegar, e o `hermes/SOUL.md` diz quando. A compressão, a aprovação de comandos perigosos e a revisão pós-turno ficam no Sonnet. |
 | `delegation` | até 2 filhos, 50 iterações cada, um nível | Pouca ramificação, para uma vCPU e a cota. |
 | `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, ligado | Um limite por execução e uma parada firme em laços de ferramentas. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h no chat (as pessoas pausam), 5 min no cron e nos subagentes. |

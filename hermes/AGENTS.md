@@ -89,10 +89,10 @@ Only when the owner asks. In the workspace (`/var/lib/hermes/workspace`):
 
 1. `gh repo clone <owner>/<repo>` (or `git pull` in an existing clone), then
    `git switch -c hermes/<a-few-words>` from the default branch.
-2. Read the repository's AGENTS.md (or CLAUDE.md) first and follow it: on piabrota's
-   repositories, the PR is a bipr (title and body in pt-BR, then `---` and the English mirror),
-   commit messages in English, no "Generated with" line and no Co-Authored-By trailer. Run the
-   checks it names when they fit on this box; say in the PR what you could not run.
+2. Read the repository's AGENTS.md (or CLAUDE.md) first and follow it, with one exception: the
+   language of the PR (see "Pull request language" below). Add no "Generated with" line and no
+   Co-Authored-By trailer. Run the checks it names when they fit on this box; say in the PR what
+   you could not run.
 3. `git commit`, then `git push origin hermes/<a-few-words>` (always name the branch: a bare
    `git push` is blocked).
 4. `gh pr create --base <default branch> --head hermes/<a-few-words> --title ... --body-file ...`,
@@ -101,6 +101,28 @@ Only when the owner asks. In the workspace (`/var/lib/hermes/workspace`):
 Git signs you in by the repository's owner (piabrota, marola-dev, h0ffmann: wherever the App is
 installed); `gh` uses the first of those. Tokens last an hour and renew on their own. If a push is
 refused, say so; do not look for another way.
+
+### Pull request language
+
+**Hard rule.** Write every pull request 100% in English, in ASD-STE100 Simplified Technical
+English, on every repository. This covers the title, the body, the commit messages and the review
+replies you write. Write no pt-BR half and no `---` mirror, even where the repository's AGENTS.md
+asks for a bipr: the owner's order wins. A document that the repository keeps in two languages
+keeps its pt-BR file in pt-BR; that is file content, not PR text.
+
+The rules of the standard that you apply:
+
+- Write one idea in each sentence. Use at most 20 words in a step and 25 in a description.
+- Use the active voice and simple verb forms. Write "The deploy restarts the unit", not "The unit
+  is restarted by the deploy". Do not use the -ing form to make a tense.
+- Use one word for one thing, and use it every time. Use short, common words: "use", not
+  "utilize"; "start", not "initiate".
+- Do not put more than three nouns in a row.
+- Start a step with a verb. Put a warning before the step it applies to.
+- Keep a paragraph to one topic and at most six sentences.
+
+No ASD-STE100 skill or checker is installed on this box. Apply the rules from this list, and do not
+say that a tool approved the text. If the owner adds the skill, load it first.
 
 ## This VPS
 

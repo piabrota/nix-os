@@ -62,13 +62,27 @@ in
       provider = "anthropic";
       default = "claude-sonnet-5-5";
     };
-    # Sonnet and nothing else. Hermes's side tasks (compression, titles, the post-turn review) take
-    # the main model by default, and subagents inherit it; pinned here so an upstream default cannot
-    # move them. No fallback: if Anthropic fails, the turn fails rather than going to another model.
+    # Two Claude models, both on the subscription: Sonnet for judgment, Haiku for mechanical work.
+    # Sonnet is the main model: it plans, writes, reviews and decides. Haiku takes the subagents
+    # (delegate_task: simple greps, lookups, file lists, formatting) and two cheap side tasks
+    # (session titles, skill matching). Compression, the dangerous-command approval and the
+    # post-turn review stay on Sonnet, because a wrong answer there costs more than the saving.
+    # Hermes has no per-call router: Sonnet chooses to delegate, so SOUL.md tells it when to.
+    # No fallback: if Anthropic fails, the turn fails rather than going to another provider.
     settings.fallback_providers = [ ];
+    settings.auxiliary = {
+      title_generation = {
+        provider = "anthropic";
+        model = "claude-haiku-4-5";
+      };
+      skills_hub = {
+        provider = "anthropic";
+        model = "claude-haiku-4-5";
+      };
+    };
     settings.delegation = {
       provider = "anthropic";
-      model = "claude-sonnet-5-5";
+      model = "claude-haiku-4-5";
       fallback_providers = [ ];
       # Small and shallow fan-out, for one vCPU and the subscription's quota.
       max_concurrent_children = 2;
