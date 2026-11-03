@@ -13,6 +13,8 @@ e NixOS são plataforma de nível 2: o flake e o módulo são mantidos "no melho
 na `main` deles pode quebrá-los. Por isso o `flake.lock` fixa um commit, e a atualização semanal do
 flake (`flake-update.yml`) só o move num PR que o CI constrói antes do merge.
 
+O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`](AWESOME-HERMES.ptBR.md).
+
 ## O que o `hermes.nix` escolhe
 
 | | |

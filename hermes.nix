@@ -88,6 +88,33 @@ in
     settings.tool_loop_guardrails.hard_stop_enabled = true;
     settings.updates.check = false;
     settings.telemetry.shared_metrics.enabled = false;
+    # From the survey in docs/AWESOME-HERMES.md, each key checked at the pinned commit.
+    # Tokens: the prompt cache lives 1 h for chat (people pause) and 5 min for cron and subagents;
+    # MCP servers do not reload (and drop the cache) on a config change, which only a deploy makes.
+    settings.prompt_caching.cache_ttl = "auto";
+    settings.mcp.auto_reload_on_config_change = false;
+    # Memory, for 1 vCPU and 1 GB: fewer cached agents, one cron job at a time, one code kernel,
+    # and media read into RAM capped at 20 MiB.
+    settings.agent.agent_cache.max_size = 16;
+    settings.cron.max_parallel_jobs = 1;
+    settings.code_execution.max_session_kernels = 1;
+    settings.gateway.max_inbound_media_bytes = 20 * 1024 * 1024;
+    # Disk: prune sessions older than 45 days, then vacuum state.db.
+    settings.sessions = {
+      auto_prune = true;
+      retention_days = 45;
+      vacuum_after_prune = true;
+    };
+    # Nix owns the dependencies and the models: no pip installs at run time, no model catalog
+    # fetched from Nous every 20 minutes, no DNS-over-HTTPS lookups of Telegram through Google
+    # and Cloudflare.
+    settings.security.allow_lazy_installs = false;
+    settings.model_catalog.enabled = false;
+    environment.HERMES_TELEGRAM_DISABLE_FALLBACK_IPS = "true";
+    # Telegram: 👀 and ✅ reactions instead of "still working" messages (no tokens), and cron
+    # results without the header and footer.
+    settings.telegram.reactions = true;
+    settings.cron.wrap_response = false;
     # Remote MCP servers from the project's approved catalog (optional-mcps/), no key: nothing runs
     # on the box for them. DeepWiki answers about public repositories (piabrota, marola-dev,
     # nixpkgs), as in this repository's .mcp.json; Context7 gives current library docs.

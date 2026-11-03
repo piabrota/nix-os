@@ -13,6 +13,8 @@ options. For the project, Nix and NixOS are a Tier 2 platform: the flake and the
 "best effort", and a commit to their `main` can break them. So `flake.lock` pins a commit, and the
 weekly flake update (`flake-update.yml`) moves it only in a PR that CI builds before the merge.
 
+What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](AWESOME-HERMES.md).
+
 ## What `hermes.nix` picks
 
 | | |
