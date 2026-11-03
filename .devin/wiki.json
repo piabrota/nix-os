@@ -22,13 +22,13 @@
       "content": "KubeSolo (single-node Kubernetes) ran here from 2026-10-30 to 2026-11-02 with rax and piabrota/agents on it, and was then removed with k8s/ and its docs (git history has them). kubesolo-purge.nix is a oneshot that clears, once, what it left on the box (pods, mounts, /var/lib/kubesolo, cni0, KUBE- and CNI- rules); it runs only while /var/lib/kubesolo exists and is deleted in a later PR. docs/KUBERNETES.md and docs/MICROK8S.md are research only."
     },
     {
-      "content": "Hermes Agent (github.com/NousResearch/hermes-agent, Nous Research) runs as the unit hermes-agent from its flake's NixOS module (hermes.nix): native mode, not a container; the minimal package plus the anthropic and messaging extras; Claude (claude-sonnet-5-5) through the owner's subscription, CLAUDE_CODE_OAUTH_TOKEN; MemoryMax 1G; state in /var/lib/hermes. Upstream calls Nix a best-effort Tier 2 platform, so flake.lock pins a commit and only the weekly flake-update PR moves it. See docs/HERMES.md."
+      "content": "Hermes Agent (github.com/NousResearch/hermes-agent, Nous Research) runs as the unit hermes-agent from its flake's NixOS module (hermes.nix): native mode, not a container; the minimal package plus the anthropic, messaging, mcp and ddgs extras; MemoryMax 1G and CPUWeight 50; state in /var/lib/hermes. Two Claude models on the owner's subscription (CLAUDE_CODE_OAUTH_TOKEN, never an API key) and no fallback provider: claude-sonnet-5-5 is the main model, claude-haiku-4-5 takes the subagents (read-only fan-out only, at most 2, one level deep) and three side tasks (titles, skill matching, the /goal judge). goals.max_turns is 6 and agent.max_turns 60. A deploy that changes its settings, environment, skills, plugins or documents reloads the unit (reloadTriggers): SIGUSR1 drains the turns in flight for at most 600 s (agent.restart_after_turn_timeout), the gateway exits 75 and Restart=always starts it with the new config; a new package restarts it at once. hermes-github.nix gives it write access as the GitHub App piabrota-hermes[bot] (hermes/* branches and PRs only, humans merge). Upstream calls Nix a best-effort Tier 2 platform, so flake.lock pins a commit and only the weekly flake-update PR moves it. www.piabrota.art/hermes shows its configuration as YAML, built by site/hermes.nix from the evaluated system with every secret-named key dropped. See docs/HERMES.md and the wiki pages wiki/Hermes-EN.md and wiki/Hermes.md."
     },
     {
       "content": "PGX (pgx.dev) is a Postgres-compatible engine in Rust used for data that can be lost; nothing uses it since KubeSolo left, and it stays for the next workload that needs Postgres. Apps keep their own data in SQLite: no PostgreSQL server or Redis for an app."
     },
     {
-      "content": "Documentation is bilingual: pt-BR first with an English mirror (docs/X.ptBR.md and docs/X.md; wiki/ pages Home, Arquitetura, Operacao, Maquetes with Home-EN, Architecture, Operations, Mockups). Mirrors change together. This DeepWiki should be written in English and may cite either language's file."
+      "content": "Documentation is bilingual: pt-BR first with an English mirror (docs/X.ptBR.md and docs/X.md; wiki/ pages Home, Arquitetura, Operacao, Hermes, Maquetes with Home-EN, Architecture, Operations, Hermes-EN, Mockups). Mirrors change together. This DeepWiki should be written in English and may cite either language's file."
     },
     {
       "content": "Figures and drawings are generated, never hand-edited: archify figures from docs/archify/*.json (just figure), the homepage mockups from mockups/*.nix (just mockups), the README drawing from drawings/mu.nix (just drawing). CI fails when a committed output is stale."
@@ -59,7 +59,7 @@
     },
     {
       "title": "Deploying",
-      "purpose": "deploy.yml's build and deploy jobs, deploy-rs and magic rollback, the Nix store cache, deploy.nix (the deploy user, garbage collection, generations), the secrets the workflow uses, and docs/DEPLOY.md's one-time setup."
+      "purpose": "deploy.yml's build and deploy jobs, deploy-rs and magic rollback, the Nix store cache, deploy.nix (the deploy user, five boot generations, the weekly nix.gc of paths older than 14 days, min-free 2 GiB and max-free 8 GiB instead of a garbage collection on each deploy, the weekly store optimisation), the secrets the workflow uses, and docs/DEPLOY.md's one-time setup."
     },
     {
       "title": "CI and checks",
@@ -68,7 +68,7 @@
     },
     {
       "title": "The site",
-      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, nginx with ACME, the www redirect, and site/DESIGN.md's look."
+      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), nginx with ACME, the www redirect, and site/DESIGN.md's look."
     },
     {
       "title": "Mockups, figures and drawings",
@@ -85,7 +85,17 @@
     },
     {
       "title": "Hermes Agent",
-      "purpose": "hermes.nix and docs/HERMES.md: the upstream NixOS module from the flake input hermes-agent, native mode, the minimal package with the anthropic and messaging extras, Claude through CLAUDE_CODE_OAUTH_TOKEN, the env file on the box and how activation copies it, MemoryMax and CPUWeight, the hermes CLI, checking, updating and turning it off."
+      "purpose": "hermes.nix, docs/HERMES.md and wiki/Hermes-EN.md: what Hermes Agent is here, the upstream NixOS module from the flake input hermes-agent, the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills, MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, checking it, updating and turning it off."
+    },
+    {
+      "title": "Hermes runtime and deploys",
+      "purpose": "How the hermes-agent unit runs and restarts: native mode, the minimal package and its extras, MemoryMax=1G and CPUWeight=50, /var/lib/hermes, the time zone; what activation rewrites on a deploy (config.yaml, .env, SOUL.md, AGENTS.md, plugin links), the reloadTriggers and ExecReload with SIGUSR1, the drain of turns, cron jobs and subagents for at most agent.restart_after_turn_timeout (600 s), exit code 75 and Restart=always, the immediate restart on a new package, and how to check that a deploy took effect.",
+      "parent": "Hermes Agent"
+    },
+    {
+      "title": "Hermes models and run limits",
+      "purpose": "The two Claude models on the subscription and why: claude-sonnet-5-5 as the main model (planning, writing, review, compression, approvals), claude-haiku-4-5 for read-only subagent fan-out and the auxiliary tasks (title_generation, skills_hub, goal_judge); no fallback providers; the delegation limits; agent.max_turns 60, goals.max_turns 6 for /goal, tool-loop hard stop, the memory and disk limits (agent cache, cron, kernels, inbound media, session pruning) and what is turned off (update checks, model catalog, telemetry, lazy installs). Point to www.piabrota.art/hermes for the full YAML.",
+      "parent": "Hermes Agent"
     },
     {
       "title": "Kubernetes, tried and removed",
