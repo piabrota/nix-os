@@ -98,7 +98,7 @@
     },
     {
       "title": "Working on this repository",
-      "purpose": "AGENTS.md's rules for people and agents: branches, bipr pull requests (pt-BR then English), no agent trail and its one exception, never deploying by hand, never committing secrets, the justfiles that must run on Ubuntu 24.04's just, the bilingual docs and the wiki workflow."
+      "purpose": "AGENTS.md's rules for people and agents: branches, pull requests in English only, no agent trail and its one exception, never deploying by hand, never committing secrets, the justfiles that must run on Ubuntu 24.04's just, the bilingual docs and the wiki workflow."
     },
     {
       "title": "Forking for your own VPS",
