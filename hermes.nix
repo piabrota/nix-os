@@ -336,7 +336,38 @@ in
     (builtins.toJSON documents)
   ];
 
+  # The gateway's exit 75 after a reload failed the first deploy that reloaded it (#76,
+  # 2026-11-03): switch-to-configuration counts a service in auto-restart whose ExecMainStatus is
+  # not 0 as failed, so deploy-rs rolled the box back. SuccessExitStatus does not change
+  # ExecMainStatus. This wrapper is the main process instead: it passes SIGUSR1 and SIGTERM on to
+  # the gateway and turns its 75 into 0, so a reload restarts it without a failed unit. The
+  # package is the module's own (moduleCommon.nix, effectivePackage).
   systemd.services.hermes-agent.serviceConfig = {
+    ExecStart = lib.mkForce (
+      let
+        cfg = config.services.hermes-agent;
+        package =
+          if cfg.extraPythonPackages == [ ] && cfg.extraDependencyGroups == [ ] then
+            cfg.package
+          else
+            cfg.package.override (prev: {
+              extraPythonPackages = (prev.extraPythonPackages or [ ]) ++ cfg.extraPythonPackages;
+              extraDependencyGroups = (prev.extraDependencyGroups or [ ]) ++ cfg.extraDependencyGroups;
+            });
+      in
+      pkgs.writeShellScript "hermes-gateway" ''
+        ${package}/bin/hermes gateway ${lib.escapeShellArgs cfg.extraArgs} &
+        child=$!
+        trap 'kill -USR1 "$child" 2>/dev/null' USR1
+        trap 'kill -TERM "$child" 2>/dev/null' TERM INT
+        # A trapped signal ends `wait` early; wait again until the gateway has exited.
+        while kill -0 "$child" 2>/dev/null; do wait "$child"; done
+        wait "$child"
+        status=$?
+        if [ "$status" -eq 75 ]; then exit 0; fi
+        exit "$status"
+      ''
+    );
     ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
     MemoryMax = lib.mkDefault "1G";
     CPUWeight = lib.mkDefault 50;
