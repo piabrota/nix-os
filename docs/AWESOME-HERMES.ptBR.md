@@ -135,6 +135,19 @@ entradas, cada uma com merge de um mantenedor, fixada num commit completo e exam
 - ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, no
   catálogo): uma skill para jobs baratos do cron (`no_agent`, `wakeAgent`, `[SILENT]`). O script de
   diagnóstico dela pede `python3`, que o `PATH` do Hermes não tem aqui.
+- ✅ Do catálogo, cada um no commit do catálogo (MIT, só Python, sem chamada ao modelo): os registros
+  [error-ledger, aux-ledger, approval-ledger e stop-ledger](https://github.com/olric3015/hermes-plugins)
+  (`/errors`, `/aux`, `/approval-log`, `/stop-log`, só metadados),
+  [progress-squash](https://github.com/pierrenode/hermes-progress-squash) (uma linha por barra de
+  progresso), [public-holidays](https://github.com/Akloenx123/hermes-public-holidays) (feriados do
+  Brasil e contas de dias úteis, do `date.nager.at`) e as referências de contexto
+  [gh-ref e wiki-ref](https://github.com/EloquentBrush0x/hermes-context-refs).
+- 🧪 Para depois, do catálogo: [hermes-session-reset-policy](https://github.com/fastfinge/hermes-session-reset-policy)
+  (uma sessão nova do gateway depois de um tempo parado ou a cada dia, para o contexto ficar curto;
+  uma escolha sobre a memória da conversa), [reaction-feedback](https://github.com/AhmetArif0/hermes-reaction-feedback)
+  (o Hermes vê seus 👍 e 👎 no Telegram; só Telegram), telegram_dashboard_probe (a mensagem de status
+  fixada acima), osv-ref (registros `@cve:`, se o Hermes passar a triar CVEs do `cves.yml`) e
+  openalex (artigos e citações; pede uma chave grátis do OpenAlex no arquivo de ambiente).
 - 🧪 [mister-ideas/usage-guard](https://github.com/mister-ideas/usage-guard) (MIT, no catálogo):
   recusa uma chamada ao modelo quando uma janela da assinatura está cheia, para não gastar excedente.
   Esperar: no commit fixado, o `agent/account_usage.py` multiplica por 100 um `utilization` da

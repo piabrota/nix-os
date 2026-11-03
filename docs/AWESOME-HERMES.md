@@ -132,6 +132,19 @@ rules). Prefer the catalog's commit when you pin a plugin from it.
 - ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, in
   the catalog): a skill for cheap cron jobs (`no_agent`, `wakeAgent`, `[SILENT]`). Its doctor
   script needs `python3`, which Hermes's `PATH` does not have here.
+- ✅ From the catalog, each at its catalog commit (MIT, pure Python, no model call): the ledgers
+  [error-ledger, aux-ledger, approval-ledger and stop-ledger](https://github.com/olric3015/hermes-plugins)
+  (`/errors`, `/aux`, `/approval-log`, `/stop-log`, metadata only),
+  [progress-squash](https://github.com/pierrenode/hermes-progress-squash) (one line per progress
+  bar), [public-holidays](https://github.com/Akloenx123/hermes-public-holidays) (Brazilian holidays
+  and workday maths, from `date.nager.at`) and the context references
+  [gh-ref and wiki-ref](https://github.com/EloquentBrush0x/hermes-context-refs).
+- 🧪 For later, from the catalog: [hermes-session-reset-policy](https://github.com/fastfinge/hermes-session-reset-policy)
+  (a fresh gateway session after an idle time or each day, so the context stays short; a choice
+  about memory of the chat), [reaction-feedback](https://github.com/AhmetArif0/hermes-reaction-feedback)
+  (Hermes sees your 👍 and 👎 on Telegram; Telegram only), telegram_dashboard_probe (the pinned
+  status message above), osv-ref (`@cve:` records, if Hermes starts to triage CVEs from
+  `cves.yml`), and openalex (papers and citations; needs a free OpenAlex key in the env file).
 - 🧪 [mister-ideas/usage-guard](https://github.com/mister-ideas/usage-guard) (MIT, in the catalog):
   refuses a model call when a subscription window is full, so no overage is spent. Wait: at the
   pinned commit, `agent/account_usage.py` scales an Anthropic `utilization` of 1 or less by 100,
