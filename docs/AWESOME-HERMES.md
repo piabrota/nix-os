@@ -124,9 +124,11 @@ rules). Prefer the catalog's commit when you pin a plugin from it.
 - ✅ [percyhendrux123-prog/hermes-tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire)
   (MIT, v0.1.1, in the catalog): one JSON line for each refused action, the deny list's blocks
   included. No network, no stored arguments or text.
-- ✅ [NousResearch/hermes-labs-plugins](https://github.com/NousResearch/hermes-labs-plugins), the
-  plugin `inbox` (MIT, in the catalog): `hermes inbox`, a read-only list of failed cron jobs and
-  stalled subagents. A CLI command only.
+- ✅ [NousResearch/hermes-labs-plugins](https://github.com/NousResearch/hermes-labs-plugins) (MIT,
+  in the catalog), all four, each at its catalog commit, by the owner's choice: `inbox` (`hermes
+  inbox`, a read-only list of failed cron jobs and stalled subagents), `telegram-business` (reply
+  drafts for a Telegram Business account; inert without one), `workflow-record` (records a browser
+  workflow; inert, no browser here) and `github-copilot` (a model provider; inert, Anthropic only).
 - ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, in
   the catalog): a skill for cheap cron jobs (`no_agent`, `wakeAgent`, `[SILENT]`). Its doctor
   script needs `python3`, which Hermes's `PATH` does not have here.

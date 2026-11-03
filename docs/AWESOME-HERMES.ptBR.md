@@ -126,9 +126,12 @@ entradas, cada uma com merge de um mantenedor, fixada num commit completo e exam
 - ✅ [percyhendrux123-prog/hermes-tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire)
   (MIT, v0.1.1, no catálogo): uma linha JSON para cada ação recusada, inclusive os bloqueios da
   lista. Sem rede, sem guardar argumentos nem texto.
-- ✅ [NousResearch/hermes-labs-plugins](https://github.com/NousResearch/hermes-labs-plugins), o
-  plugin `inbox` (MIT, no catálogo): `hermes inbox`, uma lista só de leitura dos jobs do cron que
-  falharam e dos subagentes parados. Só um comando de CLI.
+- ✅ [NousResearch/hermes-labs-plugins](https://github.com/NousResearch/hermes-labs-plugins) (MIT,
+  no catálogo), os quatro, cada um no commit do catálogo, por escolha do dono: `inbox` (`hermes
+  inbox`, uma lista só de leitura dos jobs do cron que falharam e dos subagentes parados),
+  `telegram-business` (rascunhos de resposta para uma conta Telegram Business; inerte sem ela),
+  `workflow-record` (grava um fluxo no navegador; inerte, sem navegador aqui) e `github-copilot` (um
+  provedor de modelo; inerte, só Anthropic).
 - ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, no
   catálogo): uma skill para jobs baratos do cron (`no_agent`, `wakeAgent`, `[SILENT]`). O script de
   diagnóstico dela pede `python3`, que o `PATH` do Hermes não tem aqui.

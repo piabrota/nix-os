@@ -37,15 +37,32 @@ let
     rev = "904a4f559808c57152ebb666cd0ab7d863220b49"; # v0.1.1, MIT
     hash = "sha256-Vxh+Nz0Qne7DfpfoXdXbg1/13HzVF++e6xCAC7LxtK4=";
   };
-  # inbox (Nous Research's Labs plugins): `hermes inbox`, a read-only list of failed cron jobs,
-  # stalled subagents and other work in flight. A CLI command only: no tools, no hooks.
-  labsPlugins = pkgs.fetchFromGitHub {
+  # All four plugins of Nous Research's Labs (github.com/NousResearch/hermes-labs-plugins, MIT;
+  # built by Nous, not supported), each at the commit its catalog entry pins:
+  # inbox: `hermes inbox`, a read-only list of failed cron jobs, stalled subagents and work in
+  # flight. A CLI command only.
+  # telegram-business: drafts replies to a Telegram Business account's customers and sends one only
+  # when the owner taps Send. Inert until a Business account (Telegram Premium) connects the bot.
+  # workflow-record: `hermes record` records a browser workflow over CDP for /learn. Inert here:
+  # the box runs no browser.
+  # github-copilot: Copilot as a model provider. Inert: settings.model and the fallbacks name
+  # Anthropic only, and it calls GitHub only for a profile that chose Copilot.
+  labsPlugins = rev: hash: pkgs.fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-labs-plugins";
-    rev = "62dbc160fab57f893a9eaace79c16c00518c4eca"; # MIT
-    hash = "sha256-tkkVfFbu+i483ypMQxszMpa7+M6OgZGugi4fQcZDLrk=";
+    inherit rev hash;
   };
-  # The module wants a plugin's plugin.yaml at the package's root; both live in a subdirectory.
+  labs = {
+    inbox = labsPlugins "62dbc160fab57f893a9eaace79c16c00518c4eca"
+      "sha256-tkkVfFbu+i483ypMQxszMpa7+M6OgZGugi4fQcZDLrk=";
+    telegram-business = labsPlugins "0480b2e2947276b55b302d3288b30597d238ba51"
+      "sha256-pXi9oon5r5akt+qpcqMrHvfT2DNYwN0qxxSsBjCzNB8=";
+    workflow-record = labsPlugins "fde77be2bc939dbc71d425aab41731ad88173e67"
+      "sha256-A7cmPg6PEihAR3tKG6SRtNtzA+KrSWWUDjUNuVKEX+E=";
+    github-copilot = labsPlugins "346cfe972f72b6a966e84c1004cf8742554b193d"
+      "sha256-Z+mJyWn0bFuuQuHB3doI3XqXs3hDcpL6g/gLkaaSNwA=";
+  };
+  # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
   subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
   # hermes-cron: a skill (markdown, no code in the agent) on cheap cron jobs: no_agent, the
   # wakeAgent pre-check and [SILENT], so a quiet tick makes no model call. Its read-only doctor
@@ -184,9 +201,8 @@ in
     extraPlugins = [
       dangerousPatterns
       (subPlugin "tripwire" tripwire)
-      (subPlugin "inbox" labsPlugins)
-    ];
-    settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" "inbox" ];
+    ] ++ lib.mapAttrsToList subPlugin labs;
+    settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" ] ++ builtins.attrNames labs;
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for one vCPU, 1 GB and a subscription's quota
     # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on
