@@ -71,6 +71,8 @@ in
     # from its working directory). Installed on every activation, so edit them here, not on the box.
     hermesHomeFiles."SOUL.md" = ./hermes/SOUL.md;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
+    # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
+    workingDirectory = "/var/lib/hermes/workspace";
     # Scheduled jobs and dates in the owner's time, not the server's UTC.
     settings.timezone = "America/Sao_Paulo";
     # `hermes` for the admins, on the service's state (HERMES_HOME), through the hermes group.
