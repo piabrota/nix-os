@@ -105,5 +105,5 @@ Other open points, not checked:
 ## What Hermes already has for the same job
 
 Hermes has profiles, a kanban board, scheduled jobs and subagents on this box, at no extra cost
-([Hermes forks survey](HERMES-FORKS.md)). For one owner, these cover most of what Paperclip adds.
+([upstream docs](https://hermes-agent.nousresearch.com/docs/user-guide/profiles)). For one owner, these cover most of what Paperclip adds.
 Paperclip adds a UI, budgets for each agent and an org chart.

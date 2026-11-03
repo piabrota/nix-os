@@ -113,8 +113,9 @@ in
     };
     # Two Claude models, both on the subscription: Sonnet for judgment, Haiku for mechanical work.
     # Sonnet is the main model: it plans, writes, reviews and decides. Haiku takes the subagents
-    # (delegate_task: simple greps, lookups, file lists, formatting) and two cheap side tasks
-    # (session titles, skill matching). Compression, the dangerous-command approval and the
+    # (delegate_task: read-only fan-out; SOUL.md keeps single greps on Sonnet, since a subagent's
+    # fresh context costs more than the grep) and three cheap side tasks (session titles, skill
+    # matching, the /goal judge). Compression, the dangerous-command approval and the
     # post-turn review stay on Sonnet, because a wrong answer there costs more than the saving.
     # Hermes has no per-call router: Sonnet chooses to delegate, so SOUL.md tells it when to.
     # No fallback: if Anthropic fails, the turn fails rather than going to another provider.
@@ -128,7 +129,16 @@ in
         provider = "anthropic";
         model = "claude-haiku-4-5";
       };
+      # The judge of /goal (Hermes's Ralph loop): one short verdict after each turn.
+      goal_judge = {
+        provider = "anthropic";
+        model = "claude-haiku-4-5";
+      };
     };
+    # /goal continues a task on its own until the judge says done. The default budget is 20 turns,
+    # each up to agent.max_turns (60) model calls; 6 keeps one goal within the subscription's quota.
+    # `/goal resume` continues for 6 more.
+    settings.goals.max_turns = 6;
     settings.delegation = {
       provider = "anthropic";
       model = "claude-haiku-4-5";
@@ -148,6 +158,10 @@ in
     # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on
     # tool loops, and no update checks or shared metrics (Nix owns updates; nothing goes to Nous).
     settings.agent.max_turns = 60;
+    # How long a reload (reloadTriggers, below) waits for work in flight before it stops the
+    # gateway anyway. The default, 30 min, keeps Hermes deaf to new messages for too long after a
+    # deploy; a run of 60 turns took about 3 min on 2026-11-03.
+    settings.agent.restart_after_turn_timeout = 600;
     settings.tool_loop_guardrails.hard_stop_enabled = true;
     settings.updates.check = false;
     settings.telemetry.shared_metrics.enabled = false;
@@ -217,8 +231,12 @@ in
   # to sshd, nginx and the apps.
   # Activation rewrites config.yaml, .env, SOUL.md, AGENTS.md and the plugin links, but the unit
   # itself does not change, so a deploy left the old process running with the old config
-  # (2026-11-03). Restart it when any of them changes.
-  systemd.services.hermes-agent.restartTriggers = with config.services.hermes-agent; [
+  # (2026-11-03). Reload it when any of them changes. A reload sends SIGUSR1: the gateway takes no
+  # new work, lets the turns, cron jobs and subagents in flight finish, and exits 75; Restart=always
+  # (the module's default) starts it with the new config. A SIGTERM restart cut the turn in flight,
+  # also when a merge of Hermes's own PR deployed it. A new Hermes package changes ExecStart, and
+  # that still restarts the unit at once.
+  systemd.services.hermes-agent.reloadTriggers = with config.services.hermes-agent; [
     (builtins.toJSON settings)
     (builtins.toJSON environment)
     (builtins.toJSON mcpServers)
@@ -230,6 +248,7 @@ in
   ];
 
   systemd.services.hermes-agent.serviceConfig = {
+    ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
     MemoryMax = lib.mkDefault "1G";
     CPUWeight = lib.mkDefault 50;
   };

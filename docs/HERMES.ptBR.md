@@ -21,7 +21,7 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 |---|---|
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
 | Pacote | `minimal`, mais os extras `anthropic` (o SDK da Anthropic) e `messaging` (Telegram, Discord, Slack). O padrão do flake, `full`, traz uns 700 MB a mais (voz, Bedrock, Modal e afins). |
-| Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-4-5` para subagentes e duas tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
+| Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-4-5` para subagentes e três tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
 | Limites | `MemoryMax=1G` (um quarto da RAM) e `CPUWeight=50`: sshd, nginx e os apps ganham a CPU primeiro. |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
@@ -58,9 +58,10 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 |---|---|---|
 | `fallback_providers` (principal e `delegation`) | vazio | Só modelos Claude. Se a Anthropic falhar, o turno falha; ele nunca vai para outro provedor. |
 | `model.default` | `claude-sonnet-5-5` | O Sonnet é o modelo de alto nível: planeja, escreve, revisa e decide. |
-| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub` | `claude-haiku-4-5` | O Haiku é o modelo de baixo nível: subagentes (greps simples, consultas, listas) e duas tarefas laterais baratas. O Hermes não tem roteador por chamada: o Sonnet decide delegar, e o `hermes/SOUL.md` diz quando. A compressão, a aprovação de comandos perigosos e a revisão pós-turno ficam no Sonnet. |
+| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `claude-haiku-4-5` | O Haiku é o modelo de baixo nível: subagentes para leituras em paralelo e três tarefas laterais baratas (títulos, escolha de skill, o juiz do `/goal`). O Hermes não tem roteador por chamada: o Sonnet decide delegar, e o `hermes/SOUL.md` diz quando. Um subagente começa com um contexto novo em outro modelo, e o Sonnet confere a resposta. Por isso o Sonnet roda sozinho um grep, uma lista ou uma busca, e só delega três ou mais tarefas de leitura, ou a leitura de mais de uns 20 arquivos. A compressão, a aprovação de comandos perigosos e a revisão pós-turno ficam no Sonnet. |
 | `delegation` | até 2 filhos, 50 iterações cada, um nível | Pouca ramificação, para uma vCPU e a cota. |
 | `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, ligado | Um limite por execução e uma parada firme em laços de ferramentas. |
+| `goals.max_turns` | 6 (padrão 20) | O `/goal` é o loop Ralph do Hermes: ele continua uma tarefa sozinho até o juiz dizer que acabou. Cada turno pode usar até 60 chamadas ao modelo, então 6 turnos mantêm um objetivo dentro da cota; o `/goal resume` dá mais 6. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h no chat (as pessoas pausam), 5 min no cron e nos subagentes. |
 | `mcp.auto_reload_on_config_change` | desligado | Mudar a configuração não recarrega os servidores MCP (o que derrubaria o cache do prompt); só um deploy muda a configuração. |
 | `agent.agent_cache.max_size` | 16 | Menos agentes em cache, para poupar RAM. |
@@ -71,10 +72,18 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 
 O Hermes não reinicia sozinho quando um deploy muda os arquivos dele: a ativação reescreve
 `config.yaml`, `.env`, `SOUL.md`, `AGENTS.md` e os links dos plugins, mas a unit não muda. Por
-isso o `hermes.nix` os lista como `restartTriggers` do `hermes-agent` (as configurações, o
+isso o `hermes.nix` os lista como `reloadTriggers` do `hermes-agent` (as configurações, o
 ambiente, os servidores MCP, as skills opcionais, os plugins e os dois documentos). Quando você
 adicionar um novo tipo de entrada ao módulo, adicione-o ali também. Sem isso, um deploy deixa o
 processo antigo rodando com a configuração antiga.
+
+O reload é um reinício gracioso. O `ExecReload` manda um `SIGUSR1`; o gateway não aceita trabalho
+novo, deixa terminar os turnos, os jobs de cron e os subagentes em andamento (no máximo
+`agent.restart_after_turn_timeout`, 600 s aqui) e sai com o código 75. O systemd
+(`Restart=always`) então o inicia com a configuração nova. Antes disso, um deploy parava a unit
+com `SIGTERM` e cortava o turno em andamento, inclusive quando o merge era um PR do próprio
+Hermes. Um pacote novo do Hermes muda o `ExecStart` da unit, e isso ainda a reinicia na hora.
+Enquanto ele drena, uma mensagem nova espera o gateway voltar.
 
 ## Quem ele é
 
@@ -249,7 +258,8 @@ não tem token de plataforma. Dois avisos são esperados: o "Opus codec not foun
 Discord (a voz ficou de fora) e o do plugin da lista de bloqueio, que diz não poder gravar o hash
 de integridade ao lado de um arquivo da store (a lista é somente leitura de propósito). Para ver
 se um deploy valeu, compare `systemctl show hermes-agent -p ActiveEnterTimestamp` com a hora do
-deploy: a unit reinicia quando suas entradas mudam (veja "Ajustes de execução").
+deploy: a unit reinicia quando suas entradas mudam, depois que o trabalho em andamento termina
+(veja "Ajustes de execução"), então a hora pode vir até 10 minutos depois do deploy.
 
 ## Atualizar e desligar
 

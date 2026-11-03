@@ -105,15 +105,17 @@ jobs:
             --skip-checks \
             -- --no-update-lock-file --print-build-logs
 
-      # Keep the five generations GRUB lists (deploy.nix), delete the rest and every store path
-      # nothing refers to, so the small disk holds only what the running system needs.
-      - name: Delete what the VPS no longer uses
+      # Keep the five generations GRUB lists (deploy.nix) and delete the rest. No full garbage
+      # collection here: it deleted what the next deploy downloaded again, and took the one vCPU
+      # from the services. Nix collects when free disk falls under min-free (deploy.nix), and the
+      # weekly nix.gc runs as before.
+      - name: Delete old system generations
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
           ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" \
-            'sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +5 && sudo nix-collect-garbage'
+            'sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +5'
 
       - name: Machine specs after the deploy
         if: always()

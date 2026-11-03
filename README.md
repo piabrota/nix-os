@@ -6,7 +6,7 @@
 
 <sub>无 · <i>mu</i> · the piabrota VPS · <a href="#in-one-minute">in one minute</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
 
-[![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
+[![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
 [![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
@@ -180,7 +180,7 @@ with that version.
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
 ├── docs/PGX.md            the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR and push beyond Markdown), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff)
+├── .github/workflows/       ci.yml (every PR beyond Markdown: lints and the justfile parse; the full flake check by hand), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
 ├── .claude/skills/          vendored skills for agents, four Nix, three frontend, figure and archify (their README); .mcp.json: mcp-nixos, OpenPencil, DeepWiki

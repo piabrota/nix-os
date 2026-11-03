@@ -63,7 +63,7 @@
     },
     {
       "title": "CI and checks",
-      "purpose": "ci.yml (nix flake check, nixpkgs-fmt, statix, deadnix, shellcheck, figure-check), the justfile's recipes, the flake's checks (the system, deploy-rs, loco-example, the pgx VM test, mockups, drawing), cves.yml, freeze.yml and the scripts in scripts/.",
+      "purpose": "ci.yml (on PRs: nixpkgs-fmt, statix, deadnix, shellcheck, figure-check, the justfile parse; nix flake check by hand only), the justfile's recipes, the flake's checks (the system, deploy-rs, loco-example, the pgx VM test, mockups, drawing), cves.yml, freeze.yml and the scripts in scripts/.",
       "parent": "Deploying"
     },
     {

@@ -20,7 +20,7 @@
 ## Do pull request à VPS
 
 ```
-PR ──► ci.yml: nix flake check (builda o sistema), nixpkgs-fmt, statix, deadnix, shellcheck
+PR ──► ci.yml: nixpkgs-fmt, statix, deadnix, shellcheck, justfiles (nix flake check à mão)
 merge na main ──► deploy.yml: o runner builda, o deploy-rs copia via SSH e ativa
                     └─► se o SSH não responder em 60 s, a VPS volta sozinha (magic rollback)
               └─► freeze.yml: a lista de pacotes da VPS no resumo da execução
