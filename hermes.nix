@@ -111,6 +111,9 @@ in
     settings.security.allow_lazy_installs = false;
     settings.model_catalog.enabled = false;
     environment.HERMES_TELEGRAM_DISABLE_FALLBACK_IPS = "true";
+    # Discord (the token and the allowed user ID are in the env file): attachments are held in RAM
+    # while they download, so the same 20 MiB cap as Telegram's media, not Discord's 32 MiB.
+    environment.DISCORD_MAX_ATTACHMENT_BYTES = toString (20 * 1024 * 1024);
     # Telegram: 👀 and ✅ reactions instead of "still working" messages (no tokens), and cron
     # results without the header and footer.
     settings.telegram.reactions = true;
