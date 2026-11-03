@@ -1,0 +1,119 @@
+# oh-my-pi (omp) for piabrota-hermes: the settings of the `omp` wrapper in hermes.nix, read as a
+# config overlay (PI_CONFIG_FILES). An overlay outranks ~/.omp/agent/config.yml and a repository's
+# .omp/config.yml, and an array here replaces theirs, so a cloned repository cannot loosen it.
+# It lives in the store, read-only: omp cannot edit its own guardrails. Keys from omp's
+# docs/settings.md at v18.16.0.
+
+# Claude only, through the owner's subscription, as Hermes: Sonnet for the work, Haiku for the
+# side tasks (titles, judgments, subagents). Without these, `tiny`, `memory` and `judge` pick
+# other providers or local models.
+modelRoles:
+  default: anthropic/claude-sonnet-5-5
+  slow: anthropic/claude-sonnet-5-5
+  plan: anthropic/claude-sonnet-5-5
+  smol: anthropic/claude-haiku-4-5
+  task: anthropic/claude-haiku-4-5
+  commit: anthropic/claude-haiku-4-5
+  tiny: anthropic/claude-haiku-4-5
+  memory: anthropic/claude-haiku-4-5
+  advisor: anthropic/claude-haiku-4-5
+  judge: anthropic/claude-haiku-4-5
+  web: web/duckduckgo
+retry:
+  fallbackChains:
+    default: []
+    smol: []
+    task: []
+    tiny: []
+    memory: []
+    judge: []
+    web: []
+
+# Nothing leaves the box but the model calls and the agent's own fetches.
+telemetry:
+  otlpExportEnabled: false
+exa:
+  enabled: false
+providers:
+  # Warming replays the last request before its cache expires: quota spent for nothing here.
+  cacheWarming: "off"
+
+# 1 vCPU and Hermes's 1 GB, shared with the gateway: no language servers, no eval kernels (they
+# would also run code outside the bash rules below), no memory backend, no advisor, no browser.
+lsp:
+  enabled: false
+eval:
+  py: false
+  js: false
+  autoProvision: false
+browser:
+  enabled: false
+computer:
+  enabled: false
+memory:
+  backend: "off"
+autolearn:
+  enabled: false
+advisor:
+  enabled: false
+async:
+  maxJobs: 2
+tools:
+  # Print mode has no dialog: a call that needs a prompt is refused. So the mode stays yolo and
+  # the rules below and restrictedFolders do the refusing.
+  approvalMode: yolo
+  approval:
+    eval: deny
+    browser: deny
+  maxTimeout: 600
+  restrictedFolders:
+    - /var/lib/hermes/.hermes
+    - /var/lib/hermes-secrets
+    - /var/lib/hermes/.ssh
+    - /var/lib/hermes/.config/gh
+
+# Hermes's deny list (hermes/dangerous-patterns.yaml) sees only the outer `omp` command, not what
+# omp runs. These rules repeat the parts that matter, for omp's bash tool. A deny rule matches the
+# whole command or one segment of a chain or pipe. omp never pushes, never calls gh and never
+# installs: Hermes checks the diff, then commits, pushes hermes/* and opens the pull request.
+bash:
+  patterns:
+    - { match: "git push*", approval: deny }
+    - { match: "git remote*", approval: deny }
+    - { match: "git config --global*", approval: deny }
+    - { match: "gh", approval: deny }
+    - { match: "gh *", approval: deny }
+    - { match: "*hermes-secrets*", approval: deny }
+    - { match: "*.hermes/*", approval: deny }
+    - { match: "*/.env*", approval: deny }
+    - { match: "*auth.json*", approval: deny }
+    - { match: "*.ssh/*", approval: deny }
+    - { match: "env", approval: deny }
+    - { match: "printenv*", approval: deny }
+    - { match: "export -p", approval: deny }
+    - { match: "set", approval: deny }
+    - { match: "sudo *", approval: deny }
+    - { match: "doas *", approval: deny }
+    - { match: "su *", approval: deny }
+    - { match: "systemctl *", approval: deny }
+    - { match: "nixos-rebuild*", approval: deny }
+    - { match: "nix-env*", approval: deny }
+    - { match: "nix profile*", approval: deny }
+    - { match: "curl *", approval: deny }
+    - { match: "wget *", approval: deny }
+    - { match: "npm *", approval: deny }
+    - { match: "npx *", approval: deny }
+    - { match: "pnpm *", approval: deny }
+    - { match: "yarn *", approval: deny }
+    - { match: "bun add*", approval: deny }
+    - { match: "bun install*", approval: deny }
+    - { match: "bunx *", approval: deny }
+    - { match: "pip *", approval: deny }
+    - { match: "pip3 *", approval: deny }
+    - { match: "uv *", approval: deny }
+    - { match: "uvx *", approval: deny }
+    - { match: "cargo install*", approval: deny }
+    - { match: "go install*", approval: deny }
+    - { match: "gem *", approval: deny }
+    - { match: "omp *", approval: deny }
+    - { match: "hermes *", approval: deny }

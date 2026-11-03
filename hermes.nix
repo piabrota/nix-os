@@ -2,7 +2,7 @@
 # `hermes-agent`: its messaging gateway, which answers on the chat platforms whose tokens it has and
 # runs its own cron jobs. Its NixOS module comes from the flake input `hermes-agent`; this file only
 # chooses. State in /var/lib/hermes. See docs/HERMES.md.
-{ config, lib, pkgs, hermes-agent, ... }:
+{ config, lib, pkgs, hermes-agent, omp, ... }:
 let
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
@@ -176,6 +176,21 @@ let
       cp -r ${ownerSkillsSrc}/skills/${path} $out/${baseNameOf path}
     '')
     ownerSkillPaths);
+  # oh-my-pi (omp), the coding agent Hermes hands repository work to (hermes/skills/hermes-omp,
+  # docs/HERMES.md, "omp"). Hermes's deny list and tripwire see only the outer `omp` command, so omp
+  # gets its own rules: hermes/omp.yml, a read-only config overlay. This wrapper is the only omp on
+  # Hermes's PATH. omp reads ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the
+  # same subscription. omp runs in Hermes's cgroup (1 GB): choom makes the kernel's OOM killer
+  # pick omp before the gateway.
+  ompWrapped = pkgs.writeShellApplication {
+    name = "omp";
+    text = ''
+      export PI_CONFIG_FILES=${./hermes/omp.yml}
+      export ANTHROPIC_OAUTH_TOKEN="''${ANTHROPIC_OAUTH_TOKEN:-''${CLAUDE_CODE_OAUTH_TOKEN:-}}"
+      export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
+      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${omp.packages.x86_64-linux.omp}/bin/omp "$@"
+    '';
+  };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings
@@ -241,7 +256,8 @@ in
       max_iterations = 50;
       max_spawn_depth = 1;
     };
-    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" ];
+    # The third directory holds this repository's own skills (hermes/skills/): hermes-omp.
+    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
     extraPlugins = [
@@ -303,7 +319,8 @@ in
     # gh for the bundled github skill (a read-only token as GITHUB_TOKEN in the env file),
     # ast-grep for the skill of that name, yt-dlp for pirsig-videos (captions only: the light
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
-    extraPackages = [ pkgs.gh pkgs.ast-grep pkgs.yt-dlp-light ];
+    # omp is the wrapper above, for the hermes-omp skill.
+    extraPackages = [ pkgs.gh pkgs.ast-grep pkgs.yt-dlp-light ompWrapped ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
@@ -321,7 +338,11 @@ in
     addToSystemPackages = true;
   };
 
-  systemd.tmpfiles.rules = [ "d /var/lib/hermes-secrets 0700 root root -" ];
+  # omp-tasks: the task files of the hermes-omp skill.
+  systemd.tmpfiles.rules = [
+    "d /var/lib/hermes-secrets 0700 root root -"
+    "d /var/lib/hermes/workspace/omp-tasks 0770 hermes hermes -"
+  ];
   users.users.h0ffmann.extraGroups = [ "hermes" ];
   # Reads the system journal for its daily VPS check (hermes/AGENTS.md), as the observer account does.
   users.users.hermes.extraGroups = [ "systemd-journal" ];

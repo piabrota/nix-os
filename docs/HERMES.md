@@ -151,6 +151,38 @@ hermes-lcm and the memory providers (too heavy for 1 GB, or a server or a cloud)
 that needs Node, a paid API or a web dashboard, or has no licence. Nothing on the list covers
 Brazilian alerts, bathing water or ocean science: those are piabrota's own skills to write.
 
+## omp, the coding worker
+
+[oh-my-pi](https://github.com/can1357/oh-my-pi) (omp, MIT, Stencil Labs, a fork of Mario Zechner's
+Pi) is a terminal coding agent on Bun with Rust natives. Hermes hands it large code changes through
+the `hermes-omp` skill (`hermes/skills/hermes-omp/SKILL.md`, the third `skills.external_dirs`
+entry): Hermes makes a `hermes/*` branch, writes the task to a file in
+`/var/lib/hermes/workspace/omp-tasks/`, runs `omp -p --max-time 15m` in the working tree, reads
+the diff, and then commits, pushes and opens the pull request itself. omp never pushes.
+
+- **Version.** The flake input `omp` is pinned to the tag `v18.16.0`; the weekly flake update does
+  not move a tag, so a new release is a PR. The GitHub runner builds it from source (Rust with fat
+  LTO, and bun2nix): no binary cache has it. The VPS builds nothing.
+- **The wrapper.** `omp` on Hermes's PATH is a wrapper (`ompWrapped` in `hermes.nix`). It points
+  omp at `hermes/omp.yml` as a config overlay, which is read-only in the store and outranks omp's
+  own `config.yml` and a cloned repository's `.omp/`. It passes `CLAUDE_CODE_OAUTH_TOKEN` as
+  `ANTHROPIC_OAUTH_TOKEN`, the same subscription and the same limits as Hermes, and turns off
+  OpenTelemetry, titles and the eval kernels.
+- **Its own deny list.** Hermes's deny list and tripwire see only the outer `omp` command. So
+  `hermes/omp.yml` gives omp's bash tool the rules that matter: no `git push`, no `gh`, no
+  installs, no `sudo`, no `curl` or `wget`, no reads of the secrets or the environment. The
+  folders of Hermes's state, the secrets, `~/.ssh` and `gh`'s config are restricted, which in print
+  mode means refused.
+- **Memory.** omp runs in Hermes's cgroup (`MemoryMax=1G`). LSP, the Python and JS kernels, the
+  memory backend, the advisor and the browser are off. The wrapper starts omp with
+  `choom -n 500`, so the kernel's OOM killer stops omp before the gateway.
+- **Models.** Sonnet (`claude-sonnet-5-5`) for the work and Haiku (`claude-haiku-4-5`) for omp's
+  side tasks, with no fallback, so no role reaches another provider or a local model.
+
+Not checked before the merge: omp's memory peak on the box, and that a `claude setup-token` token
+works as `ANTHROPIC_OAUTH_TOKEN`. After the deploy, run one task and read
+`systemctl show hermes-agent -p MemoryPeak`.
+
 ## The owner's plugins
 
 `pirsig-notes` and `pirsig-videos`, in `hermes/plugins/`, send smart notes and video readings to
