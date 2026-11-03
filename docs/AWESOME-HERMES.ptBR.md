@@ -9,7 +9,7 @@ testar ou por que ficou de fora. Como o Hermes roda aqui está no [`HERMES.ptBR.
 
 **A régua.** Uma Hostinger KVM 1 (1 vCPU, 4 GB de RAM, o Hermes limitado a 1 GB), NixOS com tudo
 declarado no `hermes.nix`, o Claude Sonnet pela assinatura do dono e nenhum outro provedor, o
-Telegram como único chat, um token do GitHub só de leitura. Fica de fora: o que pede Node, Go,
+Telegram e o Discord como chats, um token do GitHub só de leitura. Fica de fora: o que pede Node, Go,
 Docker ou navegador na máquina, uma API paga ou um painel web, o que manda dados para fora, e o que
 não tem licença OSI. Os objetivos que ela serve: o [marola](https://marola.dev) (balneabilidade e
 segurança na praia no Brasil), o [piabrota/alerts](https://github.com/piabrota/alerts) (alertas de
@@ -49,7 +49,7 @@ e datas são daquele dia; elas mudam.
 
 ## Embutido, em uso aqui
 
-- ✅ **Gateway no Telegram**, por polling, com um usuário permitido.
+- ✅ **Gateway no Telegram** (por polling) **e no Discord**, com um usuário permitido em cada.
 - ✅ **Agendador de cron**, com os resultados no canal principal do Telegram.
 - ✅ **Memória embutida** (`MEMORY.md`, `USER.md`), sem provedor externo.
 - ✅ **Skills que vêm no pacote**: `github`, `arxiv`, `grounded-citations`, `obsidian`,
