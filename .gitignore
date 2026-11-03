@@ -5,3 +5,6 @@ result
 secrets/
 result-*
 build/
+
+# Python bytecode of hermes/plugins/ (just hermes-plugins-test)
+__pycache__/

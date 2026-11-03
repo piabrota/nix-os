@@ -151,6 +151,12 @@ hermes-lcm and the memory providers (too heavy for 1 GB, or a server or a cloud)
 that needs Node, a paid API or a web dashboard, or has no licence. Nothing on the list covers
 Brazilian alerts, bathing water or ocean science: those are piabrota's own skills to write.
 
+## The owner's plugins
+
+`pirsig-notes` and `pirsig-videos`, in `hermes/plugins/`, send smart notes and video readings to
+piabrota/pirsig as pull requests on `hermes/*` branches. They need yt-dlp (`yt-dlp-light`) and the
+GitHub App below. See [HERMES-PLUGINS.md](HERMES-PLUGINS.md).
+
 ## One-time setup on the box
 
 Without the secrets file, activation only warns (`cannot read environmentFile`) and the gateway

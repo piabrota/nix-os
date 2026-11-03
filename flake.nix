@@ -66,6 +66,13 @@
           diff -u ${./docs/drawings/mu.desmos.json} $art/mu.desmos.json || { echo 'run `just drawing`' >&2; exit 1; }
           touch $out
         '';
+        # The unit tests of the owner's Hermes plugins (hermes/plugins/), with git and a stub gh.
+        hermes-plugins = pkgs.runCommand "hermes-plugins-test"
+          { nativeBuildInputs = [ pkgs.python3 pkgs.git ]; } ''
+          export HOME=$TMPDIR PYTHONDONTWRITEBYTECODE=1
+          cd ${./hermes/plugins}/tests && python3 -m unittest -v test_plugins
+          touch $out
+        '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).
         mockups = pkgs.runCommand "mockups-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}

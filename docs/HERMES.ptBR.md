@@ -154,6 +154,12 @@ um servidor ou uma nuvem), e tudo que pede Node, API paga ou painel web, ou não
 lista cobre alertas brasileiros, balneabilidade ou ciência do mar: essas são skills próprias do
 piabrota, ainda por escrever.
 
+## Os plugins do dono
+
+`pirsig-notes` e `pirsig-videos`, em `hermes/plugins/`, mandam smart notes e leituras de vídeo para
+o piabrota/pirsig como pull requests em branches `hermes/*`. Eles precisam do yt-dlp
+(`yt-dlp-light`) e do GitHub App abaixo. Veja [HERMES-PLUGINS.md](HERMES-PLUGINS.md) (em inglês).
+
 ## Configurar uma vez na máquina
 
 Sem o arquivo de segredos, a ativação só avisa (`cannot read environmentFile`) e o gateway sobe sem
