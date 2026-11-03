@@ -113,8 +113,9 @@ in
     };
     # Two Claude models, both on the subscription: Sonnet for judgment, Haiku for mechanical work.
     # Sonnet is the main model: it plans, writes, reviews and decides. Haiku takes the subagents
-    # (delegate_task: simple greps, lookups, file lists, formatting) and two cheap side tasks
-    # (session titles, skill matching). Compression, the dangerous-command approval and the
+    # (delegate_task: read-only fan-out; SOUL.md keeps single greps on Sonnet, since a subagent's
+    # fresh context costs more than the grep) and three cheap side tasks (session titles, skill
+    # matching, the /goal judge). Compression, the dangerous-command approval and the
     # post-turn review stay on Sonnet, because a wrong answer there costs more than the saving.
     # Hermes has no per-call router: Sonnet chooses to delegate, so SOUL.md tells it when to.
     # No fallback: if Anthropic fails, the turn fails rather than going to another provider.
@@ -128,7 +129,16 @@ in
         provider = "anthropic";
         model = "claude-haiku-4-5";
       };
+      # The judge of /goal (Hermes's Ralph loop): one short verdict after each turn.
+      goal_judge = {
+        provider = "anthropic";
+        model = "claude-haiku-4-5";
+      };
     };
+    # /goal continues a task on its own until the judge says done. The default budget is 20 turns,
+    # each up to agent.max_turns (60) model calls; 6 keeps one goal within the subscription's quota.
+    # `/goal resume` continues for 6 more.
+    settings.goals.max_turns = 6;
     settings.delegation = {
       provider = "anthropic";
       model = "claude-haiku-4-5";

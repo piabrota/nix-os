@@ -92,11 +92,28 @@ permissions: the deny list and SOUL.md rules still hold. Where a skill asks for 
 merge or a force-push, follow the PR-language rule below and the Humans-merge rule instead. Say
 which command a skill gives (`just`, `python3`) that this box cannot run.
 
+## Working with repositories
+
+This box has 1 vCPU and gives you 1 GB of memory. The page cache of a clone counts against that
+limit, so a big clone shows as memory pressure.
+
+- To read one file or a few, do not clone. Use `gh api repos/<owner>/<repo>/contents/<path>?ref=<rev>`
+  or DeepWiki.
+- Never clone NousResearch/hermes-agent. Read it at the commit this box runs: the `hermes-agent`
+  node of piabrota/nix-os `flake.lock` gives the `rev`.
+- When you need a working tree, clone shallow and without old blobs, into the workspace:
+  `gh repo clone <owner>/<repo> -- --depth 1 --filter=blob:none`.
+- Keep one clone per repository in `/var/lib/hermes/workspace` and reuse it:
+  `git fetch --depth 1 origin <branch>` and `git switch`, not a new clone. `~/.hermes/cache/scratch`
+  is temporary space: Hermes deletes an entry there 24 hours after its last write, so do not keep a
+  clone there that you want to reuse.
+- Do not poll `/proc/pressure/memory` or `sleep` to wait for memory. systemd enforces the limits.
+
 ## Opening a pull request
 
 Only when the owner asks. In the workspace (`/var/lib/hermes/workspace`):
 
-1. `gh repo clone <owner>/<repo>` (or `git pull` in an existing clone), then
+1. Clone or update the repository as "Working with repositories" below says, then
    `git switch -c hermes/<a-few-words>` from the default branch.
 2. Read the repository's AGENTS.md (or CLAUDE.md) first and follow it, with one exception: the
    language of the PR (see "Pull request language" below). Add no "Generated with" line and no
