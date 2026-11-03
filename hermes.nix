@@ -2,7 +2,7 @@
 # `hermes-agent`: its messaging gateway, which answers on the chat platforms whose tokens it has and
 # runs its own cron jobs. Its NixOS module comes from the flake input `hermes-agent`; this file only
 # chooses. State in /var/lib/hermes. See docs/HERMES.md.
-{ lib, pkgs, hermes-agent, ... }:
+{ config, lib, pkgs, hermes-agent, ... }:
 let
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
@@ -149,6 +149,19 @@ in
 
   # The box has one vCPU and 4 GB: Hermes gets at most a quarter of the memory and yields the CPU
   # to sshd, nginx and the apps.
+  # Activation rewrites config.yaml, .env, SOUL.md, AGENTS.md and the plugin links, but the unit
+  # itself does not change, so a deploy left the old process running with the old config
+  # (2026-11-03). Restart it when any of them changes.
+  systemd.services.hermes-agent.restartTriggers = with config.services.hermes-agent; [
+    (builtins.toJSON settings)
+    (builtins.toJSON environment)
+    (builtins.toJSON mcpServers)
+    optionalSkills
+    (builtins.toJSON extraPlugins)
+    (builtins.toJSON hermesHomeFiles)
+    (builtins.toJSON documents)
+  ];
+
   systemd.services.hermes-agent.serviceConfig = {
     MemoryMax = lib.mkDefault "1G";
     CPUWeight = lib.mkDefault 50;
