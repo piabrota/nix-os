@@ -30,6 +30,50 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 A configuração fica no Nix: no NixOS, `hermes setup`, `hermes config set` e
 `hermes gateway install` recusam mudar o que o módulo gerencia. Mude o `hermes.nix` num PR.
 
+## Interfaces
+
+Como as pessoas e as tarefas chegam ao Hermes, e onde cada parte é definida. A regra vale para
+todas: a escolha fica no `hermes.nix`, e o token ou a lista de usuários permitidos fica no arquivo
+de segredos na máquina (nunca aqui, e nunca um valor num PR).
+
+| Interface | Como roda aqui | No `hermes.nix` | Na máquina (`hermes.env`) |
+|---|---|---|---|
+| Telegram | Modo polling, sem porta aberta. Responde só aos usuários permitidos. Reações (👀, ✅) trocam as mensagens de "ainda trabalhando". | `settings.telegram.reactions`; `HERMES_TELEGRAM_DISABLE_FALLBACK_IPS` (sem consultas DNS-over-HTTPS do Telegram por terceiros); mídia lida na RAM limitada a 20 MiB (`gateway.max_inbound_media_bytes`) | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` |
+| Discord | Um bot no servidor do dono, que responde só ao usuário permitido. Sem voz: o pacote `full` não está instalado, então o aviso de Opus no log é esperado. | `DISCORD_MAX_ATTACHMENT_BYTES` em 20 MiB, o mesmo limite do Telegram | `DISCORD_BOT_TOKEN`, `DISCORD_ALLOWED_USERS` |
+| Slack | Está no extra `messaging`; aqui só ficam os nomes das variáveis (veja "Configurar uma vez na máquina"). | nada | `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_ALLOWED_USERS` |
+| Cron | O agendador do próprio Hermes, dentro do gateway: uma tarefa por vez, resultado no canal principal (`/sethome`, veja "Discord"), sem cabeçalho e rodapé. Datas em `America/Sao_Paulo`. | `settings.cron.max_parallel_jobs = 1`, `settings.cron.wrap_response = false`, `settings.timezone` | nada |
+| CLI | `hermes` no PATH, sobre o estado do próprio serviço, para quem está no grupo `hermes` (`h0ffmann`). | `addToSystemPackages`, `users.users.h0ffmann.extraGroups` | nada |
+| Servidores MCP | DeepWiki e Context7, remotos, sem chave; nada roda na máquina por eles. | `mcpServers`; `settings.mcp.auto_reload_on_config_change = false` | nada |
+
+Sem a lista de usuários permitidos de uma plataforma, o gateway recusa todos nela. Sem o arquivo
+de segredos, ele sobe sem plataforma e roda só as tarefas agendadas.
+
+## Ajustes de execução
+
+O que o `hermes.nix` define além do modelo e dos complementos, para 1 vCPU, 1 GB e a cota de uma
+assinatura. A pesquisa de cada chave no commit fixado está em
+[`AWESOME-HERMES.ptBR.md`](AWESOME-HERMES.ptBR.md).
+
+| Ajuste | Valor | Por quê |
+|---|---|---|
+| `fallback_providers` (principal e `delegation`) | vazio | Sonnet e mais nada. Se a Anthropic falhar, o turno falha; ele nunca vai para outro modelo. As tarefas laterais e os subagentes usam o mesmo modelo. |
+| `delegation` | até 2 filhos, 50 iterações cada, um nível | Pouca ramificação, para uma vCPU e a cota. |
+| `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, ligado | Um limite por execução e uma parada firme em laços de ferramentas. |
+| `prompt_caching.cache_ttl` | `auto` | 1 h no chat (as pessoas pausam), 5 min no cron e nos subagentes. |
+| `mcp.auto_reload_on_config_change` | desligado | Mudar a configuração não recarrega os servidores MCP (o que derrubaria o cache do prompt); só um deploy muda a configuração. |
+| `agent.agent_cache.max_size` | 16 | Menos agentes em cache, para poupar RAM. |
+| `code_execution.max_session_kernels` | 1 | Um kernel de código por vez. |
+| `sessions` | apaga com mais de 45 dias e depois faz vacuum no `state.db` | Disco. |
+| `security.allow_lazy_installs` | desligado | O Nix cuida das dependências: sem `pip install` em tempo de execução. |
+| `model_catalog.enabled`, `updates.check`, `telemetry.shared_metrics.enabled` | desligados | Sem catálogo de modelos baixado da Nous, sem checagem de atualização (o Nix cuida delas) e nada enviado à Nous. |
+
+O Hermes não reinicia sozinho quando um deploy muda os arquivos dele: a ativação reescreve
+`config.yaml`, `.env`, `SOUL.md`, `AGENTS.md` e os links dos plugins, mas a unit não muda. Por
+isso o `hermes.nix` os lista como `restartTriggers` do `hermes-agent` (as configurações, o
+ambiente, os servidores MCP, as skills opcionais, os plugins e os dois documentos). Quando você
+adicionar um novo tipo de entrada ao módulo, adicione-o ali também. Sem isso, um deploy deixa o
+processo antigo rodando com a configuração antiga.
+
 ## Quem ele é
 
 O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no Claude Sonnet. O arquivo diz o
@@ -194,7 +238,11 @@ hermes doctor
 ```
 
 O log diz quais plataformas conectaram; "No messaging platforms enabled" quer dizer que o `.env`
-não tem token de plataforma.
+não tem token de plataforma. Dois avisos são esperados: o "Opus codec not found" do adaptador do
+Discord (a voz ficou de fora) e o do plugin da lista de bloqueio, que diz não poder gravar o hash
+de integridade ao lado de um arquivo da store (a lista é somente leitura de propósito). Para ver
+se um deploy valeu, compare `systemctl show hermes-agent -p ActiveEnterTimestamp` com a hora do
+deploy: a unit reinicia quando suas entradas mudam (veja "Ajustes de execução").
 
 ## Atualizar e desligar
 
@@ -211,5 +259,6 @@ não tem token de plataforma.
   `hermes_cli/auth.py` (o `CLAUDE_CODE_OAUTH_TOKEN` no provedor `anthropic`), `.env.example`, e
   [a página de Nix](https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup), lidos em
   2026-11-02.
-- Não conferido: o sistema não foi construído nem rodado na máquina ainda (o CI constrói o PR); o
-  uso de RAM e o tamanho do closure na VPS não foram medidos.
+- Visto rodando na máquina em 2026-11-03: a unit ativa, `MemoryMax` de 1 GiB, `CPUWeight` 50 e
+  cerca de 350 MiB em uso numa leitura, com o Telegram conectado em modo polling. Uma leitura não
+  é um pico: o uso sob carga e o tamanho do closure na VPS não foram medidos.
