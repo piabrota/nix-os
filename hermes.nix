@@ -17,13 +17,33 @@ let
     "research/research-paper-writing" # papers, with the bundled arxiv and grounded-citations
     "software-development/ast-grep" # structural code search (pkgs.ast-grep below)
   ];
+  # Community add-ons, picked from github.com/0xNyk/awesome-hermes-agent and read before pinning
+  # (docs/HERMES.md, "Community add-ons"). Pinned by commit; a new commit is a PR.
+  # A pre_tool_call hook that blocks terminal commands matching hermes/dangerous-patterns.yaml.
+  dangerousPatterns = pkgs.fetchFromGitHub {
+    name = "custom-dangerous-patterns";
+    owner = "scross01";
+    repo = "hermes-custom-dangerous-patterns-plugin";
+    rev = "6b9bda685fb6271d2be7f13b75cd59fafc30f263"; # v0.5.2, MIT
+    hash = "sha256-/H2SPIvC+V7Pq/GybReP9yB2z9h04lcIANt85ObKwHA=";
+  };
+  # evidence-ledger-research: source, date, unit and table-cell discipline when extracting from
+  # bulletins and PDFs (bathing water, alerts, papers). Markdown only.
+  abvxSkills = pkgs.fetchFromGitHub {
+    owner = "markoblogo";
+    repo = "abvx-agent-skills";
+    rev = "d4af8c3a5596ed055f5be5bbbd4c36b37d535530"; # MIT
+    hash = "sha256-yjc2tz3WNQ3xvNs7CSvTSOGPt9RypFkB5cBNqkB2zKY=";
+  };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings
     (path: ''
       cp -r ${hermes-agent}/optional-skills/${path} $out/${baseNameOf path}
     '')
-    skills);
+    skills + ''
+    cp -r ${abvxSkills}/skills/evidence-ledger-research $out/evidence-ledger-research
+  '');
 in
 {
   imports = [ hermes-agent.nixosModules.default ];
@@ -50,8 +70,24 @@ in
       provider = "anthropic";
       model = "claude-sonnet-5-5";
       fallback_providers = [ ];
+      # Small and shallow fan-out, for one vCPU and the subscription's quota.
+      max_concurrent_children = 2;
+      max_iterations = 50;
+      max_spawn_depth = 1;
     };
     settings.skills.external_dirs = [ "${optionalSkills}" ];
+    # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
+    # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
+    extraPlugins = [ dangerousPatterns ];
+    settings.plugins.enabled = [ "custom-dangerous-patterns" ];
+    environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
+    # Limits from the list's operational playbooks, for one vCPU, 1 GB and a subscription's quota
+    # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on
+    # tool loops, and no update checks or shared metrics (Nix owns updates; nothing goes to Nous).
+    settings.agent.max_turns = 60;
+    settings.tool_loop_guardrails.hard_stop_enabled = true;
+    settings.updates.check = false;
+    settings.telemetry.shared_metrics.enabled = false;
     # Remote MCP servers from the project's approved catalog (optional-mcps/), no key: nothing runs
     # on the box for them. DeepWiki answers about public repositories (piabrota, marola-dev,
     # nixpkgs), as in this repository's .mcp.json; Context7 gives current library docs.

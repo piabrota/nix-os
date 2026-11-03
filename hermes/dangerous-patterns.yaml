@@ -1,0 +1,52 @@
+# Commands piabrota-hermes may never run from its terminal, for the custom-dangerous-patterns
+# plugin (hermes.nix). A deny pattern blocks at once, with no approval prompt. These back up the
+# rules in SOUL.md: humans merge, nothing is installed by hand, no secret is read. The GitHub token
+# is read-only anyway; this stops the attempt before it reaches GitHub. First match wins.
+deny_patterns:
+  # --- Writing to GitHub: humans merge (SOUL.md rule 2) ---
+  - description: '[GITHUB_WRITE] git push'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b.*'
+  - description: '[GITHUB_WRITE] gh pr that writes'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+pr\s+(?:create|merge|close|reopen|edit|comment|review|ready|lock|unlock|update-branch)\b.*'
+  - description: '[GITHUB_WRITE] gh issue that writes'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+issue\s+(?:create|close|reopen|edit|comment|delete|transfer|lock|unlock|pin|unpin|develop)\b.*'
+  - description: '[GITHUB_WRITE] gh api with a write method or a request body'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '(?i)\bgh\s+api\b.*(?:\s(?:-X|--method)(?:=|\s+)?(?:POST|PUT|PATCH|DELETE)\b|\s-[fF]\s|\s--(?:raw-)?field\b|\s--input\b).*'
+  - description: '[GITHUB_WRITE] gh repo, release, workflow or run that writes'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+(?:repo\s+(?:create|delete|edit|fork|archive|unarchive|rename|sync|deploy-key)|release\s+(?:create|delete|edit|upload)|workflow\s+(?:run|enable|disable)|run\s+(?:rerun|cancel|delete)|secret|variable|label\s+(?:create|edit|delete))\b.*'
+
+  # --- Secrets: never read, print or store one (SOUL.md rule 1) ---
+  - description: '[SECRETS] the env files, auth.json or SSH keys'
+    enabled: true
+    group: SECRETS
+    pattern: '(?:hermes-secrets|\.hermes/\.env|(?:^|[\s/"''=])\.env\b|auth\.json|\.ssh/|\bid_(?:rsa|ed25519|ecdsa)\b)'
+  - description: '[SECRETS] dumping the environment'
+    enabled: true
+    group: SECRETS
+    pattern: '(?:^|[;&|]\s*)(?:env|printenv|export\s+-p|set)\s*(?:$|[;&|>])'
+
+  # --- The system belongs to Nix: changes go through a PR to piabrota/nix-os ---
+  - description: '[SYSTEM] sudo, rebuilds and unit control'
+    enabled: true
+    group: SYSTEM
+    pattern: '\b(?:sudo|doas|su\s+-|nixos-rebuild|switch-to-configuration|nix-env|nix\s+profile\s+install)\b.*|\bsystemctl\s+(?:start|stop|restart|reload|enable|disable|mask|kill|edit|daemon-reload)\b.*'
+
+  # --- Nothing installed or fetched to run: tools come pinned from Nix ---
+  - description: '[INSTALL] a script piped from the network into a shell'
+    enabled: true
+    group: INSTALL
+    pattern: '\b(?:curl|wget)\b.*\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b.*'
+  - description: '[INSTALL] package managers and runners that fetch code'
+    enabled: true
+    group: INSTALL
+    pattern: '\b(?:uvx|npx|pnpx|bunx)\b.*|\b(?:pip3?|npm|pnpm|yarn|bun|cargo|go|gem)\s+(?:install|add|get)\b.*|\buv\s+(?:pip\s+install|tool\s+(?:install|run)|add|run)\b.*|\bhermes\s+(?:pm|plugins?|skills)\s+install\b.*'
