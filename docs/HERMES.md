@@ -59,6 +59,27 @@ project's `optional-skills/` at the pinned commit. The bundled skills (`arxiv`, 
 need Node, Go or Homebrew on the box: `pr-lens`, `qmd`, `llm-wiki`, `blogwatcher`, `archify`. Left
 out for the box's size: voice, the `mlops` skills, a local browser and `computer-use`.
 
+## Community add-ons
+
+Picked from [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) on 2026-11-03,
+each read before pinning (license, last commit, every entry point, and what it runs, reads and
+sends), and pinned by commit in `hermes.nix`:
+
+| Add-on | Kind | What for |
+|---|---|---|
+| [custom-dangerous-patterns](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin) v0.5.2 (MIT) | plugin | Blocks terminal commands that match `hermes/dangerous-patterns.yaml`: writes to GitHub (`git push`, `gh pr merge`, `gh api -X POST` and the rest), reads of secrets, `sudo` and rebuilds, and installs or `curl \| sh`. The list lives in the store, so the agent cannot edit it. |
+| [evidence-ledger-research](https://github.com/markoblogo/abvx-agent-skills) (MIT) | skill | Source, date, unit and table-cell discipline when it extracts numbers from bulletins, PDFs and papers. |
+
+Limits from the list's operational playbooks: `agent.max_turns = 60`; subagents at most 2 at a
+time, 50 iterations each, one level deep; `tool_loop_guardrails.hard_stop_enabled`; no update
+checks (Nix owns updates) and no shared metrics.
+
+Left out, with the reason: cronalytics (needs a writable plugin directory), rtk-hermes (its hook
+order with the deny list is untested), agentburn (its skill runs `uvx`, an unpinned download),
+hermes-lcm and the memory providers (too heavy for 1 GB, or a server or a cloud), and every item
+that needs Node, a paid API or a web dashboard, or has no licence. Nothing on the list covers
+Brazilian alerts, bathing water or ocean science: those are piabrota's own skills to write.
+
 ## One-time setup on the box
 
 Without the secrets file, activation only warns (`cannot read environmentFile`) and the gateway
