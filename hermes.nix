@@ -27,6 +27,89 @@ let
     rev = "6b9bda685fb6271d2be7f13b75cd59fafc30f263"; # v0.5.2, MIT
     hash = "sha256-/H2SPIvC+V7Pq/GybReP9yB2z9h04lcIANt85ObKwHA=";
   };
+  # Three more from Nous's plugin catalog (plugin-catalog/ at the pinned hermes-agent commit:
+  # maintainer-merged, scanned, pinned by commit), read at the catalog's commit before pinning.
+  # tripwire: one JSON line per refused action (a hook block such as the deny list, or a denied
+  # approval) in ~/.hermes/tripwire/events.jsonl. It stores no arguments or text and makes no calls.
+  tripwire = pkgs.fetchFromGitHub {
+    owner = "percyhendrux123-prog";
+    repo = "hermes-tripwire";
+    rev = "904a4f559808c57152ebb666cd0ab7d863220b49"; # v0.1.1, MIT
+    hash = "sha256-Vxh+Nz0Qne7DfpfoXdXbg1/13HzVF++e6xCAC7LxtK4=";
+  };
+  # All four plugins of Nous Research's Labs (github.com/NousResearch/hermes-labs-plugins, MIT;
+  # built by Nous, not supported), each at the commit its catalog entry pins:
+  # inbox: `hermes inbox`, a read-only list of failed cron jobs, stalled subagents and work in
+  # flight. A CLI command only.
+  # telegram-business: drafts replies to a Telegram Business account's customers and sends one only
+  # when the owner taps Send. Inert until a Business account (Telegram Premium) connects the bot.
+  # workflow-record: `hermes record` records a browser workflow over CDP for /learn. Inert here:
+  # the box runs no browser.
+  # github-copilot: Copilot as a model provider. Inert: settings.model and the fallbacks name
+  # Anthropic only, and it calls GitHub only for a profile that chose Copilot.
+  labsPlugins = rev: hash: pkgs.fetchFromGitHub {
+    owner = "NousResearch";
+    repo = "hermes-labs-plugins";
+    inherit rev hash;
+  };
+  labs = {
+    inbox = labsPlugins "62dbc160fab57f893a9eaace79c16c00518c4eca"
+      "sha256-tkkVfFbu+i483ypMQxszMpa7+M6OgZGugi4fQcZDLrk=";
+    telegram-business = labsPlugins "0480b2e2947276b55b302d3288b30597d238ba51"
+      "sha256-pXi9oon5r5akt+qpcqMrHvfT2DNYwN0qxxSsBjCzNB8=";
+    workflow-record = labsPlugins "fde77be2bc939dbc71d425aab41731ad88173e67"
+      "sha256-A7cmPg6PEihAR3tKG6SRtNtzA+KrSWWUDjUNuVKEX+E=";
+    github-copilot = labsPlugins "346cfe972f72b6a966e84c1004cf8742554b193d"
+      "sha256-Z+mJyWn0bFuuQuHB3doI3XqXs3hDcpL6g/gLkaaSNwA=";
+  };
+  # More from the catalog, each at its catalog commit, all MIT and pure Python: local ledgers and
+  # small helpers that cost no model call.
+  catalogPlugin = owner: repo: rev: hash: pkgs.fetchFromGitHub { inherit owner repo rev hash; };
+  olric = catalogPlugin "olric3015" "hermes-plugins";
+  refs = catalogPlugin "EloquentBrush0x" "hermes-context-refs";
+  more = {
+    # /errors: failed Anthropic calls (rate limits, overloads, timeouts) by cause and day.
+    error-ledger = olric "dd646070c662ebf1978e5623bf30d2d1f55f7bef"
+      "sha256-+f1ps0RuVn4AOEjg7huIIXJKdDYCNW6paNSP6HWX9ho=";
+    # /aux: tokens and failures of the Haiku side tasks (titles, skills hub, goal judge).
+    aux-ledger = olric "aee39a67b4ffb1ff786c417fb92f997a8c7663b7"
+      "sha256-YtsrXUEzLC1wUarMijXNp2knC+2LA699u3Sd9rJiIFM=";
+    # /approval-log: how often each deny-list rule asked, and the answers.
+    approval-ledger = olric "4a2ef866a51f1c99ed1d77e423136450340d901b"
+      "sha256-GPA252ZcSGizvro0Rxw/Q8rAhv4PUtqGusnUcd4RMOk=";
+    # /stop-log: the turns stopped with /stop or /new while Hermes was working.
+    stop-ledger = olric "604940a4bb6754c571b7562362fe2d1ceac1d741"
+      "sha256-iw+wdpTSYokYCX1Q3yKYpTRBFLOUnZy65jII+/uxZLk=";
+    # A progress bar's redraws reach the model as one line: tokens saved, nothing sent anywhere.
+    progress-squash = catalogPlugin "pierrenode" "hermes-progress-squash"
+      "044e6f1128037a58a76d5f6ff71df1607b4c1c63" "sha256-/5KHqlRkejtBEtePwbJBsK58yxFGBeFdljE4zg4uxS8=";
+    # @gh:owner/repo#N attaches a public issue or PR (anonymous GET to api.github.com, no token).
+    gh-ref = refs "bb0001012c5b213ce5a09b5905d859635c440c17"
+      "sha256-z1We+CerQAZGM+TB+XkV+LoIUQf9CWiiQPUm8sQU8e8=";
+    # @wiki:<title> attaches a Wikipedia lead section (GET to <lang>.wikipedia.org only).
+    wiki-ref = refs "0154f6bfaafc837cc4af78742e6db7c087d5b5a7"
+      "sha256-KHHeY/bqwpAZ8rsiw3oPVL6qNLudEsGdrljVl7fOfLM=";
+  };
+  # Brazilian holidays and workday maths for cron digests and deadlines, computed in code (GET to
+  # date.nager.at with a country code and a year, no key). Its plugin.yaml is at the repo's root.
+  publicHolidays = pkgs.fetchFromGitHub {
+    name = "public-holidays";
+    owner = "Akloenx123";
+    repo = "hermes-public-holidays";
+    rev = "d73f177b13c368c5c2445f6595f4008ed6c79a78"; # MIT
+    hash = "sha256-NyQWrzgt361Hg7rTws7f5lgYbcNXf6VHOCH1gvznhtk=";
+  };
+  # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
+  subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
+  # hermes-cron: a skill (markdown, no code in the agent) on cheap cron jobs: no_agent, the
+  # wakeAgent pre-check and [SILENT], so a quiet tick makes no model call. Its read-only doctor
+  # script needs python3, which is not on Hermes's PATH here; the rules work without it.
+  hermesCron = pkgs.fetchFromGitHub {
+    owner = "itpartypattaya";
+    repo = "hermes-cron";
+    rev = "2426b4b26a95e98112ac73415dedc8e0dd25c602"; # v1.5.2, MIT
+    hash = "sha256-pA6FaHsOrsurjdLituyGg0dUcCoc/pVgJ3elURGF6Os=";
+  };
   # evidence-ledger-research: source, date, unit and table-cell discipline when extracting from
   # bulletins and PDFs (bathing water, alerts, papers). Markdown only.
   abvxSkills = pkgs.fetchFromGitHub {
@@ -92,6 +175,7 @@ let
     '')
     skills + ''
     cp -r ${abvxSkills}/skills/evidence-ledger-research $out/evidence-ledger-research
+    cp -r ${hermesCron}/skills/hermes-cron $out/hermes-cron
   '');
 in
 {
@@ -151,8 +235,13 @@ in
     settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
-    extraPlugins = [ dangerousPatterns ];
-    settings.plugins.enabled = [ "custom-dangerous-patterns" ];
+    extraPlugins = [
+      dangerousPatterns
+      (subPlugin "tripwire" tripwire)
+      publicHolidays
+    ] ++ lib.mapAttrsToList subPlugin (labs // more);
+    settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" "public-holidays" ]
+      ++ builtins.attrNames (labs // more);
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for one vCPU, 1 GB and a subscription's quota
     # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on

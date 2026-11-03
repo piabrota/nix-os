@@ -122,14 +122,24 @@ not a git submodule.
 
 ## Community add-ons
 
-Picked from [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) on 2026-11-03,
-each read before pinning (license, last commit, every entry point, and what it runs, reads and
+Picked from [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) and from Nous's
+plugin catalog (`plugin-catalog/` at the pinned hermes-agent commit) on 2026-11-03, each read before pinning (license, last commit, every entry point, and what it runs, reads and
 sends), and pinned by commit in `hermes.nix`:
 
 | Add-on | Kind | What for |
 |---|---|---|
 | [custom-dangerous-patterns](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin) v0.5.2 (MIT) | plugin | Blocks terminal commands that match `hermes/dangerous-patterns.yaml`: writes to GitHub (`git push`, `gh pr merge`, `gh api -X POST` and the rest), reads of secrets, `sudo` and rebuilds, and installs or `curl \| sh`. The list lives in the store, so the agent cannot edit it. |
 | [evidence-ledger-research](https://github.com/markoblogo/abvx-agent-skills) (MIT) | skill | Source, date, unit and table-cell discipline when it extracts numbers from bulletins, PDFs and papers. |
+| [tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire) v0.1.1 (MIT) | plugin | Writes one JSON line for each refused action (a tool blocked by the deny list or another hook, or an approval that was denied, cancelled or timed out) to `/var/lib/hermes/.hermes/tripwire/events.jsonl`. It keeps no tool arguments, results or message text, and makes no network calls. A file `~/.hermes/tripwire/TEST_BLOCK` that holds `default <tool>` blocks that one tool, to test an alert; delete the file to stop it. |
+| [inbox](https://github.com/NousResearch/hermes-labs-plugins/tree/main/inbox) (MIT, Nous Research Labs) | plugin | `hermes inbox` (and `--json`): a read-only list of failed or paused cron jobs, stalled subagents, orphaned processes, work that is running and the next cron runs. A CLI command only: no tools and no hooks in chat. |
+| [telegram-business](https://github.com/NousResearch/hermes-labs-plugins/tree/main/telegram-business) (MIT, Nous Research Labs) | plugin | Drafts replies to the customers of a Telegram Business account and sends a reply only when the owner taps Send; `/biz` on Telegram. It does nothing until a Business account (Telegram Premium) connects the bot. Drafts go to Sonnet. |
+| [workflow-record](https://github.com/NousResearch/hermes-labs-plugins/tree/main/workflow-record) (MIT, Nous Research Labs) | plugin | `hermes record` records a browser workflow over CDP, and its skill lets `/learn` turn it into a skill. It does nothing here: the box runs no browser. |
+| [github-copilot](https://github.com/NousResearch/hermes-labs-plugins/tree/main/github-copilot) (MIT, Nous Research Labs) | plugin | GitHub Copilot as a model provider. It does nothing here: the model and the fallbacks name Anthropic only, and it calls GitHub only for a profile that chose Copilot. |
+| [error-ledger, aux-ledger, approval-ledger, stop-ledger](https://github.com/olric3015/hermes-plugins) (MIT) | plugins | Local ledgers, read in chat: `/errors` (failed Anthropic calls by cause), `/aux` (tokens of the Haiku side tasks), `/approval-log` (how often each deny-list rule asked, and the answers), `/stop-log` (turns stopped with `/stop` or `/new`). Metadata only, no prompt text, no network; each file is trimmed past 2 MB. |
+| [progress-squash](https://github.com/pierrenode/hermes-progress-squash) (MIT) | plugin | Collapses the redraws of a progress bar in terminal output to one line before the model reads it. No network, no files. |
+| [public-holidays](https://github.com/Akloenx123/hermes-public-holidays) (MIT) | plugin | Holidays and workday maths (Brazil and its states included), computed in code, for cron digests and deadlines. GET to `date.nager.at` with a country code and a year, no key. |
+| [gh-ref, wiki-ref](https://github.com/EloquentBrush0x/hermes-context-refs) (MIT) | plugins | `@gh:owner/repo#N` attaches a public issue or pull request (anonymous GET to `api.github.com`); `@wiki:<title>` attaches a Wikipedia section. No token, no files. |
+| [hermes-cron](https://github.com/itpartypattaya/hermes-cron) v1.5.2 (MIT) | skill | Rules for cron jobs: pause, disable or remove; and `no_agent`, the `wakeAgent` pre-check and `[SILENT]`, so that a quiet tick makes no model call. Its read-only doctor script needs `python3`, which is not on Hermes's `PATH` here; the rules work without it. |
 
 Limits from the list's operational playbooks: `agent.max_turns = 60`; subagents at most 2 at a
 time, 50 iterations each, one level deep; `tool_loop_guardrails.hard_stop_enabled`; no update
