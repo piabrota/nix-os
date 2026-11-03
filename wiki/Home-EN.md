@@ -13,6 +13,7 @@ here points to them.
 
 - [Architecture](Architecture): the pieces, and how a change reaches the VPS.
 - [Operations](Operations): day to day (build, check, roll back, turn the site on, add an app).
+- [Hermes](Hermes-EN): how Hermes Agent runs here (the unit, the models, the limits, the restart on a deploy) and where its configuration is.
 - [Mockups](Mockups): three directions for the piabrota.art homepage, generated in Nix.
 
 ## In the repository
@@ -25,7 +26,7 @@ here points to them.
 | Adding a Loco app | [`docs/LOCO.md`](https://github.com/piabrota/nix-os/blob/main/docs/LOCO.md) |
 | Running your own VPS from a fork | [`docs/FORK.md`](https://github.com/piabrota/nix-os/blob/main/docs/FORK.md) |
 | Kubernetes on this machine | [`docs/KUBERNETES.md`](https://github.com/piabrota/nix-os/blob/main/docs/KUBERNETES.md), [`docs/MICROK8S.md`](https://github.com/piabrota/nix-os/blob/main/docs/MICROK8S.md) |
-| Hermes Agent on this machine | [`docs/HERMES.md`](https://github.com/piabrota/nix-os/blob/main/docs/HERMES.md) |
+| Hermes Agent on this machine | [`docs/HERMES.md`](https://github.com/piabrota/nix-os/blob/main/docs/HERMES.md), and its configuration as YAML at [www.piabrota.art/hermes](https://www.piabrota.art/hermes) |
 
 The pages come from the repository's [`wiki/`](https://github.com/piabrota/nix-os/tree/main/wiki)
 folder and are copied here on every merge. Don't edit the wiki directly: the next copy erases the

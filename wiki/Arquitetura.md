@@ -14,7 +14,7 @@
 | `loco.nix` | Apps [Loco](https://loco.rs) como serviços systemd isolados, com SQLite, nginx e HTTPS. |
 | `site.nix` | O site estático de `site/` (Gleam e Lustre, pré-renderizado no build; a VPS recebe só o HTML e o CSS) em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
 | `pgx.nix` | O [PGX](https://pgx.dev), um banco compatível com Postgres em um processo, no lugar de um servidor PostgreSQL ou do Docker, para a próxima carga que precisar de Postgres (hoje nada o usa). Só para dado que dá para refazer; o dado dos apps fica no SQLite. Veja [`docs/PGX.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/PGX.ptBR.md). |
-| `hermes.nix` | O [Hermes Agent](https://github.com/NousResearch/hermes-agent), o agente da Nous Research, pelo módulo NixOS do flake dele: um serviço isolado que responde em plataformas de chat, com o Claude pela assinatura do dono; os segredos ficam na máquina. Veja [`docs/HERMES.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/HERMES.ptBR.md). |
+| `hermes.nix` | O [Hermes Agent](https://github.com/NousResearch/hermes-agent), o agente da Nous Research, pelo módulo NixOS do flake dele: um serviço isolado que responde em plataformas de chat, com o Claude pela assinatura do dono; os segredos ficam na máquina. Veja [Hermes](Hermes). |
 | `kubesolo-purge.nix` | Um oneshot que limpa, uma vez, o que o KubeSolo (removido em 2026-11-02) deixou na máquina: os pods, as montagens, o estado e as regras de rede. |
 
 ## Do pull request à VPS
