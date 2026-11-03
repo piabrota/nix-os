@@ -158,6 +158,10 @@ in
     # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on
     # tool loops, and no update checks or shared metrics (Nix owns updates; nothing goes to Nous).
     settings.agent.max_turns = 60;
+    # How long a reload (reloadTriggers, below) waits for work in flight before it stops the
+    # gateway anyway. The default, 30 min, keeps Hermes deaf to new messages for too long after a
+    # deploy; a run of 60 turns took about 3 min on 2026-11-03.
+    settings.agent.restart_after_turn_timeout = 600;
     settings.tool_loop_guardrails.hard_stop_enabled = true;
     settings.updates.check = false;
     settings.telemetry.shared_metrics.enabled = false;
@@ -227,8 +231,12 @@ in
   # to sshd, nginx and the apps.
   # Activation rewrites config.yaml, .env, SOUL.md, AGENTS.md and the plugin links, but the unit
   # itself does not change, so a deploy left the old process running with the old config
-  # (2026-11-03). Restart it when any of them changes.
-  systemd.services.hermes-agent.restartTriggers = with config.services.hermes-agent; [
+  # (2026-11-03). Reload it when any of them changes. A reload sends SIGUSR1: the gateway takes no
+  # new work, lets the turns, cron jobs and subagents in flight finish, and exits 75; Restart=always
+  # (the module's default) starts it with the new config. A SIGTERM restart cut the turn in flight,
+  # also when a merge of Hermes's own PR deployed it. A new Hermes package changes ExecStart, and
+  # that still restarts the unit at once.
+  systemd.services.hermes-agent.reloadTriggers = with config.services.hermes-agent; [
     (builtins.toJSON settings)
     (builtins.toJSON environment)
     (builtins.toJSON mcpServers)
@@ -240,6 +248,7 @@ in
   ];
 
   systemd.services.hermes-agent.serviceConfig = {
+    ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
     MemoryMax = lib.mkDefault "1G";
     CPUWeight = lib.mkDefault 50;
   };

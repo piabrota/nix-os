@@ -72,10 +72,18 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 
 O Hermes não reinicia sozinho quando um deploy muda os arquivos dele: a ativação reescreve
 `config.yaml`, `.env`, `SOUL.md`, `AGENTS.md` e os links dos plugins, mas a unit não muda. Por
-isso o `hermes.nix` os lista como `restartTriggers` do `hermes-agent` (as configurações, o
+isso o `hermes.nix` os lista como `reloadTriggers` do `hermes-agent` (as configurações, o
 ambiente, os servidores MCP, as skills opcionais, os plugins e os dois documentos). Quando você
 adicionar um novo tipo de entrada ao módulo, adicione-o ali também. Sem isso, um deploy deixa o
 processo antigo rodando com a configuração antiga.
+
+O reload é um reinício gracioso. O `ExecReload` manda um `SIGUSR1`; o gateway não aceita trabalho
+novo, deixa terminar os turnos, os jobs de cron e os subagentes em andamento (no máximo
+`agent.restart_after_turn_timeout`, 600 s aqui) e sai com o código 75. O systemd
+(`Restart=always`) então o inicia com a configuração nova. Antes disso, um deploy parava a unit
+com `SIGTERM` e cortava o turno em andamento, inclusive quando o merge era um PR do próprio
+Hermes. Um pacote novo do Hermes muda o `ExecStart` da unit, e isso ainda a reinicia na hora.
+Enquanto ele drena, uma mensagem nova espera o gateway voltar.
 
 ## Quem ele é
 
@@ -250,7 +258,8 @@ não tem token de plataforma. Dois avisos são esperados: o "Opus codec not foun
 Discord (a voz ficou de fora) e o do plugin da lista de bloqueio, que diz não poder gravar o hash
 de integridade ao lado de um arquivo da store (a lista é somente leitura de propósito). Para ver
 se um deploy valeu, compare `systemctl show hermes-agent -p ActiveEnterTimestamp` com a hora do
-deploy: a unit reinicia quando suas entradas mudam (veja "Ajustes de execução").
+deploy: a unit reinicia quando suas entradas mudam, depois que o trabalho em andamento termina
+(veja "Ajustes de execução"), então a hora pode vir até 10 minutos depois do deploy.
 
 ## Atualizar e desligar
 

@@ -71,10 +71,17 @@ quota. The survey of each key at the pinned commit is in [`AWESOME-HERMES.md`](A
 
 Hermes does not restart by itself when a deploy changes its files: activation rewrites
 `config.yaml`, `.env`, `SOUL.md`, `AGENTS.md` and the plugin links, but the unit does not change.
-So `hermes.nix` lists them as `restartTriggers` of `hermes-agent` (the settings, the environment,
+So `hermes.nix` lists them as `reloadTriggers` of `hermes-agent` (the settings, the environment,
 the MCP servers, the optional skills, the plugins and the two documents). When you add a new kind
 of input to the module, add it there too, or a deploy will leave the old process running with the
 old configuration.
+
+A reload is a graceful restart. `ExecReload` sends `SIGUSR1`; the gateway takes no new work, lets
+the turns, cron jobs and subagents in flight finish (at most `agent.restart_after_turn_timeout`,
+600 s here), and exits with code 75. systemd (`Restart=always`) then starts it with the new
+configuration. Before this, a deploy stopped the unit with `SIGTERM` and cut the turn in flight,
+also when the merge was Hermes's own PR. A new Hermes package changes the unit's `ExecStart`, and
+that still restarts it at once. While it drains, a new message waits until the gateway is back.
 
 ## Who it is
 
@@ -246,7 +253,8 @@ platform token. Two warnings are expected: the Discord adapter's "Opus codec not
 left out), and the deny-list plugin saying it cannot write its integrity hash next to a file in
 the store (the list is read-only on purpose). To check that a deploy took effect, compare
 `systemctl show hermes-agent -p ActiveEnterTimestamp` with the time of the deploy: the unit
-restarts when its inputs change (see "Run settings").
+restarts when its inputs change, after the work in flight ends (see "Run settings"), so the time
+can be up to 10 minutes after the deploy.
 
 ## Updating and turning it off
 
