@@ -66,12 +66,21 @@ in
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
     environmentFiles = [ "/var/lib/hermes-secrets/hermes.env" ];
+    # Who it is and what it knows: its identity and rules (hermes/SOUL.md, from piabrota's dogma)
+    # and a brief of the owner's projects, sources and jobs (hermes/AGENTS.md, which Hermes reads
+    # from its working directory). Installed on every activation, so edit them here, not on the box.
+    hermesHomeFiles."SOUL.md" = ./hermes/SOUL.md;
+    documents."AGENTS.md" = ./hermes/AGENTS.md;
+    # Scheduled jobs and dates in the owner's time, not the server's UTC.
+    settings.timezone = "America/Sao_Paulo";
     # `hermes` for the admins, on the service's state (HERMES_HOME), through the hermes group.
     addToSystemPackages = true;
   };
 
   systemd.tmpfiles.rules = [ "d /var/lib/hermes-secrets 0700 root root -" ];
   users.users.h0ffmann.extraGroups = [ "hermes" ];
+  # Reads the system journal for its daily VPS check (hermes/AGENTS.md), as the observer account does.
+  users.users.hermes.extraGroups = [ "systemd-journal" ];
 
   # The box has one vCPU and 4 GB: Hermes gets at most a quarter of the memory and yields the CPU
   # to sshd, nginx and the apps.

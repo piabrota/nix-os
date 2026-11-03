@@ -28,6 +28,18 @@ weekly flake update (`flake-update.yml`) moves it only in a PR that CI builds be
 The configuration lives in Nix: on NixOS, `hermes setup`, `hermes config set` and
 `hermes gateway install` refuse to change what the module manages. Change `hermes.nix` in a PR.
 
+## Who it is
+
+`hermes/SOUL.md` is its identity: piabrota-hermes, on this VPS, on Claude Sonnet, with what it has
+and does not have, and rules taken from piabrota's dogma (`piabrota/mu`, `DOGMA.md`): it never
+reads or repeats a secret, never pushes or merges, takes alerts from official sources only, and
+cites what it claims. It also explains that the "Claude Code" line at the start of its prompt is
+how the subscription authenticates. `hermes/AGENTS.md`, in its working directory, is the brief:
+the owner, piabrota's and marola's repositories, the official sources for watchers, the jobs he
+may ask for, and this VPS. Activation installs both on every deploy: change them here, in a PR.
+The time zone is `America/Sao_Paulo`, and the `hermes` user reads the journal
+(`systemd-journal`) for its daily check of the box.
+
 ## Add-ons
 
 All are declared in `hermes.nix`, so they arrive with a deploy and move with the flake input.
