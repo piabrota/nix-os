@@ -107,6 +107,11 @@ project's `optional-skills/` at the pinned commit. The bundled skills (`arxiv`, 
 need Node, Go or Homebrew on the box: `pr-lens`, `qmd`, `llm-wiki`, `blogwatcher`, `archify`. Left
 out for the box's size: voice, the `mlops` skills, a local browser and `computer-use`.
 
+The owner's own skills ([h0ffmann/skills](https://github.com/h0ffmann/skills)) are a second
+read-only directory in `skills.external_dirs`, pinned by commit. Each one is a command in chat:
+see [`HERMES-SKILLS.md`](HERMES-SKILLS.md) for the list, what is left out and why, and why it is
+not a git submodule.
+
 ## Community add-ons
 
 Picked from [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) on 2026-11-03,
