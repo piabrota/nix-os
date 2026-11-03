@@ -3,7 +3,7 @@
 # from GitHub; the mockups draw them. The philosophy comes from the profile's "Why it is open" and
 # piabrota/mu's DOGMA.md. The board, the partners and the forks below are dated where they are.
 # `path` is a path on piabrota.art; `site` an address elsewhere; `state` is live, coming or none;
-# `owner` when the repository is not the org's. site/data.nix writes the same facts as
+# `owner` when the repository is not the org's; `repository` when it is not named after the project. site/data.nix writes the same facts as
 # Gleam for the live site, so the mockups and the site cannot disagree.
 rec {
   # Where a project meets the web, as the cards and rows print it.
@@ -20,7 +20,7 @@ rec {
 
   # Whose repository it is: the org's, or a personal one that dojo pins.
   owner = p: p.owner or "piabrota";
-  repo = p: "https://github.com/${owner p}/${p.name}";
+  repo = p: "https://github.com/${owner p}/${p.repository or p.name}";
   origin = p: if owner p == "piabrota" then "own" else "personal";
 
   org = {
@@ -127,6 +127,19 @@ rec {
       licence = "MPL-2.0";
       pushed = "2026-11-01";
       site = "h0ffmann.github.io/skills";
+      state = "live";
+    }
+    {
+      # Not a repository of its own: Nous Research's agent, configured in nix-os (hermes.nix).
+      name = "hermes";
+      glyph = "☤";
+      lane = "think";
+      repository = "nix-os";
+      blurb = "Nous Research's Hermes Agent on the VPS, with Claude on Telegram and Discord. Its configuration, as plain YAML.";
+      lang = "Nix";
+      licence = "MIT, MPL-2.0";
+      pushed = "2026-11-03";
+      path = "/hermes";
       state = "live";
     }
     {

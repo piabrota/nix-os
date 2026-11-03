@@ -1,10 +1,11 @@
-//// The HTML document around a page, and the three pages as documents.
+//// The HTML document around a page, and the pages as documents.
 
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import piabrota_site/data
 import piabrota_site/fabric as fabric_page
+import piabrota_site/hermes as hermes_page
 import piabrota_site/i18n
 import piabrota_site/index as index_page
 import piabrota_site/paths as paths_page
@@ -27,6 +28,11 @@ pub fn index() -> String {
 /// Design C at /paths/.
 pub fn paths() -> String {
   document("paths", "en", "piabrota · paths", paths_page.view())
+}
+
+/// Hermes's configuration at /hermes/.
+pub fn hermes() -> String {
+  document("hermes", "en", "piabrota · hermes", hermes_page.view())
 }
 
 /// `design` names the body's class in style.css. The fonts are the sister sites' (picasso,

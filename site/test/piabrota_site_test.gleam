@@ -152,3 +152,24 @@ pub fn no_script_test() {
     }
   })
 }
+
+// /hermes shows Hermes's configuration from hermes.nix, and design A's hermes card links to it.
+pub fn hermes_page_test() {
+  let html = page.hermes()
+  assert string.starts_with(string.lowercase(html), "<!doctype html>")
+  assert string.contains(html, "<body class=\"hermes\">")
+  assert data.hermes_config != ""
+  assert string.contains(html, "<pre class=\"yaml\">")
+  assert string.contains(html, "model:")
+  assert string.contains(html, "hermes-agent.service")
+  assert string.contains(page.fabric(), "href=\"/hermes\"")
+}
+
+// No secret reaches the page: not the env file, not a token's name. (A store path cannot: the
+// build has allowedReferences = [ ].)
+pub fn hermes_no_secret_test() {
+  let text = data.hermes_config <> data.hermes_service
+  list.each(["hermes.env", "TOKEN", "ALLOWED", "PRIVATE KEY"], fn(word) {
+    assert !string.contains(text, word)
+  })
+}

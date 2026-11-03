@@ -261,6 +261,19 @@ se um deploy valeu, compare `systemctl show hermes-agent -p ActiveEnterTimestamp
 deploy: a unit reinicia quando suas entradas mudam, depois que o trabalho em andamento termina
 (veja "Ajustes de execução"), então a hora pode vir até 10 minutos depois do deploy.
 
+## A página /hermes
+
+A página [www.piabrota.art/hermes](https://www.piabrota.art/hermes) mostra esta configuração em
+YAML simples, não em Nix. Ela mostra as opções que o `hermes.nix` grava no `config.yaml` e como a
+unit roda: o pacote, os extras, os limites, os plugins, os arquivos e o commit fixado do upstream. O
+build do site lê esses dados do sistema avaliado (`site/hermes.nix`). Por isso a página muda a cada
+merge que muda o `hermes.nix`. A página mostra a configuração que o último deploy da `main` aplica.
+Ela não confere a unit ao vivo: para isso, veja "Conferir".
+
+Nenhum segredo chega à página. O site nunca lê os arquivos de ambiente e não cita o nome deles. Uma
+chave que cita token, chave, segredo, senha ou usuários permitidos sai antes do build, e o build
+para se o nome de um segredo passar. Os caminhos da store mantêm o nome e perdem o hash.
+
 ## Atualizar e desligar
 
 - **Atualizar:** o PR semanal do `flake-update.yml` move o input `hermes-agent` junto com o resto,

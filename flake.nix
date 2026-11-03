@@ -111,11 +111,16 @@
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })
           mockups.files);
-        # The site, prerendered from Gleam (site/): index.html and static/, with no runtime.
-        site = pkgs.callPackage ./site { };
+        # The site, prerendered from Gleam (site/): the pages and static/, with no runtime. The
+        # system's own, so /hermes shows the Hermes that hermes.nix configures.
+        site = self.nixosConfigurations.piabrota.config.piabrota.site.root;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"
-          (import ./site/data.nix { inherit (pkgs) lib; data = import ./mockups/data.nix; });
+          (import ./site/data.nix {
+            inherit (pkgs) lib;
+            data = import ./mockups/data.nix;
+            inherit (self.nixosConfigurations.piabrota.config.piabrota.site) hermes;
+          });
         # The README drawing, in pure Nix (drawings/): mu.svg, mu.desmos.json and mu-check.svg.
         mu-art = pkgs.linkFarm "mu-art" [
           { name = "mu.svg"; path = pkgs.writeText "mu.svg" drawing.svg; }

@@ -186,6 +186,11 @@ span.where { color: var(--muted); }
 .term-block a.where:hover { text-decoration-color: var(--accent-text); }
 .who { color: var(--muted); }
 
+/* /hermes: the configuration as YAML, in the terminal of design C. */
+.terminal pre.yaml { margin: 0; padding: 16px 20px; overflow-x: auto; color: var(--text); font: inherit; white-space: pre; tab-size: 2; }
+.hermes-facts dd { font: 400 1.05rem/1.3 var(--mono); }
+.caduceus { display: block; font: 400 160px/1 var(--display); color: var(--accent-text); text-align: center; }
+
 /* The foot. */
 .foot { margin-top: 64px; border-top: 1px solid var(--border); padding: 28px 0 48px; font-size: 13px; color: var(--muted); }
 .foot .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -196,6 +201,7 @@ span.where { color: var(--muted); }
   .drawing { order: -1; justify-self: start; }
   .drawing img { width: 120px; }
   .drawing .eye { width: 96px; }
+  .caduceus { font-size: 96px; text-align: left; }
   .drawing figcaption { display: none; }
   .term-block li { grid-template-columns: minmax(0, 1fr) 7.5rem; }
   .term-block .where { grid-column: 1 / -1; }
