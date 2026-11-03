@@ -154,6 +154,39 @@ um servidor ou uma nuvem), e tudo que pede Node, API paga ou painel web, ou não
 lista cobre alertas brasileiros, balneabilidade ou ciência do mar: essas são skills próprias do
 piabrota, ainda por escrever.
 
+## omp, o trabalhador de código
+
+O [oh-my-pi](https://github.com/can1357/oh-my-pi) (omp, MIT, da Stencil Labs, um fork do Pi de
+Mario Zechner) é um agente de código de terminal, em Bun com partes nativas em Rust. O Hermes passa
+a ele mudanças grandes de código pela skill `hermes-omp` (`hermes/skills/hermes-omp/SKILL.md`, a
+terceira entrada de `skills.external_dirs`): o Hermes cria um branch `hermes/*`, escreve a tarefa
+num arquivo em `/var/lib/hermes/workspace/omp-tasks/`, roda `omp -p --max-time 15m` na cópia de
+trabalho, lê o diff e então ele mesmo faz o commit, o push e o pull request. O omp nunca faz push.
+
+- **Versão.** O input `omp` do flake está fixado na tag `v18.16.0`; a atualização semanal do flake
+  não move uma tag, então uma versão nova é um PR. O runner do GitHub compila o omp do código-fonte
+  (Rust com fat LTO, e bun2nix): nenhum cache binário tem o pacote. A VPS não compila nada.
+- **O wrapper.** O `omp` no PATH do Hermes é um wrapper (`ompWrapped` no `hermes.nix`). Ele aponta
+  o omp para `hermes/omp.yml` como overlay de configuração. O arquivo é só leitura na store e vale
+  mais que o `config.yml` do próprio omp e que o `.omp/` de um repositório clonado. O wrapper passa
+  o `CLAUDE_CODE_OAUTH_TOKEN` como `ANTHROPIC_OAUTH_TOKEN`: a mesma assinatura e os mesmos limites
+  do Hermes. Ele também desliga o OpenTelemetry, os títulos e os kernels de eval.
+- **A lista de bloqueio dele.** A lista de bloqueio e o tripwire do Hermes veem só o comando `omp`
+  de fora. Por isso o `hermes/omp.yml` dá à ferramenta bash do omp as regras que importam: sem
+  `git push`, sem `gh`, sem instalações, sem `sudo`, sem `curl` ou `wget`, sem leitura dos segredos
+  ou do ambiente. As pastas do estado do Hermes, dos segredos, o `~/.ssh` e a configuração do `gh`
+  são restritas, o que no modo print quer dizer recusadas.
+- **Memória.** O omp roda no cgroup do Hermes (`MemoryMax=1G`). O LSP, os kernels de Python e JS,
+  o backend de memória, o advisor e o navegador estão desligados. O wrapper inicia o omp com
+  `choom -n 500`, então o OOM killer do kernel para o omp antes do gateway.
+- **Modelos.** O Sonnet (`claude-sonnet-5-5`) para o trabalho e o Haiku (`claude-haiku-4-5`) para
+  as tarefas laterais do omp, sem fallback, então nenhum papel chega a outro provedor ou a um
+  modelo local.
+
+Não conferido antes do merge: o pico de memória do omp na máquina, e se um token de
+`claude setup-token` funciona como `ANTHROPIC_OAUTH_TOKEN`. Depois do deploy, rode uma tarefa e
+leia `systemctl show hermes-agent -p MemoryPeak`.
+
 ## Os plugins do dono
 
 `pirsig-notes` e `pirsig-videos`, em `hermes/plugins/`, mandam smart notes e leituras de vídeo para

@@ -43,6 +43,8 @@ subscription authenticates; it is not who you are. Your main model is Claude Son
 - MCP servers: DeepWiki (questions about any public GitHub repository) and Context7 (current
   library docs).
 - A shell on the VPS as the unprivileged `hermes` user, which can read the system journal.
+- `omp` (oh-my-pi), a coding agent for large changes in a repository, through the `hermes-omp`
+  skill. It edits; you check its diff, commit, push and open the pull request.
 
 ## What you do not have
 
