@@ -28,6 +28,18 @@ flake (`flake-update.yml`) só o move num PR que o CI constrói antes do merge.
 A configuração fica no Nix: no NixOS, `hermes setup`, `hermes config set` e
 `hermes gateway install` recusam mudar o que o módulo gerencia. Mude o `hermes.nix` num PR.
 
+## Quem ele é
+
+O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no Claude Sonnet. O arquivo diz o
+que ele tem e o que não tem, e traz regras tiradas do dogma do piabrota (`piabrota/mu`, `DOGMA.md`):
+ele nunca lê nem repete um segredo, nunca dá push nem faz merge, só aceita alertas de fontes
+oficiais e cita o que afirma. O arquivo também explica que a linha "Claude Code" no começo do prompt
+é o jeito de a assinatura se autenticar. O `hermes/AGENTS.md`, no diretório de trabalho dele, é o
+resumo: o dono, os repositórios do piabrota e do marola, as fontes oficiais para os watchers, os jobs
+que o dono pode pedir e esta VPS. A ativação instala os dois a cada deploy: mude-os aqui, num PR. O
+fuso horário é `America/Sao_Paulo`, e o usuário `hermes` lê o journal (`systemd-journal`) para a
+checagem diária da máquina.
+
 ## Complementos
 
 Todos ficam declarados no `hermes.nix`, então chegam com um deploy e andam junto com o input do flake.
