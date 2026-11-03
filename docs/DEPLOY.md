@@ -119,6 +119,6 @@ After either one, `ssh deploy@<ip>` works with the key of step 1. From then on, 
 
 Every deploy deletes all system generations but the last five, then every store path nothing
 refers to. `deploy.nix` keeps the same five generations in the boot menu, also collects store
-paths older than 14 days each week, deduplicates the store, and leaves the nixpkgs source
-(about 200 MiB) out of the system. The VPS runs at most one build job on one core, so a
+paths older than 14 days each week, deduplicates the store once a week (not during a deploy),
+and leaves the nixpkgs source (about 200 MiB) out of the system. The VPS runs at most one build job on one core, so a
 build that starts there by mistake cannot use all the RAM.

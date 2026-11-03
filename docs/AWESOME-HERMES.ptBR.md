@@ -76,9 +76,10 @@ Cada uma está no `hermes.nix`, com o motivo do lado.
 |---|---|---|---|
 | `model.provider`, `model.default` | `anthropic`, `claude-sonnet-5-5` | | Sonnet pela assinatura |
 | `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Só Claude: nenhum outro provedor, nunca |
-| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model` | `claude-haiku-4-5` | | Haiku para subagentes e duas tarefas laterais baratas; Sonnet para o resto |
+| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `claude-haiku-4-5` | | Haiku para subagentes e três tarefas laterais baratas; Sonnet para o resto |
 | `delegation.max_concurrent_children`, `max_iterations`, `max_spawn_depth` | 2, 50, 1 | 10, 250, 1 | Poucos subagentes, para uma vCPU e a cota |
 | `agent.max_turns` | 60 | sem limite | Uma execução não fica em loop para sempre |
+| `goals.max_turns` | 6 | 20 | Um `/goal` (o loop Ralph) para depois de 6 turnos, até o `/goal resume` |
 | `tool_loop_guardrails.hard_stop_enabled` | true | false | Para um loop de ferramenta também no chat |
 | `prompt_caching.cache_ttl` | `auto` | `5m` | Cache de 1 h para o chat e de 5 min para o cron: o Hermes mede cerca de 42 % menos custo de escrita de cache quando uma conversa volta depois de uma pausa |
 | `mcp.auto_reload_on_config_change` | false | true | Recarregar derruba o cache do prompt; aqui só um deploy muda a configuração |
