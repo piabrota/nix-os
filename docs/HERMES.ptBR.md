@@ -35,7 +35,8 @@ A configuração fica no Nix: no NixOS, `hermes setup`, `hermes config set` e
 O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no Claude Sonnet. O arquivo diz o
 que ele tem e o que não tem, e traz regras tiradas do dogma do piabrota (`piabrota/mu`, `DOGMA.md`):
 ele nunca lê nem repete um segredo, nunca dá push nem faz merge, só aceita alertas de fontes
-oficiais e cita o que afirma. O arquivo também explica que a linha "Claude Code" no começo do prompt
+oficiais e cita o que afirma. Ele tem uma regra fixa do dono: toda mensagem com notícia boa (uma melhoria, um conserto que
+deu certo, uma checagem que voltou ao normal) começa com **piou a melhoria**. O arquivo também explica que a linha "Claude Code" no começo do prompt
 é o jeito de a assinatura se autenticar. O `hermes/AGENTS.md`, no diretório de trabalho dele, é o
 resumo: o dono, os repositórios do piabrota e do marola, as fontes oficiais para os watchers, os jobs
 que o dono pode pedir e esta VPS. A ativação instala os dois a cada deploy: mude-os aqui, num PR. O
@@ -116,6 +117,36 @@ plataforma nenhuma, rodando só as tarefas agendadas. Um deploy nunca falha por 
    ```
 
    O mesmo vale toda vez que você mudar o arquivo. O próximo deploy também copia.
+
+## Discord
+
+O extra `messaging` do Hermes já tem o discord.py; o Discord só precisa de um bot e de duas linhas
+no arquivo de segredos. Pelo guia do projeto (`website/docs/user-guide/messaging/discord.md` no
+commit fixado):
+
+1. No [Discord Developer Portal](https://discord.com/developers/applications): **New
+   Application**, depois **Bot**. Em **Privileged Gateway Intents**, ligue **Message Content
+   Intent** e **Server Members Intent** (sem a primeira, o Discord recusa a conexão). **Reset
+   Token** e guarde o token.
+2. Convide o bot para o seu servidor: **Installation** (ou OAuth2), escopos `bot` e
+   `applications.commands`, permissões 309237763136 (ver, enviar, embeds, arquivos, histórico,
+   threads, reações; sem voz).
+3. Seu ID de usuário: no Discord, **Configurações → Avançado → Modo Desenvolvedor** ligado, depois
+   clique com o botão direito no seu nome, **Copiar ID do usuário**.
+4. Na máquina, acrescente ao `/var/lib/hermes-secrets/hermes.env` (`sudo nano`):
+
+   ```text
+   DISCORD_BOT_TOKEN=...
+   DISCORD_ALLOWED_USERS=<seu ID de usuário>
+   ```
+
+   Depois rode `sudo /run/current-system/bin/switch-to-configuration switch && sudo systemctl
+   restart hermes-agent`. O log diz quando o Discord conecta.
+
+Num canal de servidor, ele só responde quando é @mencionado, numa thread própria; numa DM, sempre.
+Ele nunca menciona `@everyone`, `@here` nem um cargo (é o padrão, e o `SOUL.md` diz isso). O
+`hermes.nix` limita os anexos a 20 MiB, como no Telegram. Mande `/sethome` no canal onde os
+resultados agendados devem chegar.
 
 ## Conferir
 
