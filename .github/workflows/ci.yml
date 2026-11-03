@@ -19,8 +19,30 @@ permissions:
   actions: write
 
 jobs:
+  # The fast checks, on every pull request: formatting, lints, shellcheck, the DeepWiki plan and the
+  # figures. They build nothing, so they take about a minute.
+  lint:
+    name: lint (builds nothing)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix site/data.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
+      - run: nix run nixpkgs#statix -- check .
+      - run: nix run nixpkgs#deadnix -- --fail .
+      - run: nix run nixpkgs#shellcheck -- scripts/*.sh
+      - name: DeepWiki's page plan is within its limits (.devin/wiki.json)
+        run: nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
+      - name: figures match their sources (offline; the pin is read from the index)
+        run: nix shell nixpkgs#just -c just figure-check
+
+  # The full `nix flake check` builds the system and runs the VM test (checks.pgx), about 10 minutes
+  # a run. The owner took it off pull requests on 2026-11-03: deploy.yml builds the system on each
+  # merge and stops before the VPS if the build fails. Run it by hand on a branch when a change
+  # needs it: `gh workflow run ci.yml --ref <branch>`.
   flake:
     name: flake check (builds the system)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -48,14 +70,6 @@ jobs:
           # Collect garbage down to 4 GiB before saving, so the cache stays small enough to restore.
           gc-max-store-size-linux: 4G
       - run: nix flake check --no-update-lock-file --print-build-logs
-      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix site/data.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
-      - run: nix run nixpkgs#statix -- check .
-      - run: nix run nixpkgs#deadnix -- --fail .
-      - run: nix run nixpkgs#shellcheck -- scripts/*.sh
-      - name: DeepWiki's page plan is within its limits (.devin/wiki.json)
-        run: nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
-      - name: figures match their sources (offline; the pin is read from the index)
-        run: nix shell nixpkgs#just -c just figure-check
 
   justfiles:
     # Project rule: every justfile runs on the just that Ubuntu LTS ships through apt

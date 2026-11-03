@@ -13,9 +13,12 @@ Every change to the VPS goes through GitHub. A push to `main` runs `.github/work
    (the five that GRUB lists), then every store path nothing refers to (`nix-collect-garbage`).
 5. The job prints `scripts/specs.sh` from the VPS into the run summary.
 
-Every pull request runs `.github/workflows/ci.yml`: `nix flake check` (it builds the system and
-checks the deploy-rs node), `nixpkgs-fmt` on the Nix files of the deploy, `shellcheck`, and a
-parse of every justfile with the `just` of Ubuntu 24.04 (1.21.0).
+Every pull request runs `.github/workflows/ci.yml`: `nixpkgs-fmt`, `statix`, `deadnix`,
+`shellcheck`, the figure check, and a parse of every justfile with the `just` of Ubuntu 24.04
+(1.21.0). These build nothing. The full `nix flake check` (it builds the system, the VM test and
+checks the deploy-rs node) takes about 10 minutes, so it runs only by hand:
+`gh workflow run ci.yml --ref <branch>`. The build of each merge in `deploy.yml` is the gate: if it
+fails, nothing reaches the VPS.
 
 ## One-time setup
 
