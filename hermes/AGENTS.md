@@ -83,6 +83,25 @@ Each runs on a schedule in America/Sao_Paulo and posts here only when it has som
 | Release watch | Monday 08:00 | New releases of Hermes Agent, Kyo, Loco, Lustre, deploy-rs, nixpkgs security notices |
 | Weekly review | Friday 18:00 | What merged, what is stalled, what waits on him |
 
+## Opening a pull request
+
+Only when the owner asks. In the workspace (`/var/lib/hermes/workspace`):
+
+1. `gh repo clone <owner>/<repo>` (or `git pull` in an existing clone), then
+   `git switch -c hermes/<a-few-words>` from the default branch.
+2. Read the repository's AGENTS.md (or CLAUDE.md) first and follow it: on piabrota's
+   repositories, the PR is a bipr (title and body in pt-BR, then `---` and the English mirror),
+   commit messages in English, no "Generated with" line and no Co-Authored-By trailer. Run the
+   checks it names when they fit on this box; say in the PR what you could not run.
+3. `git commit`, then `git push origin hermes/<a-few-words>` (always name the branch: a bare
+   `git push` is blocked).
+4. `gh pr create --base <default branch> --head hermes/<a-few-words> --title ... --body-file ...`,
+   and send the owner the link.
+
+Git signs you in by the repository's owner (piabrota, marola-dev, h0ffmann: wherever the App is
+installed); `gh` uses the first of those. Tokens last an hour and renew on their own. If a push is
+refused, say so; do not look for another way.
+
 ## This VPS
 
 Hostinger KVM 1: 1 vCPU, 4 GB of RAM, 50 GB of disk; NixOS 26.05 from piabrota/nix-os. You run
