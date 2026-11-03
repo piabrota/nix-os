@@ -146,6 +146,41 @@ never pings `@everyone`, `@here` or a role (the defaults, and `SOUL.md` says so)
 caps attachments at 20 MiB, as for Telegram. Send `/sethome` in the channel where scheduled
 results should go.
 
+## Write access to GitHub
+
+When the owner asks, Hermes clones a repository, works on a `hermes/*` branch, pushes it and opens
+a pull request, as **piabrota-hermes[bot]**, its own GitHub App. It never merges: the owner does.
+`hermes-github.nix` keeps the App's key root-only and gives Hermes one-hour tokens.
+
+1. **Create the App** (once): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
+   Name `piabrota-hermes`, any homepage (piabrota.art), **Webhook** off. Repository permissions:
+   **Contents** read and write, **Pull requests** read and write, **Issues** read and write,
+   Metadata read; nothing else (no Workflows, no Administration). Where it can be installed:
+   **Any account**, so it can go on marola-dev and h0ffmann too.
+2. **Generate a private key** on the App's page (a `.pem` downloads), and note the **App ID**.
+3. **Install it** (App page → **Install App**) on piabrota, marola-dev and h0ffmann, on all
+   repositories or the ones Hermes may work on.
+4. **Protect the default branches**: in each organisation, Settings → Rules → Rulesets → **New
+   branch ruleset**, target the default branch, **Restrict deletions**, **Block force pushes**,
+   **Require a pull request before merging**, with no bypass for the App. GitHub then refuses a
+   push to `main` even if the deny list were to miss one.
+5. **Put the key on the box** (from your computer, then on the VPS):
+
+   ```console
+   base64 < piabrota-hermes.*.private-key.pem | tr -d '\n'   # on your computer: copy the output
+   sudo install -m 600 /dev/stdin /var/lib/hermes-secrets/github-app.env   # on the VPS, then paste:
+   GH_APP_ID=<the App ID>
+   GH_APP_PRIVATE_KEY_B64=<the base64 line>
+   ```
+
+   End with Ctrl-D, then `sudo systemctl start hermes-github-token` and
+   `journalctl -u hermes-github-token` (one line per account: "token for one hour"). Delete the
+   `.pem` from your computer once it works; a new one can be generated any time.
+
+Then ask on Telegram or Discord: "abre um PR em piabrota/nix-os que …". Hermes answers with the
+link. If you used a read-only `GITHUB_TOKEN` before, remove it from `hermes.env`: the App replaces
+it.
+
 ## Checking it
 
 ```console

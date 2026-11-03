@@ -148,6 +148,42 @@ Ele nunca menciona `@everyone`, `@here` nem um cargo (é o padrão, e o `SOUL.md
 `hermes.nix` limita os anexos a 20 MiB, como no Telegram. Mande `/sethome` no canal onde os
 resultados agendados devem chegar.
 
+## Escrita no GitHub
+
+Quando o dono pede, o Hermes clona um repositório, trabalha num branch `hermes/*`, dá push nele e
+abre um pull request, como **piabrota-hermes[bot]**, o GitHub App dele. Ele nunca faz merge: quem
+faz é o dono. O `hermes-github.nix` guarda a chave do App só para o root e entrega ao Hermes tokens
+de uma hora.
+
+1. **Crie o App** (uma vez): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
+   Nome `piabrota-hermes`, qualquer homepage (piabrota.art), **Webhook** desligado. Permissões de
+   repositório: **Contents** leitura e escrita, **Pull requests** leitura e escrita, **Issues**
+   leitura e escrita, Metadata leitura; mais nada (sem Workflows, sem Administration). Onde pode ser
+   instalado: **Any account**, para entrar também no marola-dev e no h0ffmann.
+2. **Gere uma chave privada** na página do App (baixa um `.pem`), e anote o **App ID**.
+3. **Instale** (página do App → **Install App**) no piabrota, no marola-dev e no h0ffmann, em todos
+   os repositórios ou só nos que o Hermes pode mexer.
+4. **Proteja os branches padrão**: em cada organização, Settings → Rules → Rulesets → **New branch
+   ruleset**, alvo o branch padrão, **Restrict deletions**, **Block force pushes**, **Require a
+   pull request before merging**, sem exceção para o App. Assim o GitHub recusa um push na `main`
+   mesmo se a lista de bloqueio deixar passar algum.
+5. **Ponha a chave na máquina** (no seu computador, depois na VPS):
+
+   ```console
+   base64 < piabrota-hermes.*.private-key.pem | tr -d '\n'   # no seu computador: copie a saída
+   sudo install -m 600 /dev/stdin /var/lib/hermes-secrets/github-app.env   # na VPS, e cole:
+   GH_APP_ID=<o App ID>
+   GH_APP_PRIVATE_KEY_B64=<a linha em base64>
+   ```
+
+   Termine com Ctrl-D, depois rode `sudo systemctl start hermes-github-token` e
+   `journalctl -u hermes-github-token` (uma linha por conta: "token for one hour"). Apague o `.pem`
+   do seu computador quando funcionar; dá para gerar outro quando quiser.
+
+Depois peça no Telegram ou no Discord: "abre um PR em piabrota/nix-os que …". O Hermes responde com
+o link. Se você tinha posto um `GITHUB_TOKEN` só de leitura, tire-o do `hermes.env`: o App substitui
+esse token.
+
 ## Conferir
 
 ```console

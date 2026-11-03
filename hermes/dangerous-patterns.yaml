@@ -1,21 +1,36 @@
 # Commands piabrota-hermes may never run from its terminal, for the custom-dangerous-patterns
 # plugin (hermes.nix). A deny pattern blocks at once, with no approval prompt. These back up the
-# rules in SOUL.md: humans merge, nothing is installed by hand, no secret is read. The GitHub token
-# is read-only anyway; this stops the attempt before it reaches GitHub. First match wins.
+# rules in SOUL.md: it pushes only hermes/* branches and opens pull requests, humans merge, nothing
+# is installed by hand, no secret is read. A ruleset on each default branch stops a push to it at
+# GitHub too. First match wins.
 deny_patterns:
-  # --- Writing to GitHub: humans merge (SOUL.md rule 2) ---
-  - description: '[GITHUB_WRITE] git push'
+  # --- Writing to GitHub: Hermes pushes hermes/* branches and opens PRs; humans merge ---
+  # (SOUL.md rule 2, hermes-github.nix). A push must name its hermes/* branch: a bare `git push`
+  # is blocked, and so is any refspec that lands elsewhere, a force, a delete or a mass push.
+  - description: '[GITHUB_WRITE] git push with force, delete, mirror, all or tags'
     enabled: true
     group: GITHUB_WRITE
-    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b.*'
-  - description: '[GITHUB_WRITE] gh pr that writes'
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b[^|;&]*(?:\s(?:-f|--force(?:-with-lease|-if-includes)?(?:=\S*)?|-d|--delete|--mirror|--all|--tags|--prune)\b|\s\+\S|\s:\S)'
+  - description: '[GITHUB_WRITE] git push that does not name a hermes/* branch'
     enabled: true
     group: GITHUB_WRITE
-    pattern: '\bgh\s+pr\s+(?:create|merge|close|reopen|edit|comment|review|ready|lock|unlock|update-branch)\b.*'
-  - description: '[GITHUB_WRITE] gh issue that writes'
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b(?![^|;&]*[\s:/]hermes/[A-Za-z0-9._/-]+)'
+  - description: '[GITHUB_WRITE] git push to a branch other than hermes/*'
     enabled: true
     group: GITHUB_WRITE
-    pattern: '\bgh\s+issue\s+(?:create|close|reopen|edit|comment|delete|transfer|lock|unlock|pin|unpin|develop)\b.*'
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b[^|;&]*\s\S*:(?!(?:refs/heads/)?hermes/)'
+  - description: '[GITHUB_WRITE] git push with a second refspec that is not hermes/*'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b(?:\s+-\S+)*\s+[^\s-]\S*(?:\s+-\S+|\s+\S*hermes/\S*)*\s+(?!-)(?!\S*hermes/)[^\s|;&]+'
+  - description: '[GITHUB_WRITE] gh pr merge, review, close, reopen or lock'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+pr\s+(?:merge|review|close|reopen|lock|unlock)\b.*'
+  - description: '[GITHUB_WRITE] gh issue close, delete, transfer, lock or pin'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+issue\s+(?:close|reopen|delete|transfer|lock|unlock|pin|unpin)\b.*'
   - description: '[GITHUB_WRITE] gh api with a write method or a request body'
     enabled: true
     group: GITHUB_WRITE

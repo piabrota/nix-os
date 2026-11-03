@@ -17,6 +17,8 @@
     ./pgx.nix
     # Hermes Agent, Nous Research's agent, on the chat platforms it has tokens for (docs/HERMES.md).
     ./hermes.nix
+    # Its write access to GitHub, as its own App: hermes/* branches and pull requests only.
+    ./hermes-github.nix
     # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
     ./kubesolo-purge.nix
   ];
