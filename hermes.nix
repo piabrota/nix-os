@@ -35,6 +35,55 @@ let
     rev = "d4af8c3a5596ed055f5be5bbbd4c36b37d535530"; # MIT
     hash = "sha256-yjc2tz3WNQ3xvNs7CSvTSOGPt9RypFkB5cBNqkB2zKY=";
   };
+  # The owner's skills (github.com/h0ffmann/skills, MPL-2.0), pinned by commit; a new commit is a
+  # PR. Not a git submodule: a flake reads its git tree without submodules unless the flake URL
+  # says `?submodules=1`, so a submodule path is empty at build time. Each skill becomes a /name command, and on
+  # Discord `/skill name`. Only the skills below are copied (docs/HERMES-SKILLS.md says why each
+  # other one is left out). A skill needs nothing from the box beyond bash, git, gh and curl.
+  ownerSkillsSrc = pkgs.fetchFromGitHub {
+    owner = "h0ffmann";
+    repo = "skills";
+    rev = "78c5cac9d2f057414440bbf9931b1b1eeb0f7301";
+    hash = "sha256-4sZmWpg+YnmPG0Tsdr/nnateGqagAceITa+sCkBSZdE=";
+  };
+  ownerSkillPaths = [
+    "writing/ste100"
+    "writing/ptbr"
+    "writing/cientifico"
+    "writing/ptbr-humanizer"
+    "writing/easy-translate"
+    "writing/essay"
+    "research/paper"
+    "research/cite-release"
+    "research/open-text"
+    "research/eli5"
+    "dev-flow/triage"
+    "dev-flow/mip"
+    "dev-flow/easy-issues"
+    "dev-flow/skill-validator"
+    "code/lean-code"
+    "code/loco"
+    "nix/nix-debug"
+    "nix/nixos-vps"
+    "nix/systemd-hardening"
+    "nix/nix-lab"
+    "figures/svg-diagram"
+    "figures/ddraw"
+    "ouroboric/ponytail-review"
+    "ouroboric/sharingan"
+    "ouroboric/retro"
+    "ouroboric/writing-styles"
+    "web/citizen-science"
+    "web/news-post"
+    "web/web-ui"
+  ];
+  ownerSkills = pkgs.runCommand "hermes-owner-skills" { allowedReferences = [ ]; } (''
+    mkdir $out
+  '' + lib.concatMapStrings
+    (path: ''
+      cp -r ${ownerSkillsSrc}/skills/${path} $out/${baseNameOf path}
+    '')
+    ownerSkillPaths);
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings
@@ -89,7 +138,7 @@ in
       max_iterations = 50;
       max_spawn_depth = 1;
     };
-    settings.skills.external_dirs = [ "${optionalSkills}" ];
+    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
     extraPlugins = [ dangerousPatterns ];
@@ -174,6 +223,7 @@ in
     (builtins.toJSON environment)
     (builtins.toJSON mcpServers)
     optionalSkills
+    ownerSkills
     (builtins.toJSON extraPlugins)
     (builtins.toJSON hermesHomeFiles)
     (builtins.toJSON documents)

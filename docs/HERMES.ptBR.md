@@ -108,6 +108,11 @@ As skills opcionais formam um diretório só de leitura em `skills.external_dirs
 Go ou Homebrew na máquina: `pr-lens`, `qmd`, `llm-wiki`, `blogwatcher`, `archify`. Ficaram de fora
 pelo tamanho da máquina: voz, as skills de `mlops`, um navegador local e o `computer-use`.
 
+As skills do próprio dono ([h0ffmann/skills](https://github.com/h0ffmann/skills)) formam um
+segundo diretório só de leitura em `skills.external_dirs`, fixado por commit. Cada uma vira um
+comando no chat: veja [`HERMES-SKILLS.md`](HERMES-SKILLS.md) (em inglês) para a lista, o que ficou
+de fora e por quê, e por que não é um submódulo do git.
+
 ## Complementos da comunidade
 
 Escolhidos da [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) em 2026-11-03.

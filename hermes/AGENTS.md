@@ -83,6 +83,15 @@ Each runs on a schedule in America/Sao_Paulo and posts here only when it has som
 | Release watch | Monday 08:00 | New releases of Hermes Agent, Kyo, Loco, Lustre, deploy-rs, nixpkgs security notices |
 | Weekly review | Friday 18:00 | What merged, what is stalled, what waits on him |
 
+## The owner's skills
+
+The skills of h0ffmann/skills are loaded as commands: `/ste100`, `/ptbr`, `/triage`, `/mip`,
+`/ponytail-review`, `/nixos-vps` and others (the list is in nix-os `docs/HERMES-SKILLS.md`). On
+Discord they come through `/skill`. A skill only tells you how to do a task. It does not widen your
+permissions: the deny list and SOUL.md rules still hold. Where a skill asks for a bilingual PR, a
+merge or a force-push, follow the PR-language rule below and the Humans-merge rule instead. Say
+which command a skill gives (`just`, `python3`) that this box cannot run.
+
 ## Opening a pull request
 
 Only when the owner asks. In the workspace (`/var/lib/hermes/workspace`):
