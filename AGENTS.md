@@ -136,7 +136,7 @@ Measured against nixos-26.05 (13050.08d3a97586f6) on 2026-10-29, adding `tools.n
 system closure 25.9 MiB smaller (1.49 GiB to 1.46 GiB): the tools add about 38 MiB, the removed
 documentation saves more.
 
-`deploy.nix` sets garbage collection (weekly, paths older than 14 days), a weekly store optimisation,
+`deploy.nix` sets garbage collection (weekly, paths older than 14 days, and when free disk falls under 2 GiB), a weekly store optimisation,
 five boot generations and `max-jobs = 1`, `cores = 1`. Change them there, not in a second module.
 
 ## Build

@@ -9,8 +9,8 @@ Every change to the VPS goes through GitHub. A push to `main` runs `.github/work
 3. deploy-rs activates the new system and then opens a new SSH connection. If that connection
    fails within 60 seconds (a bad firewall or sshd change), the VPS rolls back to the previous
    generation by itself ("magic rollback").
-4. The job deletes what the VPS no longer uses: every system generation but the last five
-   (the five that GRUB lists), then every store path nothing refers to (`nix-collect-garbage`).
+4. The job deletes every system generation but the last five (the five that GRUB lists). It
+   does not collect garbage: Nix does that when free disk falls under 2 GiB, and once a week.
 5. The job prints `scripts/specs.sh` from the VPS into the run summary.
 
 Every pull request runs `.github/workflows/ci.yml`: `nixpkgs-fmt`, `statix`, `deadnix`,
@@ -120,8 +120,9 @@ After either one, `ssh deploy@<ip>` works with the key of step 1. From then on, 
 
 ## Disk
 
-Every deploy deletes all system generations but the last five, then every store path nothing
-refers to. `deploy.nix` keeps the same five generations in the boot menu, also collects store
-paths older than 14 days each week, deduplicates the store once a week (not during a deploy),
-and leaves the nixpkgs source (about 200 MiB) out of the system. The VPS runs at most one build job on one core, so a
-build that starts there by mistake cannot use all the RAM.
+Every deploy deletes all system generations but the last five. `deploy.nix` keeps the same five
+generations in the boot menu, collects store paths older than 14 days each week, collects
+garbage when free disk falls under 2 GiB (until 8 GiB are free: `min-free`, `max-free`),
+deduplicates the store once a week (not during a deploy), and leaves the nixpkgs source (about
+200 MiB) out of the system. The VPS runs at most one build job on one core, so a build that
+starts there by mistake cannot use all the RAM.
