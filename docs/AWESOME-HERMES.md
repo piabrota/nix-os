@@ -9,7 +9,7 @@ here is in [`HERMES.md`](HERMES.md).
 
 **The yardstick.** A Hostinger KVM 1 (1 vCPU, 4 GB of RAM, Hermes capped at 1 GB), NixOS with
 everything declared in `hermes.nix`, Claude Sonnet through the owner's subscription and no other
-provider, Telegram as the only chat, a read-only GitHub token. Out: anything that needs Node, Go,
+provider, Telegram and Discord as the chats, a read-only GitHub token. Out: anything that needs Node, Go,
 Docker or a browser on the box, a paid API, a web dashboard, or that phones home; anything without
 an OSI licence. The goals it serves: [marola](https://marola.dev) (bathing water and beach safety
 in Brazil), [piabrota/alerts](https://github.com/piabrota/alerts) (alerts from official agencies),
@@ -48,7 +48,7 @@ day; they move.
 
 ## Built in, in use here
 
-- ✅ **Gateway on Telegram**, polling, one allowed user.
+- ✅ **Gateway on Telegram** (polling) **and Discord**, one allowed user on each.
 - ✅ **Cron scheduler**, results to the Telegram home channel.
 - ✅ **Built-in memory** (`MEMORY.md`, `USER.md`), no external provider.
 - ✅ **Bundled skills**: `github`, `arxiv`, `grounded-citations`, `obsidian`,
