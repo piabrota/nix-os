@@ -104,6 +104,12 @@ platforms it has tokens for: how it is set up, its secrets on the box, and how t
 - [`docs/HERMES.ptBR.md`](docs/HERMES.ptBR.md), em português
 - [`docs/HERMES.md`](docs/HERMES.md), in English
 
+A small Rust bot plays lofi music without end in a voice channel of the Marola Discord
+(`lofi.nix`, `lofi/`): why a bot of our own, which music is legal to play, and its setup:
+
+- [`docs/LOFI.ptBR.md`](docs/LOFI.ptBR.md), em português
+- [`docs/LOFI.md`](docs/LOFI.md), in English
+
 PGX, a Postgres-compatible engine in one process, runs here for the next workload that needs
 Postgres, instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its cost and its limits:
 
@@ -155,6 +161,7 @@ with that version.
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
+├── lofi.nix, lofi/          a 24/7 lofi music bot for the Marola Discord, in Rust (docs/LOFI.md)
 ├── kubesolo-purge.nix       a oneshot that clears what KubeSolo left on the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)

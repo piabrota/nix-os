@@ -107,6 +107,8 @@
         inherit (pkgs) deploy-rs;
         # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
         pgx = pkgs.callPackage ./pgx/package.nix { };
+        # The lofi Discord bot (lofi/, lofi.nix).
+        lofi = pkgs.callPackage ./lofi { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })

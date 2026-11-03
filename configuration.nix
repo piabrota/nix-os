@@ -17,6 +17,8 @@
     ./pgx.nix
     # Hermes Agent, Nous Research's agent, on the chat platforms it has tokens for (docs/HERMES.md).
     ./hermes.nix
+    # A 24/7 lofi music bot in the Marola Discord server's voice channel (docs/LOFI.md).
+    ./lofi.nix
     # Its write access to GitHub, as its own App: hermes/* branches and pull requests only.
     ./hermes-github.nix
     # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
@@ -72,8 +74,8 @@
   # that hVPS verification invokes by bare name (e.g. `dig` for a DNS check).
   environment.systemPackages = with pkgs; [
     cloud-init
-    dnsutils   # dig, nslookup, host
-    nettools   # ifconfig, netstat, route (net-tools parity)
+    dnsutils # dig, nslookup, host
+    nettools # ifconfig, netstat, route (net-tools parity)
     curl
     wget
     nano
@@ -86,6 +88,8 @@
   # PGX, a Postgres instead of a PostgreSQL server or Docker (pgx.nix, docs/PGX.md). Not for data
   # you keep: that stays in SQLite.
   piabrota.pgx.enable = true;
+  # The lofi bot (lofi.nix, docs/LOFI.md). Idle until its token and IDs are on the box.
+  piabrota.lofi.enable = true;
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";

@@ -13,7 +13,7 @@
       "content": "Resource budget: every change is judged by what it adds to the system closure (measured with dix) and to resident memory. No GUI, fonts or desktop services; no heavy runtimes for small jobs; no resident daemons the host does not need. tools.nix removes the NixOS manual and caps the journal; deploy.nix sets garbage collection and keeps five boot generations."
     },
     {
-      "content": "The repository's own modules use the option namespace piabrota.*: piabrota.site (site.nix), piabrota.loco.apps.<name> (loco.nix), piabrota.pgx (pgx.nix). configuration.nix imports them and turns them on, with hermes.nix (services.hermes-agent, the upstream module from the flake input hermes-agent) and kubesolo-purge.nix."
+      "content": "The repository's own modules use the option namespace piabrota.*: piabrota.site (site.nix), piabrota.loco.apps.<name> (loco.nix), piabrota.pgx (pgx.nix), piabrota.lofi (lofi.nix, the Discord music bot in lofi/). configuration.nix imports them and turns them on, with hermes.nix (services.hermes-agent, the upstream module from the flake input hermes-agent) and kubesolo-purge.nix."
     },
     {
       "content": "Secrets never live in the repository (it is public). They are files on the box written by hand: /var/lib/loco-secrets/<app>.env for Loco apps, /var/lib/hermes-secrets/hermes.env for Hermes Agent (copied into its .env at activation), and PGX's generated password. Units read them with EnvironmentFile or systemd LoadCredential. Document where a secret lives and how it is written, never a value."
