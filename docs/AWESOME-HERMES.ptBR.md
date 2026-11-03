@@ -75,7 +75,8 @@ Cada uma está no `hermes.nix`, com o motivo do lado.
 | Configuração | Aqui | Padrão | Por quê |
 |---|---|---|---|
 | `model.provider`, `model.default` | `anthropic`, `claude-sonnet-5-5` | | Sonnet pela assinatura |
-| `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Só Sonnet: nenhum outro modelo, nunca |
+| `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Só Claude: nenhum outro provedor, nunca |
+| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model` | `claude-haiku-4-5` | | Haiku para subagentes e duas tarefas laterais baratas; Sonnet para o resto |
 | `delegation.max_concurrent_children`, `max_iterations`, `max_spawn_depth` | 2, 50, 1 | 10, 250, 1 | Poucos subagentes, para uma vCPU e a cota |
 | `agent.max_turns` | 60 | sem limite | Uma execução não fica em loop para sempre |
 | `tool_loop_guardrails.hard_stop_enabled` | true | false | Para um loop de ferramenta também no chat |

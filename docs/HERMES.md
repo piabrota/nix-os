@@ -21,7 +21,7 @@ What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](A
 |---|---|
 | Mode | Native: a systemd service on the host, with the module's sandbox (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Not container mode, which would need Docker or Podman. |
 | Package | `minimal`, plus the extras `anthropic` (Anthropic's SDK) and `messaging` (Telegram, Discord, Slack). The flake's default, `full`, adds about 700 MB more (voice, Bedrock, Modal and the like). |
-| Model | `claude-sonnet-5-5` through the `anthropic` provider, on the owner's subscription: `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`), as piabrota/agents does. No API key. |
+| Model | `claude-sonnet-5-5` through the `anthropic` provider, with `claude-haiku-4-5` for subagents and two cheap side tasks (see "Run settings"), on the owner's subscription: `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`), as piabrota/agents does. No API key. |
 | Secrets | `/var/lib/hermes-secrets/hermes.env`, written by hand on the box, readable by root only. Never in the repository or the store. |
 | Limits | `MemoryMax=1G` (a quarter of the RAM) and `CPUWeight=50`: sshd, nginx and the apps get the CPU first. |
 | State | `/var/lib/hermes` (`HERMES_HOME` is `/var/lib/hermes/.hermes`): the configuration, the memory, the sessions and the `.env`. |
@@ -55,7 +55,9 @@ quota. The survey of each key at the pinned commit is in [`AWESOME-HERMES.md`](A
 
 | Setting | Value | Why |
 |---|---|---|
-| `fallback_providers` (main and `delegation`) | empty | Sonnet and nothing else. If Anthropic fails, the turn fails; it never goes to another model. Side tasks and subagents are pinned to the same model. |
+| `fallback_providers` (main and `delegation`) | empty | Claude models only. If Anthropic fails, the turn fails; it never goes to another provider. |
+| `model.default` | `claude-sonnet-5-5` | Sonnet is the high-level model: it plans, writes, reviews and decides. |
+| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub` | `claude-haiku-4-5` | Haiku is the low-level model: subagents (simple greps, lookups, lists) and two cheap side tasks. Hermes has no per-call router: Sonnet decides to delegate, and `hermes/SOUL.md` says when. Compression, the dangerous-command approval and the post-turn review stay on Sonnet. |
 | `delegation` | at most 2 children, 50 iterations each, one level deep | Small fan-out, for one vCPU and the quota. |
 | `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, on | A bound on a run, and a hard stop on tool loops. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h for chat (people pause), 5 min for cron and subagents. |
