@@ -124,14 +124,17 @@ de fora e por quê, e por que não é um submódulo do git.
 
 ## Complementos da comunidade
 
-Escolhidos da [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) em 2026-11-03.
-Cada um foi lido antes de ser fixado (licença, último commit, cada ponto de entrada, e o que ele roda,
+Escolhidos da [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) e do catálogo de
+plugins da Nous (`plugin-catalog/` no commit fixado do hermes-agent) em 2026-11-03. Cada um foi lido antes de ser fixado (licença, último commit, cada ponto de entrada, e o que ele roda,
 lê e envia), e está fixado por commit no `hermes.nix`:
 
 | Complemento | Tipo | Para quê |
 |---|---|---|
 | [custom-dangerous-patterns](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin) v0.5.2 (MIT) | plugin | Bloqueia comandos de terminal que batem com o `hermes/dangerous-patterns.yaml`: escrita no GitHub (`git push`, `gh pr merge`, `gh api -X POST` e os outros), leitura de segredos, `sudo` e rebuilds, e instalações ou `curl \| sh`. A lista fica na store, então o agente não consegue editá-la. |
 | [evidence-ledger-research](https://github.com/markoblogo/abvx-agent-skills) (MIT) | skill | Disciplina de fonte, data, unidade e célula de tabela quando ele tira números de boletins, PDFs e artigos. |
+| [tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire) v0.1.1 (MIT) | plugin | Grava uma linha JSON para cada ação recusada (uma ferramenta bloqueada pela lista de bloqueio ou por outro hook, ou uma aprovação negada, cancelada ou expirada) em `/var/lib/hermes/.hermes/tripwire/events.jsonl`. Ele não guarda argumentos, resultados nem texto de mensagem, e não acessa a rede. Um arquivo `~/.hermes/tripwire/TEST_BLOCK` com `default <ferramenta>` bloqueia essa ferramenta, para testar um alerta; apague o arquivo para parar. |
+| [inbox](https://github.com/NousResearch/hermes-labs-plugins/tree/main/inbox) (MIT, Nous Research Labs) | plugin | `hermes inbox` (e `--json`): uma lista só de leitura dos jobs do cron que falharam ou estão pausados, dos subagentes parados, dos processos órfãos, do trabalho em andamento e das próximas execuções do cron. Só um comando de CLI: nenhuma ferramenta e nenhum hook no chat. |
+| [hermes-cron](https://github.com/itpartypattaya/hermes-cron) v1.5.2 (MIT) | skill | Regras para os jobs do cron: pausar, desativar ou remover; e `no_agent`, a checagem prévia `wakeAgent` e `[SILENT]`, para que um tick sem novidade não chame o modelo. O script de diagnóstico dela, só de leitura, pede `python3`, que não está no `PATH` do Hermes aqui; as regras funcionam sem ele. |
 
 Limites tirados dos playbooks da lista: `agent.max_turns = 60`; no máximo 2 subagentes ao mesmo
 tempo, com 50 iterações cada e um nível só; `tool_loop_guardrails.hard_stop_enabled`; sem checagem de

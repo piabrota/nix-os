@@ -27,6 +27,35 @@ let
     rev = "6b9bda685fb6271d2be7f13b75cd59fafc30f263"; # v0.5.2, MIT
     hash = "sha256-/H2SPIvC+V7Pq/GybReP9yB2z9h04lcIANt85ObKwHA=";
   };
+  # Three more from Nous's plugin catalog (plugin-catalog/ at the pinned hermes-agent commit:
+  # maintainer-merged, scanned, pinned by commit), read at the catalog's commit before pinning.
+  # tripwire: one JSON line per refused action (a hook block such as the deny list, or a denied
+  # approval) in ~/.hermes/tripwire/events.jsonl. It stores no arguments or text and makes no calls.
+  tripwire = pkgs.fetchFromGitHub {
+    owner = "percyhendrux123-prog";
+    repo = "hermes-tripwire";
+    rev = "904a4f559808c57152ebb666cd0ab7d863220b49"; # v0.1.1, MIT
+    hash = "sha256-Vxh+Nz0Qne7DfpfoXdXbg1/13HzVF++e6xCAC7LxtK4=";
+  };
+  # inbox (Nous Research's Labs plugins): `hermes inbox`, a read-only list of failed cron jobs,
+  # stalled subagents and other work in flight. A CLI command only: no tools, no hooks.
+  labsPlugins = pkgs.fetchFromGitHub {
+    owner = "NousResearch";
+    repo = "hermes-labs-plugins";
+    rev = "62dbc160fab57f893a9eaace79c16c00518c4eca"; # MIT
+    hash = "sha256-tkkVfFbu+i483ypMQxszMpa7+M6OgZGugi4fQcZDLrk=";
+  };
+  # The module wants a plugin's plugin.yaml at the package's root; both live in a subdirectory.
+  subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
+  # hermes-cron: a skill (markdown, no code in the agent) on cheap cron jobs: no_agent, the
+  # wakeAgent pre-check and [SILENT], so a quiet tick makes no model call. Its read-only doctor
+  # script needs python3, which is not on Hermes's PATH here; the rules work without it.
+  hermesCron = pkgs.fetchFromGitHub {
+    owner = "itpartypattaya";
+    repo = "hermes-cron";
+    rev = "2426b4b26a95e98112ac73415dedc8e0dd25c602"; # v1.5.2, MIT
+    hash = "sha256-pA6FaHsOrsurjdLituyGg0dUcCoc/pVgJ3elURGF6Os=";
+  };
   # evidence-ledger-research: source, date, unit and table-cell discipline when extracting from
   # bulletins and PDFs (bathing water, alerts, papers). Markdown only.
   abvxSkills = pkgs.fetchFromGitHub {
@@ -92,6 +121,7 @@ let
     '')
     skills + ''
     cp -r ${abvxSkills}/skills/evidence-ledger-research $out/evidence-ledger-research
+    cp -r ${hermesCron}/skills/hermes-cron $out/hermes-cron
   '');
 in
 {
@@ -151,8 +181,12 @@ in
     settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
-    extraPlugins = [ dangerousPatterns ];
-    settings.plugins.enabled = [ "custom-dangerous-patterns" ];
+    extraPlugins = [
+      dangerousPatterns
+      (subPlugin "tripwire" tripwire)
+      (subPlugin "inbox" labsPlugins)
+    ];
+    settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" "inbox" ];
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for one vCPU, 1 GB and a subscription's quota
     # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on

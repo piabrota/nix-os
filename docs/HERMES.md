@@ -122,14 +122,17 @@ not a git submodule.
 
 ## Community add-ons
 
-Picked from [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) on 2026-11-03,
-each read before pinning (license, last commit, every entry point, and what it runs, reads and
+Picked from [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) and from Nous's
+plugin catalog (`plugin-catalog/` at the pinned hermes-agent commit) on 2026-11-03, each read before pinning (license, last commit, every entry point, and what it runs, reads and
 sends), and pinned by commit in `hermes.nix`:
 
 | Add-on | Kind | What for |
 |---|---|---|
 | [custom-dangerous-patterns](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin) v0.5.2 (MIT) | plugin | Blocks terminal commands that match `hermes/dangerous-patterns.yaml`: writes to GitHub (`git push`, `gh pr merge`, `gh api -X POST` and the rest), reads of secrets, `sudo` and rebuilds, and installs or `curl \| sh`. The list lives in the store, so the agent cannot edit it. |
 | [evidence-ledger-research](https://github.com/markoblogo/abvx-agent-skills) (MIT) | skill | Source, date, unit and table-cell discipline when it extracts numbers from bulletins, PDFs and papers. |
+| [tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire) v0.1.1 (MIT) | plugin | Writes one JSON line for each refused action (a tool blocked by the deny list or another hook, or an approval that was denied, cancelled or timed out) to `/var/lib/hermes/.hermes/tripwire/events.jsonl`. It keeps no tool arguments, results or message text, and makes no network calls. A file `~/.hermes/tripwire/TEST_BLOCK` that holds `default <tool>` blocks that one tool, to test an alert; delete the file to stop it. |
+| [inbox](https://github.com/NousResearch/hermes-labs-plugins/tree/main/inbox) (MIT, Nous Research Labs) | plugin | `hermes inbox` (and `--json`): a read-only list of failed or paused cron jobs, stalled subagents, orphaned processes, work that is running and the next cron runs. A CLI command only: no tools and no hooks in chat. |
+| [hermes-cron](https://github.com/itpartypattaya/hermes-cron) v1.5.2 (MIT) | skill | Rules for cron jobs: pause, disable or remove; and `no_agent`, the `wakeAgent` pre-check and `[SILENT]`, so that a quiet tick makes no model call. Its read-only doctor script needs `python3`, which is not on Hermes's `PATH` here; the rules work without it. |
 
 Limits from the list's operational playbooks: `agent.max_turns = 60`; subagents at most 2 at a
 time, 50 iterations each, one level deep; `tool_loop_guardrails.hard_stop_enabled`; no update

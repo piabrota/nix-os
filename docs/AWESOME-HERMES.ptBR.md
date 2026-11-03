@@ -118,7 +118,33 @@ Cada uma está no `hermes.nix`, com o motivo do lado.
 
 ## Complementos da comunidade
 
-Da [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent) e de uma busca no GitHub.
+Da [awesome-hermes-agent](https://github.com/0xNyk/awesome-hermes-agent), de uma busca no GitHub e
+do catálogo de plugins da própria Nous: `plugin-catalog/` no commit fixado do hermes-agent, 912
+entradas, cada uma com merge de um mantenedor, fixada num commit completo e examinada na admissão
+(o `README.md` dele traz as regras). Ao fixar um plugin de lá, prefira o commit do catálogo.
+
+- ✅ [percyhendrux123-prog/hermes-tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire)
+  (MIT, v0.1.1, no catálogo): uma linha JSON para cada ação recusada, inclusive os bloqueios da
+  lista. Sem rede, sem guardar argumentos nem texto.
+- ✅ [NousResearch/hermes-labs-plugins](https://github.com/NousResearch/hermes-labs-plugins), o
+  plugin `inbox` (MIT, no catálogo): `hermes inbox`, uma lista só de leitura dos jobs do cron que
+  falharam e dos subagentes parados. Só um comando de CLI.
+- ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, no
+  catálogo): uma skill para jobs baratos do cron (`no_agent`, `wakeAgent`, `[SILENT]`). O script de
+  diagnóstico dela pede `python3`, que o `PATH` do Hermes não tem aqui.
+- 🧪 [mister-ideas/usage-guard](https://github.com/mister-ideas/usage-guard) (MIT, no catálogo):
+  recusa uma chamada ao modelo quando uma janela da assinatura está cheia, para não gastar excedente.
+  Esperar: no commit fixado, o `agent/account_usage.py` multiplica por 100 um `utilization` da
+  Anthropic de 1 ou menos, então o guard bloquearia logo depois de cada reset (o README dele aponta a
+  correção upstream).
+- 🧪 [otsoa-dubief/airlock](https://github.com/otsoa-dubief/airlock) (Apache-2.0, no catálogo):
+  depois que uma sessão lê conteúdo não confiável, envios, pushes e escritas de memória, skill e
+  cron passam por aprovação. Ele bloqueia escritas do cron sem ninguém por perto, então comece no
+  modo de observação.
+- ⛔ Do catálogo: context-audit (sem arquivo de licença), turn-usage (o rodapé dele volta ao modelo
+  a cada turno), llmslim (numpy e scikit-learn do PyPI), tameru (sobrescreve métodos privados do
+  Hermes), discord-tps, session-mirror e hermes-discord-rpc (presença do bot ou o app de desktop),
+  redaction-pack (fornecedores que esta máquina não usa).
 
 - ✅ [scross01/hermes-custom-dangerous-patterns-plugin](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin)
   (MIT, v0.5.2): um hook `pre_tool_call` que bloqueia comandos de terminal por regex. Aqui ele
