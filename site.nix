@@ -30,9 +30,26 @@ in
     root = mkOption {
       type = types.path;
       # Gleam runs on the builder; the box gets only the pages, static/ and mu.svg (site/default.nix).
-      default = pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; };
-      defaultText = lib.literalExpression "pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; }, the prerendered pages";
+      default = pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; inherit (cfg) hermes; };
+      defaultText = lib.literalExpression "pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; inherit (cfg) hermes; }, the prerendered pages";
       description = "The directory nginx serves. Read-only: the store.";
+    };
+    hermes = mkOption {
+      type = types.nullOr types.attrs;
+      internal = true;
+      # The /hermes page: hermes.nix's settings as YAML, from this system's own evaluation.
+      default =
+        if config.services ? hermes-agent && config.services.hermes-agent.enable then
+          import ./site/hermes.nix
+            {
+              inherit lib;
+              cfg = config.services.hermes-agent;
+              unit = config.systemd.services.hermes-agent.serviceConfig;
+              lock = (lib.importJSON ./flake.lock).nodes.hermes-agent.locked;
+            }
+        else null;
+      defaultText = lib.literalMD "the facts of `site/hermes.nix`, when Hermes is on";
+      description = "What the /hermes page shows. null: no /hermes page.";
     };
     analytics.measurementId = mkOption {
       type = types.strMatching "(G-[A-Z0-9]+)?";

@@ -256,6 +256,19 @@ the store (the list is read-only on purpose). To check that a deploy took effect
 restarts when its inputs change, after the work in flight ends (see "Run settings"), so the time
 can be up to 10 minutes after the deploy.
 
+## The /hermes page
+
+[www.piabrota.art/hermes](https://www.piabrota.art/hermes) shows this configuration in plain YAML,
+not in Nix: the settings that `hermes.nix` writes to `config.yaml`, and how the unit runs (the
+package, the extras, the limits, the plugins, the files and the pinned upstream commit). The site
+build reads them from the evaluated system (`site/hermes.nix`), so the page changes with every
+merge that changes `hermes.nix`. It is the configuration that the last deploy of `main` sets, not a
+live check of the unit: for that, see "Checking it".
+
+No secret reaches the page. The site never reads the env files and does not name them; a key that
+names a token, a key, a secret, a password or allowed users is dropped; and the build stops if a
+secret's name gets through. Store paths keep their name and lose their hash.
+
 ## Updating and turning it off
 
 - **Update:** the weekly `flake-update.yml` PR moves the `hermes-agent` input with the rest, with

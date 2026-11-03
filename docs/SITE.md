@@ -79,7 +79,7 @@ failed.
 | URL | Answer |
 |---|---|
 | `http://www.piabrota.art/` | the site |
-| `https://www.piabrota.art/` | the site: design A; B at `/index/`, C at `/paths/` |
+| `https://www.piabrota.art/` | the site: design A; B at `/index/`, C at `/paths/`, Hermes's configuration at `/hermes/` |
 | `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `…/nixos` | 302 to this repository, so the README link keeps working |
@@ -126,6 +126,7 @@ designs of the [mockups](MOCKUPS.md), each a page, with a switcher at the foot o
 | `/index/` | B · index: an editorial list, one numbered row a project |
 | `/pt-BR/`, `/zh-CN/`, `/ja-JP/` | design A in that language |
 | `/paths/` | C · paths: 无 and the name, and a listing of what answers here and where the rest lives |
+| `/hermes/` | Hermes Agent as `hermes.nix` configures it, in plain YAML: the hermes card in "think and write" links here ([HERMES.md](HERMES.md#the-hermes-page)) |
 
 The facts (the projects, their blurbs, where each meets the web) come from `mockups/data.nix`, the
 same file the mockups draw: the mockups and the site cannot disagree. Change a fact there.
@@ -137,6 +138,7 @@ same file the mockups draw: the mockups and the site cannot disagree. Change a f
 | `site/src/piabrota_site/page.gleam` | the HTML document around each page: head, theme colour, stylesheet |
 | `site/src/piabrota_site/render/` | one module a page, which prints it as HTML |
 | `site/data.nix` | writes `src/piabrota_site/data.gleam` from `mockups/data.nix`; that file is not committed |
+| `site/hermes.nix`, `src/piabrota_site/hermes.gleam` | the /hermes page: `site/hermes.nix` writes `services.hermes-agent` of the evaluated system as YAML, without secrets; `site.nix` passes it to the build as `piabrota.site.hermes` |
 | `site/test/` | gleeunit tests on the rendered pages |
 | `site/static/` | copied as is next to the pages (`style.css`, one body class a design) |
 | `site/gleam.toml`, `site/manifest.toml` | the Gleam project and its locked hex packages |

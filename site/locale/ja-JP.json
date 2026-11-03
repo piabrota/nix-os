@@ -110,6 +110,7 @@
   "project.gramatico": "ブラジルの ポルトガル語の 技術文を、1回で 読める 文に 直します。Claude Code の プラグインです。",
   "project.closed-source": "The god that failed は 本です。クローズドソースが 守りとして 失敗した 理由を 書いています。まず 科学の 話です。",
   "project.skills": "エージェントの ための スキル集です。",
+  "project.hermes": "Nous Research の Hermes Agent です。VPS で 動きます。Telegram と Discord で Claude を 使います。設定は YAML で 見られます。",
   "project.alerts": "公式の 情報だけを 使う 警報です。Discord と Atom フィード（CAP 1.2）に 送ります。最初は ブラジル南部の 洪水（こうずい）です。",
   "project.rax": "Rustic Agentic Runtime です。AX を Rust だけで 書き直しました。AX は エージェントの 仕事を 管理します。",
   "project.agents": "小さな エージェントです。nix-os と サーバーを 見て、piabrota-ops として GitHub に 報告します。pull request を 開きます。マージは しません。",

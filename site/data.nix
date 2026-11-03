@@ -1,7 +1,7 @@
 # The facts of the site as Gleam (src/piabrota_site/data.gleam), written from mockups/data.nix,
 # the same facts the mockups draw. default.nix writes the file on every build; `just site-data`
 # writes it for local work. It is not committed.
-{ lib, data, measurementId ? "" }:
+{ lib, data, measurementId ? "", hermes ? null }:
 let
   str = s: "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
   state = { live = "Live"; coming = "Coming"; none = "NoSite"; };
@@ -42,6 +42,9 @@ let
     (lib.remove "en" languages);
   clause = l: k: "    ${str l}, ${str k} -> ${str (locale l).${k}}\n";
   clauses = lib.concatMapStrings (l: lib.concatMapStrings (clause l) (keys l)) languages;
+  # site/hermes.nix's facts; with no Hermes, empty, and the page says so.
+  h = if hermes == null then { config = ""; service = ""; upstream = ""; facts = [ ]; } else hermes;
+  fact = f: "#(${str f.label}, ${str f.value})";
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
 assert checked;
@@ -103,6 +106,17 @@ assert checked;
 
   /// The Google Analytics 4 measurement ID (piabrota.site.analytics.measurementId); "" for none.
   pub const analytics_id = ${str measurementId}
+
+  /// Hermes's configuration as hermes.nix sets it, in YAML (site/hermes.nix); "" with no Hermes.
+  pub const hermes_config = ${str h.config}
+
+  /// How nix-os runs Hermes: the unit, the package, the limits, in YAML.
+  pub const hermes_service = ${str h.service}
+
+  /// The upstream commit the flake pins.
+  pub const hermes_upstream = ${str h.upstream}
+
+  pub const hermes_facts = ${list fact h.facts}
 
   pub const name = ${str data.org.name}
 

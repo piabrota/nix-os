@@ -61,6 +61,10 @@ font file is stored here.
   title, and below 420 px the buttons fill the row.
 - A: tiles in a grid of the profile's lanes; mu's is the one filled tile, in `--accent`, across the
   row. B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
+- **/hermes** is not a design and has no place in the switcher: its hero carries ☤ in Fjalla One
+  and `--accent-text` where the others carry a drawing, its numbers are facts in mono, and its
+  YAML sits in C's terminal, in a `<pre>` that scrolls sideways on a phone. It ends at the foot,
+  without the shared sections.
 - **Tiles**, on A: tags (the state pill, the language, own or personal), the name in Fjalla One, the
   blurb, the licence and the address. The name's link covers the tile. Hover scales it 1.5%.
 - **The numbers** in the hero are `<dl>` pairs, counted from the facts, never typed.
