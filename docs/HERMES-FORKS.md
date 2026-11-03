@@ -1,130 +1,98 @@
-# Hermes forks and business editions
+# Should piabrota fork Hermes?
 
-A survey of forks and business editions of [Hermes Agent](https://github.com/NousResearch/hermes-agent)
-for very small companies and startups. Read on 2026-11-03. This file is in English only, by the
-owner's order. It is research: the configuration runs none of these projects.
+The trade-offs of a piabrota fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+against the upstream that this box runs today, for piabrota's needs. Written on 2026-11-03, from
+the pinned commit `d9f15af` and this repository. This file is in English only, by the owner's
+order. It replaces the earlier survey of third-party forks (git history has it).
 
 ## Answer
 
-Keep the upstream Hermes Agent for now. No fork in this list is a better fit than upstream for
-one owner on a 1 vCPU, 4 GB box.
+Do not fork yet. Keep upstream, pinned by `flake.lock`, and tailor it with configuration, skills,
+plugins, MCP servers and `SOUL.md`/`AGENTS.md`. When a change to Hermes's own code is necessary,
+carry it as a patch file in this repository and send it upstream. Start a fork when one of the
+signals in "When to fork" is true.
 
-- If a second person needs their own agent, use upstream
-  [profiles](https://hermes-agent.nousresearch.com/docs/user-guide/profiles). A profile has its own
-  config, keys, memory, sessions, skills and gateway state. No fork is necessary.
-- If the company needs roles, approvals and an audit log, test Maia first (single tenant).
-- If one deployment must serve many isolated users, read hermes-agent-mt first (thin fork).
-- If the company wants no server at all, Hermes Business is the hosted option.
+Confidence: medium. The facts about upstream come from its code and docs at the pin. The cost of
+a fork is an estimate: nobody here has maintained one.
 
-Confidence: medium. I read the READMEs, licences, release lists and repository metadata. I did not
-run any of these projects.
+## What piabrota needs from Hermes
 
-## How to read the table
+From `hermes/AGENTS.md` and `hermes/SOUL.md`:
 
-GitHub marks a repository as a fork only when it keeps the fork link. Most of these do not. The
-**Kind** column comes from the README and the LICENSE file, not from the GitHub flag.
+| Need | Met today by | Needs the core? |
+|---|---|---|
+| Official alerts (CEMADEN, Defesa Civil, INMET) and bathing water (FEPAM, IMA, IAT) | `watchers` and `rss-feeds` skills, Hermes's cron | No |
+| Ocean research digests, papers, citations | `research-paper-writing`, `arxiv`, `evidence-ledger-research` | No |
+| GitHub work as piabrota-hermes[bot], humans merge | `gh`, the App tokens (`hermes-github.nix`), the deny-list plugin | No |
+| The owner's skills as commands | `skills.external_dirs` (h0ffmann/skills, pinned) | No |
+| Long tasks that continue on their own (the Ralph loop) | `/goal`, at the pin | No |
+| Identity, voice, the "piou a melhoria" rule | `SOUL.md`, `AGENTS.md` | No |
+| Fit in 1 vCPU and 1 GB | the `minimal` package, run limits, graceful reload | No |
+| Two models: Sonnet decides, Haiku does mechanical work | `delegation` and `auxiliary` settings | No |
 
-| Project | Kind | Aim | Licence | Stars | Last push | Release |
-|---|---|---|---|---|---|---|
-| [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | Upstream | Personal agent | MIT | 260168 | 2026-11-03 | not checked |
-| [cyborg-garden/hermes-agent-mt](https://github.com/cyborg-garden/hermes-agent-mt) | Thin fork | Multi-tenant deployments | MIT | 14 | 2026-11-03 | none |
-| [cyborg-garden/swarm-map](https://github.com/cyborg-garden/swarm-map) | Control plane for the fork above | Admin for many agents | AGPL-3.0 | 26 | 2026-11-03 | not checked |
-| [and270/maia](https://github.com/and270/maia) | Modified distribution | One-tenant corporate assistant | MIT | 1 | 2026-07-20 | v0.1.0 (2026-07-20) |
-| [eggyrooch-blip/hermes-multitenancy](https://github.com/eggyrooch-blip/hermes-multitenancy) | Plugin on stock core | One Feishu bot for many users | MIT | 26 | 2026-11-03 | none |
-| [SeerBench/hermes-multiuser-web-service](https://github.com/SeerBench/hermes-multiuser-web-service) | Fork plus one adapter | Multi-user web chat | MIT | 2 | 2026-10-19 | none |
-| [RemiPelloux/OpenAgents](https://github.com/RemiPelloux/OpenAgents) | Rename fork | Branding and onboarding | MIT | 1 | 2026-10-05 | none |
-| [kwkuh/chathermes](https://github.com/kwkuh/chathermes) | SaaS boilerplate on upstream | Sell an agent per paying user | AGPL-3.0 plus addenda (not OSI) | 11 | 2026-07-31 | none |
-| [Colin4k1024/hermesx](https://github.com/Colin4k1024/hermesx) | Go rewrite, diverged from a fork | Multi-tenant control plane | MIT | 14 | 2026-09-03 | v2.0.0 (2026-05-07) in the release list; the README names v2.3.0 |
+No need on this list requires a change to Hermes's code today.
 
-Stars and dates come from `gh api repos/<owner>/<repo>` on 2026-11-03.
+## Three ways to tailor Hermes
 
-## Official business editions
+| | Upstream, tailored from outside (today) | Upstream plus patch files in nix-os | A fork: `piabrota/hermes-agent` |
+|---|---|---|---|
+| What you can change | Configuration, skills, plugins and hooks, MCP servers, `SOUL.md`/`AGENTS.md` | Also small changes to the core, a few files each | Everything: the core, the defaults, the Nix module, the dependencies |
+| Updates | The weekly `flake-update.yml` PR, with CI and the `dix` closure diff | The same weekly PR. A patch that no longer applies fails the build and names the file | You merge upstream by hand. Upstream changes many times a day, and conflicts land in the files you changed |
+| Security fixes | When the weekly PR merges | When the weekly PR merges | When you merge upstream |
+| Nix module | Upstream keeps it ("best effort"); the pin protects you | The same | Yours to fix when it breaks |
+| Size on the box | `minimal` plus four extras | The same | You can remove code paths, but `minimal` already leaves out voice, browser and Bedrock: the gain is small |
+| Community add-ons and docs | Work as documented | Work as documented | Can drift from your code; each one needs a check |
+| Extra work | None | One patch file and one upstream PR per change | A second repository: CI, Nix checks, merges, the MIT notice that keeps the Nous copyright line |
+| Going back | Nothing to undo | Delete the patch | Hard after months of divergence |
+| Giving back | Publish skills and plugins | Each patch becomes an upstream PR | Upstream PRs come from the fork |
 
-**Hermes Business and Hermes Enterprise** (Nous Research). Source: the
-[Nous Portal page](https://portal.nousresearch.com/business).
+## The cost of a fork, for this owner
 
-- Business is a team account on Nous infrastructure. It has one shared balance, per-member spend
-  caps, hosted agents for each member and a shared skill library. Each team gets an isolated
-  tenant on Nous servers.
-- Enterprise runs on infrastructure that the customer controls. It adds SSO and SLAs.
-  Nous does not publish its size needs or its price.
-- Load on this VPS: none for Business. The agents run at Nous. Nous publishes no sizing for Enterprise.
-- Costs that are not CPU or RAM:
-  - The Team Gateway relay turns off direct Telegram, Slack and Discord connections, unless
-    `GATEWAY_RELAY_ALLOW_DIRECT_PLATFORMS=true` is set
-    ([issue 141175](https://github.com/NousResearch/hermes-agent/issues/141175)). This box uses
-    direct Telegram and Discord.
-  - The models come from the Nous API or from the customer's provider keys. This box uses the
-    owner's Claude subscription and no API key. I did not check if that works in Business.
-  - A trade article gives $20 to $200 a month for the hosted tiers
-    ([AI Agent Chronicle](https://aiagentchronicle.com/articles/2026-10-12-nous-research-raises-90m-to-bring-its-open-source-hermes-agent-directly-to-busin/)).
-    The official page shows no price. Treat the number as unverified.
-  - A community blog says that, on 2026-10-02, shared skills were still pre-launch in the public
-    code ([hermesagents.net](https://hermesagents.net/blog/hermes-business-and-enterprise-explained)).
-    Treat this as unverified.
+- **Merge work every week.** Upstream at the pin has tens of thousands of commits and thousands of
+  open PRs. A fork that changes the core must merge that flow by hand, or fall behind.
+- **Late security fixes.** Hermes runs a shell, holds a GitHub App token and reads web pages. A fix
+  that waits for a manual merge stays open on a live box.
+- **The Nix module becomes yours.** Upstream keeps Nix "best effort". Today the pin and the weekly
+  PR catch its breaks before a merge. In a fork, a break is yours to fix.
+- **One person.** The owner reviews every PR here. A fork adds a second stream of reviews that do
+  not move piabrota's goals.
 
-## Projects
+## What a fork would give
 
-**hermes-agent-mt.** Its FORK-NOTICE says: 2 core patches (memory scoped per group or direct
-message, and safe context IDs) and about 8 adapter changes (Signal, Mattermost, Telegram). It
-says a CI job rebases it on upstream each week. I did not check that job. The fork ships as a
-container image, with one container for each agent. Swarm Map manages the containers. The image
-path changed with two org renames. Old paths still pull and return old code
-([FORK-NOTICE](https://github.com/cyborg-garden/hermes-agent-mt/blob/main/FORK-NOTICE.md)).
-This is the best-maintained fork in the list. It does not fit this box: the yardstick in
-[AWESOME-HERMES.md](AWESOME-HERMES.md) excludes anything that needs Docker on the box.
+- **Changes upstream refuses.** For example, memory scoped per user, which upstream's hooks cannot
+  do (upstream issue 34352, the reason hermes-agent-mt patches the core).
+- **A smaller program.** Removing modules the box never loads. The gain is small after `minimal`,
+  and it was not measured.
+- **Defaults for this box in code**, not in `hermes.nix`. That only moves them: the settings already
+  work.
+- **A home for upstream PRs.** This is cheap, and it needs no change on the box: the VPS keeps
+  running upstream.
 
-**Maia (AmpliIA).** A private, one-tenant corporate assistant based on the Hermes code. Its README
-lists: role-aware conversations, deny-by-default folder policies by role, team or user, approvals
-by a human for edits, commands and cron jobs, layered corporate, team and user knowledge, an
-append-only audit log and an optional SIEM webhook. Its LICENSE is MIT and keeps the Nous
-copyright line. It is the closest match to "a small company with roles and an audit trail". The
-risk is maintenance: one release (v0.1.0) and no push for more than three months, while upstream
-changes each day. I did not check if it builds with Nix.
+## When to fork
 
-**hermes-multitenancy.** A plugin, not a fork. It uses upstream's `pre_gateway_dispatch` hook to
-send each Feishu user to their own profile. It makes no patch to the core, so upgrades stay easy.
-It supports Feishu only. A company on Slack, Discord or Telegram cannot use it as it is.
+Start a fork when one of these is true:
 
-**hermes-multiuser-web-service.** A fork that adds a `web_chat` adapter and per-user isolation.
-Accounts and billing pass to an OpenAI-compatible gateway (new-api). It has 2 stars. It suits a
-company that wants a web chat for staff and already runs such a gateway.
+1. Two or more patch files live in this repository for more than three months, and upstream
+   refuses them or does not answer.
+2. Upstream drops Nix, or drops a feature that piabrota depends on (cron, skills, the gateway
+   platforms, `delegation`).
+3. piabrota needs a change to the core that upstream will not take, such as multi-tenant memory for
+   a second person who cannot use a [profile](https://hermes-agent.nousresearch.com/docs/user-guide/profiles).
 
-**OpenAgents.** A rename of Hermes with a "company workspace" scaffold and a visual workflow
-builder. I found no technical change that upstream lacks. Skip it.
+Until then, a fork used only to send PRs upstream is fine, as long as `flake.nix` points at
+upstream.
 
-**ChatHermes.** A multi-tenant SaaS boilerplate (magic-link login, Stripe, one agent for each
-paying user) that runs on Hermes. Its licence is AGPL-3.0 with a required-attribution addendum, a
-trademark reservation and a cloud carve-out. I did not read the addendum terms. A startup that
-wants to sell agents needs a lawyer to read them first.
+## How to carry a patch
 
-**HermesX.** A Go control plane with PostgreSQL row-level security, RBAC, audit logs and
-Kubernetes. Its README says it started as a fork of Hermes and then diverged. It is not
-Hermes any more. It supports SaaS mode only. It is too large for this box.
-
-## What upstream already has for teams
-
-- Profiles: several independent agents on one machine
-  ([docs](https://hermes-agent.nousresearch.com/docs/user-guide/profiles)).
-- A kanban board for work across profiles
-  ([docs](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban)).
-- Per-platform lists of allowed users, which this box uses already.
-- Known gap: an upstream issue says memory operations skip the hook system, so a plugin cannot
-  isolate tenants alone ([issue 34352](https://github.com/NousResearch/hermes-agent/issues/34352)).
-  That is the reason hermes-agent-mt patches the core. I read the issue summary only.
-
-## Fit for this box
-
-The box has 1 vCPU and 4 GB of RAM. Hermes is capped at 1 GB. On 2026-11-03 it used about 378 MiB
-of program memory and 537 MiB of file cache that the kernel can free. It had no out-of-memory
-kills. The yardstick in [AWESOME-HERMES.md](AWESOME-HERMES.md) excludes anything that needs Node, Go,
-Docker or a browser on the box. The resource budget in AGENTS.md excludes heavy runtimes and
-resident daemons. A container for each agent, or a Go control plane on Kubernetes, breaks these rules.
+1. Put the change in `hermes/patches/<name>.patch`, made against the pinned commit.
+2. Apply it in `hermes.nix`, on top of the `hermes-agent` package. Check first that the `minimal`
+   package takes `patches` through `overrideAttrs`: this was not tested.
+3. Open the same change as an upstream PR, and link it in the patch's first line.
+4. Delete the patch when upstream merges it and the weekly flake update brings it in.
 
 ## Not checked
 
-- I ran no project. All facts come from READMEs, licence files, release lists and the GitHub API.
-- I did not check the weekly rebase of hermes-agent-mt, or how far Maia is behind upstream.
-- I did not read the ChatHermes addendum terms or the Maia source.
-- Release data for upstream, Swarm Map and hermes-multitenancy is partial.
-- No ASD-STE100 checker is installed on this box. I applied the rules by hand.
+- The cost of a fork is an estimate. I did not measure how often upstream changes the files a
+  piabrota patch would touch.
+- The size gain of a trimmed program was not measured.
+- The patch path through `overrideAttrs` was not tested.
