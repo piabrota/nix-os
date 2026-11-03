@@ -40,32 +40,42 @@ jobs:
       - uses: actions/checkout@v7
       # The runner has about 14 GB free, and the Nix store (Hermes's build, with its own nixpkgs, and
       # the restored cache) outgrew it on 2026-11-02 ("No space left on device"). The image's
-      # toolchains that nothing here uses give back about 20 GB.
+      # toolchains that nothing here uses give back about 20 GB. The delete takes about 1 min 40 s, so
+      # it runs in the background while Nix installs and the cache restores.
       - name: Free disk space on the runner
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost
           df -h /
+          sudo nohup rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost </dev/null >/dev/null 2>&1 &
       - uses: cachix/install-nix-action@v31
-      # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here, so
-      # without this every run compiles apps/notes (about 400 crates) again. The store is saved to
-      # GitHub's Actions cache after a successful build and restored at the start of the next: the
-      # newest cache of ci or deploy on this branch, else main's (a PR reads main's caches, not the
-      # reverse). Older caches of this workflow and branch are deleted after the save, to stay in
-      # the 10 GB quota.
+      # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here (apps/notes,
+      # about 400 crates; Hermes's Python packages and web UI; the site). The store is saved to
+      # GitHub's Actions cache after the build and restored at the start of the next run: the newest
+      # cache of ci or deploy on this branch, else main's. The key is the commit, so the deploy job
+      # below restores exactly this build. Older caches of this workflow and branch are deleted
+      # after the save, to stay in the 10 GB quota.
       - uses: nix-community/cache-nix-action@v7
         with:
-          primary-key: nix-${{ runner.os }}-deploy-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          primary-key: nix-${{ runner.os }}-deploy-${{ github.sha }}
           restore-prefixes-first-match: nix-${{ runner.os }}-
           purge: true
           purge-prefixes: nix-${{ runner.os }}-deploy-
           purge-created: 0
           purge-primary-key: never
-          # Collect garbage down to 4 GiB before saving, so the cache stays small enough to restore.
-          gc-max-store-size-linux: 4G
+          # Before the save, collect everything that the GC roots of the next step do not keep:
+          # the build-time tools (rustc, node, the crate sources) go, and cache.nixos.org has them.
+          gc-max-store-size-linux: 1G
+      # The system and the flake inputs are GC roots, so the collection before the save keeps them.
+      # Until 2026-11-03 the build used --no-link: the collection deleted the system it had built, the
+      # deploy job built all 661 derivations a second time, and the next run built them a third time.
       - name: Build the system
         run: |
+          mkdir -p "$HOME/gcroots"
           nix build .#deploy.nodes.piabrota.profiles.system.path \
-            --no-link --no-update-lock-file --print-build-logs
+            --out-link "$HOME/gcroots/system" --no-update-lock-file --print-build-logs
+          nix flake archive --json --no-update-lock-file \
+            | jq -r '.. | .path? // empty' | sort -u | nl -w1 -s' ' \
+            | while read -r n path; do nix-store --add-root "$HOME/gcroots/input-$n" --realise "$path" >/dev/null; done
+          nix path-info --closure-size --human-readable "$HOME/gcroots/system"
 
   deploy:
     needs: build
@@ -77,10 +87,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
-      # The store the build job saved, by its exact key; deploy-rs then finds the system built.
+      # The store the build job saved for this commit; deploy-rs then finds the system built and
+      # only copies it. If that cache is missing, the newest deploy cache keeps the rebuild small.
       - uses: nix-community/cache-nix-action@v7
         with:
-          primary-key: nix-${{ runner.os }}-deploy-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          primary-key: nix-${{ runner.os }}-deploy-${{ github.sha }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-deploy-
           save: false
 
       - name: SSH key and pinned host key

@@ -3,7 +3,9 @@
 Every change to the VPS goes through GitHub. A push to `main` runs `.github/workflows/deploy.yml`:
 
 1. The GitHub runner builds the whole system (`nixosConfigurations.piabrota`). The VPS builds
-   nothing, so its small CPU, RAM and disk are not used for compiles.
+   nothing, so its small CPU, RAM and disk are not used for compiles. The build job saves the
+   system's closure to GitHub's Actions cache under the commit's key. The deploy job restores that
+   cache and does not build again, and the next merge builds only what changed.
 2. [deploy-rs](https://github.com/serokell/deploy-rs) copies the result to the VPS over SSH. The
    VPS downloads what `cache.nixos.org` has by itself; the runner uploads only the rest.
 3. deploy-rs activates the new system and then opens a new SSH connection. If that connection
