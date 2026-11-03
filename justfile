@@ -20,6 +20,10 @@ check:
     nix run nixpkgs#shellcheck -- scripts/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
 
+# unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
+hermes-plugins-test:
+    cd hermes/plugins/tests && python3 -m unittest -v test_plugins
+
 # CVE report of the system closure (vulnix against the NVD; a report, many matches are false)
 cves: build
     nix run --inputs-from . nixpkgs#vulnix -- --closure ./result || [ $? -eq 2 ]

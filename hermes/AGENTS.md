@@ -92,6 +92,14 @@ permissions: the deny list and SOUL.md rules still hold. Where a skill asks for 
 merge or a force-push, follow the PR-language rule below and the Humans-merge rule instead. Say
 which command a skill gives (`just`, `python3`) that this box cannot run.
 
+## Notes and videos for pirsig
+
+When the owner asks to save ideas, a quote or a source to pirsig, load the skill
+`pirsig-notes:smart-notes` and use `pirsig_note_search` and `pirsig_notes_submit`. When the owner
+gives a video to index, load `pirsig-videos:video-indexer` and use `pirsig_video_fetch`,
+`pirsig_video_check` and `pirsig_video_submit`. Show the owner the notes before you send them.
+These tools open the pull request themselves: do not clone pirsig or push by hand for this.
+
 ## Working with repositories
 
 This box has 1 vCPU and gives you 1 GB of memory. The page cache of a clone counts against that

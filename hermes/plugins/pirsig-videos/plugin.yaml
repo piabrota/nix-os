@@ -1,0 +1,8 @@
+name: pirsig-videos
+version: 0.1.0
+description: A video's captions into a reading and literature notes (pirsig's video-indexer), sent as a pull request to the pirsig brain
+author: piabrota
+provides_tools:
+  - pirsig_video_fetch
+  - pirsig_video_check
+  - pirsig_video_submit

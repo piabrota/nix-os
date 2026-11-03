@@ -101,6 +101,15 @@ let
   };
   # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
   subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
+  # The owner's own plugins, in this repository (hermes/plugins/, docs/HERMES-PLUGINS.md): smart
+  # notes and video readings, sent to piabrota/pirsig as pull requests on hermes/* branches. Each
+  # is its directory plus the shared common/brain.py, so each stays one self-contained plugin.
+  ownPlugins = [ "pirsig-notes" "pirsig-videos" ];
+  ownPlugin = name: pkgs.runCommand name { } ''
+    cp -r ${./hermes/plugins + "/${name}"} $out
+    chmod u+w $out
+    cp ${./hermes/plugins/common/brain.py} $out/brain.py
+  '';
   # hermes-cron: a skill (markdown, no code in the agent) on cheap cron jobs: no_agent, the
   # wakeAgent pre-check and [SILENT], so a quiet tick makes no model call. Its read-only doctor
   # script needs python3, which is not on Hermes's PATH here; the rules work without it.
@@ -239,9 +248,9 @@ in
       dangerousPatterns
       (subPlugin "tripwire" tripwire)
       publicHolidays
-    ] ++ lib.mapAttrsToList subPlugin (labs // more);
+    ] ++ lib.mapAttrsToList subPlugin (labs // more) ++ map ownPlugin ownPlugins;
     settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" "public-holidays" ]
-      ++ builtins.attrNames (labs // more);
+      ++ builtins.attrNames (labs // more) ++ ownPlugins;
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for one vCPU, 1 GB and a subscription's quota
     # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on
@@ -292,8 +301,9 @@ in
       context7.url = "https://mcp.context7.com/mcp";
     };
     # gh for the bundled github skill (a read-only token as GITHUB_TOKEN in the env file),
-    # ast-grep for the skill of that name.
-    extraPackages = [ pkgs.gh pkgs.ast-grep ];
+    # ast-grep for the skill of that name, yt-dlp for pirsig-videos (captions only: the light
+    # build has no ffmpeg, and the plugin never downloads a video or its audio).
+    extraPackages = [ pkgs.gh pkgs.ast-grep pkgs.yt-dlp-light ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
