@@ -78,7 +78,7 @@
           };
         in
         # `kvm4` is a temporary alias: .github/workflows/deploy.yml and freeze.yml still name the
-        # node `kvm4`. Remove it in the pull request that renames the node in those workflows.
+          # node `kvm4`. Remove it in the pull request that renames the node in those workflows.
         nodes // { kvm4 = nodes.piabrota2; };
 
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
