@@ -17,7 +17,7 @@ import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 
-from .brain import Brain, BrainError, REFRESH_SECONDS, data_dir, fail, ok, run
+from .brain import Brain, BrainError, REFRESH_SECONDS, data_dir, fail, ok, open_brain, run
 
 PLUGIN = "pirsig-videos"
 HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "music.youtube.com"}
@@ -83,6 +83,7 @@ SUBMIT = {
 }
 
 
+# `h:mm:ss`, `m:ss` or `s`: the form of the `t=` ranges in the reading.
 def seconds(s: str) -> int:
     total = 0
     for part in s.split(":"):
@@ -96,10 +97,10 @@ def clock(t: float) -> str:
 
 
 def brain(ctx=None) -> Brain:
-    get = (lambda k, d: ctx.get_config(k, default=d)) if ctx is not None else (lambda k, d: d)
-    return Brain(data_dir(PLUGIN), repo=get("repo", "piabrota/pirsig"), base=get("base", "main"))
+    return open_brain(PLUGIN, ctx)
 
 
+# `name` comes from the model: the pattern keeps it from leaving `videos/` (no `..`, no `/`).
 def work_dir(name: str) -> Path:
     if not NAME.fullmatch(name or ""):
         raise BrainError(f"not a video folder name: {name!r}")
@@ -112,21 +113,31 @@ def video_slug(title: str) -> str:
     return "-".join(re.sub(r"[^a-z0-9]+", " ", plain).split()[:5]) or "video"
 
 
+def in_language(lang: str, spoken: str) -> bool:
+    """`pt-BR` and `pt-orig` are both the spoken `pt`; with no known language nothing is."""
+    return bool(spoken) and lang.split("-")[0] == spoken
+
+
+def first_spoken(langs: list[str], spoken: str) -> str | None:
+    return next((lang for lang in langs if in_language(lang, spoken)), None)
+
+
+def track_names(info: dict, key: str) -> list[str]:
+    return list(info.get(key) or {})
+
+
 def pick_captions(info: dict) -> tuple[str | None, bool]:
     """A person's captions in the spoken language, then any person's, then the automatic
-    `-orig` track of the spoken language (videos.mjs, fetchVideo)."""
-    manual = [lang for lang in (info.get("subtitles") or {}) if lang != "live_chat"]
-    spoken_lang = (info.get("language") or "").split("-")[0]
-
-    def spoken(lang: str) -> bool:
-        return bool(spoken_lang) and lang.split("-")[0] == spoken_lang
-
-    sub = next((lang for lang in manual if spoken(lang)), None) or (manual[0] if manual else None)
+    `-orig` track of the spoken language (videos.mjs, fetchVideo). The flag is true for a
+    person's captions."""
+    spoken = (info.get("language") or "").split("-")[0]
+    manual = [lang for lang in track_names(info, "subtitles") if lang != "live_chat"]
+    sub = first_spoken(manual, spoken) or next(iter(manual), None)
     if sub:
         return sub, True
-    auto = next((lang for lang in (info.get("automatic_captions") or {})
-                 if lang.endswith("-orig") and spoken(lang)), None)
-    return auto, False
+    # Only the `-orig` track is what the speaker said; the others are machine translations.
+    original = [lang for lang in track_names(info, "automatic_captions") if lang.endswith("-orig")]
+    return first_spoken(original, spoken), False
 
 
 def transcript(events: list) -> str:
@@ -139,52 +150,70 @@ def transcript(events: list) -> str:
     return "".join(f"[{clock(t)}] {' '.join(lines)}\n" for t, lines in blocks.items())
 
 
+def is_youtube_url(url: str) -> bool:
+    return urlparse(url).scheme == "https" and (urlparse(url).hostname or "").lower() in HOSTS
+
+
+# `--skip-download`: only the info and the captions, never the video file.
+def ytdlp(out: str, url: str, *extra: str) -> None:
+    run(["yt-dlp", "--skip-download", "--no-playlist", "--quiet", "-o", out, *extra, url],
+        timeout=YTDLP_TIMEOUT)
+
+
+def download_captions(tmp: Path, url: str) -> tuple[dict, str, bool]:
+    """Run yt-dlp twice: first for the info, which decides the captions, then for the captions.
+    Returns the info, the caption language and whether a person wrote them."""
+    out = str(tmp / "v.%(ext)s")
+    ytdlp(out, url, "--write-info-json")
+    info = json.loads((tmp / "v.info.json").read_text(encoding="utf-8"))
+    sub, manual = pick_captions(info)
+    if not sub:
+        raise BrainError(f"no captions in the spoken language ({info.get('language')}): "
+                         "stop and tell the owner; never transcribe from memory")
+    ytdlp(out, url, "--write-subs" if manual else "--write-auto-subs", "--sub-langs", sub,
+          "--sub-format", "json3")
+    return info, sub, manual
+
+
+def write_folder(b: Brain, tmp: Path, info: dict, sub: str, manual: bool) -> tuple[dict, Path, str]:
+    """Write video.json and the transcript into the work folder. Returns the video record, the
+    folder and the transcript text."""
+    d = info["upload_date"]
+    date = f"{d[:4]}-{d[4:6]}-{d[6:]}"
+    name = f"{date}-{video_slug(info['title'])}"
+    # From the merge on the notes belong to the owner; a second fetch must not overwrite them.
+    if (b.path / "brain" / "Videos" / name).exists():
+        raise BrainError(f"{name} is already in the brain: from then on its notes are the owner's")
+    target = work_dir(name)
+    (target / "figuras").mkdir(parents=True, exist_ok=True)
+    video = {
+        "id": info["id"], "url": info["webpage_url"], "title": info["title"],
+        "channel": info.get("channel"), "date": date, "duration": info["duration"],
+        "language": info.get("language"), "captions": sub,
+        "captions_kind": "manual" if manual else "automatic",
+        "description": info.get("description"), "hub": None, "resource": None,
+    }
+    (target / "video.json").write_text(json.dumps(video, ensure_ascii=False, indent=2) + "\n",
+                                       encoding="utf-8")
+    raw = tmp / f"v.{sub}.json3"
+    text = transcript(json.loads(raw.read_text(encoding="utf-8")).get("events") or [])
+    (target / "transcript.txt").write_text(text, encoding="utf-8")
+    shutil.copyfile(raw, target / "transcript.json3")
+    return video, target, text
+
+
 def fetch(args: dict, ctx=None, **_) -> str:
     url = str(args.get("url", "")).strip()
-    host = (urlparse(url).hostname or "").lower()
-    if urlparse(url).scheme != "https" or host not in HOSTS:
+    if not is_youtube_url(url):
         return fail("give an https YouTube URL")
     try:
         b = brain(ctx)
         b.sync(max_age=REFRESH_SECONDS)
         with tempfile.TemporaryDirectory(dir=data_dir(PLUGIN)) as tmp:
-            out = str(Path(tmp) / "v.%(ext)s")
-
-            def ytdlp(*extra: str) -> None:
-                run(["yt-dlp", "--skip-download", "--no-playlist", "--quiet", "-o", out, *extra, url],
-                    timeout=YTDLP_TIMEOUT)
-
-            ytdlp("--write-info-json")
-            info = json.loads((Path(tmp) / "v.info.json").read_text(encoding="utf-8"))
-            sub, manual = pick_captions(info)
-            if not sub:
-                return fail(f"no captions in the spoken language ({info.get('language')}): "
-                            "stop and tell the owner; never transcribe from memory")
-            ytdlp("--write-subs" if manual else "--write-auto-subs", "--sub-langs", sub,
-                  "--sub-format", "json3")
-            raw = Path(tmp) / f"v.{sub}.json3"
-            d = info["upload_date"]
-            date = f"{d[:4]}-{d[4:6]}-{d[6:]}"
-            name = f"{date}-{video_slug(info['title'])}"
-            if (b.path / "brain" / "Videos" / name).exists():
-                return fail(f"{name} is already in the brain: from then on its notes are the owner's")
-            target = work_dir(name)
-            (target / "figuras").mkdir(parents=True, exist_ok=True)
-            video = {
-                "id": info["id"], "url": info["webpage_url"], "title": info["title"],
-                "channel": info.get("channel"), "date": date, "duration": info["duration"],
-                "language": info.get("language"), "captions": sub,
-                "captions_kind": "manual" if manual else "automatic",
-                "description": info.get("description"), "hub": None, "resource": None,
-            }
-            (target / "video.json").write_text(json.dumps(video, ensure_ascii=False, indent=2) + "\n",
-                                               encoding="utf-8")
-            events = json.loads(raw.read_text(encoding="utf-8")).get("events") or []
-            text = transcript(events)
-            (target / "transcript.txt").write_text(text, encoding="utf-8")
-            shutil.copyfile(raw, target / "transcript.json3")
+            info, sub, manual = download_captions(Path(tmp), url)
+            video, target, text = write_folder(b, Path(tmp), info, sub, manual)
         return ok(
-            name=name, path=str(target), title=video["title"], channel=video["channel"],
+            name=target.name, path=str(target), title=video["title"], channel=video["channel"],
             duration=clock(video["duration"]), captions=sub, captions_kind=video["captions_kind"],
             transcript=str(target / "transcript.txt"), transcript_words=len(text.split()),
             policy=str(b.path / ".claude" / "agents" / "video-indexer.md"),
@@ -197,74 +226,103 @@ def fetch(args: dict, ctx=None, **_) -> str:
         return fail(f"yt-dlp gave an unexpected answer: {e}")
 
 
+def start_part(line: str, parts: list[dict]) -> dict:
+    block = {"title": line[3:], "body": [], "notes": []}
+    parts.append(block)
+    return block
+
+
+def start_note(note: re.Match, line: str, parts: list[dict], problems: list[str]) -> dict:
+    if not parts:
+        problems.append(f"note before the first part: {line}")
+        parts.append({"title": "", "body": [], "notes": []})
+    block = {"key": note[1], "from": seconds(note[2]), "to": seconds(note[3]),
+             "title": note[4], "body": [], "links": []}
+    parts[-1]["notes"].append(block)
+    return block
+
+
+def add_link(line: str, block: dict | None, problems: list[str]) -> None:
+    target, _, why = line[3:].partition(": ")
+    if block is None or "links" not in block:
+        problems.append(f"link outside a note: {line}")
+    else:
+        block["links"].append({"target": target, "why": why})
+
+
 def parse(text: str) -> tuple[dict, list[str]]:
     """Parts (`## `) hold notes (`### [k=key t=a-b] Title`); `-> key: why` is a link."""
     problems: list[str] = []
     parts: list[dict] = []
     title, block = "", None
+    # The first matching branch wins: `### [k= t=]` is tested before the plain `### ` error, and
+    # both before body text.
     for line in text.split("\n"):
         note = NOTE.match(line)
         if line.startswith("# "):
             title = line[2:]
         elif line.startswith("## "):
-            block = {"title": line[3:], "body": [], "notes": []}
-            parts.append(block)
+            block = start_part(line, parts)
         elif note:
-            if not parts:
-                problems.append(f"note before the first part: {line}")
-                parts.append({"title": "", "body": [], "notes": []})
-            block = {"key": note[1], "from": seconds(note[2]), "to": seconds(note[3]),
-                     "title": note[4], "body": [], "links": []}
-            parts[-1]["notes"].append(block)
+            block = start_note(note, line, parts, problems)
         elif line.startswith("-> "):
-            target, _, why = line[3:].partition(": ")
-            if block is None or "links" not in block:
-                problems.append(f"link outside a note: {line}")
-            else:
-                block["links"].append({"target": target, "why": why})
+            add_link(line, block, problems)
         elif line.startswith("### "):
             problems.append(f"note without [k= t=]: {line}")
         elif block is not None:
             block["body"].append(line)
-    for b in [x for p in parts for x in (p, *p["notes"])]:
-        b["body"] = "\n".join(b["body"]).strip()
+    join_bodies(parts)
     return {"title": title, "parts": parts}, problems
 
 
-def reading(doc: dict) -> dict:
-    """Words and the reading time, by the formula in gramatico's SKILL.md (videos.mjs)."""
+def join_bodies(parts: list[dict]) -> None:
+    """Turn the body lines of each part and note into one stripped string, in place."""
+    for b in [x for p in parts for x in (p, *p["notes"])]:
+        b["body"] = "\n".join(b["body"]).strip()
+
+
+def reading_minutes(count: int, mean: float, share: float) -> int:
+    """238 words a minute, rounded up; long sentences and many long words each add 15 %."""
+    minutes = count / 238
+    if mean > 20:
+        minutes *= 1.15
+    if share > 0.25:
+        minutes *= 1.15
+    return int(-(-minutes // 1))
+
+
+def reading_text(doc: dict) -> str:
+    """What a reader reads: titles and bodies, without figures and Markdown marks."""
     chunks = []
     for p in doc["parts"]:
         chunks += [p["title"], p["body"]]
         for n in p["notes"]:
             chunks += [n["title"], n["body"]]
-    text = re.sub(r"[*`#]", " ", FIGURE.sub("", "\n".join(chunks)))
+    return re.sub(r"[*`#]", " ", FIGURE.sub("", "\n".join(chunks)))
+
+
+def reading(doc: dict) -> dict:
+    """Words and the reading time, by the formula in gramatico's SKILL.md (videos.mjs)."""
+    text = reading_text(doc)
     words = [w for w in text.split() if re.search(r"[^\W_]", w)]
     sentences = [s for s in re.split(r"[.!?:]\s|\n+", text) if s.strip()]
     long = sum(1 for w in words if len(re.sub(r"[\W\d_]", "", w)) >= 10)
     count = len(words) or 1
     mean = count / (len(sentences) or 1)
     share = long / count
-    minutes = count / 238
-    if mean > 20:
-        minutes *= 1.15
-    if share > 0.25:
-        minutes *= 1.15
     return {"words": len(words), "mean": round(mean, 1), "long_share": round(share, 2),
-            "minutes": int(-(-minutes // 1))}
+            "minutes": reading_minutes(count, mean, share)}
 
 
-def check_dir(path: Path) -> dict:
-    problems: list[str] = []
-    for f in ("video.json", "leitura.markdown", "figuras.json"):
-        if not (path / f).is_file():
-            problems.append(f"no {f}")
-    if problems:
-        return {"problems": problems}
-    video = json.loads((path / "video.json").read_text(encoding="utf-8"))
-    doc, problems = parse((path / "leitura.markdown").read_text(encoding="utf-8"))
-    notes = [n for p in doc["parts"] for n in p["notes"]]
+def missing_files(path: Path) -> list[str]:
+    return [f"no {f}" for f in ("video.json", "leitura.markdown", "figuras.json")
+            if not (path / f).is_file()]
 
+
+def coverage_problems(notes: list[dict], duration: float) -> tuple[list[str], float]:
+    """The notes must cover the video from 0 to its end with no gap. Returns the problems and
+    the second where the coverage stops."""
+    problems = []
     covered = 0
     for start, end, key in sorted((n["from"], n["to"], n["key"]) for n in notes):
         if start > covered:
@@ -272,43 +330,66 @@ def check_dir(path: Path) -> dict:
         if end <= start:
             problems.append(f"{key}: ends before it starts")
         covered = max(covered, end)
-    if covered < video["duration"] - 1:
-        problems.append(f"stops at {clock(covered)} of {clock(video['duration'])}")
+    if covered < duration - 1:
+        problems.append(f"stops at {clock(covered)} of {clock(duration)}")
+    return problems, covered
 
+
+def key_and_link_problems(notes: list[dict]) -> list[str]:
     keys = {n["key"] for n in notes}
-    if len(keys) != len(notes):
-        problems.append("repeated note keys")
+    problems = ["repeated note keys"] if len(keys) != len(notes) else []
     for n in notes:
         for link in n["links"]:
+            # `#10` points at a note of the brain by its zid, outside this reading.
             if link["target"] not in keys and not re.match(r"#\d", link["target"]):
                 problems.append(f"{n['key']}: unknown link {link['target']}")
             if not link["why"]:
                 problems.append(f"{n['key']}: link to {link['target']} has no reason")
+    return problems
 
+
+def load_figures(path: Path) -> tuple[dict, list[str]]:
     try:
-        figures = json.loads((path / "figuras.json").read_text(encoding="utf-8"))
+        return json.loads((path / "figuras.json").read_text(encoding="utf-8")), []
     except ValueError as e:
-        figures = {}
-        problems.append(f"figuras.json is not JSON: {e}")
-    body = "\n".join(x["body"] for p in doc["parts"] for x in (p, *p["notes"]))
+        return {}, [f"figuras.json is not JSON: {e}"]
+
+
+def one_figure_problems(path: Path, fid: str, entry: dict | None) -> list[str]:
+    if not entry:
+        return [f"figure {fid} has no entry in figuras.json"]
+    problems = [f"figure {fid}: no {field}" for field in FIGURE_FIELDS if not entry.get(field)]
+    # The id is a file name: only these characters keep it inside figuras/.
+    if not re.fullmatch(r"[a-z0-9-]+", fid) or not (path / "figuras" / f"{fid}.json").is_file():
+        problems.append(f"figure {fid}: no figuras/{fid}.json (Archify's source)")
+    return problems
+
+
+def figure_problems(path: Path, body: str, figures: dict) -> list[str]:
+    """Every figure of the text has an entry and a source; every entry is used."""
     used = list(dict.fromkeys(FIGURE.findall(body)))
+    problems = []
     for fid in used:
-        entry = figures.get(fid)
-        if not entry:
-            problems.append(f"figure {fid} has no entry in figuras.json")
-            continue
-        for field in FIGURE_FIELDS:
-            if not entry.get(field):
-                problems.append(f"figure {fid}: no {field}")
-        if not re.fullmatch(r"[a-z0-9-]+", fid) or not (path / "figuras" / f"{fid}.json").is_file():
-            problems.append(f"figure {fid}: no figuras/{fid}.json (Archify's source)")
-    for fid in figures:
-        if fid not in used:
-            problems.append(f"figure {fid} is not in the text")
+        problems += one_figure_problems(path, fid, figures.get(fid))
+    return problems + [f"figure {fid} is not in the text" for fid in figures if fid not in used]
 
-    for pattern, why in BANNED:
-        problems += [f"{why}: {m.group(0)}" for m in pattern.finditer(body)]
 
+def banned_problems(body: str) -> list[str]:
+    return [f"{why}: {m.group(0)}" for pattern, why in BANNED for m in pattern.finditer(body)]
+
+
+def check_dir(path: Path) -> dict:
+    problems = missing_files(path)
+    if problems:
+        return {"problems": problems}
+    video = json.loads((path / "video.json").read_text(encoding="utf-8"))
+    doc, problems = parse((path / "leitura.markdown").read_text(encoding="utf-8"))
+    notes = [n for p in doc["parts"] for n in p["notes"]]
+    gaps, covered = coverage_problems(notes, video["duration"])
+    figures, figures_file = load_figures(path)
+    body = "\n".join(x["body"] for p in doc["parts"] for x in (p, *p["notes"]))
+    problems += [*gaps, *key_and_link_problems(notes), *figures_file,
+                 *figure_problems(path, body, figures), *banned_problems(body)]
     r = reading(doc)
     return {
         "notes": len(notes), "figures": len(figures),
@@ -375,6 +456,8 @@ def submit(args: dict, ctx=None, **_) -> str:
         video = json.loads((path / "video.json").read_text(encoding="utf-8"))
         sources = ["video.json", "leitura.markdown", "figuras.json",
                    *sorted(f"figuras/{p.name}" for p in (path / "figuras").glob("*.json"))]
+        # Only the reading and the figure sources go to git; the PR body says how to fetch the
+        # transcript again.
         files = {f"brain/Videos/{name}/{rel}": (path / rel).read_text(encoding="utf-8")
                  for rel in sources}
         b = brain(ctx)
