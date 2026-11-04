@@ -58,6 +58,12 @@ O `deploy.yml` ignora um merge que muda só Markdown. Isso inclui os arquivos Ma
 deploy, ou quando você roda o `deploy.yml` à mão no `main`. Um merge que muda um arquivo `.nix`, o
 `hermes/omp.yml` ou outro arquivo que não é Markdown faz o deploy da máquina.
 
+O wrapper roda o omp sob `timeout`. Nenhuma execução passa de 35 minutos, sejam quais forem as flags.
+Um restart do gateway também interrompe a execução. Numa tarefa longa, o arquivo de tarefa nomeia um
+arquivo de progresso (`omp-tasks/<nome>.progress`). O omp acrescenta uma linha a cada passo
+concluído, e a execução seguinte continua depois do último. O `kvm4-health` mostra o `NRestarts` de
+cada unidade: WARN acima de 3, CRIT acima de 50.
+
 ## Qual configuração vence
 
 Esta é a ordem no omp, da mais forte para a mais fraca (docs do omp, `config-usage.md`, "Layers", na
