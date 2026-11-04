@@ -46,7 +46,7 @@
 
 **How to read.** Top to bottom, one lane per place: people, DNS, each VPS, GitHub. Arrows say where a request or a deploy goes; the red border marks what is outside the two boxes.
 
-**Not shown.** PGX on KVM 4, the ACME certificates, the secrets on each box, and the deploy by hand.
+**Not shown.** PGX and Paperclip on KVM 4, the ACME certificates, the secrets on each box, and the deploy by hand.
 
 **Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
 
@@ -114,6 +114,10 @@ Postgres, instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its 
 - [`docs/PGX.ptBR.md`](docs/PGX.ptBR.md), em português
 - [`docs/PGX.md`](docs/PGX.md), in English
 
+[Paperclip](https://github.com/paperclipai/paperclip), a control plane for a team of AI agents, runs
+on KVM 4 at paperclip.piabrota.art with Hermes as its agent (`paperclip.nix`): how they talk, the
+setup on the box and the cost are in [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md), in English.
+
 ## Recipes
 
 ```console
@@ -153,7 +157,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
 ├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
 ├── hosts/piabrota/          KVM 1: the public web only
-├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, PGX (docs/DEPLOY.md)
+├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, Paperclip, PGX (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
@@ -161,6 +165,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── apps.nix, apps/notes/    the Loco apps: a notes CRUD demo at www.piabrota.art/notes (docs/LOCO.md)
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
+├── paperclip.nix, paperclip/ Paperclip, its npm package and lock, with Hermes as its agent
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
 ├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
@@ -187,6 +192,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── docs/HERMES.md         the same, in English
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
 ├── docs/PGX.md            the same, in English
+├── docs/PAPERCLIP.md      Paperclip and Hermes here: setup, cost, updating
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR beyond Markdown: lints and the justfile parse; the full flake check by hand), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use

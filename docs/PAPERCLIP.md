@@ -1,109 +1,155 @@
-# Paperclip on this VPS
+# Paperclip on piabrota2
 
-A check of the cost of self-hosting [Paperclip](https://github.com/paperclipai/paperclip) on the
-KVM 1 box. Research only: nothing here is installed. This file is in English only, by the owner's order.
+[Paperclip](https://github.com/paperclipai/paperclip) (MIT) runs on piabrota2 (KVM 4) at
+<https://paperclip.piabrota.art>, with Hermes as its agent. `paperclip.nix` sets it up. This file
+is in English only, by the owner's order.
 
-Read on 2026-11-03.
+Paperclip is a control plane for a "company" of AI agents: goals, an org chart, tasks, budgets
+and a heartbeat that wakes the agents. It is not an agent itself. Here its one agent is the Hermes
+that already runs on the box.
 
-## Answer
+## What is installed
 
-Do not run Paperclip on this box. It would fit on paper, with a thin margin. It breaks three rules of
-this repository, and I could not measure its real cost.
+| Part | Where | Notes |
+|---|---|---|
+| Paperclip server | unit `paperclip`, `127.0.0.1:3100` | The npm release `paperclipai` 2026.1023.0 on Node.js 24 (`paperclip/package.nix`). `MemoryMax=2G`, `CPUWeight=50`. State in `/var/lib/paperclip`. |
+| Database | unit `postgresql`, PostgreSQL 17 | A Unix socket only (`/run/postgresql`, port 5433), no TCP, peer authentication: only the `paperclip` user reaches the `paperclip` database. `MemoryMax=1G`. PGX keeps `127.0.0.1:5432`. |
+| Signing secrets | `/var/lib/paperclip-secrets/paperclip.env` | Made on the box by the unit `paperclip-secrets` the first time, kept after: `BETTER_AUTH_SECRET`, `PAPERCLIP_TOOL_ACTION_SIGNING_SECRET`, `PAPERCLIP_AGENT_JWT_SECRET`. Never in the repository. |
+| Web | nginx, `paperclip.piabrota.art` | TLS from Let's Encrypt, WebSockets, a rate limit on `/api/auth/`. |
+| Configuration | the store | `config.json` is written by Nix and read-only: the UI and the CLI cannot change the instance settings. A change is a pull request. |
+| Admin CLI | `paperclipai` on the PATH | Runs as the `paperclip` user with the server's configuration and secrets (`sudo` inside). |
 
-If you want it, run it on a second small VPS or on your own computer. Hermes can be one of its agents.
+The mode is `authenticated` with `public` exposure: Paperclip's own login (Better Auth) and sign-up
+closed. Telemetry and update checks are off. Paperclip makes a `pg_dump` of its database once a day
+into `/var/lib/paperclip/backups` and keeps it for 7 days.
 
-Confidence: medium on the answer. High on the facts about the box. Low on any number about Paperclip,
-because I did not run it.
+## How Hermes and Paperclip talk
 
-## What it is
+Paperclip's built-in `hermes_gateway` adapter calls a Hermes that is already running, over the
+Hermes API server. It does not start a second Hermes.
 
-- A Node.js server and a React UI that run a "company" of AI agents: goals, org chart, budgets,
-  tasks, and a heartbeat that wakes agents. MIT licence.
-  Source: [README](https://github.com/paperclipai/paperclip). At the time of reading: about 110,000 stars,
-  last push 2026-11-03, newest release `v2026.1023.0` (2026-10-24).
-- It is not an agent. It starts agents of other makers as child processes of its server. The Hermes
-  adapter `hermes_local` runs `hermes chat -q` on the same machine
-  ([adapter docs](https://docs.paperclip.ing/reference/adapters/hermes/)). Hermes must be installed there.
+```text
+Paperclip (127.0.0.1:3100) --POST /v1/runs, Bearer API_SERVER_KEY--> Hermes API server (127.0.0.1:8642)
+Hermes terminal (curl)  --Bearer PAPERCLIP_API_KEY------------------> Paperclip API (127.0.0.1:3100/api)
+```
 
-## What it needs
+So a Paperclip task runs inside the Hermes of `hermes.nix`: its Claude subscription, its deny list,
+tripwire, its skills and its memory. No traffic between the two leaves the box.
 
-From the official docs ([installation](https://github.com/paperclipai/paperclip-docs/blob/main/docs/guides/getting-started/installation.md),
-[deploy to a VPS](https://github.com/paperclipai/paperclip-docs/blob/main/docs/how-to/deploy-to-vps-or-fly.md),
-[database](https://github.com/paperclipai/paperclip-docs/blob/main/docs/reference/deploy/database.md)):
+What `paperclip.nix` adds to Hermes (`piabrota.paperclip.hermes.enable`, on when Hermes is on):
 
-| Need | Value |
-|---|---|
-| Runtime | Node.js 24.11 or newer. pnpm 9.15 or newer to build from source. |
-| Size, as the docs say | "Any Linux VPS with 1 vCPU and 2 GB of RAM is enough to get started." |
-| Database | Embedded PostgreSQL for a local test. A hosted PostgreSQL for production. |
-| Public use | A domain, HTTPS, nginx in front, and the app bound to `127.0.0.1:3100`. |
-| Official VPS path | A Docker image. The container holds the API, the UI and the agent processes. |
-| Secrets | `PAPERCLIP_AGENT_JWT_SECRET`, and a model key for each agent kind. |
+- `API_SERVER_HOST=127.0.0.1` and `API_SERVER_PORT=8642`. Hermes opens its API server only when
+  `/var/lib/hermes-secrets/hermes.env` has `API_SERVER_KEY` (16 characters or more). Without it,
+  nothing listens, and Paperclip has no agent.
+- `PAPERCLIP_API_URL=http://127.0.0.1:3100`, and `terminal.env_passthrough` for
+  `PAPERCLIP_API_URL` and `PAPERCLIP_API_KEY`, so that `curl` in Hermes's terminal gets them.
+  Hermes removes other secrets from its children's environment; `API_SERVER_KEY` is not passed.
+- Paperclip's own `paperclip` skill (how to read a task, update it, comment and report), copied from
+  the release into `skills.external_dirs`, and `jq` for its scripts.
 
-The docs give the 2 GB figure for a start, for the platform alone. They do not give a figure for
-agents that run at the same time.
+Hermes's deny list and its approval prompts still apply to every command a Paperclip task runs.
 
-## What the box has
+## One-time setup
 
-Measured on 2026-11-03 (`free -m`, `systemctl show`, the cgroup of `hermes-agent`):
+Do these steps in order. Steps 1 and 2 are before the merge, because the merge deploys.
+
+1. **DNS.** Add an `A` record `paperclip.piabrota.art` → piabrota2's address (the same as
+   `hermes.piabrota.art`, `187.41.117.18` on 2026-11-04). Without it the ACME order fails on the
+   deploy, and deploy-rs rolls the box back. Check: `dig +short paperclip.piabrota.art`.
+2. **The Hermes gateway key.** On the box, add a random key to Hermes's secrets and keep a copy for
+   step 6 (the deploy's activation copies it into Hermes's `.env`):
+
+   ```console
+   key=$(openssl rand -hex 32)
+   echo "API_SERVER_KEY=$key" | sudo tee -a /var/lib/hermes-secrets/hermes.env >/dev/null
+   echo "$key"
+   ```
+
+3. **Merge** the pull request. The deploy starts PostgreSQL, Paperclip and the API server of
+   Hermes. Check: `curl -s http://127.0.0.1:3100/api/health` and
+   `curl -s -H "Authorization: Bearer $key" http://127.0.0.1:8642/health` on the box.
+4. **Open sign-up for the first admin.** Sign-up is closed, and Paperclip has no other way to make
+   the first account. On the box:
+
+   ```console
+   echo PAPERCLIP_AUTH_DISABLE_SIGN_UP=false | sudo tee -a /var/lib/paperclip-secrets/paperclip.env
+   sudo systemctl restart paperclip
+   paperclipai auth bootstrap-ceo
+   ```
+
+   Open <https://paperclip.piabrota.art>, create your account, then open the invite URL that
+   `bootstrap-ceo` printed: it makes you the instance admin. Then close sign-up again: remove that
+   line from the file and `sudo systemctl restart paperclip`.
+5. **A company.** In the UI, create the company (for example "piabrota").
+6. **Hermes as an agent.** In the company, add an agent with the adapter **Hermes Gateway**:
+   - API base URL: `http://127.0.0.1:8642`
+   - API key: the key from step 2 (Paperclip stores it encrypted, as a secret reference)
+   - Paperclip API URL: `http://127.0.0.1:3100`
+   - Session key strategy: `issue` (one Hermes session for each task)
+
+   The adapter's environment test must say "Hermes Gateway health endpoint is reachable".
+7. **Hermes's key for Paperclip.** In the agent's page, create an API key. On the box, add it to
+   Hermes's secrets and reload Hermes:
+
+   ```console
+   echo "PAPERCLIP_API_KEY=<the pcp_... key>" | sudo tee -a /var/lib/hermes-secrets/hermes.env >/dev/null
+   sudo /run/current-system/bin/switch-to-configuration switch
+   sudo systemctl reload hermes-agent
+   ```
+
+   The activation, not the service, copies `hermes.env` into Hermes's `.env` (docs/HERMES.md);
+   the reload lets the turns in flight finish first.
+
+   Hermes then reads and updates its tasks with the `paperclip` skill.
+
+The flow from step 4 to 7 was run on a copy of the unit (its command, environment and
+`config.json`) against PostgreSQL 17 on 2026-11-04, with a stand-in for the Hermes API server:
+the bootstrap invite made the admin, the environment test reached `/health` with the Bearer key,
+and the agent key authenticated `GET /api/agents/me`. The real Hermes API server was not run.
+
+## Cost
+
+Measured on 2026-11-04 (Linux x86_64, PostgreSQL 17.11, Node.js 24.22.1), not on the box:
 
 | Item | Value |
 |---|---|
-| CPU | 1 vCPU |
-| RAM | 3916 MiB in total, about 3100 MiB available (this includes cache that the kernel can free) |
-| Swap | 1957 MiB (compressed, in RAM). 269 to 333 MiB used at the two readings. |
-| Disk | 42 GB free of 50 GB |
-| Hermes | Cap 1024 MiB. About 380 MiB of program memory in use. A past peak of 996 MiB. |
-| Other units | nginx about 6 MiB. PGX about 26 MiB. |
-| Memory pressure | `avg300` about 9%. A short spike to `avg10` 48% happened while I evaluated nixpkgs once. I stopped it. |
+| Paperclip package in the store | 622 MiB (815 MiB with Node.js 24 and its libraries) |
+| Download to build it | 113 MiB of npm tarballs (3.9 GiB with the optional platform binaries, which are left out) |
+| Server memory, idle | about 590 MiB RSS |
+| PostgreSQL | 128 MiB of shared buffers; Paperclip opens 10 connections |
 
-The spike is a warning: this box slows down when one more heavy job runs on it.
+piabrota2 has 16 GB (Hostinger's plan list): Hermes may take 8G, its dashboard 2G, Paperclip 2G and
+PostgreSQL 1G. The earlier study of this file (2026-11-03, for KVM 1) said no to the 1 vCPU box;
+those limits do not apply to KVM 4.
 
-## The cost, in numbers that I can support
+What Paperclip costs in Claude usage is the Hermes runs it starts: each heartbeat that wakes Hermes
+is a Hermes turn on the subscription. Paperclip's budgets limit how often that happens.
 
-- **Platform alone:** the docs say 2 GB of RAM is "enough to get started". The box has about 3.1 GiB
-  available. After a 2 GB platform, about 1.1 GiB stays free for everything else.
-- **One agent run:** each `hermes_local` run starts a new Hermes process. I did not measure this.
-  The gateway process of Hermes uses about 380 MiB, so a run of the same size would take a large
-  part of the 1.1 GiB.
-- **CPU:** 1 vCPU, shared with nginx, the apps and the Hermes gateway. A Node server, a database
-  and an agent run at the same time would compete for it.
-- **I did not measure Paperclip itself.** I would need to install it from npm, and to get Node 24
-  and the embedded database. The deny list blocks installs, and this repository has no Node on the host.
-  Treat any figure for its real use as unknown.
+## Not included
 
-## Where it breaks the rules of this repository
+- Paperclip's local adapters (`claude_local`, `codex_local` and the others) and `hermes_local`:
+  they start CLIs that the box does not have. Use `hermes_gateway`.
+- The embedded PostgreSQL and the Docker image: Paperclip refuses the embedded one in public mode,
+  and this repository runs no Docker.
+- `paperclip-runnerd` and the remote runners (Daytona and the like).
 
-`AGENTS.md` and `docs/AWESOME-HERMES.md` of this repository set these rules:
+## Updating
 
-1. **No heavy runtime for a small job** (`AGENTS.md`, resource budget, rule 4). The yardstick of
-   `AWESOME-HERMES.md` leaves out "anything that needs Node, Go, Docker or a browser on the box".
-   Paperclip is a Node 24 server.
-2. **No PostgreSQL server for an app** (`AGENTS.md`, "Do not break the machine"). The docs ask for a
-   real PostgreSQL in production. PGX is on this box, but it is "for data you can lose", and I did
-   not check if Paperclip works on it.
-3. **No Docker on the box** (the same yardstick). The official VPS path is a Docker image.
-4. **No resident daemon unless the host needs it** (`AGENTS.md`, resource budget, rule 5).
-   Paperclip adds a server and a database that run all the time.
+The package is the npm release. To move to a new one:
 
-Other open points, not checked:
+1. Download the release's `package.json` (`npm view paperclipai@<version> dist.tarball`).
+2. Put its dependencies in `paperclip/package.json`, without `optionalDependencies`, and add
+   `@img/sharp-linux-x64` and `@img/sharp-libvips-linux-x64` at the versions that `sharp` asks for.
+3. Make the lock with Node.js 24's npm: `npm install --package-lock-only --ignore-scripts`, then
+   again with `--os=darwin --cpu=arm64` (npm leaves `fsevents` out of a lock made on Linux, and
+   `npm ci` then refuses it).
+4. Set `version`, the `src` hash and the `npmDeps` hash in `paperclip/package.nix`, and build
+   `piabrota2`.
 
-- **Credentials.** The docs show `ANTHROPIC_API_KEY` for its agents. This box uses the owner's
-  Claude subscription and no API key. I did not check if Paperclip can use the subscription.
-- **Guardrails.** The deny list is a plugin of the Hermes gateway process. I did not check if a
-  `hermes chat -q` child of Paperclip loads it. If it does not, that child runs with fewer limits than I do.
-- **Nix package.** I did not confirm if nixpkgs has a Paperclip package. A search was too heavy for this box.
+Read the release notes for a change to the configuration schema or the `hermes_gateway` adapter.
 
-## If you still want it
+## Turning it off
 
-1. Run it off this box: a second VPS with at least 2 vCPU and 4 GB, or your computer on Tailscale.
-2. Use the Docker path there, with a hosted or separate PostgreSQL.
-3. Keep Hermes on this box. Paperclip can call it over the `hermes_local` adapter only on the same
-   machine, so the second host needs its own Hermes install.
-4. Measure it first: `systemd-cgtop` or `docker stats` for a day, with two agents at the same time.
-
-## What Hermes already has for the same job
-
-Hermes has profiles, a kanban board, scheduled jobs and subagents on this box, at no extra cost
-([upstream docs](https://hermes-agent.nousresearch.com/docs/user-guide/profiles)). For one owner, these cover most of what Paperclip adds.
-Paperclip adds a UI, budgets for each agent and an org chart.
+`piabrota.paperclip.enable = false;` in `hosts/piabrota2/default.nix`. The data stays in
+`/var/lib/paperclip` and in the `paperclip` database. Remove `API_SERVER_KEY` from Hermes's
+secrets to close its API server.

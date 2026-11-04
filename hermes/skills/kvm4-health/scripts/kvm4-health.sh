@@ -44,7 +44,7 @@ done
 : "${KH_JOURNAL_MIB:=180}"      # journald keeps at most 200 MiB (tools.nix)
 : "${KH_REPEAT_HOURS:=6}"       # --alert repeats the same findings after this many hours
 
-units="hermes-agent hermes-backend pgx"
+units="hermes-agent hermes-backend pgx paperclip postgresql"
 home=${HERMES_HOME:-/var/lib/hermes/.hermes}
 state=$home/plugin-data/kvm4-health
 now=$(date +%s)
