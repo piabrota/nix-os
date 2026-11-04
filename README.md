@@ -118,6 +118,7 @@ just check          # what CI runs: nix flake check, nixpkgs-fmt, statix, deadni
 just deploy         # deploy by hand, as CI does (DEPLOY_HOST=<ip>; a human only)
 just specs          # CPU, RAM, disk, kernel and NixOS generation of this machine
 just remote-specs   # the same, of the VPS, over SSH
+just remote-hermes-check  # Hermes's plugins, skills, omp and yt-dlp are live on the VPS
 just cves           # CVE report of the system closure (vulnix; a report, not a gate)
 just freeze         # every package of the running system with its size, like pip freeze
 just remote-freeze  # the same, of the VPS, over SSH
@@ -159,6 +160,7 @@ with that version.
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
+├── scripts/hermes-check.sh  checks on the box that Hermes's add-ons of the last deploy are live
 ├── drawings/                the pen and the drawing, in Nix, that draw docs/drawings/mu.svg
 ├── mockups/                 three mockups of the piabrota.art homepage, SVG in pure Nix (docs/MOCKUPS.md)
 ├── docs/archify/, docs/img/ the figures' archify sources and PNGs; vendor/archify is the pinned archify

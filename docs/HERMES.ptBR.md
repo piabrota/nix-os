@@ -305,6 +305,11 @@ hermes status
 hermes doctor
 ```
 
+`just remote-hermes-check` (do seu computador, como `h0ffmann`; `scripts/hermes-check.sh`) confere
+de uma vez, só lendo, os complementos do último deploy: a unit e a hora em que subiu, cada plugin
+ligado e habilitado, a skill `hermes-omp`, `omp --version` e `yt-dlp --version`, e erros de plugin
+no journal. Imprime `FAIL` para cada parte que falta e nunca lê os segredos.
+
 O log diz quais plataformas conectaram; "No messaging platforms enabled" quer dizer que o `.env`
 não tem token de plataforma. Dois avisos são esperados: o "Opus codec not found" do adaptador do
 Discord (a voz ficou de fora) e o do plugin da lista de bloqueio, que diz não poder gravar o hash

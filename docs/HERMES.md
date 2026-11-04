@@ -298,6 +298,11 @@ hermes status
 hermes doctor
 ```
 
+`just remote-hermes-check` (from your machine, as `h0ffmann`; `scripts/hermes-check.sh`) checks
+the add-ons of the last deploy in one run, read-only: the unit and when it started, each plugin
+linked and enabled, the `hermes-omp` skill, `omp --version` and `yt-dlp --version`, and plugin
+errors in the journal. It prints `FAIL` for each missing part and never reads the secrets.
+
 The log says which platforms connected; "No messaging platforms enabled" means the `.env` has no
 platform token. Two warnings are expected: the Discord adapter's "Opus codec not found" (voice is
 left out), and the deny-list plugin saying it cannot write its integrity hash next to a file in
