@@ -1,7 +1,8 @@
 # piabrota2: the Hostinger KVM 4 VPS (4 vCPU and 16 GB RAM by Hostinger's plan list; `just remote-specs`
 # gives the real figures), the second host. It runs Hermes: the full Hermes (upstream's `full`
 # package and upstream's defaults), its GitHub App, its web dashboard on hermes.piabrota.art,
-# Paperclip on paperclip.piabrota.art with Hermes as its agent, and PGX. It does not serve www.piabrota.art: that name points at piabrota.
+# Paperclip on paperclip.piabrota.art with Hermes as its agent, and PGX. It does not serve
+# www.piabrota.art: that name points at piabrota.
 #
 # Its setup from an empty VPS is docs/DEPLOY.md, "A second host"; the move of Hermes from piabrota
 # is docs/MIGRATION-KVM4.md. Nothing is cloned or built on the VPS.

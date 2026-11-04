@@ -83,8 +83,9 @@ let
       ${pkgs.coreutils}/bin/env ${lib.escapeShellArgs envArgs} ${lib.getExe pkg} "$@"
   '';
   # Paperclip's own skill for its agents (how to read a task, update it and report), copied from
-  # the release; the category folder names it in Hermes.
-  hermesSkills = pkgs.runCommand "paperclip-hermes-skills" { allowedReferences = [ ]; } ''
+  # the release; the category folder names it in Hermes. Its scripts have store shebangs (bash and
+  # node): these two are all that may stay, so the skill never pulls in the whole package.
+  hermesSkills = pkgs.runCommand "paperclip-hermes-skills" { allowedReferences = [ pkgs.bashNonInteractive pkg.nodejs ]; } ''
     mkdir -p $out/paperclip
     cp -r ${pkg}/${pkg.skills}/paperclip $out/paperclip/paperclip
   '';
@@ -197,8 +198,8 @@ in
         description = "Paperclip, a control plane for AI agents";
         documentation = [ "https://docs.paperclip.ing" ];
         wantedBy = [ "multi-user.target" ];
-        requires = [ "postgresql.service" "paperclip-secrets.service" ];
-        after = [ "network.target" "postgresql.service" "paperclip-secrets.service" ];
+        requires = [ "postgresql.target" "paperclip-secrets.service" ];
+        after = [ "network.target" "postgresql.target" "paperclip-secrets.service" ];
         environment = env;
         # psql and pg_dump for its backups.
         path = [ pg ];
@@ -224,6 +225,9 @@ in
           ProtectHome = true;
           ProtectKernelTunables = true;
           ProtectKernelModules = true;
+          ProtectKernelLogs = true;
+          ProtectProc = "invisible";
+          CapabilityBoundingSet = "";
           ProtectControlGroups = true;
           ProtectClock = true;
           ProtectHostname = true;
@@ -233,6 +237,8 @@ in
           LockPersonality = true;
           RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
           SystemCallArchitectures = "native";
+          SystemCallFilter = [ "@system-service" "~@privileged" ];
+          SystemCallErrorNumber = "EPERM";
         };
       };
 
