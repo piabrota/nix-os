@@ -45,6 +45,7 @@ box (never here, never a value in a PR).
 | Cron | Hermes's own scheduler, inside the gateway: one job at a time, results to the home channel (`/sethome`, see "Discord"), without the header and footer. Dates in `America/Sao_Paulo`. | `settings.cron.max_parallel_jobs = 1`, `settings.cron.wrap_response = false`, `settings.timezone` | none |
 | CLI | `hermes` on the PATH, on the service's own state, for users in the `hermes` group (`h0ffmann`). | `addToSystemPackages`, `users.users.h0ffmann.extraGroups` | none |
 | MCP servers | DeepWiki and Context7, remote, no key; nothing runs on the box for them. | `mcpServers`; `settings.mcp.auto_reload_on_config_change = false` | none |
+| Web dashboard | Upstream's `hermes dashboard`, the unit `hermes-backend`, on 127.0.0.1:9119 only; nginx serves it at `https://hermes.piabrota.art` with TLS and basic auth (`hermes-web.nix`, see "The web dashboard"). | none: `piabrota.hermesWeb` in `hermes-web.nix` | none: the basic-auth file is `/var/lib/hermes-web-secrets/htpasswd` |
 
 With no allowed-users list for a platform, the gateway refuses everyone on it. With no secrets
 file, it starts with no platform and runs only the scheduled jobs.
@@ -311,6 +312,66 @@ the store (the list is read-only on purpose). To check that a deploy took effect
 `systemctl show hermes-agent -p ActiveEnterTimestamp` with the time of the deploy: the unit
 restarts when its inputs change, after the work in flight ends (see "Run settings"), so the time
 can be up to 10 minutes after the deploy.
+
+## The web dashboard
+
+Hermes has its own browser admin panel, `hermes dashboard`: sessions, cron jobs, skills, MCP
+servers, the config, logs and a Chat tab that runs Hermes's TUI in a terminal in the browser. Its
+web app is part of the Hermes package that `hermes.nix` installs, so it adds no download.
+`hermes-web.nix` turns it on with the upstream module's `backend.mode = "dashboard"`:
+
+- **The unit `hermes-backend`**, a second process beside the gateway, with the same user, package
+  and `HERMES_HOME`. It binds to `127.0.0.1:9119`; the firewall never opens that port.
+  `MemoryMax=768M` (the Chat tab runs an agent in this unit) and `CPUWeight=50`.
+- **nginx is the gate**, on `hermes.piabrota.art`: Let's Encrypt (HTTP answers with a redirect),
+  HTTP basic auth against a bcrypt file on the box, at most 10 requests a second per address
+  (burst 60). Upstream's own login stays off: a loopback bind does not start it, and upstream says
+  its username/password provider is for a trusted network only.
+- **What nginx changes on the way.** The backend refuses a `Host` or a WebSocket `Origin` that is
+  not its loopback address (its DNS-rebinding guard), so nginx sends `Host: 127.0.0.1:9119` and no
+  `Origin`, `X-Forwarded-For` or `Authorization`. Before that, nginx refuses (403) any request
+  whose `Origin` is not `https://hermes.piabrota.art`, so another site cannot use the browser's
+  basic-auth login to write.
+- **No secret reaches the browser.** `POST /api/env/reveal` (shows a value of `.env`) is refused,
+  and so is every write to `/api/env`: activation writes `.env` from the secrets file on each
+  deploy, so an edit there is lost anyway. The page still lists the names of the variables, with
+  their values redacted.
+- **Nix owns the config.** A change made in the Config page lasts only until the next deploy
+  writes `config.yaml` again. Change `hermes.nix` in a PR instead.
+
+### Turning it on
+
+Do the two steps below before the PR that turns it on is merged. Without the DNS record the ACME
+order fails on the deploy, and deploy-rs rolls the box back.
+
+1. **DNS.** An `A` record `hermes.piabrota.art` with the box's IPv4 address, the same as
+   `www.piabrota.art` (and an `AAAA` record only if `www` has one). Check it:
+   `dig +short hermes.piabrota.art`.
+2. **The password file.** On the box, make one bcrypt line with a long random password. Keep the
+   password in your password manager; it is not stored anywhere else:
+
+   ```console
+   ssh h0ffmann@piabrota.art
+   sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
+   pw=$(openssl rand -base64 24); echo "$pw"   # copy it to your password manager
+   nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
+     | sudo install -m 640 -o root -g nginx /dev/stdin /var/lib/hermes-web-secrets/htpasswd
+   unset pw
+   ```
+
+   The deploy makes the directory too. Without the file nginx answers every request with a 500,
+   so the dashboard stays closed until the file exists. A change to the file needs no deploy.
+
+Then open `https://hermes.piabrota.art` and log in as `owner`.
+
+### Checking and turning it off
+
+- `systemctl status hermes-backend` and `journalctl -u hermes-backend` on the box.
+- `curl -s -o /dev/null -w '%{http_code}\n' https://hermes.piabrota.art/` gives `401` without
+  the password.
+- **Turn off:** `piabrota.hermesWeb.enable = false` in `configuration.nix`, in a PR.
+- **Move to another host:** set the option on the host that runs Hermes and point the DNS record
+  at that host first.
 
 ## The /hermes page
 

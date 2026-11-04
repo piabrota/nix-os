@@ -45,6 +45,7 @@ de segredos na máquina (nunca aqui, e nunca um valor num PR).
 | Cron | O agendador do próprio Hermes, dentro do gateway: uma tarefa por vez, resultado no canal principal (`/sethome`, veja "Discord"), sem cabeçalho e rodapé. Datas em `America/Sao_Paulo`. | `settings.cron.max_parallel_jobs = 1`, `settings.cron.wrap_response = false`, `settings.timezone` | nada |
 | CLI | `hermes` no PATH, sobre o estado do próprio serviço, para quem está no grupo `hermes` (`h0ffmann`). | `addToSystemPackages`, `users.users.h0ffmann.extraGroups` | nada |
 | Servidores MCP | DeepWiki e Context7, remotos, sem chave; nada roda na máquina por eles. | `mcpServers`; `settings.mcp.auto_reload_on_config_change = false` | nada |
+| Painel web | O `hermes dashboard` do upstream, a unidade `hermes-backend`, só em 127.0.0.1:9119; o nginx o serve em `https://hermes.piabrota.art` com TLS e basic auth (`hermes-web.nix`, veja "O painel web"). | nada: `piabrota.hermesWeb` no `hermes-web.nix` | nada: o arquivo do basic auth é `/var/lib/hermes-web-secrets/htpasswd` |
 
 Sem a lista de usuários permitidos de uma plataforma, o gateway recusa todos nela. Sem o arquivo
 de segredos, ele sobe sem plataforma e roda só as tarefas agendadas.
@@ -318,6 +319,66 @@ de integridade ao lado de um arquivo da store (a lista é somente leitura de pro
 se um deploy valeu, compare `systemctl show hermes-agent -p ActiveEnterTimestamp` com a hora do
 deploy: a unit reinicia quando suas entradas mudam, depois que o trabalho em andamento termina
 (veja "Ajustes de execução"), então a hora pode vir até 10 minutos depois do deploy.
+
+## O painel web
+
+O Hermes tem o próprio painel de administração no navegador, o `hermes dashboard`: sessões,
+tarefas de cron, skills, servidores MCP, a configuração, os logs e uma aba Chat que roda a TUI do
+Hermes num terminal no navegador. O app web faz parte do pacote do Hermes que o `hermes.nix`
+instala, então não acrescenta download. O `hermes-web.nix` o liga com o `backend.mode = "dashboard"`
+do módulo do upstream:
+
+- **A unidade `hermes-backend`**, um segundo processo ao lado do gateway, com o mesmo usuário,
+  pacote e `HERMES_HOME`. Ela escuta em `127.0.0.1:9119`; o firewall nunca abre essa porta.
+  `MemoryMax=768M` (a aba Chat roda um agente nessa unidade) e `CPUWeight=50`.
+- **O nginx é o portão**, em `hermes.piabrota.art`: Let's Encrypt (HTTP responde com
+  redirecionamento), basic auth do HTTP contra um arquivo bcrypt na máquina, no máximo 10
+  requisições por segundo por endereço (rajada de 60). O login do próprio upstream fica desligado:
+  escutar em loopback não o liga, e o upstream diz que o provedor de usuário e senha dele é só para
+  rede confiável.
+- **O que o nginx muda no caminho.** O backend recusa um `Host` ou um `Origin` de WebSocket que não
+  seja o endereço de loopback dele (a proteção contra DNS rebinding), então o nginx manda
+  `Host: 127.0.0.1:9119` e nenhum `Origin`, `X-Forwarded-For` ou `Authorization`. Antes disso, o
+  nginx recusa (403) toda requisição cujo `Origin` não seja `https://hermes.piabrota.art`, para que
+  outro site não use o login de basic auth do navegador para escrever.
+- **Nenhum segredo chega ao navegador.** `POST /api/env/reveal` (mostra um valor do `.env`) é
+  recusado, e toda escrita em `/api/env` também: a ativação escreve o `.env` a partir do arquivo de
+  segredos em cada deploy, então uma edição ali se perde de todo jeito. A página ainda lista os
+  nomes das variáveis, com os valores ocultos.
+- **O Nix é dono da configuração.** Uma mudança feita na página Config dura só até o próximo
+  deploy escrever o `config.yaml` de novo. Mude o `hermes.nix` num PR.
+
+### Ligar
+
+Faça os dois passos abaixo antes do merge do PR que o liga. Sem o registro de DNS, o pedido ACME
+falha no deploy, e o deploy-rs volta a máquina para a versão anterior.
+
+1. **DNS.** Um registro `A` `hermes.piabrota.art` com o IPv4 da máquina, o mesmo de
+   `www.piabrota.art` (e um `AAAA` só se o `www` tiver um). Confira: `dig +short hermes.piabrota.art`.
+2. **O arquivo de senha.** Na máquina, gere uma linha bcrypt com uma senha longa e aleatória.
+   Guarde a senha no seu gerenciador de senhas; ela não fica guardada em nenhum outro lugar:
+
+   ```console
+   ssh h0ffmann@piabrota.art
+   sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
+   pw=$(openssl rand -base64 24); echo "$pw"   # copie para o gerenciador de senhas
+   nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
+     | sudo install -m 640 -o root -g nginx /dev/stdin /var/lib/hermes-web-secrets/htpasswd
+   unset pw
+   ```
+
+   O deploy também cria o diretório. Sem o arquivo, o nginx responde 500 a toda requisição, então
+   o painel fica fechado até o arquivo existir. Mudar o arquivo não precisa de deploy.
+
+Depois abra `https://hermes.piabrota.art` e entre como `owner`.
+
+### Conferir e desligar
+
+- `systemctl status hermes-backend` e `journalctl -u hermes-backend` na máquina.
+- `curl -s -o /dev/null -w '%{http_code}\n' https://hermes.piabrota.art/` dá `401` sem a senha.
+- **Desligar:** `piabrota.hermesWeb.enable = false` no `configuration.nix`, num PR.
+- **Levar para outra máquina:** ligue a opção na máquina que roda o Hermes e aponte o registro de
+  DNS para ela antes.
 
 ## A página /hermes
 
