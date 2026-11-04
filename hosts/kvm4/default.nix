@@ -18,6 +18,14 @@
   # Replace with the name Hostinger gave the VPS (see piabrota's file for why it must match).
   networking.hostName = "kvm4";
 
+  # Far above what Hermes used on piabrota (1G and CPUWeight 50), so a runaway task cannot starve
+  # sshd and make a deploy roll back: half the RAM, and half the CPU share of other units when the
+  # four cores are busy. The dashboard has its own 2G (hermes-web.nix).
+  systemd.services.hermes-agent.serviceConfig = {
+    MemoryMax = "8G";
+    CPUWeight = 50;
+  };
+
   piabrota.hermesWeb.enable = true;
   piabrota.pgx.enable = true;
 }

@@ -20,11 +20,11 @@ What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](A
 | | |
 |---|---|
 | Mode | Native: a systemd service on the host, with the module's sandbox (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Not container mode, which would need Docker or Podman. |
-| Host | kvm4 (KVM 4), the second VPS, since the move from piabrota (KVM 1) in [MIGRATION-KVM4.md](MIGRATION-KVM4.md). `hermes.nix` sets what does not depend on the machine and leaves the rest at upstream's defaults: the `full` package, 10 subagents at a time, 128 cached agents, no limit on parallel cron jobs, 4 kernels, 128 MiB media, no `MemoryMax`. |
+| Host | kvm4 (KVM 4), the second VPS, since the move from piabrota (KVM 1) in [MIGRATION-KVM4.md](MIGRATION-KVM4.md). `hermes.nix` sets what does not depend on the machine and leaves the rest at upstream's defaults: the `full` package, 10 subagents at a time, 128 cached agents, no limit on parallel cron jobs, 4 kernels, 128 MiB media. `hosts/kvm4` caps the gateway at `MemoryMax=8G` and `CPUWeight=50`. |
 | Package | The flake's default, `full`, about 700 MB more (voice, Bedrock, Modal and the like). It adds the extras `anthropic` (Anthropic's SDK), `messaging` (Telegram, Discord, Slack), `mcp` and `ddgs`. |
 | Model | `claude-sonnet-5-5` through the `anthropic` provider, with `claude-haiku-4-5` for subagents and three cheap side tasks (see "Run settings"), on the owner's subscription: `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`), as piabrota/agents does. No API key. |
 | Secrets | `/var/lib/hermes-secrets/hermes.env`, written by hand on the box, readable by root only. Never in the repository or the store. |
-| Limits | None on the gateway (16 GB). The dashboard's unit has `MemoryMax=2G` ("The web dashboard"). |
+| Limits | `MemoryMax=8G` (half of 16 GB) and `CPUWeight=50` (half the share of other units) on the gateway, so sshd and a deploy keep room. The dashboard's unit has `MemoryMax=2G` ("The web dashboard"). |
 | State | `/var/lib/hermes` (`HERMES_HOME` is `/var/lib/hermes/.hermes`): the configuration, the memory, the sessions and the `.env`. |
 | CLI | `hermes` on the PATH (`addToSystemPackages`), on the service's own state; `h0ffmann` is in the `hermes` group. |
 
@@ -177,7 +177,7 @@ the diff, and then commits, pushes and opens the pull request itself. omp never 
   installs, no `sudo`, no `curl` or `wget`, no reads of the secrets or the environment. The
   folders of Hermes's state, the secrets, `~/.ssh` and `gh`'s config are restricted, which in print
   mode means refused.
-- **Memory.** omp runs in Hermes's cgroup (`MemoryMax=1G`). LSP, the Python and JS kernels, the
+- **Memory.** omp runs in Hermes's cgroup (`MemoryMax=8G`). LSP, the Python and JS kernels, the
   memory backend, the advisor and the browser are off. The wrapper starts omp with
   `choom -n 500`, so the kernel's OOM killer stops omp before the gateway.
 - **Models.** Sonnet (`claude-sonnet-5-5`) for the work and Haiku (`claude-haiku-4-5`) for omp's

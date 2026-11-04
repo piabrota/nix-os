@@ -20,11 +20,11 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 | | |
 |---|---|
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
-| Host | kvm4 (KVM 4), a segunda VPS, desde a mudança do piabrota (KVM 1) no [MIGRATION-KVM4.md](MIGRATION-KVM4.md). O `hermes.nix` define o que não depende da máquina e deixa o resto nos padrões do upstream: o pacote `full`, 10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB, sem `MemoryMax`. |
+| Host | kvm4 (KVM 4), a segunda VPS, desde a mudança do piabrota (KVM 1) no [MIGRATION-KVM4.md](MIGRATION-KVM4.md). O `hermes.nix` define o que não depende da máquina e deixa o resto nos padrões do upstream: o pacote `full`, 10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB. O `hosts/kvm4` limita o gateway a `MemoryMax=8G` e `CPUWeight=50`. |
 | Pacote | O padrão do flake, `full`, uns 700 MB a mais (voz, Bedrock, Modal e afins). Ele soma os extras `anthropic` (o SDK da Anthropic), `messaging` (Telegram, Discord, Slack), `mcp` e `ddgs`. |
 | Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-4-5` para subagentes e três tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
-| Limites | Nenhum no gateway (16 GB). A unidade do painel tem `MemoryMax=2G` ("O painel web"). |
+| Limites | `MemoryMax=8G` (metade de 16 GB) e `CPUWeight=50` (metade da fatia das outras unidades) no gateway, para o sshd e um deploy terem espaço. A unidade do painel tem `MemoryMax=2G` ("O painel web"). |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
 | CLI | `hermes` no PATH (`addToSystemPackages`), sobre o mesmo estado do serviço; o `h0ffmann` está no grupo `hermes`. |
 
@@ -181,7 +181,7 @@ trabalho, lê o diff e então ele mesmo faz o commit, o push e o pull request. O
   `git push`, sem `gh`, sem instalações, sem `sudo`, sem `curl` ou `wget`, sem leitura dos segredos
   ou do ambiente. As pastas do estado do Hermes, dos segredos, o `~/.ssh` e a configuração do `gh`
   são restritas, o que no modo print quer dizer recusadas.
-- **Memória.** O omp roda no cgroup do Hermes (`MemoryMax=1G`). O LSP, os kernels de Python e JS,
+- **Memória.** O omp roda no cgroup do Hermes (`MemoryMax=8G`). O LSP, os kernels de Python e JS,
   o backend de memória, o advisor e o navegador estão desligados. O wrapper inicia o omp com
   `choom -n 500`, então o OOM killer do kernel para o omp antes do gateway.
 - **Modelos.** O Sonnet (`claude-sonnet-5-5`) para o trabalho e o Haiku (`claude-haiku-4-5`) para
