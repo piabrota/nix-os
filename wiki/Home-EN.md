@@ -3,8 +3,8 @@
 [Português](Home)
 
 The NixOS configuration of two live VPSs, both Hostinger KVM guests. `piabrota` (the KVM 1 plan:
-1 vCPU, 4 GB RAM, a 50 GB disk) serves the public web. `kvm4` (the KVM 4 plan) runs Hermes Agent,
-its dashboard and PGX. Measured on `kvm4` on 2026-11-04: 4 vCPU, 15.6 GiB RAM, a 196.8 GiB disk
+1 vCPU, 4 GB RAM, a 50 GB disk) serves the public web. `piabrota2` (the KVM 4 plan) runs Hermes Agent,
+its dashboard and PGX. Measured on `piabrota2` on 2026-11-04: 4 vCPU, 15.6 GiB RAM, a 196.8 GiB disk
 (6 % used) and 7.8 GiB of swap; at rest, `hermes-agent` uses about 0.4 GiB, `hermes-backend` about
 0.55 GiB and `pgx` about 0.1 GiB. Everything goes through GitHub: a pull request runs the CI
 checks, and a merge to `main` builds and deploys each system.

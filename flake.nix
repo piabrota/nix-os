@@ -56,26 +56,34 @@
       };
     in
     {
-      # piabrota: KVM 1, the public web. kvm4: KVM 4, the full Hermes and its dashboard.
-      # A new host is a directory in hosts/, a line here and one in deploy.yml's matrix.
+      # piabrota: KVM 1, the public web. piabrota2: KVM 4, the full Hermes and its dashboard.
+      # One name for one VPS: the VPS name in hPanel = hosts/<name>/ = nixosConfigurations.<name>
+      # = deploy.nodes.<name>. A new host is a directory in hosts/, a line here and one in the
+      # address map of deploy.yml and freeze.yml.
       nixosConfigurations = {
-        # The /hermes page on piabrota's site shows the Hermes that kvm4 runs.
+        # The /hermes page on piabrota's site shows the Hermes that piabrota2 runs.
         piabrota = mkHost "piabrota" [{
-          piabrota.site.hermes = self.nixosConfigurations.kvm4.config.piabrota.site.hermes;
+          piabrota.site.hermes = self.nixosConfigurations.piabrota2.config.piabrota.site.hermes;
         }];
-        kvm4 = mkHost "kvm4" [ ];
+        piabrota2 = mkHost "piabrota2" [ ];
       };
 
-      deploy.nodes = {
-        piabrota = mkNode "piabrota" "piabrota.art";
-        # hermes.piabrota.art points at kvm4 (docs/MIGRATION-KVM4.md); CI still passes its address
-        # (the secret DEPLOY_HOST_KVM4).
-        kvm4 = mkNode "kvm4" "hermes.piabrota.art";
-      };
+      deploy.nodes =
+        let
+          nodes = {
+            piabrota = mkNode "piabrota" "piabrota.art";
+            # hermes.piabrota.art points at piabrota2 (docs/MIGRATION-KVM4.md); CI still passes its
+            # address (the secret DEPLOY_HOST_KVM4).
+            piabrota2 = mkNode "piabrota2" "hermes.piabrota.art";
+          };
+        in
+        # `kvm4` is a temporary alias: .github/workflows/deploy.yml and freeze.yml still name the
+        # node `kvm4`. Remove it in the pull request that renames the node in those workflows.
+        nodes // { kvm4 = nodes.piabrota2; };
 
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
-        toplevel-kvm4 = self.nixosConfigurations.kvm4.config.system.build.toplevel;
+        toplevel-piabrota2 = self.nixosConfigurations.piabrota2.config.system.build.toplevel;
         # The drawing's tests pass and the committed files are its output (`just drawing`).
         drawing = pkgs.runCommand "mu-art-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") drawing.failures}
@@ -95,7 +103,7 @@
         # The dashboard bundle still holds the docs address that hermes-web.nix swaps for
         # piabrota's page. If an upstream bump renames it, the swap does nothing and this fails.
         hermes-docs-url =
-          let pkg = self.nixosConfigurations.kvm4.config.services.hermes-agent.package;
+          let pkg = self.nixosConfigurations.piabrota2.config.services.hermes-agent.package;
           in pkgs.runCommand "hermes-docs-url-check" { nativeBuildInputs = [ pkgs.jq ]; } ''
             web=$(jq -r '.env.HERMES_WEB_DIST' ${pkg}/command-map.json)
             grep -RqF --include='*.js' '`https://hermes-agent.nousresearch.com/docs/`' "$web" || {
@@ -124,8 +132,8 @@
           modules = [
             ./hosts/piabrota
             {
-              # As in nixosConfigurations.piabrota: without kvm4's facts the site's /hermes test fails.
-              piabrota.site.hermes = self.nixosConfigurations.kvm4.config.piabrota.site.hermes;
+              # As in nixosConfigurations.piabrota: without piabrota2's facts the site's /hermes test fails.
+              piabrota.site.hermes = self.nixosConfigurations.piabrota2.config.piabrota.site.hermes;
               piabrota.loco.apps.example = {
                 package = pkgs.runCommand "example-loco" { } ''
                   mkdir -p $out/bin $out/share/example/config

@@ -81,7 +81,7 @@ let
     extras = cfg.extraDependencyGroups;
     state = cfg.stateDir;
     working_directory = cfg.workingDirectory;
-    # systemd's defaults when the host sets no limit (kvm4).
+    # systemd's defaults when the host sets no limit (piabrota2).
     memory_max = unit.MemoryMax or "infinity";
     cpu_weight = unit.CPUWeight or 100;
     plugins = map name cfg.extraPlugins;

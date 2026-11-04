@@ -3,7 +3,7 @@
 [Português](Hermes)
 
 [Hermes Agent](https://github.com/NousResearch/hermes-agent), Nous Research's agent, runs on
-`kvm4` (the KVM 4 VPS) as piabrota-hermes: it answers on Telegram and Discord, runs its own
+`piabrota2` (the KVM 4 VPS) as piabrota-hermes: it answers on Telegram and Discord, runs its own
 scheduled jobs and, when the owner asks, opens pull requests. This page is a map of how it runs and
 how it is configured, as of [#72](https://github.com/piabrota/nix-os/pull/72) and
 [#74](https://github.com/piabrota/nix-os/pull/74). The full guide is
@@ -23,7 +23,7 @@ reads them from the evaluated system, so the page changes with every merge that 
 |---|---|
 | Unit | `hermes-agent`, a systemd service from the NixOS module of Hermes's flake (the input `hermes-agent`, pinned in `flake.lock`). Native mode, not a container. |
 | Version | The release v0.22.7 (commit `b200f5b`, 2026-11-03), pinned in `flake.lock`. |
-| Host | `kvm4`, the KVM 4 VPS (`hosts/kvm4/default.nix`). |
+| Host | `piabrota2`, the KVM 4 VPS (`hosts/piabrota2/default.nix`). |
 | Package | `full`, the default of Hermes's flake, plus the extras `anthropic`, `messaging`, `mcp` and `ddgs`. |
 | Limits | `MemoryMax=8G` (half the RAM) and `CPUWeight=50`: when the four cores are busy, sshd and the other units get twice Hermes's CPU share. |
 | Dashboard | `hermes.piabrota.art`, behind nginx, with TLS and basic auth. Unit `hermes-backend`, `MemoryMax=2G` (`hermes-web.nix`). |

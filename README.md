@@ -19,7 +19,7 @@
 
 - nix-os is the NixOS configuration of two live Hostinger VPSs, one flake with a system per host
   in `hosts/`: **KVM 1** (`piabrota`) serves the public web, [piabrota.art](https://piabrota.art);
-  **KVM 4** (`kvm4`) runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) and its
+  **KVM 4** (`piabrota2`) runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) and its
   dashboard. [www.piabrota.art/hosts](https://www.piabrota.art/hosts) shows who does what.
 - Every change goes through GitHub. A merge to `main` builds both systems and deploys each one.
   The GitHub runner builds, [deploy-rs](https://github.com/serokell/deploy-rs)
@@ -47,7 +47,7 @@
 
 **Not shown.** PGX on KVM 4, the ACME certificates, the secrets on each box, and the deploy by hand.
 
-**Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/kvm4/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
+**Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
 
 </details>
 
@@ -167,7 +167,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
 ├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
 ├── hosts/piabrota/          KVM 1: the public web only
-├── hosts/kvm4/              KVM 4: the full Hermes, its GitHub App and dashboard, PGX (docs/DEPLOY.md)
+├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, PGX (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
@@ -245,6 +245,8 @@ $ nix flake show
         ├───mu-art: package 'mu-art'
         └───site: package 'piabrota-site-1.0.0'
 ```
+
+This block was taken before the rename of `kvm4` to `piabrota2`: the host, its system and its check now carry the new name.
 
 ## Credits
 

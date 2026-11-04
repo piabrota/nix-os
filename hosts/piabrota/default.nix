@@ -1,6 +1,6 @@
 # piabrota: the Hostinger KVM 1 VPS (1 vCPU, 4 GB RAM, 50 GB disk), the first host. It serves the
 # public web (www.piabrota.art and the Loco apps on it), and nothing else: Hermes and PGX run on
-# kvm4 (docs/MIGRATION-KVM4.md).
+# piabrota2 (docs/MIGRATION-KVM4.md).
 { ... }:
 {
   imports = [

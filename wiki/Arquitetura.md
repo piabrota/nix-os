@@ -6,7 +6,7 @@
 
 | Arquivo | O que faz |
 |---|---|
-| `flake.nix` | Um sistema por máquina, `nixosConfigurations.piabrota` e `.kvm4` (nixos-26.05, de `hosts/<nome>/`), um nó do deploy-rs para cada uma e os `checks` do CI. |
+| `flake.nix` | Um sistema por máquina, `nixosConfigurations.piabrota` e `.piabrota2` (nixos-26.05, de `hosts/<nome>/`), um nó do deploy-rs para cada uma e os `checks` do CI. |
 | `configuration.nix` | O que as duas máquinas dividem: a base da Hostinger (GRUB em `/dev/sda`, cloud-init, o agente QEMU, SSH). Importa os módulos abaixo. |
 | `piabrota.nix` | O usuário `h0ffmann` (só chave SSH) e os pacotes base. |
 | `tools.nix` | Ferramentas de linha de comando leves e os limites de disco e memória. |
@@ -44,7 +44,7 @@ geração nova, e o GRUB guarda as cinco últimas.
 
 **Fora da figura.** O PGX na KVM 4, os certificados ACME, os segredos em cada máquina e o deploy à mão.
 
-**Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/kvm4/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
+**Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
 
 </details>
 

@@ -16,14 +16,14 @@ receitas: `just`.
 
 ## As duas máquinas
 
-A `piabrota` (KVM 1) serve a web pública. A `kvm4` (KVM 4) roda o Hermes, o painel dele e o PGX.
+A `piabrota` (KVM 1) serve a web pública. A `piabrota2` (KVM 4) roda o Hermes, o painel dele e o PGX.
 As receitas `just remote-*` leem `DEPLOY_HOST` e, sem ele, usam `piabrota.art`, a máquina
-`piabrota`. Para a `kvm4`, ponha o endereço dela em `DEPLOY_HOST`:
+`piabrota`. Para a `piabrota2`, ponha o endereço dela em `DEPLOY_HOST`:
 
 ```console
-DEPLOY_HOST=<endereço da kvm4> just remote-specs         # CPU, RAM, disco e geração
-DEPLOY_HOST=<endereço da kvm4> just remote-health        # memória, MemoryPeak contra MemoryMax, disco e CPU, com as unidades do Hermes
-DEPLOY_HOST=<endereço da kvm4> just remote-hermes-check  # os add-ons do Hermes do último deploy estão ativos
+DEPLOY_HOST=<endereço da piabrota2> just remote-specs         # CPU, RAM, disco e geração
+DEPLOY_HOST=<endereço da piabrota2> just remote-health        # memória, MemoryPeak contra MemoryMax, disco e CPU, com as unidades do Hermes
+DEPLOY_HOST=<endereço da piabrota2> just remote-hermes-check  # os add-ons do Hermes do último deploy estão ativos
 ```
 
 O `remote-health` roda o script da skill `kvm4-health`, o mesmo relatório que o Hermes lê com o
@@ -44,7 +44,7 @@ a não ser no primeiro deploy ([`docs/DEPLOY.md`](https://github.com/piabrota/ni
 ## O site em www.piabrota.art
 
 O site está ligado. Os dois nomes, `piabrota.art` e `www`, precisam apontar para a VPS `piabrota`
-(KVM 1); o `hermes.piabrota.art` aponta para a `kvm4`. Os passos do DNS estão em
+(KVM 1); o `hermes.piabrota.art` aponta para a `piabrota2`. Os passos do DNS estão em
 [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md).
 
 ## Adicionar um app
