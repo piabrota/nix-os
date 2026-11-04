@@ -3,7 +3,8 @@
 # runs its own cron jobs. Its NixOS module comes from the flake input `hermes-agent`; this file only
 # chooses. State in /var/lib/hermes. See docs/HERMES.md.
 # Every host gets this file. It sets what does not depend on the machine and leaves the rest at
-# upstream's defaults: the full Hermes. A small host cuts it in its own file (hosts/piabrota/hermes.nix).
+# upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
+# KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to kvm4).
 { config, lib, pkgs, hermes-agent, ... }:
 let
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
@@ -210,7 +211,7 @@ in
   services.hermes-agent = {
     enable = true;
     # The flake's default, `full`: every portable extra (voice, Bedrock, Modal and the like).
-    # KVM 1 takes `minimal` instead (hosts/piabrota/hermes.nix).
+    # A small host can take `minimal` instead.
     package = lib.mkDefault hermes-agent.packages.x86_64-linux.default;
     # The extras every host uses, added to the package's own: Anthropic's SDK and the chat platforms
     # (Telegram, Discord, Slack), already in `full`; mcp, the MCP client, without which mcpServers
@@ -255,7 +256,7 @@ in
       model = "claude-haiku-4-5";
       fallback_providers = [ ];
       # Shallow fan-out, for the subscription's quota. How many children run at once depends on
-      # the machine: upstream's 10, or KVM 1's 2 (hosts/piabrota/hermes.nix).
+      # the machine: upstream's 10 on kvm4.
       max_iterations = 50;
       max_spawn_depth = 1;
     };

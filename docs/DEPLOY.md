@@ -147,14 +147,14 @@ repository stays on GitHub (and on your machine), and the VPS only receives the 
      the commands).
    After it, `ssh deploy@<ip>` works, and every merge to `main` deploys kvm4 too.
 7. **Hermes's secrets.** Write `/var/lib/hermes-secrets/hermes.env` (and `github-app.env` for
-   the GitHub App) on the VPS, as docs/HERMES.md says. While piabrota still runs Hermes, use other
-   chat bot tokens: two gateways on one Telegram token both fail. Hermes starts with no platform
-   until the file exists, so step 6 does not wait on it.
+   the GitHub App) on the VPS, as docs/HERMES.md says. Copy them from piabrota at the cutover
+   (MIGRATION-KVM4.md): two gateways on one Telegram token both fail. Hermes starts with no
+   platform until the file exists, so step 6 does not wait on it.
 
-When kvm4 runs everything piabrota should hand over, a pull request takes `../../hermes.nix`,
-`./hermes.nix`, `../../hermes-github.nix` and `piabrota.pgx.enable` out of
-`hosts/piabrota/default.nix`. Copy `/var/lib/hermes` (memory, sessions) to kvm4 first if you
-want to keep them. piabrota then serves the public web only.
+Hermes, its GitHub App, its dashboard and PGX moved from piabrota to kvm4; piabrota serves the
+public web only. [MIGRATION-KVM4.md](MIGRATION-KVM4.md) is the checklist of that move: kvm4's
+first deploy before the merge, the cutover of the state and the secrets, and what is left on
+piabrota.
 
 ## Every day
 

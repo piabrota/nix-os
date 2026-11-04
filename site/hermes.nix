@@ -81,8 +81,9 @@ let
     extras = cfg.extraDependencyGroups;
     state = cfg.stateDir;
     working_directory = cfg.workingDirectory;
-    memory_max = unit.MemoryMax;
-    cpu_weight = unit.CPUWeight;
+    # systemd's defaults when the host sets no limit (kvm4).
+    memory_max = unit.MemoryMax or "infinity";
+    cpu_weight = unit.CPUWeight or 100;
     plugins = map name cfg.extraPlugins;
     packages = map (p: "${name p}${version p}") cfg.extraPackages;
     files = lib.attrNames cfg.hermesHomeFiles ++ lib.attrNames cfg.documents;
@@ -103,7 +104,7 @@ text // {
     { label = "unit"; value = service.unit; }
     { label = "model"; value = cfg.settings.model.default or ""; }
     { label = "subagents"; value = cfg.settings.delegation.model or ""; }
-    { label = "memory"; value = "${toString unit.MemoryMax} max"; }
+    { label = "memory"; value = "${toString service.memory_max} max"; }
     { label = "upstream"; value = "${short} · ${service.upstream.date}"; }
   ];
   upstream = "https://github.com/NousResearch/hermes-agent/commit/${lock.rev}";

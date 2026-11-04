@@ -48,11 +48,8 @@ in
       mode = "dashboard";
       host = "127.0.0.1";
     };
-    # Its own budget, beside the gateway's 1G: the dashboard's Chat tab runs an agent in this unit.
-    systemd.services.hermes-backend.serviceConfig = {
-      MemoryMax = lib.mkDefault "768M";
-      CPUWeight = lib.mkDefault 50;
-    };
+    # A cap of its own, so a runaway Chat tab (it runs an agent in this unit) cannot take the box.
+    systemd.services.hermes-backend.serviceConfig.MemoryMax = lib.mkDefault "2G";
 
     systemd.tmpfiles.rules = [ "d /var/lib/hermes-web-secrets 0750 root nginx -" ];
 

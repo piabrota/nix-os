@@ -20,11 +20,11 @@ What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](A
 | | |
 |---|---|
 | Mode | Native: a systemd service on the host, with the module's sandbox (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Not container mode, which would need Docker or Podman. |
-| Hosts | The same `hermes.nix` on every host that imports it. It sets what does not depend on the machine and leaves the rest at upstream's defaults. On piabrota (KVM 1), `hosts/piabrota/hermes.nix` cuts it for 1 vCPU and 4 GB (the limits in this table). On kvm4 (KVM 4), nothing cuts it: the `full` package, upstream's defaults (10 subagents at a time, 128 cached agents, no limit on parallel cron jobs, 4 kernels, 128 MiB media) and no `MemoryMax`. While both run Hermes, each needs its own chat bot tokens. |
-| Package | piabrota: `minimal`. kvm4: the flake's default, `full`, about 700 MB more (voice, Bedrock, Modal and the like). Both add the extras `anthropic` (Anthropic's SDK), `messaging` (Telegram, Discord, Slack), `mcp` and `ddgs`. |
+| Host | kvm4 (KVM 4), the second VPS, since the move from piabrota (KVM 1) in [MIGRATION-KVM4.md](MIGRATION-KVM4.md). `hermes.nix` sets what does not depend on the machine and leaves the rest at upstream's defaults: the `full` package, 10 subagents at a time, 128 cached agents, no limit on parallel cron jobs, 4 kernels, 128 MiB media, no `MemoryMax`. |
+| Package | The flake's default, `full`, about 700 MB more (voice, Bedrock, Modal and the like). It adds the extras `anthropic` (Anthropic's SDK), `messaging` (Telegram, Discord, Slack), `mcp` and `ddgs`. |
 | Model | `claude-sonnet-5-5` through the `anthropic` provider, with `claude-haiku-4-5` for subagents and three cheap side tasks (see "Run settings"), on the owner's subscription: `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`), as piabrota/agents does. No API key. |
 | Secrets | `/var/lib/hermes-secrets/hermes.env`, written by hand on the box, readable by root only. Never in the repository or the store. |
-| Limits | piabrota: `MemoryMax=1G` (a quarter of the RAM) and `CPUWeight=50`: sshd, nginx and the apps get the CPU first. kvm4: none. |
+| Limits | None on the gateway (16 GB). The dashboard's unit has `MemoryMax=2G` ("The web dashboard"). |
 | State | `/var/lib/hermes` (`HERMES_HOME` is `/var/lib/hermes/.hermes`): the configuration, the memory, the sessions and the `.env`. |
 | CLI | `hermes` on the PATH (`addToSystemPackages`), on the service's own state; `h0ffmann` is in the `hermes` group. |
 
@@ -205,7 +205,7 @@ starts with no platform, running only the scheduled jobs. A deploy never fails b
 3. On the box, write the file (paste the lines and end with Ctrl-D):
 
    ```console
-   ssh h0ffmann@piabrota.art
+   ssh h0ffmann@hermes.piabrota.art
    sudo install -m 600 /dev/stdin /var/lib/hermes-secrets/hermes.env
    CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
    TELEGRAM_BOT_TOKEN=123456:ABC...
@@ -322,7 +322,7 @@ web app is part of the Hermes package that `hermes.nix` installs, so it adds no 
 
 - **The unit `hermes-backend`**, a second process beside the gateway, with the same user, package
   and `HERMES_HOME`. It binds to `127.0.0.1:9119`; the firewall never opens that port.
-  `MemoryMax=768M` (the Chat tab runs an agent in this unit) and `CPUWeight=50`.
+  `MemoryMax=2G`, since the Chat tab runs an agent in this unit.
 - **nginx is the gate**, on `hermes.piabrota.art`: Let's Encrypt (HTTP answers with a redirect),
   HTTP basic auth against a bcrypt file on the box, at most 10 requests a second per address
   (burst 60). Upstream's own login stays off: a loopback bind does not start it, and upstream says
@@ -344,14 +344,14 @@ web app is part of the Hermes package that `hermes.nix` installs, so it adds no 
 Do the two steps below before the PR that turns it on is merged. Without the DNS record the ACME
 order fails on the deploy, and deploy-rs rolls the box back.
 
-1. **DNS.** An `A` record `hermes.piabrota.art` with the box's IPv4 address, the same as
-   `www.piabrota.art` (and an `AAAA` record only if `www` has one). Check it:
+1. **DNS.** An `A` record `hermes.piabrota.art` with KVM 4's IPv4 address (an `AAAA`
+   record only if KVM 4 has IPv6). Check it:
    `dig +short hermes.piabrota.art`.
 2. **The password file.** On the box, make one bcrypt line with a long random password. Keep the
    password in your password manager; it is not stored anywhere else:
 
    ```console
-   ssh h0ffmann@piabrota.art
+   ssh h0ffmann@hermes.piabrota.art
    sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
    pw=$(openssl rand -base64 24); echo "$pw"   # copy it to your password manager
    nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
@@ -369,7 +369,7 @@ Then open `https://hermes.piabrota.art` and log in as `owner`.
 - `systemctl status hermes-backend` and `journalctl -u hermes-backend` on the box.
 - `curl -s -o /dev/null -w '%{http_code}\n' https://hermes.piabrota.art/` gives `401` without
   the password.
-- **Turn off:** `piabrota.hermesWeb.enable = false` in `configuration.nix`, in a PR.
+- **Turn off:** `piabrota.hermesWeb.enable = false` in `hosts/kvm4/default.nix`, in a PR.
 - **Move to another host:** set the option on the host that runs Hermes and point the DNS record
   at that host first.
 

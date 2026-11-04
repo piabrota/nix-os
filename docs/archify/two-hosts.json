@@ -1,0 +1,182 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Two hosts: KVM 1 serves the public web, KVM 4 runs Hermes",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "two-hosts.html"
+  },
+  "lanes": [
+    {
+      "id": "people",
+      "label": "People"
+    },
+    {
+      "id": "dns",
+      "label": "Porkbun DNS"
+    },
+    {
+      "id": "kvm1",
+      "label": "VPS 1 · KVM 1 (piabrota)"
+    },
+    {
+      "id": "kvm4",
+      "label": "VPS 2 · KVM 4 (kvm4)"
+    },
+    {
+      "id": "gh",
+      "label": "GitHub"
+    }
+  ],
+  "mainPath": [
+    "browser",
+    "records",
+    "www"
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "lane": "people",
+      "col": 0,
+      "type": "external",
+      "label": "a browser",
+      "sublabel": "https only on hermes",
+      "width": 170
+    },
+    {
+      "id": "chats",
+      "lane": "people",
+      "col": 2,
+      "type": "external",
+      "label": "Telegram, Discord",
+      "sublabel": "the owner's chats",
+      "width": 170
+    },
+    {
+      "id": "records",
+      "lane": "dns",
+      "col": 1,
+      "type": "backend",
+      "label": "A records",
+      "sublabel": "one name, one host",
+      "width": 170
+    },
+    {
+      "id": "www",
+      "lane": "kvm1",
+      "col": 2,
+      "type": "frontend",
+      "label": "www.piabrota.art",
+      "sublabel": "the site, /hermes, /hosts",
+      "width": 170
+    },
+    {
+      "id": "apps",
+      "lane": "kvm1",
+      "col": 3,
+      "type": "backend",
+      "label": "/notes",
+      "sublabel": "Loco app, SQLite",
+      "width": 170
+    },
+    {
+      "id": "dash",
+      "lane": "kvm4",
+      "col": 2,
+      "type": "frontend",
+      "label": "hermes.piabrota.art",
+      "sublabel": "dashboard, basic auth",
+      "width": 170
+    },
+    {
+      "id": "gateway",
+      "lane": "kvm4",
+      "col": 3,
+      "type": "backend",
+      "label": "hermes-agent",
+      "sublabel": "gateway, cron, omp",
+      "width": 170
+    },
+    {
+      "id": "deploy",
+      "lane": "gh",
+      "col": 1,
+      "type": "backend",
+      "label": "deploy.yml",
+      "sublabel": "builds both, deploys each",
+      "width": 170
+    },
+    {
+      "id": "github",
+      "lane": "gh",
+      "col": 3,
+      "type": "external",
+      "label": "piabrota-hermes[bot]",
+      "sublabel": "pull requests only",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "browser",
+      "to": "records",
+      "label": "resolve"
+    },
+    {
+      "id": "e2",
+      "from": "records",
+      "to": "www",
+      "label": "KVM 1"
+    },
+    {
+      "id": "e3",
+      "from": "records",
+      "to": "dash",
+      "label": "KVM 4",
+      "role": "branch"
+    },
+    {
+      "id": "e4",
+      "from": "www",
+      "to": "apps",
+      "label": "a path"
+    },
+    {
+      "id": "e5",
+      "from": "chats",
+      "to": "gateway",
+      "label": "polling"
+    },
+    {
+      "id": "e6",
+      "from": "dash",
+      "to": "gateway",
+      "label": "same state"
+    },
+    {
+      "id": "e7",
+      "from": "gateway",
+      "to": "github",
+      "label": "hermes/*"
+    },
+    {
+      "id": "e8",
+      "from": "deploy",
+      "to": "www",
+      "label": "merge",
+      "role": "branch"
+    },
+    {
+      "id": "e9",
+      "from": "deploy",
+      "to": "dash",
+      "label": "merge",
+      "role": "branch"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 # The site, prerendered: Gleam and Lustre (src/) run once on the builder and write the three pages
-# (A at index.html, B at index/, C at paths/, and Hermes's configuration at hermes/); the output is those pages, static/ and the 无
+# (A at index.html, B at index/, C at paths/, Hermes's configuration at hermes/, the two hosts at hosts/); the output is those pages, static/ and the 无
 # drawing, nothing else. The facts come from ../mockups/data.nix, written as Gleam by data.nix. allowedReferences = [ ] fails the build if the
 # output names any store path, so gleam, node and the hex packages never reach the VPS closure.
 { lib, stdenvNoCC, fetchurl, gleam, nodejs, measurementId ? "", hermes ? null }:
@@ -46,7 +46,7 @@ stdenvNoCC.mkDerivation {
   buildPhase = ''
     runHook preBuild
     gleam format --check src test
-    mkdir -p dist/index dist/paths dist/pt-BR dist/zh-CN dist/ja-JP dist/hermes
+    mkdir -p dist/index dist/paths dist/pt-BR dist/zh-CN dist/ja-JP dist/hermes dist/hosts
     gleam run -m piabrota_site/render/fabric --no-print-progress > dist/index.html
     gleam run -m piabrota_site/render/index --no-print-progress > dist/index/index.html
     gleam run -m piabrota_site/render/paths --no-print-progress > dist/paths/index.html
@@ -54,6 +54,7 @@ stdenvNoCC.mkDerivation {
     gleam run -m piabrota_site/render/fabric_zh_cn --no-print-progress > dist/zh-CN/index.html
     gleam run -m piabrota_site/render/fabric_ja_jp --no-print-progress > dist/ja-JP/index.html
     gleam run -m piabrota_site/render/hermes --no-print-progress > dist/hermes/index.html
+    gleam run -m piabrota_site/render/hosts --no-print-progress > dist/hosts/index.html
     runHook postBuild
   '';
 
@@ -69,6 +70,7 @@ stdenvNoCC.mkDerivation {
     cp -R dist $out
     cp -R static/. $out/
     cp ${../docs/drawings/mu.svg} $out/mu.svg
+    cp ${../docs/img/two-hosts.png} $out/hosts/two-hosts.png
     runHook postInstall
   '';
 

@@ -23,10 +23,10 @@
       mockups = import ./mockups { inherit (nixpkgs) lib; mu = drawing.svg; };
       # One system per directory of hosts/ (docs/DEPLOY.md, "A second host"): configuration.nix
       # plus what is the host's own.
-      mkHost = name: nixpkgs.lib.nixosSystem {
+      mkHost = name: extraModules: nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = { inherit hermes-agent; };
-        modules = [ ./hosts/${name} ];
+        modules = [ ./hosts/${name} ] ++ extraModules;
       };
       # deploy-rs: CI builds the closure, copies it over SSH and activates it. If the box
       # cannot be reached over SSH after activation, it rolls back by itself (magicRollback).
@@ -56,17 +56,21 @@
       };
     in
     {
-      # piabrota: KVM 1, the public web, Hermes with KVM 1's limits. kvm4: KVM 4, the full Hermes.
+      # piabrota: KVM 1, the public web. kvm4: KVM 4, the full Hermes and its dashboard.
       # A new host is a directory in hosts/, a line here and one in deploy.yml's matrix.
       nixosConfigurations = {
-        piabrota = mkHost "piabrota";
-        kvm4 = mkHost "kvm4";
+        # The /hermes page on piabrota's site shows the Hermes that kvm4 runs.
+        piabrota = mkHost "piabrota" [{
+          piabrota.site.hermes = self.nixosConfigurations.kvm4.config.piabrota.site.hermes;
+        }];
+        kvm4 = mkHost "kvm4" [ ];
       };
 
       deploy.nodes = {
         piabrota = mkNode "piabrota" "piabrota.art";
-        # No name in DNS yet: CI always passes its address (the secret DEPLOY_HOST_KVM4).
-        kvm4 = mkNode "kvm4" "kvm4.invalid";
+        # hermes.piabrota.art points at kvm4 (docs/MIGRATION-KVM4.md); CI still passes its address
+        # (the secret DEPLOY_HOST_KVM4).
+        kvm4 = mkNode "kvm4" "hermes.piabrota.art";
       };
 
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
