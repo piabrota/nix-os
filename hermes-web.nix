@@ -72,6 +72,7 @@ in
         basicAuthFile = cfg.htpasswdFile;
         extraConfig = ''
           limit_req zone=hermes_web burst=60 nodelay;
+          limit_req_status 429;
           add_header X-Frame-Options DENY always;
           add_header Referrer-Policy no-referrer always;
           if ($hermes_web_foreign_origin) { return 403; }
