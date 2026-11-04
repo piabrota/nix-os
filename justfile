@@ -154,3 +154,7 @@ remote-hermes-check user="h0ffmann":
 # the health of the VPS and its Hermes units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only)
 remote-health user="h0ffmann":
     ssh {{user}}@{{host}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh
+
+# smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
+video-dummy:
+    sh video-lab/dummy/run.sh
