@@ -12,6 +12,8 @@
     ./deploy.nix
     # A read-only account for debugging from a coding agent's session (keys/observer.pub).
     ./observer.nix
+    # The same, plus a short list of actions through sudo (keys/operator.pub, docs/OPERATOR.md).
+    ./operator.nix
     ./loco.nix
     ./site.nix
     # A Postgres-compatible database (docs/PGX.md), off until a host turns it on.
