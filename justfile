@@ -24,6 +24,14 @@ check:
 hermes-plugins-test:
     cd hermes/plugins/tests && python3 -m unittest -v test_plugins
 
+# unit tests of the personal feed (hermes/feeds/), offline, with the local python3
+feeds-test:
+    cd hermes/feeds/tests && python3 -m unittest -v test_build_feed
+
+# build the personal feed from the real sources into a temporary folder; writes no state (needs network)
+feeds-build:
+    python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out "$(mktemp -d)" --dry-run
+
 # CVE report of the system closure (vulnix against the NVD; a report, many matches are false)
 cves: build
     nix run --inputs-from . nixpkgs#vulnix -- --closure ./result || [ $? -eq 2 ]
