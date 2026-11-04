@@ -176,6 +176,7 @@ with that version.
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
 ├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
+├── hermes-web/docs/         the page the dashboard's Documentation tab shows
 ├── kubesolo-purge.nix       a oneshot that clears what KubeSolo left on the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)

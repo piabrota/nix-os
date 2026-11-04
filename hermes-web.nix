@@ -15,6 +15,11 @@ let
   # A page on another site cannot use the owner's basic-auth session to write: any Origin but the
   # dashboard's own is refused before the backend sees it.
   origin = "https://${cfg.domain}";
+  # The Documentation tab frames this address and its button opens it (web/src/pages/DocsPage.tsx
+  # upstream). The address is a literal in the built bundle, so nginx swaps it on the way;
+  # checks.hermes-docs-url fails when an upstream bump renames it.
+  upstreamDocs = "https://hermes-agent.nousresearch.com/docs/";
+  docsPath = "/piabrota-docs/";
 in
 {
   options.piabrota.hermesWeb = {
@@ -32,6 +37,14 @@ in
         The basic-auth users, one `name:bcrypt-hash` line each (`htpasswd -B`), written by hand on
         the box: mode 0640, owner root, group nginx. Without it every request gets a 500, so the
         dashboard stays closed until the file exists.
+      '';
+    };
+    docs = mkOption {
+      type = types.path;
+      default = ./hermes-web/docs;
+      description = ''
+        A directory with an index.html that the Documentation tab shows in place of upstream's
+        docs, served at ${docsPath} behind the same basic auth.
       '';
     };
   };
@@ -94,6 +107,11 @@ in
               proxy_set_header Origin "";
               proxy_set_header X-Forwarded-For "";
               proxy_set_header Authorization "";
+              # sub_filter needs the body uncompressed.
+              proxy_set_header Accept-Encoding "";
+              sub_filter_types application/javascript text/javascript;
+              sub_filter_once off;
+              sub_filter '"${upstreamDocs}"' '"${docsPath}"';
               proxy_read_timeout 1h;
               proxy_send_timeout 1h;
               client_max_body_size 32m;
@@ -103,6 +121,18 @@ in
           # box. Edits to .env are refused too, since activation writes it from the env file on
           # every deploy (hermes.nix).
           "= /api/env/reveal".return = "403";
+          ${docsPath} = {
+            alias = "${cfg.docs}/";
+            index = "index.html";
+            # SAMEORIGIN only here: the Documentation tab frames this page. An add_header in a
+            # location drops the server's, so all four are repeated.
+            extraConfig = ''
+              add_header X-Frame-Options SAMEORIGIN always;
+              add_header Referrer-Policy no-referrer always;
+              add_header X-Content-Type-Options nosniff always;
+              add_header Strict-Transport-Security "max-age=31536000" always;
+            '';
+          };
           "/api/env" = {
             proxyPass = "http://${backend}";
             recommendedProxySettings = false;
