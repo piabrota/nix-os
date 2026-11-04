@@ -1,5 +1,5 @@
 {
-  description = "NixOS configuration of the piabrota Hostinger VPS, deployed from GitHub";
+  description = "NixOS configuration of the piabrota Hostinger VPSs, deployed from GitHub";
 
   inputs = {
     # stateVersion is 26.05, so follow the matching stable channel.
@@ -21,6 +21,30 @@
       pkgs = nixpkgs.legacyPackages.${system};
       drawing = import ./drawings { inherit (nixpkgs) lib; };
       mockups = import ./mockups { inherit (nixpkgs) lib; mu = drawing.svg; };
+      # One system per directory of hosts/ (docs/DEPLOY.md, "A second host"): configuration.nix
+      # plus what is the host's own.
+      mkHost = name: extraModules: nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = { inherit hermes-agent; };
+        modules = [ ./hosts/${name} ] ++ extraModules;
+      };
+      # deploy-rs: CI builds the closure, copies it over SSH and activates it. If the box
+      # cannot be reached over SSH after activation, it rolls back by itself (magicRollback).
+      # CI passes the real address with --hostname (a secret per host); `hostname` is only the
+      # default.
+      mkNode = name: hostname: {
+        inherit hostname;
+        sshUser = "deploy";
+        user = "root";
+        # The VPS pulls what cache.nixos.org has instead of the runner uploading it.
+        fastConnection = false;
+        remoteBuild = false;
+        magicRollback = true;
+        autoRollback = true;
+        confirmTimeout = 60;
+        profiles.system.path =
+          deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.${name};
+      };
       # deploy-rs's lib with nixpkgs' deploy-rs binary, which cache.nixos.org has, so CI does
       # not compile it (the overlay the deploy-rs README gives for this).
       deployPkgs = import nixpkgs {
@@ -32,31 +56,26 @@
       };
     in
     {
-      nixosConfigurations.piabrota = nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = { inherit hermes-agent; };
-        modules = [ ./configuration.nix ];
+      # piabrota: KVM 1, the public web. kvm4: KVM 4, the full Hermes and its dashboard.
+      # A new host is a directory in hosts/, a line here and one in deploy.yml's matrix.
+      nixosConfigurations = {
+        # The /hermes page on piabrota's site shows the Hermes that kvm4 runs.
+        piabrota = mkHost "piabrota" [{
+          piabrota.site.hermes = self.nixosConfigurations.kvm4.config.piabrota.site.hermes;
+        }];
+        kvm4 = mkHost "kvm4" [ ];
       };
 
-      # deploy-rs: CI builds the closure, copies it over SSH and activates it. If the box
-      # cannot be reached over SSH after activation, it rolls back by itself (magicRollback).
-      deploy.nodes.piabrota = {
-        # CI passes the real address with --hostname; this is only the default.
-        hostname = "piabrota.art";
-        sshUser = "deploy";
-        user = "root";
-        # The VPS pulls what cache.nixos.org has instead of the runner uploading it.
-        fastConnection = false;
-        remoteBuild = false;
-        magicRollback = true;
-        autoRollback = true;
-        confirmTimeout = 60;
-        profiles.system.path =
-          deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.piabrota;
+      deploy.nodes = {
+        piabrota = mkNode "piabrota" "piabrota.art";
+        # hermes.piabrota.art points at kvm4 (docs/MIGRATION-KVM4.md); CI still passes its address
+        # (the secret DEPLOY_HOST_KVM4).
+        kvm4 = mkNode "kvm4" "hermes.piabrota.art";
       };
 
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
+        toplevel-kvm4 = self.nixosConfigurations.kvm4.config.system.build.toplevel;
         # The drawing's tests pass and the committed files are its output (`just drawing`).
         drawing = pkgs.runCommand "mu-art-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") drawing.failures}
@@ -89,7 +108,7 @@
           inherit system;
           specialArgs = { inherit hermes-agent; };
           modules = [
-            ./configuration.nix
+            ./hosts/piabrota
             {
               piabrota.loco.apps.example = {
                 package = pkgs.runCommand "example-loco" { } ''

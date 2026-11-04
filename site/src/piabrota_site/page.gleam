@@ -6,6 +6,7 @@ import lustre/element/html
 import piabrota_site/data
 import piabrota_site/fabric as fabric_page
 import piabrota_site/hermes as hermes_page
+import piabrota_site/hosts as hosts_page
 import piabrota_site/i18n
 import piabrota_site/index as index_page
 import piabrota_site/paths as paths_page
@@ -33,6 +34,11 @@ pub fn paths() -> String {
 /// Hermes's configuration at /hermes/.
 pub fn hermes() -> String {
   document("hermes", "en", "piabrota · hermes", hermes_page.view())
+}
+
+/// What each of the two VPSs runs, at /hosts/.
+pub fn hosts() -> String {
+  document("hosts", "en", "piabrota · hosts", hosts_page.view())
 }
 
 /// `design` names the body's class in style.css. The fonts are the sister sites' (picasso,

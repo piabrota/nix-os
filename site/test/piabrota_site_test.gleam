@@ -165,6 +165,16 @@ pub fn hermes_page_test() {
   assert string.contains(page.fabric(), "href=\"/hermes\"")
 }
 
+// /hosts shows the figure and both hosts, and /hermes links to it.
+pub fn hosts_page_test() {
+  let html = page.hosts()
+  assert string.contains(html, "<body class=\"hosts\">")
+  assert string.contains(html, "src=\"/hosts/two-hosts.png\"")
+  assert string.contains(html, "VPS 1 · KVM 1")
+  assert string.contains(html, "VPS 2 · KVM 4")
+  assert string.contains(page.hermes(), "href=\"/hosts\"")
+}
+
 // No secret reaches the page: not the env file, not a token's name. (A store path cannot: the
 // build has allowedReferences = [ ].)
 pub fn hermes_no_secret_test() {

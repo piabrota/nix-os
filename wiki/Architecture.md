@@ -33,6 +33,21 @@ new generation, and GRUB keeps the last five.
 
 ## The figures
 
+![Two hosts: Porkbun DNS sends www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /hosts and the /notes Loco app, and hermes.piabrota.art to VPS 2 (KVM 4), where the dashboard behind basic auth shares its state with the hermes-agent gateway; the owner's Telegram and Discord chats reach the gateway by polling, and it opens pull requests on hermes/* branches as piabrota-hermes[bot]; deploy.yml builds both systems and deploys each on a merge.](img/two-hosts.png)
+
+<details open>
+<summary>How to read this figure</summary>
+
+**Takeaway.** KVM 1 serves the public web and nothing else; everything Hermes is on KVM 4.
+
+**How to read.** Top to bottom, one lane per place: people, DNS, each VPS, GitHub. Arrows say where a request or a deploy goes; the red border marks what is outside the two boxes.
+
+**Not shown.** PGX on KVM 4, the ACME certificates, the secrets on each box, and the deploy by hand.
+
+**Evidence.** [`docs/archify/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/kvm4/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
+
+</details>
+
 ![How nix-os works: a pull request runs ci.yml on every push; a merge to main runs deploy.yml, which builds the system on the GitHub runner; deploy-rs copies the closure to the VPS over SSH and switches it, the VPS fetching store paths from cache.nixos.org; if SSH falls silent for 60 s, magic rollback restores the old system; after the switch, freeze.yml lists the VPS's packages, and cves.yml reports vulnix on the same push.](img/how-nix-os-works.png)
 
 <details open>

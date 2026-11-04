@@ -2,6 +2,9 @@
 # `hermes-agent`: its messaging gateway, which answers on the chat platforms whose tokens it has and
 # runs its own cron jobs. Its NixOS module comes from the flake input `hermes-agent`; this file only
 # chooses. State in /var/lib/hermes. See docs/HERMES.md.
+# Every host gets this file. It sets what does not depend on the machine and leaves the rest at
+# upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
+# KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to kvm4).
 { config, lib, pkgs, hermes-agent, ... }:
 let
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
@@ -180,8 +183,8 @@ let
   # docs/HERMES.md, "omp"). Hermes's deny list and tripwire see only the outer `omp` command, so omp
   # gets its own rules: hermes/omp.yml, a read-only config overlay. This wrapper is the only omp on
   # Hermes's PATH. omp reads ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the
-  # same subscription. omp runs in Hermes's cgroup (1 GB): choom makes the kernel's OOM killer
-  # pick omp before the gateway.
+  # same subscription. omp runs in Hermes's cgroup: choom makes the kernel's OOM killer pick omp
+  # before the gateway.
   ompWrapped = pkgs.writeShellApplication {
     name = "omp";
     text = ''
@@ -207,11 +210,12 @@ in
 
   services.hermes-agent = {
     enable = true;
-    # The smallest build, plus the two extras this box uses: Anthropic's SDK and the chat
-    # platforms (Telegram, Discord, Slack). The flake's default, `full`, adds about 700 MB more
-    # (voice, Bedrock, Modal and the like).
-    package = hermes-agent.packages.x86_64-linux.minimal;
-    # mcp: the MCP client, without which mcpServers below do nothing. ddgs: DuckDuckGo search.
+    # The flake's default, `full`: every portable extra (voice, Bedrock, Modal and the like).
+    # A small host can take `minimal` instead.
+    package = lib.mkDefault hermes-agent.packages.x86_64-linux.default;
+    # The extras every host uses, added to the package's own: Anthropic's SDK and the chat platforms
+    # (Telegram, Discord, Slack), already in `full`; mcp, the MCP client, without which mcpServers
+    # below do nothing; ddgs, DuckDuckGo search.
     extraDependencyGroups = [ "anthropic" "messaging" "mcp" "ddgs" ];
     # Claude through the owner's subscription: CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`) in the
     # env file below, as piabrota/agents does. Never a key here: settings land in the store.
@@ -251,8 +255,8 @@ in
       provider = "anthropic";
       model = "claude-haiku-4-5";
       fallback_providers = [ ];
-      # Small and shallow fan-out, for one vCPU and the subscription's quota.
-      max_concurrent_children = 2;
+      # Shallow fan-out, for the subscription's quota. How many children run at once depends on
+      # the machine: upstream's 10 on kvm4.
       max_iterations = 50;
       max_spawn_depth = 1;
     };
@@ -268,9 +272,10 @@ in
     settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" "public-holidays" ]
       ++ builtins.attrNames (labs // more) ++ ownPlugins;
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
-    # Limits from the list's operational playbooks, for one vCPU, 1 GB and a subscription's quota
-    # (the fan-out limits are in settings.delegation above): fewer turns per run, a hard stop on
-    # tool loops, and no update checks or shared metrics (Nix owns updates; nothing goes to Nous).
+    # Limits from the list's operational playbooks, for a subscription's quota (the fan-out limits
+    # are in settings.delegation above): fewer turns per run, a hard stop on tool loops, and no
+    # update checks or shared metrics (Nix owns updates; nothing goes to Nous). The machine's
+    # limits (memory, CPU, parallel work) are per host.
     settings.agent.max_turns = 60;
     # How long a reload (reloadTriggers, below) waits for work in flight before it stops the
     # gateway anyway. The default, 30 min, keeps Hermes deaf to new messages for too long after a
@@ -284,12 +289,6 @@ in
     # MCP servers do not reload (and drop the cache) on a config change, which only a deploy makes.
     settings.prompt_caching.cache_ttl = "auto";
     settings.mcp.auto_reload_on_config_change = false;
-    # Memory, for 1 vCPU and 1 GB: fewer cached agents, one cron job at a time, one code kernel,
-    # and media read into RAM capped at 20 MiB.
-    settings.agent.agent_cache.max_size = 16;
-    settings.cron.max_parallel_jobs = 1;
-    settings.code_execution.max_session_kernels = 1;
-    settings.gateway.max_inbound_media_bytes = 20 * 1024 * 1024;
     # Disk: prune sessions older than 45 days, then vacuum state.db.
     settings.sessions = {
       auto_prune = true;
@@ -302,9 +301,6 @@ in
     settings.security.allow_lazy_installs = false;
     settings.model_catalog.enabled = false;
     environment.HERMES_TELEGRAM_DISABLE_FALLBACK_IPS = "true";
-    # Discord (the token and the allowed user ID are in the env file): attachments are held in RAM
-    # while they download, so the same 20 MiB cap as Telegram's media, not Discord's 32 MiB.
-    environment.DISCORD_MAX_ATTACHMENT_BYTES = toString (20 * 1024 * 1024);
     # Telegram: 👀 and ✅ reactions instead of "still working" messages (no tokens), and cron
     # results without the header and footer.
     settings.telegram.reactions = true;
@@ -347,8 +343,6 @@ in
   # Reads the system journal for its daily VPS check (hermes/AGENTS.md), as the observer account does.
   users.users.hermes.extraGroups = [ "systemd-journal" ];
 
-  # The box has one vCPU and 4 GB: Hermes gets at most a quarter of the memory and yields the CPU
-  # to sshd, nginx and the apps.
   # Activation rewrites config.yaml, .env, SOUL.md, AGENTS.md and the plugin links, but the unit
   # itself does not change, so a deploy left the old process running with the old config
   # (2026-11-03). Reload it when any of them changes. A reload sends SIGUSR1: the gateway takes no
@@ -400,7 +394,5 @@ in
       ''
     );
     ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
-    MemoryMax = lib.mkDefault "1G";
-    CPUWeight = lib.mkDefault 50;
   };
 }

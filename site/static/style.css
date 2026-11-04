@@ -189,6 +189,11 @@ span.where { color: var(--muted); }
 /* /hermes: the configuration as YAML, in the terminal of design C. */
 .terminal pre.yaml { margin: 0; padding: 16px 20px; overflow-x: auto; color: var(--text); font: inherit; white-space: pre; tab-size: 2; }
 .hermes-facts dd { font: 400 1.05rem/1.3 var(--mono); }
+/* /hosts: the figure and one card per host. */
+.hosts-figure { margin: 0; }
+.hosts-figure img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: 12px; }
+.hosts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.hosts-grid ul { margin: 8px 0 0; padding-left: 18px; }
 .caduceus { display: block; font: 400 160px/1 var(--display); color: var(--accent-text); text-align: center; }
 
 /* The foot. */

@@ -4,7 +4,7 @@
 
 # nix-os
 
-<sub>无 · <i>mu</i> · the piabrota VPS · <a href="#in-one-minute">in one minute</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
+<sub>无 · <i>mu</i> · the piabrota VPSs · <a href="#in-one-minute">in one minute</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
 
 [![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
 [![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
@@ -16,16 +16,16 @@
 
 ## In one minute
 
-- nix-os is the NixOS configuration of one small, live VPS: a Hostinger KVM guest that serves
-  [piabrota.art/nixos](https://piabrota.art/nixos). It is a flake with one system,
-  `nixosConfigurations.piabrota`.
-- Every change goes through GitHub. A pull request builds the whole system in CI; a merge to
-  `main` deploys it. The GitHub runner builds, [deploy-rs](https://github.com/serokell/deploy-rs)
+- nix-os is the NixOS configuration of two live Hostinger VPSs, one flake with a system per host
+  in `hosts/`: **KVM 1** (`piabrota`) serves the public web, [piabrota.art](https://piabrota.art);
+  **KVM 4** (`kvm4`) runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) and its
+  dashboard. [www.piabrota.art/hosts](https://www.piabrota.art/hosts) shows who does what.
+- Every change goes through GitHub. A merge to `main` builds both systems and deploys each one.
+  The GitHub runner builds, [deploy-rs](https://github.com/serokell/deploy-rs)
   copies the result over SSH and switches the VPS, and the VPS rolls back by itself if SSH stops
   answering. The VPS compiles nothing. [`docs/DEPLOY.md`](docs/DEPLOY.md) has the one-time setup.
-- The machine is small: Hostinger's **KVM 1** plan, with 1 vCPU core, 4 GB RAM, a 50 GB disk
-  and 4 TB of bandwidth a month (hPanel, 2026-10-29). Every change is judged by what it adds to
-  the closure and to memory ([`AGENTS.md`](AGENTS.md), "Resource budget").
+- KVM 1 is small (1 vCPU, 4 GB RAM, 50 GB disk); KVM 4 has 4 vCPU and 16 GB. Every change is
+  judged by what it adds to the closure and to memory ([`AGENTS.md`](AGENTS.md), "Resource budget").
 - It is ready to host [Loco](https://loco.rs) apps (Rust and SQLite) behind nginx with HTTPS:
   declare an app and the merge deploys it ([`docs/LOCO.md`](docs/LOCO.md)). Until then it adds
   nothing to the system.
@@ -33,6 +33,21 @@
   from [Gabriel Volpe's `nix-config`](https://github.com/gvolpe/nix-config).
 
 ## How it works
+
+![Two hosts: Porkbun DNS sends www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /hosts and the /notes Loco app, and hermes.piabrota.art to VPS 2 (KVM 4), where the dashboard behind basic auth shares its state with the hermes-agent gateway; the owner's Telegram and Discord chats reach the gateway by polling, and it opens pull requests on hermes/* branches as piabrota-hermes[bot]; deploy.yml builds both systems and deploys each on a merge.](docs/img/two-hosts.png)
+
+<details open>
+<summary>How to read this figure</summary>
+
+**Takeaway.** KVM 1 serves the public web and nothing else; everything Hermes is on KVM 4.
+
+**How to read.** Top to bottom, one lane per place: people, DNS, each VPS, GitHub. Arrows say where a request or a deploy goes; the red border marks what is outside the two boxes.
+
+**Not shown.** PGX on KVM 4, the ACME certificates, the secrets on each box, and the deploy by hand.
+
+**Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/kvm4/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
+
+</details>
 
 ![How nix-os works: a pull request runs ci.yml on every push; a merge to main runs deploy.yml, which builds the system on the GitHub runner; deploy-rs copies the closure to the VPS over SSH and switches it, the VPS fetching store paths from cache.nixos.org; if SSH falls silent for 60 s, magic rollback restores the old system; after the switch, freeze.yml lists the VPS's packages, and cves.yml reports vulnix on the same push.](docs/img/how-nix-os-works.png)
 
@@ -64,7 +79,7 @@
 
 </details>
 
-`just figure` draws both again with the pinned [archify](https://github.com/tt-a1i/archify)
+`just figure` draws them again with the pinned [archify](https://github.com/tt-a1i/archify)
 (`vendor/archify`), the same way as piabrota/pirsig and piabrota/gramatico; `just figure-check` says
 whether a PNG is stale. The `figure` skill (`.claude/skills/figure/`) has the rules.
 
@@ -97,14 +112,15 @@ apart:
 KubeSolo ran here from 2026-10-30 to 2026-11-02 and was then removed; `kubesolo-purge.nix`
 clears what it left on the box, once. Git history has its module and its doc.
 
-[Hermes Agent](https://github.com/NousResearch/hermes-agent), Nous Research's agent, runs here as a
-NixOS service (`hermes.nix`), on Claude through the owner's subscription, and answers on the chat
-platforms it has tokens for: how it is set up, its secrets on the box, and how to check it:
+[Hermes Agent](https://github.com/NousResearch/hermes-agent), Nous Research's agent, runs on KVM 4 as a
+NixOS service (`hermes.nix`), on Claude through the owner's subscription, with its web dashboard at
+hermes.piabrota.art (`hermes-web.nix`). How it is set up, its secrets, and how to check it (the move
+from KVM 1 is [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md)):
 
 - [`docs/HERMES.ptBR.md`](docs/HERMES.ptBR.md), em português
 - [`docs/HERMES.md`](docs/HERMES.md), in English
 
-PGX, a Postgres-compatible engine in one process, runs here for the next workload that needs
+PGX, a Postgres-compatible engine in one process, runs on KVM 4 for the next workload that needs
 Postgres, instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its cost and its limits:
 
 - [`docs/PGX.ptBR.md`](docs/PGX.ptBR.md), em português
@@ -118,7 +134,7 @@ just check          # what CI runs: nix flake check, nixpkgs-fmt, statix, deadni
 just deploy         # deploy by hand, as CI does (DEPLOY_HOST=<ip>; a human only)
 just specs          # CPU, RAM, disk, kernel and NixOS generation of this machine
 just remote-specs   # the same, of the VPS, over SSH
-just remote-hermes-check  # Hermes's plugins, skills, omp and yt-dlp are live on the VPS
+just remote-hermes-check  # Hermes's add-ons are live on KVM 4 (DEPLOY_HOST=<its address>)
 just cves           # CVE report of the system closure (vulnix; a report, not a gate)
 just freeze         # every package of the running system with its size, like pip freeze
 just remote-freeze  # the same, of the VPS, over SSH
@@ -146,8 +162,10 @@ with that version.
 
 ```
 .
-├── flake.nix, flake.lock    the system, the deploy-rs node, the checks
-├── configuration.nix        the Hostinger KVM base: boot, disk, cloud-init, guest agent, SSH
+├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
+├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
+├── hosts/piabrota/          KVM 1: the public web only
+├── hosts/kvm4/              KVM 4: the full Hermes, its GitHub App and dashboard, PGX (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
@@ -156,6 +174,8 @@ with that version.
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
+├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
+├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── kubesolo-purge.nix       a oneshot that clears what KubeSolo left on the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
@@ -164,7 +184,8 @@ with that version.
 ├── drawings/                the pen and the drawing, in Nix, that draw docs/drawings/mu.svg
 ├── mockups/                 three mockups of the piabrota.art homepage, SVG in pure Nix (docs/MOCKUPS.md)
 ├── docs/archify/, docs/img/ the figures' archify sources and PNGs; vendor/archify is the pinned archify
-├── docs/DEPLOY.md           how a merge reaches the VPS, and the one-time setup
+├── docs/DEPLOY.md           how a merge reaches the VPSs, and the one-time setup
+├── docs/MIGRATION-KVM4.md   the checklist that moves Hermes from KVM 1 to KVM 4
 ├── docs/LOCO.md             how to add a Loco app
 ├── docs/SITE.md             how to turn the static site on
 ├── docs/MOCKUPS.ptBR.md     the homepage mockups, in Portuguese
@@ -202,7 +223,8 @@ $ nix flake show
 │       ├───drawing: derivation 'mu-art-check'
 │       ├───loco-example: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
 │       ├───mockups: derivation 'mockups-check'
-│       └───toplevel: derivation 'nixos-system-nixos-26.05.20261028.08d3a97'
+│       ├───toplevel: derivation 'nixos-system-srv2108887-26.05.20261101.9bb5222'
+│       └───toplevel-kvm4: derivation 'nixos-system-kvm4-26.05.20261101.9bb5222'
 ├───deploy: unknown
 ├───devShells
 │   └───x86_64-linux
@@ -211,6 +233,7 @@ $ nix flake show
 ├───formatter
 │   └───x86_64-linux: package 'nixpkgs-fmt-1.3.0'
 ├───nixosConfigurations
+│   ├───kvm4: NixOS configuration
 │   └───piabrota: NixOS configuration
 └───packages
     └───x86_64-linux

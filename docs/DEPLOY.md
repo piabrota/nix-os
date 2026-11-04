@@ -2,7 +2,8 @@
 
 Every change to the VPS goes through GitHub. A push to `main` runs `.github/workflows/deploy.yml`:
 
-1. The GitHub runner builds the whole system (`nixosConfigurations.piabrota`). The VPS builds
+1. The GitHub runner builds the whole system of each host (`nixosConfigurations.piabrota`,
+   `nixosConfigurations.kvm4`; see "A second host"). The VPS builds
    nothing, so its small CPU, RAM and disk are not used for compiles. The build job saves the
    system's closure to GitHub's Actions cache under the commit's key. The deploy job restores that
    cache and does not build again, and the next merge builds only what changed.
@@ -110,6 +111,50 @@ This builds on your machine, copies to the VPS and activates, with the same roll
 After either one, `ssh deploy@<ip>` works with the key of step 1. From then on, every merge to
 `main` deploys by itself, and you can start a deploy again from the **Actions** tab
 (`deploy`, **Run workflow**, SSH user `deploy`).
+
+## A second host
+
+The repository deploys two hosts: `piabrota` (KVM 1) and `kvm4` (KVM 4). Each is a directory in
+`hosts/` that imports `configuration.nix` (what both share) and the roles it runs. Every merge
+builds both systems in one job and deploys each in its own job. A host that has no address secret
+is skipped with a notice, so `piabrota` keeps deploying while `kvm4` is being set up.
+
+To bring `kvm4` up from a new, empty VPS, once. Nothing is cloned or built on the VPS: the
+repository stays on GitHub (and on your machine), and the VPS only receives the built system.
+
+1. **hPanel, the OS.** Install the NixOS template on the KVM 4 VPS (**VPS > OS & Panel >
+   Operating System**, as in docs/FORK.md), with your SSH public key. `configuration.nix`'s boot
+   and disk settings are that template's. Take a snapshot (**Snapshots & Backups**), so you can
+   go back to a clean system.
+2. **The VPS, a look.** Log in with the account the template set up for your key (`root` or
+   `h0ffmann`). Note the hostname (`hostname`, srvNNNNNNN), print the host key
+   (`cat /etc/ssh/ssh_host_ed25519_key.pub`) and look at `/etc/nixos/`. If its
+   `hardware-configuration.nix` names another disk or label than `/dev/sda` and `nixos`, add it
+   to `hosts/kvm4/` and import it.
+3. **The repository.** In a pull request, set `networking.hostName` in `hosts/kvm4/default.nix`
+   to that hostname. Merge it; kvm4 is still skipped, because it has no address secret yet.
+4. **GitHub.** In the `prod` environment, add the secret `DEPLOY_HOST_KVM4` (the IPv4 address
+   from **VPS > Overview**), and add the line `<ip> ssh-ed25519 AAAA...` to `DEPLOY_KNOWN_HOSTS`,
+   under piabrota's line. `DEPLOY_SSH_KEY` stays the same: `keys/deploy.pub` is on both hosts.
+5. **hPanel, the firewall.** Open TCP port 22 from any address, as in step 4 above.
+6. **The first deploy**, before the `deploy` user exists on the VPS, in one of two ways:
+   - From your machine, with Nix, in a clone of this repository:
+     `DEPLOY_HOST=<ip> just deploy root kvm4` (or `h0ffmann` instead of `root`, whichever
+     account step 2 used).
+   - From GitHub, if the account is `h0ffmann`: add the line of `keys/deploy.pub` to
+     `~h0ffmann/.ssh/authorized_keys` on the VPS, run **Actions > deploy > Run workflow** with
+     **Host** `kvm4` and **SSH user** `h0ffmann`, then remove the line again (step 5 above shows
+     the commands).
+   After it, `ssh deploy@<ip>` works, and every merge to `main` deploys kvm4 too.
+7. **Hermes's secrets.** Write `/var/lib/hermes-secrets/hermes.env` (and `github-app.env` for
+   the GitHub App) on the VPS, as docs/HERMES.md says. Copy them from piabrota at the cutover
+   (MIGRATION-KVM4.md): two gateways on one Telegram token both fail. Hermes starts with no
+   platform until the file exists, so step 6 does not wait on it.
+
+Hermes, its GitHub App, its dashboard and PGX moved from piabrota to kvm4; piabrota serves the
+public web only. [MIGRATION-KVM4.md](MIGRATION-KVM4.md) is the checklist of that move: kvm4's
+first deploy before the merge, the cutover of the state and the secrets, and what is left on
+piabrota.
 
 ## Every day
 

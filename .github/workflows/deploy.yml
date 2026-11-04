@@ -1,8 +1,9 @@
 name: deploy
 
-# Every push to main is deployed to the VPS. The runner builds the system, deploy-rs copies
-# it over SSH (the box pulls what cache.nixos.org has) and activates it. If the box cannot
-# be reached over SSH after the switch, deploy-rs rolls it back.
+# Every push to main is deployed to every host (flake.nix, deploy.nodes): piabrota (KVM 1) and kvm4
+# (KVM 4). The runner builds the systems, deploy-rs copies each over SSH (the box pulls what
+# cache.nixos.org has) and activates it. If a box cannot be reached over SSH after the switch,
+# deploy-rs rolls it back. A host whose address secret is not set yet is skipped, not failed.
 #
 # Run by hand on any other branch (`gh workflow run deploy.yml --ref drill/<name>`), it only
 # builds: a drill. A broken branch then fails like a real deploy, piabrota/agents' deploy-doctor
@@ -20,6 +21,12 @@ on:
         type: choice
         options: [deploy, h0ffmann]
         default: deploy
+      node:
+        # One host only, for example kvm4's first deploy as h0ffmann (docs/DEPLOY.md).
+        description: Host
+        type: choice
+        options: [all, piabrota, kvm4]
+        default: all
 
 permissions:
   contents: read
@@ -64,38 +71,67 @@ jobs:
           # Before the save, collect everything that the GC roots of the next step do not keep:
           # the build-time tools (rustc, node, the crate sources) go, and cache.nixos.org has them.
           gc-max-store-size-linux: 1G
-      # The system and the flake inputs are GC roots, so the collection before the save keeps them.
+      # The systems and the flake inputs are GC roots, so the collection before the save keeps them.
       # Until 2026-11-03 the build used --no-link: the collection deleted the system it had built, the
       # deploy job built all 661 derivations a second time, and the next run built them a third time.
-      - name: Build the system
+      # Both hosts in one build and one cache: they share most of their closure.
+      - name: Build the systems
         run: |
           mkdir -p "$HOME/gcroots"
-          nix build .#deploy.nodes.piabrota.profiles.system.path \
-            --out-link "$HOME/gcroots/system" --no-update-lock-file --print-build-logs
+          for node in piabrota kvm4; do
+            nix build ".#deploy.nodes.$node.profiles.system.path" \
+              --out-link "$HOME/gcroots/system-$node" --no-update-lock-file --print-build-logs
+          done
           nix flake archive --json --no-update-lock-file \
             | jq -r '.. | .path? // empty' | sort -u | nl -w1 -s' ' \
             | while read -r n path; do nix-store --add-root "$HOME/gcroots/input-$n" --realise "$path" >/dev/null; done
-          nix path-info --closure-size --human-readable "$HOME/gcroots/system"
+          nix path-info --closure-size --human-readable "$HOME"/gcroots/system-*
 
   deploy:
     needs: build
-    # Only main reaches the VPS; any other branch is a drill and stops at the build.
+    # Only main reaches the VPSs; any other branch is a drill and stops at the build.
     if: github.ref == 'refs/heads/main'
+    name: deploy ${{ matrix.node }}
+    strategy:
+      # A host that fails does not stop the other's deploy.
+      fail-fast: false
+      matrix:
+        # Every host, or the one chosen in a manual run. Each host's address is its own secret:
+        # DEPLOY_HOST (piabrota) and DEPLOY_HOST_KVM4.
+        node: ${{ fromJSON((inputs.node || 'all') == 'all' && '["piabrota","kvm4"]' || format('["{0}"]', inputs.node)) }}
     runs-on: ubuntu-latest
+    env:
+      # The host's address: one secret per host, named in this map. A new host adds its pair.
+      DEPLOY_HOST: ${{ secrets[fromJSON('{"piabrota":"DEPLOY_HOST","kvm4":"DEPLOY_HOST_KVM4"}')[matrix.node]] }}
     # Secrets live in this environment; protect it in Settings > Environments.
     environment: prod
     steps:
       - uses: actions/checkout@v7
+      # A host with no address yet (kvm4 before its setup, docs/DEPLOY.md) is skipped: the other
+      # host still deploys and the run stays green.
+      - name: Is the host set up?
+        id: host
+        run: |
+          if [ -n "$DEPLOY_HOST" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.node }} has no address secret yet; not deployed (docs/DEPLOY.md, \"A second host\")."
+          fi
       - uses: cachix/install-nix-action@v31
+        if: steps.host.outputs.ready == 'true'
       # The store the build job saved for this commit; deploy-rs then finds the system built and
       # only copies it. If that cache is missing, the newest deploy cache keeps the rebuild small.
       - uses: nix-community/cache-nix-action@v7
+        if: steps.host.outputs.ready == 'true'
         with:
           primary-key: nix-${{ runner.os }}-deploy-${{ github.sha }}
           restore-prefixes-first-match: nix-${{ runner.os }}-deploy-
           save: false
 
+      # DEPLOY_KNOWN_HOSTS holds one line per host.
       - name: SSH key and pinned host key
+        if: steps.host.outputs.ready == 'true'
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -106,11 +142,11 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Build and deploy
+        if: steps.host.outputs.ready == 'true'
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
-          nix run .#deploy-rs -- .#piabrota \
+          nix run .#deploy-rs -- ".#${{ matrix.node }}" \
             --hostname "$DEPLOY_HOST" \
             --ssh-user "$SSH_USER" \
             --ssh-opts "-o StrictHostKeyChecking=yes -o BatchMode=yes" \
@@ -122,21 +158,20 @@ jobs:
       # from the services. Nix collects when free disk falls under min-free (deploy.nix), and the
       # weekly nix.gc runs as before.
       - name: Delete old system generations
+        if: steps.host.outputs.ready == 'true'
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
           ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" \
             'sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +5'
 
       - name: Machine specs after the deploy
-        if: always()
+        if: always() && steps.host.outputs.ready == 'true'
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
           {
-            echo '### piabrota after deploy of `'"$GITHUB_SHA"'`'
+            echo '### ${{ matrix.node }} after deploy of `'"$GITHUB_SHA"'`'
             echo '```'
             ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" sh -s < scripts/specs.sh
             echo '```'

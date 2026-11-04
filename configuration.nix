@@ -1,5 +1,7 @@
-# NixOS system configuration for the Hostinger KVM template.
-# Built into a qcow2 by image.nix via nixpkgs' make-disk-image (no nixos-infect).
+# What every host here has in common: the Hostinger KVM template (boot, disk, cloud-init, the
+# guest agent, SSH) and the modules below. A host is hosts/<name>/default.nix, which imports this
+# file and adds what is its own: its name, and which roles it runs (the public web, Hermes, PGX).
+# The template is built into a qcow2 by image.nix via nixpkgs' make-disk-image (no nixos-infect).
 { lib, pkgs, modulesPath, ... }:
 {
   imports = [
@@ -12,13 +14,8 @@
     ./observer.nix
     ./loco.nix
     ./site.nix
-    ./apps.nix
-    # A Postgres-compatible database (docs/PGX.md), turned on below.
+    # A Postgres-compatible database (docs/PGX.md), off until a host turns it on.
     ./pgx.nix
-    # Hermes Agent, Nous Research's agent, on the chat platforms it has tokens for (docs/HERMES.md).
-    ./hermes.nix
-    # Its write access to GitHub, as its own App: hermes/* branches and pull requests only.
-    ./hermes-github.nix
     # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
     ./kubesolo-purge.nix
   ];
@@ -57,11 +54,7 @@
   services.cloud-init.settings.ssh.emit_keys_to_console = false;
   # cloud-init owns IP assignment, so DHCP must be off (otherwise it races cloud-init).
   networking.useDHCP = lib.mkForce false;
-  # The name Hostinger gave the VPS. Without it NixOS writes `nixos` to /etc/hostname, and cloud-init,
-  # which set srv2108887 on the first boot, keeps whatever /etc/hostname says on the next ones
-  # ("assuming user maintained hostname"): the 2026-10-31 reboot came up as `nixos`. This keeps the
-  # two in step.
-  networking.hostName = "srv2108887";
+  # networking.hostName is per host (hosts/<name>/default.nix): the name Hostinger gave the VPS.
 
   # hVPS drives provisioning by running bare-name commands (sh, cloud-init, chpasswd, ...)
   # through the guest agent, which resolves them on the *agent's* PATH. NixOS gives services a
@@ -81,11 +74,7 @@
   systemd.services.qemu-guest-agent.environment.PATH =
     lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/bin";
 
-  # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
-  piabrota.site.enable = true;
-  # PGX, a Postgres instead of a PostgreSQL server or Docker (pgx.nix, docs/PGX.md). Not for data
-  # you keep: that stays in SQLite.
-  piabrota.pgx.enable = true;
+  # The static site (site.nix) is per host: only the host that DNS points at can get its certificate.
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";

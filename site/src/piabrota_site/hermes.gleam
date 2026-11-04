@@ -23,7 +23,7 @@ pub fn view() -> Element(msg) {
         ]),
         html.p([attribute.class("lede")], [
           html.text(
-            "Nous Research's Hermes Agent runs on the VPS as one systemd unit, with Claude through the owner's subscription. Below is its configuration as Hermes reads it, in YAML, written from hermes.nix when the site is built.",
+            "Nous Research's Hermes Agent runs on KVM 4, the second VPS, as one systemd unit, with Claude through the owner's subscription. Below is its configuration as Hermes reads it, in YAML, written from hermes.nix when the site is built.",
           ),
         ]),
         facts(),
@@ -31,6 +31,7 @@ pub fn view() -> Element(msg) {
           parts.button("#config", "Read the config ↓", True),
           parts.button(module, "hermes.nix ↗", False),
           parts.button(doc, "docs/HERMES.md ↗", False),
+          parts.button("/hosts", "Which host →", False),
         ]),
       ]),
       html.figure([attribute.class("drawing")], [
@@ -62,7 +63,7 @@ pub fn view() -> Element(msg) {
           parts.section_head("The unit", "how nix-os runs it"),
           html.p([attribute.class("sub")], [
             html.text(
-              "The package, its limits on one vCPU and 4 GB, and what is installed beside the config. A merge to main deploys it.",
+              "The package, its limits, and what is installed beside the config. A merge to main deploys it.",
             ),
           ]),
           terminal("hermes-agent.service", data.hermes_service),
