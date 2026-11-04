@@ -160,10 +160,12 @@ piabrota, ainda por escrever.
 
 O [oh-my-pi](https://github.com/can1357/oh-my-pi) (omp, MIT, da Stencil Labs, um fork do Pi de
 Mario Zechner) é um agente de código de terminal, em Bun com partes nativas em Rust. O Hermes passa
-a ele mudanças grandes de código pela skill `hermes-omp` (`hermes/skills/hermes-omp/SKILL.md`, a
-terceira entrada de `skills.external_dirs`): o Hermes cria um branch `hermes/*`, escreve a tarefa
-num arquivo em `/var/lib/hermes/workspace/omp-tasks/`, roda `omp -p --max-time 15m` na cópia de
-trabalho, lê o diff e então ele mesmo faz o commit, o push e o pull request. O omp nunca faz push.
+a ele toda tarefa que escreve ou revisa código pela skill `hermes-omp`
+(`hermes/skills/hermes-omp/SKILL.md`, a terceira entrada de `skills.external_dirs`): o Hermes cria
+um branch `hermes/*`, escreve a tarefa num arquivo em `/var/lib/hermes/workspace/omp-tasks/`, roda
+`omp -p --max-time 15m` na cópia de trabalho, lê o diff e então ele mesmo faz o commit, o push e o
+pull request. O omp nunca faz push. Como ver e ajustar cada camada:
+[HERMES-OMP.ptBR.md](HERMES-OMP.ptBR.md).
 
 - **Versão.** O `omp/package.nix` usa o binário de release da tag `v18.16.0` (`omp-linux-x64`,
   fixado pelo hash), e não o flake. Do código-fonte, o omp é um build de Rust (fat LTO) e bun2nix
