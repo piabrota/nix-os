@@ -113,14 +113,16 @@ Measured on 2026-11-04 (Linux x86_64, PostgreSQL 17.11, Node.js 24.22.1), not on
 
 | Item | Value |
 |---|---|
-| Paperclip package in the store | 622 MiB (815 MiB with Node.js 24 and its libraries) |
+| Paperclip package in the store | 564 MiB (815 MiB with Node.js 24 and its libraries) |
 | Download to build it | 113 MiB of npm tarballs (3.9 GiB with the optional platform binaries, which are left out) |
 | Server memory, idle | about 590 MiB RSS |
 | PostgreSQL | 128 MiB of shared buffers; Paperclip opens 10 connections |
 
-piabrota2 has 16 GB (Hostinger's plan list): Hermes may take 8G, its dashboard 2G, Paperclip 2G and
-PostgreSQL 1G. The earlier study of this file (2026-11-03, for KVM 1) said no to the 1 vCPU box;
-those limits do not apply to KVM 4.
+piabrota2 has 16 GB (Hostinger's plan list; the kernel sees 15.6 GiB). The caps of the big units add
+up to 13.25 GiB: Hermes 8G, its dashboard 2G, Paperclip 2G, PostgreSQL 1G and PGX 256M. That leaves
+about 2.4 GiB for the kernel, nginx, sshd and the page cache, so the units must not all reach their
+caps at once. At rest they use far less (Paperclip about 590 MiB). The earlier study of this file
+(2026-11-03, for KVM 1) said no to the 1 vCPU box; those limits do not apply to KVM 4.
 
 What Paperclip costs in Claude usage is the Hermes runs it starts: each heartbeat that wakes Hermes
 is a Hermes turn on the subscription. Paperclip's budgets limit how often that happens.

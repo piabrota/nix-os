@@ -4,7 +4,7 @@
 # optional dependencies replaced by the two that Linux needs (sharp's x64 build and its libvips),
 # and package-lock.json is made from it (docs/PAPERCLIP.md, "Updating"). The optional ones are
 # embedded PostgreSQL and agent CLI binaries for every platform (3.9 GiB to fetch, 2.3 GiB
-# installed; without them 113 MiB and 622 MiB, measured 2026-11-04); this box uses the
+# installed; without them 113 MiB and 564 MiB, measured 2026-11-04); this box uses the
 # NixOS PostgreSQL and talks to Hermes over HTTP. Bump `version`, both hashes and the two files
 # together.
 { lib, buildNpmPackage, fetchNpmDeps, fetchurl, runCommand, jq, nodejs_24 }:
