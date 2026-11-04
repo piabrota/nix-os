@@ -84,6 +84,8 @@ the turns, cron jobs and subagents in flight finish (at most `agent.restart_afte
 configuration. Before this, a deploy stopped the unit with `SIGTERM` and cut the turn in flight,
 also when the merge was Hermes's own PR. A new Hermes package changes the unit's `ExecStart`, and
 that still restarts it at once. While it drains, a new message waits until the gateway is back.
+The gateway runs with `--external-supervisor`. This tells it that systemd owns it, so a reload
+exits with code 75 and does not start a detached gateway.
 
 ## Who it is
 
