@@ -75,7 +75,7 @@ Each is in `hermes.nix`, with the reason next to it.
 |---|---|---|---|
 | `model.provider`, `model.default` | `anthropic`, `claude-sonnet-5-5` | | Sonnet through the subscription |
 | `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Claude only: no other provider, ever |
-| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `claude-haiku-4-5` | | Haiku for subagents and three cheap side tasks; Sonnet for everything else |
+| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `claude-haiku-5-5` | | Haiku for subagents and three cheap side tasks; Sonnet for everything else |
 | `delegation.max_concurrent_children`, `max_iterations`, `max_spawn_depth` | 2, 50, 1 | 10, 250, 1 | Small fan-out for one vCPU and the quota |
 | `agent.max_turns` | 60 | unlimited | A run cannot loop forever |
 | `goals.max_turns` | 6 | 20 | One `/goal` (the Ralph loop) stops after 6 turns until `/goal resume` |
