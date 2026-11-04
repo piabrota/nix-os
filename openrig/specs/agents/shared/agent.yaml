@@ -1,0 +1,12 @@
+# What both seats of piabrota-dev share: one guidance file, the rules of every seat. It holds no
+# skill, plugin or runtime resource: an omp seat projects none of the last two, and the shared
+# pool of OpenRig's own specs is for Claude Code and Codex seats. A spec that imports this one
+# selects the file with `guidance: [shared:norms]`.
+name: shared
+version: "1.0"
+description: The rules that every piabrota seat follows
+
+resources:
+  guidance:
+    - id: norms
+      path: guidance/norms.md

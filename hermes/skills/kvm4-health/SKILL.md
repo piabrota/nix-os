@@ -16,7 +16,8 @@ metadata:
 You run on kvm4, a Hostinger KVM 4 VPS: 4 vCPU, 16 GB RAM, 200 GB disk by the plan (piabrota/nix-os
 `AGENTS.md`, "Resource budget"). systemd caps your unit, `hermes-agent`, at `MemoryMax=8G` and
 `CPUWeight=50` (nix-os `hosts/kvm4/default.nix`), the dashboard, `hermes-backend`, at 2G, and
-Paperclip, `paperclip`, at 2G with its `postgresql` at 1G (nix-os `paperclip.nix`). Cron
+Paperclip, `paperclip`, at 2G with its `postgresql` at 1G (nix-os `paperclip.nix`), and OpenRig,
+`openrig`, at 3G for its daemon, tmux and every seat (nix-os `openrig.nix`). Cron
 jobs run in transient scopes under the `hermes` user's slice, not in `hermes-agent`: the script
 counts that slice too. Above the cap the kernel kills a process of the unit, omp first.
 

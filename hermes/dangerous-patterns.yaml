@@ -66,9 +66,14 @@ deny_patterns:
     group: INSTALL
     pattern: '\b(?:uvx|npx|pnpx|bunx)\b.*|\b(?:pip3?|npm|pnpm|yarn|bun|cargo|go|gem)\s+(?:install|add|get)\b.*|\buv\s+(?:pip\s+install|tool\s+(?:install|run)|add|run)\b.*|\bhermes\s+(?:pm|plugins?|skills)\s+install\b.*'
 
-  # --- OpenRig: systemd runs the daemon; the owner sets up the machine, hosts and credentials ---
-  # Hermes may plan, start, stop and talk to rigs (rig up, down, ps, send, queue, capture). A
-  # restart of the daemon goes through a deploy, never through `rig daemon`.
+  # --- OpenRig (openrig.nix): systemd runs the daemon; Hermes runs `rig` against 127.0.0.1 and nothing more ---
+  # Hermes may plan, start, stop and talk to rigs (rig up, down, ps, send, queue, capture). A restart
+  # of the daemon goes through a deploy, never through `rig daemon`; `rig setup` installs tools and
+  # edits ~/.tmux.conf. The first rule is the owner's (PR 124) and covers setup, start and daemon
+  # control. The others close what it leaves open: `rig host` and --host, changes to a seat's
+  # permission policy (the repository's specs choose it, through a reviewed pull request; the unit
+  # sets OPENRIG_YOLO, Hermes never does), and a pointer at another daemon or at the daemon's state.
+  # The skill hermes-rig lists what is allowed.
   - description: '[OPENRIG] rig setup, rig start or daemon control'
     enabled: true
     group: OPENRIG
@@ -77,3 +82,15 @@ deny_patterns:
     enabled: true
     group: OPENRIG
     pattern: '\brig\s+(?:host\s+(?:add|pair|select|rename)|auth\s+(?:save|switch)|provider\s+switch|mcp\s+(?:token\s+add|serve\b[^|;&]*--http)|slack\s+setup)\b.*'
+  - description: '[OPENRIG] rig host (pairing and remote hosts) and any rig command with --host'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+host\b.*|\brig\b[^|;&]*\s--host\b.*'
+  - description: '[OPENRIG] turning off a seat''s permission prompts or changing its policy'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:seat\s+set-permissions|policy\s+apply)\b.*|\brig\b[^|;&]*\s--(?:policy|permission-mode|codex-permissions|dangerously-interact|non-interruptive)\b.*|\bOPENRIG_YOLO\b'
+  - description: '[OPENRIG] a pointer at another daemon or at the daemon''s own state'
+    enabled: true
+    group: OPENRIG
+    pattern: '\bOPENRIG_(?:URL|HOME|DB|BIND_HOST)=|openrig-secrets|/var/lib/openrig\b'

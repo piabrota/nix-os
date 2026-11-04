@@ -1,0 +1,35 @@
+# The builder seat: writes and tests the code of one task. It runs on omp. The model, and the
+# rules of its tools, come from the omp configuration of the box (hermes/omp.yml), not from this
+# file.
+name: builder
+version: "1.0"
+description: Writes and tests code for one task
+
+defaults:
+  runtime: omp
+
+imports:
+  - ref: local:../shared
+
+profiles:
+  default:
+    summary: Builds one task on a branch and reports the result
+    uses:
+      skills: []
+      # The norms land in the AGENTS.md of the seat's working folder. The role does not: it goes
+      # in as a startup file below, so the other seat's role never replaces it.
+      guidance: [shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []
