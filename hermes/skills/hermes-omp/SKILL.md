@@ -45,6 +45,8 @@ Run one omp at a time.
    - what done means, and the checks to run (from the repository's AGENTS.md, only those that fit
      on 1 vCPU and 1 GB);
    - the files or the issue to start from, when you know them;
+   - a section "How to prove it is done": the exact commands to run, the result that means
+     success, and for a bug the test that must fail before the fix and pass after it;
    - this line: "Do not commit, push or open pull requests. When you finish, list the changed
      files and the checks you ran, with their result."
 
@@ -60,6 +62,8 @@ Run one omp at a time.
 4. **Check.** omp's answer is a claim. Read `git status`, `git diff --stat` and `git diff`. Run the
    cheapest check yourself. If the diff is wrong or too big, run omp once more with a short
    follow-up in a new task file, or fix it yourself. Do not run omp more than twice for one task.
+   Compare omp's list of checks with the section "How to prove it is done". A task is not done if
+   omp did not run the checks, or if it gives no output.
 5. **Deliver.** Commit, push `hermes/<a-few-words>` and open the pull request as the workspace
    AGENTS.md, "Opening a pull request", says, in English. Tell the owner what omp did and what you
    checked.

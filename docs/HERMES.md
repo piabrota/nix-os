@@ -178,8 +178,14 @@ the diff, and then commits, pushes and opens the pull request itself. omp never 
 - **Memory.** omp runs in Hermes's cgroup (`MemoryMax=1G`). LSP, the Python and JS kernels, the
   memory backend, the advisor and the browser are off. The wrapper starts omp with
   `choom -n 500`, so the kernel's OOM killer stops omp before the gateway.
-- **Models.** Sonnet (`claude-sonnet-5-5`) for the work and Haiku (`claude-haiku-4-5`) for omp's
-  side tasks, with no fallback, so no role reaches another provider or a local model.
+- **Models.** Sonnet (`claude-sonnet-5-5`) for the work and for the subagents (`task`), Haiku
+  (`claude-haiku-4-5`) for the side roles (`smol`, `commit`, `tiny`, `memory`, `advisor`,
+  `judge`). The thinking level is pinned to `high`. There is no fallback, so no role reaches
+  another provider or a local model.
+- **Prompt.** The wrapper appends `hermes/omp-append-system.md` to omp's system prompt: small
+  diffs, a stated check, no claim of done without output, no commit or push. omp reads the file
+  at that path, and a path on the command line turns off its search for `APPEND_SYSTEM.md`, so a
+  cloned repository cannot replace these rules (`main.ts` and `system-prompt.ts` at v18.16.0).
 
 Not checked before the merge: omp's memory peak on the box, and that a `claude setup-token` token
 works as `ANTHROPIC_OAUTH_TOKEN`. After the deploy, run one task and read

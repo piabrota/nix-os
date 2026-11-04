@@ -182,9 +182,15 @@ trabalho, lê o diff e então ele mesmo faz o commit, o push e o pull request. O
 - **Memória.** O omp roda no cgroup do Hermes (`MemoryMax=1G`). O LSP, os kernels de Python e JS,
   o backend de memória, o advisor e o navegador estão desligados. O wrapper inicia o omp com
   `choom -n 500`, então o OOM killer do kernel para o omp antes do gateway.
-- **Modelos.** O Sonnet (`claude-sonnet-5-5`) para o trabalho e o Haiku (`claude-haiku-4-5`) para
-  as tarefas laterais do omp, sem fallback, então nenhum papel chega a outro provedor ou a um
-  modelo local.
+- **Modelos.** O Sonnet (`claude-sonnet-5-5`) para o trabalho e para os subagentes (`task`), e o
+  Haiku (`claude-haiku-4-5`) para os papéis laterais (`smol`, `commit`, `tiny`, `memory`,
+  `advisor`, `judge`). O nível de raciocínio fica fixo em `high`. Não há fallback, então nenhum
+  papel chega a outro provedor ou a um modelo local.
+- **Prompt.** O wrapper acrescenta o `hermes/omp-append-system.md` ao prompt de sistema do omp:
+  diffs pequenos, uma verificação declarada, nenhuma afirmação de "pronto" sem saída, nenhum commit
+  nem push. O omp lê o arquivo nesse caminho, e um caminho na linha de comando desliga a busca dele
+  por `APPEND_SYSTEM.md`, então um repositório clonado não troca essas regras (`main.ts` e
+  `system-prompt.ts` na v18.16.0).
 
 Não conferido antes do merge: o pico de memória do omp na máquina, e se um token de
 `claude setup-token` funciona como `ANTHROPIC_OAUTH_TOKEN`. Depois do deploy, rode uma tarefa e

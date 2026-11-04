@@ -4,21 +4,26 @@
 # It lives in the store, read-only: omp cannot edit its own guardrails. Keys from omp's
 # docs/settings.md at v18.16.0.
 
-# Claude only, through the owner's subscription, as Hermes: Sonnet for the work, Haiku for the
-# side tasks (titles, judgments, subagents). Without these, `tiny`, `memory` and `judge` pick
-# other providers or local models.
+# Claude only, through the owner's subscription, as Hermes: Sonnet for the work and for the
+# subagents (`task`), which edit code; Haiku for the side roles (smol, commit, tiny, memory,
+# advisor, judge). Without these, `tiny`, `memory` and `judge` pick other providers or local
+# models.
 modelRoles:
   default: anthropic/claude-sonnet-5-5
   slow: anthropic/claude-sonnet-5-5
   plan: anthropic/claude-sonnet-5-5
   smol: anthropic/claude-haiku-4-5
-  task: anthropic/claude-haiku-4-5
+  task: anthropic/claude-sonnet-5-5
   commit: anthropic/claude-haiku-4-5
   tiny: anthropic/claude-haiku-4-5
   memory: anthropic/claude-haiku-4-5
   advisor: anthropic/claude-haiku-4-5
   judge: anthropic/claude-haiku-4-5
   web: web/duckduckgo
+
+# The default is `high`. This line pins it, so an upstream default cannot move it.
+defaultThinkingLevel: high
+
 retry:
   fallbackChains:
     default: []
