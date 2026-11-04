@@ -98,7 +98,7 @@
           let pkg = self.nixosConfigurations.kvm4.config.services.hermes-agent.package;
           in pkgs.runCommand "hermes-docs-url-check" { nativeBuildInputs = [ pkgs.jq ]; } ''
             web=$(jq -r '.env.HERMES_WEB_DIST' ${pkg}/command-map.json)
-            grep -rqF '"https://hermes-agent.nousresearch.com/docs/"' "$web" \
+            grep -rqF --include='*.js' '"https://hermes-agent.nousresearch.com/docs/"' "$web" \
               || { echo "the docs address is not in $web: fix sub_filter in hermes-web.nix" >&2; exit 1; }
             touch $out
           '';

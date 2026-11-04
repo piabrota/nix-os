@@ -86,8 +86,7 @@ in
         extraConfig = ''
           limit_req zone=hermes_web burst=60 nodelay;
           limit_req_status 429;
-          # SAMEORIGIN, not DENY: the Documentation tab frames ${docsPath}.
-          add_header X-Frame-Options SAMEORIGIN always;
+          add_header X-Frame-Options DENY always;
           add_header Referrer-Policy no-referrer always;
           add_header X-Content-Type-Options nosniff always;
           add_header Strict-Transport-Security "max-age=31536000" always;
@@ -125,6 +124,14 @@ in
           ${docsPath} = {
             alias = "${cfg.docs}/";
             index = "index.html";
+            # SAMEORIGIN only here: the Documentation tab frames this page. An add_header in a
+            # location drops the server's, so all four are repeated.
+            extraConfig = ''
+              add_header X-Frame-Options SAMEORIGIN always;
+              add_header Referrer-Policy no-referrer always;
+              add_header X-Content-Type-Options nosniff always;
+              add_header Strict-Transport-Security "max-age=31536000" always;
+            '';
           };
           "/api/env" = {
             proxyPass = "http://${backend}";

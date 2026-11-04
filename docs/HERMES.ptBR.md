@@ -356,8 +356,9 @@ do módulo do upstream:
 - **A aba Documentation mostra a página do piabrota**, `hermes-web/docs/index.html`, e não a
   documentação da Nous Research. O upstream abre `https://hermes-agent.nousresearch.com/docs/` num
   iframe, um literal no bundle JS. O nginx troca esse endereço por `/piabrota-docs/` no caminho
-  (`sub_filter`) e serve esse diretório do store, atrás da mesma basic auth; o `X-Frame-Options` é
-  `SAMEORIGIN` para a aba poder abrir a página. O `checks.hermes-docs-url` falha quando uma
+  (`sub_filter`) e serve esse diretório do store, atrás da mesma basic auth; só essa location manda
+  `X-Frame-Options: SAMEORIGIN`, para a aba poder abrir a página, e o resto do dashboard fica com
+  `DENY`. O `checks.hermes-docs-url` falha quando uma
   atualização do Hermes muda o endereço. Para mostrar outra página, edite o arquivo ou aponte
   `piabrota.hermesWeb.docs` para outro diretório com um `index.html`. Os assets do bundle ficam em
   cache como imutáveis: depois do primeiro deploy, recarregue o dashboard uma vez sem cache
