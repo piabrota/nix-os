@@ -92,6 +92,16 @@
           cd ${./hermes/plugins}/tests && python3 -m unittest -v test_plugins
           touch $out
         '';
+        # The dashboard bundle still holds the docs address that hermes-web.nix swaps for
+        # piabrota's page. If an upstream bump renames it, the swap does nothing and this fails.
+        hermes-docs-url =
+          let pkg = self.nixosConfigurations.kvm4.config.services.hermes-agent.package;
+          in pkgs.runCommand "hermes-docs-url-check" { nativeBuildInputs = [ pkgs.jq ]; } ''
+            web=$(jq -r '.env.HERMES_WEB_DIST' ${pkg}/command-map.json)
+            grep -rqF '"https://hermes-agent.nousresearch.com/docs/"' "$web" \
+              || { echo "the docs address is not in $web: fix sub_filter in hermes-web.nix" >&2; exit 1; }
+            touch $out
+          '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).
         mockups = pkgs.runCommand "mockups-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}

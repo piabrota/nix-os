@@ -353,6 +353,15 @@ do módulo do upstream:
   nomes das variáveis, com os valores ocultos.
 - **O Nix é dono da configuração.** Uma mudança feita na página Config dura só até o próximo
   deploy escrever o `config.yaml` de novo. Mude o `hermes.nix` num PR.
+- **A aba Documentation mostra a página do piabrota**, `hermes-web/docs/index.html`, e não a
+  documentação da Nous Research. O upstream abre `https://hermes-agent.nousresearch.com/docs/` num
+  iframe, um literal no bundle JS. O nginx troca esse endereço por `/piabrota-docs/` no caminho
+  (`sub_filter`) e serve esse diretório do store, atrás da mesma basic auth; o `X-Frame-Options` é
+  `SAMEORIGIN` para a aba poder abrir a página. O `checks.hermes-docs-url` falha quando uma
+  atualização do Hermes muda o endereço. Para mostrar outra página, edite o arquivo ou aponte
+  `piabrota.hermesWeb.docs` para outro diretório com um `index.html`. Os assets do bundle ficam em
+  cache como imutáveis: depois do primeiro deploy, recarregue o dashboard uma vez sem cache
+  (Ctrl+Shift+R).
 - **A aba Chat exige o grupo `hermes` privado.** O upstream recusa o socket de controle do gateway
   quando o grupo do diretório com escrita para o grupo tem um membro além do dono. Se a aba Chat
   mostrar "retrying", rode `sudo -u hermes hermes gateway status` e confira que mais ninguém está
