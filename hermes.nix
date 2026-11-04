@@ -435,6 +435,10 @@ in
   # ExecMainStatus. This wrapper is the main process instead: it passes SIGUSR1 and SIGTERM on to
   # the gateway and turns its 75 into 0, so a reload restarts it without a failed unit. The
   # package is the module's own (moduleCommon.nix, effectivePackage).
+  # The wrapper also hides systemd from the gateway: the gateway is a child of a shell, not of
+  # systemd. Without --external-supervisor, Hermes v0.22.7 treats a reload as a graceful restart
+  # and starts a detached gateway, and the unit then loops (2026-11-04). The flag makes the
+  # gateway exit back to this wrapper instead.
   systemd.services.hermes-agent.serviceConfig = {
     ExecStart = lib.mkForce (
       let
@@ -449,7 +453,7 @@ in
             });
       in
       pkgs.writeShellScript "hermes-gateway" ''
-        ${package}/bin/hermes gateway ${lib.escapeShellArgs cfg.extraArgs} &
+        ${package}/bin/hermes gateway run --external-supervisor ${lib.escapeShellArgs cfg.extraArgs} &
         child=$!
         trap 'kill -USR1 "$child" 2>/dev/null' USR1
         trap 'kill -TERM "$child" 2>/dev/null' TERM INT

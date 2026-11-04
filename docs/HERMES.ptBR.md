@@ -86,6 +86,8 @@ novo, deixa terminar os turnos, os jobs de cron e os subagentes em andamento (no
 com `SIGTERM` e cortava o turno em andamento, inclusive quando o merge era um PR do próprio
 Hermes. Um pacote novo do Hermes muda o `ExecStart` da unit, e isso ainda a reinicia na hora.
 Enquanto ele drena, uma mensagem nova espera o gateway voltar.
+O gateway roda com `--external-supervisor`. Isso avisa que o systemd é o dono dele, então um reload
+sai com o código 75 e não inicia um gateway separado.
 
 ## Quem ele é
 
