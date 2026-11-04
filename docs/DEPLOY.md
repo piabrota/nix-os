@@ -133,6 +133,9 @@ repository stays on GitHub (and on your machine), and the VPS only receives the 
    to `hosts/kvm4/` and import it.
 3. **The repository.** In a pull request, set `networking.hostName` in `hosts/kvm4/default.nix`
    to that hostname. Merge it; kvm4 is still skipped, because it has no address secret yet.
+   For the move of Hermes, follow [MIGRATION-KVM4.md](MIGRATION-KVM4.md): put the hostname in
+   that pull request, and do not merge it first. A merge before kvm4 runs Hermes takes Hermes
+   down.
 4. **GitHub.** In the `prod` environment, add the secret `DEPLOY_HOST_KVM4` (the IPv4 address
    from **VPS > Overview**), and add the line `<ip> ssh-ed25519 AAAA...` to `DEPLOY_KNOWN_HOSTS`,
    under piabrota's line. `DEPLOY_SSH_KEY` stays the same: `keys/deploy.pub` is on both hosts.
@@ -145,6 +148,9 @@ repository stays on GitHub (and on your machine), and the VPS only receives the 
      `~h0ffmann/.ssh/authorized_keys` on the VPS, run **Actions > deploy > Run workflow** with
      **Host** `kvm4` and **SSH user** `h0ffmann`, then remove the line again (step 5 above shows
      the commands).
+   For the move of Hermes, follow [MIGRATION-KVM4.md](MIGRATION-KVM4.md): put the hostname in
+   that pull request, and do the first deploy from your computer. A deploy from GitHub runs only
+   on `main`, so it needs the merged pull request.
    After it, `ssh deploy@<ip>` works, and every merge to `main` deploys kvm4 too.
 7. **Hermes's secrets.** Write `/var/lib/hermes-secrets/hermes.env` (and `github-app.env` for
    the GitHub App) on the VPS, as docs/HERMES.md says. Copy them from piabrota at the cutover

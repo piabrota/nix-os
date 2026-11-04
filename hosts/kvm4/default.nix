@@ -15,8 +15,9 @@
     ../../hermes-web.nix
   ];
 
-  # Replace with the name Hostinger gave the VPS (see piabrota's file for why it must match).
-  networking.hostName = "kvm4";
+  # The VPS is named piabrota2 in hPanel. Hostinger first set srv2125808.hstgr.cloud, which stays
+  # its address. Without this line NixOS writes `nixos` to /etc/hostname; see piabrota's file.
+  networking.hostName = "piabrota2";
 
   # Far above what Hermes used on piabrota (1G and CPUWeight 50), so a runaway task cannot starve
   # sshd and make a deploy roll back: half the RAM, and half the CPU share of other units when the

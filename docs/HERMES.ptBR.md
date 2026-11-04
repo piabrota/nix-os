@@ -351,6 +351,14 @@ do módulo do upstream:
   recusado, e toda escrita em `/api/env` também: a ativação escreve o `.env` a partir do arquivo de
   segredos em cada deploy, então uma edição ali se perde de todo jeito. A página ainda lista os
   nomes das variáveis, com os valores ocultos.
+  Isso vale para um navegador atrás do nginx. Não vale para um processo na máquina. O backend
+  escuta em `127.0.0.1:9119` com o próprio portão de autenticação desligado, as regras do nginx
+  não se aplicam a uma requisição local, e nesse modo o backend entrega o token de sessão dele a
+  um cliente local (no upstream, `hermes_cli/web_server_dashboard.py` define
+  `window.__HERMES_SESSION_TOKEN__`). Trate qualquer conta local como capaz de usar a API do
+  painel, inclusive a rota que revela um valor do `.env`. Isso foi lido no código do upstream e
+  não foi testado aqui. Um arquivo para `backend.sessionTokenFile` (legível só pelo `hermes`) ou
+  uma regra de firewall por ID de usuário fecharia essa brecha. Nenhuma das duas existe ainda.
 - **O Nix é dono da configuração.** Uma mudança feita na página Config dura só até o próximo
   deploy escrever o `config.yaml` de novo. Mude o `hermes.nix` num PR.
 
@@ -368,7 +376,7 @@ falha no deploy, e o deploy-rs volta a máquina para a versão anterior.
    ssh h0ffmann@hermes.piabrota.art
    sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
    pw=$(openssl rand -base64 24); echo "$pw"   # copie para o gerenciador de senhas
-   nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
+   printf '%s' "$pw" | nix shell nixpkgs#apacheHttpd -c htpasswd -niB -C 12 owner \
      | sudo install -m 640 -o root -g nginx /dev/stdin /var/lib/hermes-web-secrets/htpasswd
    unset pw
    ```
