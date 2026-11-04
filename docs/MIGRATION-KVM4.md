@@ -21,13 +21,19 @@ Hermes on KVM 1 keeps working during all of section 1.
   NixOS template with your SSH key and a snapshot, a look at the hostname, the host key and
   `/etc/nixos/`, the hostname in `hosts/kvm4/default.nix`, the secret `DEPLOY_HOST_KVM4` and
   kvm4's line in `DEPLOY_KNOWN_HOSTS`, port 22. Nothing is cloned on the VPS. The hostname
-  (`srv2125808`, from hPanel) is already in this same pull request. Check that `hostname` on the
-  VPS prints the same name.
+  (`piabrota2`, the VPS name in hPanel) is already in this same pull request. After the first
+  deploy, check that `hostname` on the VPS prints `piabrota2`. Hostinger's own address for the VPS,
+  `srv2125808.hstgr.cloud`, does not change.
 - [ ] **Firewall.** In hPanel, open TCP 80 and 443 on KVM 4 too, beside 22: Let's Encrypt checks
   port 80, and the dashboard is on 443.
-- [ ] **DNS.** At Porkbun, an `A` record `hermes.piabrota.art` with KVM 4's IPv4 address (an
-  `AAAA` only if KVM 4 has IPv6). Check it: `dig +short hermes.piabrota.art`. Without it the ACME
-  order for the dashboard fails on the first deploy, and deploy-rs rolls KVM 4 back.
+- [ ] **DNS.** At Porkbun (the name servers of `piabrota.art`), add one record:
+  type `A`, host `hermes`, answer KVM 4's IPv4 address, TTL 600. Take the address from hPanel,
+  **VPS > Overview**. Do not touch the records for `piabrota.art` and `www`: they stay on KVM 1.
+  Add no `AAAA` record yet. KVM 4 has an IPv6 address, and Let's Encrypt prefers it when a record
+  exists, so the IPv6 firewall of hPanel must open ports 80 and 443 first. There is no `CAA`
+  record on the domain, so Let's Encrypt may issue. Check it:
+  `dig +short hermes.piabrota.art` prints the address. Without the record, the ACME order for the
+  dashboard fails on the first deploy, and deploy-rs rolls KVM 4 back.
 - [ ] **First deploy** ("A second host", step 6), from your computer on this branch, not from
   GitHub: a manual run of `deploy.yml` on a branch other than `main` only builds.
 
