@@ -28,6 +28,11 @@ hermes-plugins-test:
 feeds-test:
     cd hermes/feeds/tests && python3 -m unittest -v test_build_feed
 
+# tests of the Paperclip helpers (paperclip/*.test.sh): the pi_local shim and paperclip-hermes-key; needs bash and openssl
+paperclip-test:
+    bash paperclip/pi-to-omp.test.sh
+    sh paperclip/hermes-key.test.sh
+
 # build the personal feed from the real sources into a temporary folder; writes no state (needs network)
 feeds-build:
     python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out "$(mktemp -d)" --dry-run

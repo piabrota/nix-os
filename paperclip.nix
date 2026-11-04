@@ -13,6 +13,10 @@
 # Hermes calls back with Paperclip's skill and an agent key. Both keys live only on the box
 # (API_SERVER_KEY and PAPERCLIP_API_KEY in /var/lib/hermes-secrets/hermes.env). Without
 # API_SERVER_KEY Hermes opens no API server, and Paperclip runs with no agent.
+#
+# The second path: Paperclip's `pi_local` adapter runs the box's `omp` (omp/wrapper.nix) through a
+# shim, with the same Claude subscription token as Hermes. `claude_local` cannot work here: its
+# `claude` CLI is unfree.
 # paperclip.piabrota.art must point at the box before this is on, or the ACME order fails on the
 # deploy.
 { config, lib, pkgs, ... }:
@@ -89,6 +93,31 @@ let
     mkdir -p $out/paperclip
     cp -r ${pkg}/${pkg.skills}/paperclip $out/paperclip/paperclip
   '';
+  # `writeShellApplication` writes its own shebang line, so the scripts' first line goes.
+  withoutShebang = file: lib.concatStringsSep "\n" (lib.drop 1 (lib.splitString "\n" (builtins.readFile file)));
+  # `pi_local` calls the command in PAPERCLIP_PI_COMMAND, `pi` by default; this shim calls omp.
+  piShim = pkgs.writeShellApplication {
+    name = "paperclip-pi";
+    runtimeInputs = [ (pkgs.callPackage ./omp/wrapper.nix { }) ];
+    text = withoutShebang ./paperclip/pi-to-omp.sh;
+  };
+  hermesKey = pkgs.writeShellApplication {
+    name = "paperclip-hermes-key";
+    runtimeInputs = [ pkgs.coreutils pkgs.gnugrep pkgs.openssl ];
+    text = withoutShebang ./paperclip/hermes-key.sh;
+  };
+  # Runs as root (the `+` of ExecStartPre) at each start: copies the one line CLAUDE_CODE_OAUTH_TOKEN
+  # of Hermes's secrets file, and nothing else, to a file that only the paperclip user reads. The
+  # file is empty when the line or the source is missing.
+  claudeEnv = "/var/lib/paperclip-secrets/claude.env";
+  claudeToken = pkgs.writeShellScript "paperclip-claude-token" ''
+    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep ]}
+    umask 077
+    grep '^CLAUDE_CODE_OAUTH_TOKEN=' /var/lib/hermes-secrets/hermes.env 2>/dev/null | tail -n 1 > ${claudeEnv}.new
+    chown paperclip:paperclip ${claudeEnv}.new
+    chmod 600 ${claudeEnv}.new
+    mv ${claudeEnv}.new ${claudeEnv}
+  '';
 in
 {
   options.piabrota.paperclip = {
@@ -128,6 +157,17 @@ in
         type = types.port;
         default = 8642;
         description = "The Hermes API server's loopback port (upstream's default).";
+      };
+    };
+    omp = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.services.hermes-agent.enable;
+        defaultText = lib.literalExpression "config.services.hermes-agent.enable";
+        description = ''
+          Run Paperclip's pi_local adapter on the box's omp, through a shim, with Hermes's Claude
+          subscription token (copied to a file only the paperclip user reads at each start).
+        '';
       };
     };
     hermesSkillDirs = mkOption {
@@ -294,6 +334,22 @@ in
       networking.firewall.allowedTCPPorts = [ 80 443 ];
     }
 
+    (mkIf cfg.omp.enable {
+      assertions = [{
+        assertion = config.services.hermes-agent.enable;
+        message = "piabrota.paperclip.omp needs services.hermes-agent (hermes.nix) on the same host: it uses Hermes's omp wrapper and token.";
+      }];
+      systemd.services.paperclip = {
+        environment.PAPERCLIP_PI_COMMAND = "${piShim}/bin/paperclip-pi";
+        serviceConfig = {
+          # `-` lets Paperclip start if this step fails: the token is for the agents, not the server.
+          ExecStartPre = [ "-+${claudeToken}" ];
+          # The leading `-` makes the file optional.
+          EnvironmentFile = [ "-${claudeEnv}" ];
+        };
+      };
+    })
+
     (mkIf cfg.hermes.enable {
       assertions = [{
         assertion = config.services.hermes-agent.enable;
@@ -317,6 +373,7 @@ in
       # hermes.nix adds it to skills.external_dirs.
       piabrota.paperclip.hermesSkillDirs = [ "${hermesSkills}" ];
       systemd.services.hermes-agent.reloadTriggers = [ hermesSkills ];
+      environment.systemPackages = [ hermesKey ];
     })
   ]);
 }
