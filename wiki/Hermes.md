@@ -38,7 +38,7 @@ provedor de reserva: se a Anthropic falha, o turno falha.
 | Modelo | Faz |
 |---|---|
 | `claude-sonnet-5-5` | O modelo principal: ele planeja, escreve, revisa e decide. Ele também faz a compressão, a aprovação de comando perigoso e a revisão depois do turno. Ele mesmo roda um grep, uma listagem ou uma busca isolada. |
-| `claude-haiku-4-5` | Subagentes só para leitura em leque (três tarefas ou mais, ou mais de uns 20 arquivos) e três tarefas laterais: os títulos das sessões, a escolha de skill e o juiz do `/goal`. |
+| `claude-haiku-5-5` | Subagentes só para leitura em leque (três tarefas ou mais, ou mais de uns 20 arquivos) e três tarefas laterais: os títulos das sessões, a escolha de skill e o juiz do `/goal`. |
 
 Subagentes: no máximo 2 ao mesmo tempo, 50 iterações cada, um nível de profundidade.
 
