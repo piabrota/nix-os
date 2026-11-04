@@ -49,6 +49,8 @@ A term of `[negative]` in the title or summary drops the item.
 `requires_match = true` keeps only items that match an interest.
 A `pinned` source always keeps its newest items. An item without a date gets no recency bonus.
 `feed.atom` keeps items with `score >= min_score`. The thresholds are in `[output]`.
+A GitHub item has the date of its last push (`pushed_at`), or of its creation if there is no push. `feed.atom` gives each group `max_per_group` places first; the best of the rest fill the room. The digest shows at most `digest_per_group` items of a group.
+A source key `exclude_terms = ["canary"]` drops an item with a term in its title, as a whole word. A source key `pinned_keep` replaces the `[output]` value for that source.
 
 ## The interests
 

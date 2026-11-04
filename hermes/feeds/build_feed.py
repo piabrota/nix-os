@@ -72,9 +72,11 @@ class FeedError(Exception):
 @dataclass(frozen=True)
 class Output:
     max_items: int = 80
+    max_per_group: int = 14
     max_age_days: int = 21
     min_score: float = 4.0
-    digest_items: int = 15
+    digest_items: int = 18
+    digest_per_group: int = 3
     digest_min_score: float = 6.0
     digest_max_chars: int = 1900
     pinned_keep: int = 3
@@ -107,6 +109,7 @@ class Source:
     pinned: bool = False
     requires_match: bool = False
     genres: tuple[str, ...] = ()
+    exclude_terms: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -131,6 +134,7 @@ class Item:
     stars: int = 0
     score: float = 0.0
     matched: tuple[str, ...] = ()
+    pinned: bool = False
 
 
 @dataclass(frozen=True)
@@ -180,6 +184,7 @@ def parse_source(raw: dict, output: Output) -> Source:
     """Build a source; a missing age limit or pin count comes from [output]."""
     fields = {"max_age_days": output.max_age_days, "pinned_keep": output.pinned_keep, **raw}
     fields["genres"] = tuple(fields.get("genres", ()))
+    fields["exclude_terms"] = tuple(fields.get("exclude_terms", ()))
     return Source(**fields)
 
 
@@ -351,14 +356,14 @@ def parse_feed(data: bytes, src: Source, now: datetime) -> list[Item]:
 
 
 def github_item(repo: dict, src: Source, now: datetime) -> Item:
-    """One repository of a search result."""
-    created = parse_date(repo.get("created_at") or "")
+    """One repository of a search result. Its date is the last push, else the creation."""
+    moment = parse_date(repo.get("pushed_at") or "") or parse_date(repo.get("created_at") or "")
     return Item(
         title=repo["full_name"],
         link=repo["html_url"],
         summary=summarize(repo.get("description") or ""),
-        date=created or now,
-        dated=created is not None,
+        date=moment or now,
+        dated=moment is not None,
         source=src.id,
         group=src.group,
         stars=int(repo.get("stargazers_count") or 0),
@@ -434,11 +439,16 @@ def too_old(item: Item, src: Source, now: datetime) -> bool:
     return item.dated and now - item.date > timedelta(days=src.max_age_days)
 
 
+def is_excluded(item: Item, src: Source) -> bool:
+    """The title has a term of the source exclude_terms, as a whole word or phrase."""
+    return bool(compile_terms(src.exclude_terms).search(item.title))
+
+
 def score_item(item: Item, src: Source, cfg: Config, now: datetime) -> Item | None:
     """The item with its score, or None when a rule drops it."""
     if cfg.negative.search(item.title) or cfg.negative.search(item.summary):
         return None
-    if too_old(item, src, now):
+    if too_old(item, src, now) or is_excluded(item, src):
         return None
     interest, matched = interest_score(item, cfg.interests)
     if src.requires_match and not matched:
@@ -459,7 +469,8 @@ def select_items(src: Source, items: Sequence[Item], cfg: Config, now: datetime)
     """Score the items of one source and keep those above min_score, and the pinned ones."""
     scored = [s for s in (score_item(i, src, cfg, now) for i in items) if s]
     pinned = pinned_links(scored, src)
-    return [i for i in scored if i.score >= cfg.output.min_score or i.link in pinned]
+    marked = [replace(i, pinned=i.link in pinned) for i in scored]
+    return [i for i in marked if i.score >= cfg.output.min_score or i.pinned]
 
 
 def best_by(items: Sequence[Item], key: Callable[[Item], str]) -> list[Item]:
@@ -482,6 +493,41 @@ def dedupe(items: Sequence[Item]) -> list[Item]:
 def rank(items: Sequence[Item]) -> list[Item]:
     """Best score first, then newest."""
     return sorted(items, key=lambda i: (-i.score, -i.date.timestamp()))
+
+
+def share_key(item: Item) -> tuple[bool, float, float]:
+    """The order inside a group for the feed: pinned first, then score, then date."""
+    return (item.pinned, item.score, item.date.timestamp())
+
+
+def best_key(item: Item) -> tuple[float, float]:
+    """The order inside a group for the digest: score, then date."""
+    return (item.score, item.date.timestamp())
+
+
+def split_shares(items: Sequence[Item], share: int, key: Callable[[Item], tuple]) -> tuple[list[Item], list[Item]]:
+    """The best `share` items of each group, and all the others. Both lists keep the order of key."""
+    taken: list[Item] = []
+    rest: list[Item] = []
+    counts: dict[str, int] = {}
+    for item in sorted(items, key=key, reverse=True):
+        count = counts.get(item.group, 0)
+        (taken if count < share else rest).append(item)
+        counts[item.group] = count + 1
+    return taken, rest
+
+
+def select_for_feed(items: Sequence[Item], output: Output) -> list[Item]:
+    """Each group gets max_per_group places first. The room that is left goes to the best of the rest."""
+    first, rest = split_shares(items, output.max_per_group, share_key)
+    chosen = first + rank(rest)[: max(0, output.max_items - len(first))]
+    return rank(sorted(chosen, key=share_key, reverse=True)[: output.max_items])
+
+
+def select_for_digest(items: Sequence[Item], output: Output) -> list[Item]:
+    """At most digest_per_group items of each group, best first, cut at digest_items."""
+    taken, _ = split_shares(items, output.digest_per_group, best_key)
+    return rank(taken)[: output.digest_items]
 
 
 # ---------------------------------------------------------------- network
@@ -644,7 +690,7 @@ def collect(sources: Sequence[Source], run: Run) -> list[SourceResult]:
 def make_report(cfg: Config, sources: Sequence[Source], results: Sequence[SourceResult], now: datetime) -> Report:
     """Score, dedupe and rank the items of all sources that worked."""
     kept = [i for s, r in zip(sources, results) for i in select_items(s, r.items, cfg, now)]
-    items = rank(dedupe(kept))[: cfg.output.max_items]
+    items = select_for_feed(dedupe(kept), cfg.output)
     errors = tuple(r.id for r in results if r.status == "error")
     return Report(cfg, sources, results, items, errors, now)
 
@@ -759,8 +805,8 @@ def render_digest(items: Sequence[Item], cfg: Config, now: datetime, errors: Seq
 
 
 def pick_digest(items: Sequence[Item], report: Report, max_chars: int | None = None) -> list[Item]:
-    """The first digest_items items. With max_chars, drop the last item until the text fits."""
-    chosen = list(items[: report.cfg.output.digest_items])
+    """The best digest items: a share for each group, cut at digest_items. With max_chars, drop the last until the text fits."""
+    chosen = select_for_digest(items, report.cfg.output)
     while max_chars and chosen:
         text = render_digest(chosen, report.cfg, report.now, report.errors)
         if len(text) <= max_chars:

@@ -49,6 +49,8 @@ Um termo de `[negative]` no título ou no resumo descarta o item.
 `requires_match = true` mantém só os itens que casam com algum interesse.
 Uma fonte `pinned` sempre mantém seus itens mais novos. Item sem data não ganha bônus de recência.
 O `feed.atom` mantém itens com `score >= min_score`. Os limites ficam em `[output]`.
+Um item do GitHub tem a data do último push (`pushed_at`), ou a da criação se não há push. O `feed.atom` dá a cada grupo `max_per_group` vagas primeiro; os melhores do resto preenchem o espaço. O digest mostra no máximo `digest_per_group` itens de um grupo.
+A chave de fonte `exclude_terms = ["canary"]` descarta o item com um termo no título, como palavra inteira. A chave de fonte `pinned_keep` substitui o valor de `[output]` para essa fonte.
 
 ## Os interesses
 

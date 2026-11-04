@@ -41,6 +41,7 @@ title = "Test feed"
 [output]
 max_items = 10
 digest_items = 5
+digest_per_group = 10
 digest_min_score = 6.0
 [negative]
 terms = ["giveaway"]
@@ -221,6 +222,31 @@ class ParsingTest(unittest.TestCase):
         self.assertEqual(first.date, datetime(2026, 11, 2, 8, 0, tzinfo=timezone.utc))
         self.assertEqual(items[1].summary, "")
 
+    def test_github_item_is_dated_by_the_last_push(self) -> None:
+        repos = {"items": [
+            {"full_name": "old/active", "html_url": "https://github.com/old/active",
+             "created_at": "2019-03-01T00:00:00Z", "pushed_at": "2026-11-03T12:00:00Z"},
+            {"full_name": "old/no-push", "html_url": "https://github.com/old/no-push",
+             "created_at": "2026-10-30T08:00:00Z", "pushed_at": None},
+        ]}
+        src = make_source(kind="github_search", weight=2, max_age_days=21)
+        active, no_push = bf.parse_github(json.dumps(repos).encode(), src, NOW)
+        self.assertEqual(active.date, datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc))
+        self.assertEqual(no_push.date, datetime(2026, 10, 30, 8, 0, tzinfo=timezone.utc))
+        self.assertTrue(active.dated and no_push.dated)
+        scored = bf.score_item(active, src, CFG, NOW)
+        self.assertIsNotNone(scored)
+        self.assertEqual(scored.score, 4.0)  # base 2 + recency 2.0 (24 hours old), no stars
+        entry = ET.fromstring(bf.build_atom(bf.Report(CFG, [], [], [active], (), NOW))).find(ATOM + "entry")
+        self.assertEqual(entry.findtext(ATOM + "updated"), "2026-11-03T12:00:00Z")
+
+    def test_github_item_pushed_long_ago_is_too_old(self) -> None:
+        repos = {"items": [{"full_name": "old/idle", "html_url": "https://github.com/old/idle",
+                            "created_at": "2026-11-02T00:00:00Z", "pushed_at": "2019-03-01T00:00:00Z"}]}
+        src = make_source(kind="github_search", weight=5, max_age_days=21)
+        (idle,) = bf.parse_github(json.dumps(repos).encode(), src, NOW)
+        self.assertIsNone(bf.score_item(idle, src, CFG, NOW))
+
     def test_github_query_dates(self) -> None:
         src = make_source(kind="github_search", query="topic:x created:>{d7} pushed:>{d14} a:>{d30}", limit=7)
         url = bf.github_url(src, NOW)
@@ -358,6 +384,28 @@ class ScoringTest(unittest.TestCase):
         src = make_source(weight=1, pinned=True, pinned_keep=3, max_age_days=3)
         self.assertEqual([i.link for i in bf.select_items(src, items, CFG, NOW)], ["https://x/1"])
 
+    def test_exclude_terms_drop_a_title_with_the_whole_word(self) -> None:
+        src = make_source(weight=5, exclude_terms=("canary",))
+        titles = ["v0.5.0-canary.3", "Canary build 7", "Canaryx 1", "v0.5.0"]
+        items = [make_item(title=t, link=f"https://x/{n}", summary="canary in the summary") for n, t in enumerate(titles)]
+        kept = bf.select_items(src, items, CFG, NOW)
+        self.assertEqual([i.title for i in kept], ["Canaryx 1", "v0.5.0"])
+        self.assertEqual(len(bf.select_items(make_source(weight=5), items, CFG, NOW)), 4)
+
+    def test_source_keys_exclude_terms_and_pinned_keep(self) -> None:
+        raw = {**RAW_CONFIG, "source": [
+            {"id": "a", "group": "agents", "kind": "feed", "weight": 3, "url": "https://x/a",
+             "pinned": True, "pinned_keep": 1, "exclude_terms": ["canary", "nightly build"]},
+            {"id": "b", "group": "agents", "kind": "feed", "weight": 3, "url": "https://x/b"},
+        ]}
+        raw["output"] = {**raw["output"], "pinned_keep": 3}
+        first, second = bf.parse_config(raw).sources
+        self.assertEqual((first.pinned_keep, first.exclude_terms), (1, ("canary", "nightly build")))
+        self.assertEqual((second.pinned_keep, second.exclude_terms), (3, ()))
+        dropped = make_item(title="The Nightly Build is out")
+        self.assertTrue(bf.is_excluded(dropped, first))
+        self.assertFalse(bf.is_excluded(dropped, second))
+
     def test_rank_orders_by_score_then_date(self) -> None:
         a = make_item(link="https://x/a", score=5.0, date=hours_ago(5))
         b = make_item(link="https://x/b", score=5.0, date=hours_ago(1))
@@ -366,8 +414,9 @@ class ScoringTest(unittest.TestCase):
 
 
 class OutputTest(unittest.TestCase):
-    def report(self, items: list[bf.Item], now: datetime = NOW, errors: tuple[str, ...] = ()) -> bf.Report:
-        return bf.Report(CFG, [], [], items, errors, now)
+    def report(self, items: list[bf.Item], now: datetime = NOW, errors: tuple[str, ...] = (), **output) -> bf.Report:
+        cfg = bf.parse_config({**RAW_CONFIG, "output": {**RAW_CONFIG["output"], **output}})
+        return bf.Report(cfg, [], [], items, errors, now)
 
     def scored_items(self) -> list[bf.Item]:
         return [
@@ -434,7 +483,7 @@ class OutputTest(unittest.TestCase):
             make_item(title=f"Item {n} " + "x" * 200, link=f"https://x/{n}", score=9.0 - n / 10)
             for n in range(5)
         ]
-        report = self.report(items, errors=("bad",))
+        report = self.report(items, errors=("bad",), digest_per_group=5)
         chosen = bf.pick_digest(items, report, 700)
         text = bf.render_digest(chosen, CFG, NOW, ("bad",))
         self.assertLessEqual(len(text), 700)
@@ -446,7 +495,53 @@ class OutputTest(unittest.TestCase):
 
     def test_digest_item_limit(self) -> None:
         items = [make_item(link=f"https://x/{n}", score=9.0) for n in range(9)]
-        self.assertEqual(len(bf.pick_digest(items, self.report(items))), 5)
+        self.assertEqual(len(bf.pick_digest(items, self.report(items, digest_per_group=9))), 5)
+
+    def test_feed_share_of_a_group_is_capped_in_the_first_pass(self) -> None:
+        busy = [make_item(link=f"https://x/a{n}", score=9.0 - n / 10) for n in range(30)]
+        calm = [make_item(link=f"https://x/s{n}", score=5.0 - n, group="science") for n in range(3)]
+        output = bf.Output(max_items=17, max_per_group=14)
+        chosen = bf.select_for_feed(busy + calm, output)
+        self.assertEqual(sum(i.group == "agents" for i in chosen), 14)
+        self.assertEqual(sum(i.group == "science" for i in chosen), 3)
+
+    def test_feed_room_that_is_left_goes_to_the_best_of_the_rest(self) -> None:
+        busy = [make_item(link=f"https://x/a{n}", score=9.0 - n / 10) for n in range(30)]
+        calm = [make_item(link=f"https://x/s{n}", score=5.0 - n, group="science") for n in range(3)]
+        chosen = bf.select_for_feed(busy + calm, bf.Output(max_items=20, max_per_group=14))
+        self.assertEqual(len(chosen), 20)
+        self.assertEqual(sum(i.group == "agents" for i in chosen), 17)
+        self.assertEqual([i.score for i in chosen], sorted((i.score for i in chosen), reverse=True))
+        self.assertEqual({i.link for i in chosen if i.group == "agents"}, {f"https://x/a{n}" for n in range(17)})
+
+    def test_feed_first_pass_never_goes_over_max_items(self) -> None:
+        items = [make_item(link=f"https://x/{g}{n}", score=9.0 - n, group=g) for g in ("agents", "science") for n in range(4)]
+        self.assertEqual(len(bf.select_for_feed(items, bf.Output(max_items=5, max_per_group=14))), 5)
+
+    def test_feed_share_takes_a_pinned_item_before_a_better_score(self) -> None:
+        items = [make_item(link=f"https://x/{n}", score=9.0 - n) for n in range(5)]
+        items.append(make_item(link="https://x/pinned", score=1.0, pinned=True))
+        chosen = bf.select_for_feed(items, bf.Output(max_items=3, max_per_group=3))
+        self.assertEqual([i.link for i in chosen], ["https://x/0", "https://x/1", "https://x/pinned"])
+
+    def test_digest_takes_at_most_digest_per_group_of_one_group(self) -> None:
+        items = [make_item(link=f"https://x/{g}{n}", score=9.0 - n / 10, group=g) for g in ("agents", "science") for n in range(10)]
+        chosen = bf.select_for_digest(items, bf.Output(digest_items=18, digest_per_group=3))
+        self.assertEqual(len(chosen), 6)
+        self.assertEqual({i.link for i in chosen}, {f"https://x/{g}{n}" for g in ("agents", "science") for n in range(3)})
+
+    def test_digest_is_cut_at_digest_items_with_the_best_first(self) -> None:
+        items = [make_item(link=f"https://x/{g}{n}", score=9.0 - n / 10 - (g == "science"), group=g) for g in ("agents", "science") for n in range(4)]
+        chosen = bf.select_for_digest(items, bf.Output(digest_items=4, digest_per_group=3))
+        self.assertEqual([i.link for i in chosen], ["https://x/agents0", "https://x/agents1", "https://x/agents2", "https://x/science0"])
+
+    def test_digest_sections_follow_the_config_not_the_score(self) -> None:
+        science = make_item(title="Sci", link="https://x/s", score=9.0, group="science")
+        agents = make_item(title="Agt", link="https://x/a", score=7.0)
+        report = self.report([science, agents])
+        text = bf.render_digest(bf.pick_digest([science, agents], report), report.cfg, NOW, ())
+        self.assertLess(text.index("## Agents"), text.index("## Science"))
+        self.assertEqual(bf.render_digest([science], report.cfg, NOW, ()).count("## "), 1)
 
     def test_opml(self) -> None:
         raw = {**RAW_CONFIG, "source": [
@@ -704,6 +799,27 @@ class RealConfigTest(unittest.TestCase):
         cfg = bf.load_config(HERE.parent / "feeds.toml")
         self.assertEqual(len(cfg.sources), len(self.raw["source"]))
         self.assertEqual(len(cfg.interests), len(self.raw["interest"]))
+
+    def test_new_source_and_output_keys(self) -> None:
+        for source in self.raw["source"]:
+            if "exclude_terms" in source:
+                self.assertTrue(source["exclude_terms"], source["id"])
+                self.assertTrue(all(isinstance(t, str) and t for t in source["exclude_terms"]), source["id"])
+            if "pinned_keep" in source:
+                self.assertIs(type(source["pinned_keep"]), int, source["id"])
+                self.assertGreaterEqual(source["pinned_keep"], 1, source["id"])
+        for key in ("max_per_group", "digest_per_group"):
+            self.assertIs(type(self.raw["output"][key]), int, key)
+            self.assertGreaterEqual(self.raw["output"][key], 1, key)
+
+    def test_the_sources_of_the_first_run_fixes(self) -> None:
+        cfg = bf.load_config(HERE.parent / "feeds.toml")
+        by_id = {s.id: s for s in cfg.sources}
+        self.assertEqual(by_id["hermes-releases"].exclude_terms, ("canary",))
+        for name in ("latent-space", "oxide-and-friends", "rustacean-station", "gleaming-the-tube",
+                     "cognitive-revolution", "changelog", "practical-ai"):
+            self.assertEqual((by_id[f"pod-{name}"].pinned, by_id[f"pod-{name}"].pinned_keep), (True, 2), name)
+        self.assertEqual((cfg.output.max_per_group, cfg.output.digest_per_group, cfg.output.digest_items), (14, 3, 18))
 
 
 if __name__ == "__main__":

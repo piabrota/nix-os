@@ -4,9 +4,11 @@ title = "piabrota - personal feed"
 
 [output]
 max_items = 80          # entries in feed.atom
+max_per_group = 14      # most entries one group places in the first pass
 max_age_days = 21       # default age limit of an item
 min_score = 4.0         # an item below this score is dropped (pinned items stay)
-digest_items = 15       # items in digest.md and in the stdout digest
+digest_items = 18       # items in digest.md and in the stdout digest
+digest_per_group = 3    # most digest items of one group
 digest_min_score = 6.0  # an item must reach this to be sent on stdout
 digest_max_chars = 1900 # Discord cuts a message at 2000
 pinned_keep = 3
@@ -145,6 +147,7 @@ weight = 5
 pinned = true
 limit = 5
 max_age_days = 30
+exclude_terms = ["canary"]
 [[source]]
 id = "hermes-commits"
 group = "hermes"
@@ -452,6 +455,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://podcast.latent.space/feed.xml"
 weight = 3
+pinned = true
+pinned_keep = 2
 limit = 6
 max_age_days = 21
 [[source]]
@@ -460,6 +465,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://feeds.megaphone.fm/RINTP3108857801"
 weight = 2
+pinned = true
+pinned_keep = 2
 limit = 6
 max_age_days = 21
 [[source]]
@@ -468,6 +475,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://feeds.transistor.fm/oxide-and-friends"
 weight = 3
+pinned = true
+pinned_keep = 2
 limit = 6
 max_age_days = 30
 [[source]]
@@ -476,6 +485,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://rustacean-station.org/podcast.rss"
 weight = 3
+pinned = true
+pinned_keep = 2
 limit = 6
 max_age_days = 45
 [[source]]
@@ -484,6 +495,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://changelog.com/podcast/feed"
 weight = 2
+pinned = true
+pinned_keep = 2
 limit = 6
 max_age_days = 21
 [[source]]
@@ -500,6 +513,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://changelog.com/practicalai/feed"
 weight = 2
+pinned = true
+pinned_keep = 2
 limit = 6
 max_age_days = 21
 [[source]]
@@ -542,6 +557,8 @@ group = "podcasts"
 kind = "feed"
 url = "https://feeds.acast.com/public/shows/65bea6b33f3dbd00160fe247"
 weight = 3
+pinned = true
+pinned_keep = 2
 limit = 4
 max_age_days = 60
 [[source]]
