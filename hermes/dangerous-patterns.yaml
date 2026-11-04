@@ -65,3 +65,15 @@ deny_patterns:
     enabled: true
     group: INSTALL
     pattern: '\b(?:uvx|npx|pnpx|bunx)\b.*|\b(?:pip3?|npm|pnpm|yarn|bun|cargo|go|gem)\s+(?:install|add|get)\b.*|\buv\s+(?:pip\s+install|tool\s+(?:install|run)|add|run)\b.*|\bhermes\s+(?:pm|plugins?|skills)\s+install\b.*'
+
+  # --- OpenRig: systemd runs the daemon; the owner sets up the machine, hosts and credentials ---
+  # Hermes may plan, start, stop and talk to rigs (rig up, down, ps, send, queue, capture). A
+  # restart of the daemon goes through a deploy, never through `rig daemon`.
+  - description: '[OPENRIG] rig setup, rig start or daemon control'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:setup|start|daemon\s+(?:start|stop|restart))\b.*'
+  - description: '[OPENRIG] remote hosts, credentials, providers, MCP grants or connectors'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:host\s+(?:add|pair|select|rename)|auth\s+(?:save|switch)|provider\s+switch|mcp\s+(?:token\s+add|serve\b[^|;&]*--http)|slack\s+setup)\b.*'
