@@ -235,7 +235,9 @@ in
           RestrictRealtime = true;
           RestrictSUIDSGID = true;
           LockPersonality = true;
-          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+          # AF_NETLINK: os.networkInterfaces() at startup reads the addresses over netlink;
+          # without it Node fails with EAFNOSUPPORT (97) and the server exits.
+          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
           SystemCallArchitectures = "native";
           SystemCallFilter = [ "@system-service" "~@privileged" ];
           SystemCallErrorNumber = "EPERM";
