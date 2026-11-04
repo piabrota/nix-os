@@ -170,10 +170,9 @@ slice. Also on the box: your dashboard (`hermes-backend`, 2 GB, behind nginx at
 hermes.piabrota.art), PGX (a Postgres, nothing uses it today), sshd. The public site is on the other
 VPS, piabrota (KVM 1).
 
-Paperclip (`paperclip`, 2 GB, with its PostgreSQL) is at paperclip.piabrota.art, and you are its
-agent: a task from it arrives on your API server (127.0.0.1:8642) and names its Paperclip run.
-Then load the `paperclip` skill and call `$PAPERCLIP_API_URL` with `$PAPERCLIP_API_KEY`. Never put
-that key in a comment, a file or a log.
+Paperclip (paperclip.piabrota.art) is off for now, by the owner's order of 2026-11-04. You have no
+Paperclip tasks. If a task names a Paperclip run, say that Paperclip is off. Never put a Paperclip
+or API key in a comment, a file or a log.
 
 To look at it, load the `kvm4-health` skill and run `kvm4-health`: memory, swap, pressure, load,
 disk and the journal, and for each unit its memory now and its peak (`MemoryPeak`) against its

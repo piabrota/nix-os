@@ -46,7 +46,7 @@
 
 **How to read.** Top to bottom, one lane per place: people, DNS, each VPS, GitHub. Arrows say where a request or a deploy goes; the red border marks what is outside the two boxes.
 
-**Not shown.** PGX and Paperclip on KVM 4, the ACME certificates, the secrets on each box, and the deploy by hand.
+**Not shown.** PGX on KVM 4 (Paperclip is off for now), the ACME certificates, the secrets on each box, and the deploy by hand.
 
 **Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
 
@@ -114,9 +114,10 @@ Postgres, instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its 
 - [`docs/PGX.ptBR.md`](docs/PGX.ptBR.md), em português
 - [`docs/PGX.md`](docs/PGX.md), in English
 
-[Paperclip](https://github.com/paperclipai/paperclip), a control plane for a team of AI agents, runs
-on KVM 4 at paperclip.piabrota.art with Hermes as its agent (`paperclip.nix`): how they talk, the
-setup on the box and the cost are in [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md), in English.
+[Paperclip](https://github.com/paperclipai/paperclip), a control plane for a team of AI agents, is
+off for now (`piabrota.paperclip.enable = false;`). When on, it runs on KVM 4 at paperclip.piabrota.art
+with Hermes as its agent (`paperclip.nix`): how they talk, the setup on the box, the cost and how to
+turn it on are in [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md), in English.
 
 ## Recipes
 
@@ -157,7 +158,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
 ├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
 ├── hosts/piabrota/          KVM 1: the public web only
-├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, Paperclip, PGX (docs/DEPLOY.md)
+├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, PGX; Paperclip off for now (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit

@@ -1,5 +1,55 @@
 # Paperclip on piabrota2
 
+Status: off since 2026-11-04 (the owner's order). `hosts/piabrota2/default.nix` sets
+`piabrota.paperclip.enable = false;`. The import of `paperclip.nix` stays. The rest of this file
+describes Paperclip when it is on.
+
+## Turn it on again
+
+1. Set `piabrota.paperclip.enable = true;` in `hosts/piabrota2/default.nix`.
+2. Check the DNS: `dig +short paperclip.piabrota.art` must give the address of piabrota2. If it
+   does not, the ACME order fails on the deploy.
+3. Merge the pull request. The deploy starts `paperclip`, `paperclip-secrets` and `postgresql`, and
+   adds the nginx host.
+4. Do the steps of "Setup" below. Do step 2 of "Setup" only if the database is new. If the data
+   below is still on the disk, the admin, the company and the agents are back, and you only need
+   steps 3 to 5 if Hermes lost its keys.
+
+### What stays on the disk
+
+The change removes the units, the user, the packages and the nginx host. It deletes no data:
+
+| What | Path |
+|---|---|
+| Paperclip state: backups, logs, uploads and the master key of its encrypted secrets (`secrets/master.key`) | `/var/lib/paperclip` |
+| Signing secrets (`paperclip.env`) and the copy of the Claude token (`claude.env`) | `/var/lib/paperclip-secrets` |
+| The PostgreSQL 17 data directory, with the `paperclip` database and role | `/var/lib/postgresql/17` |
+| The ACME certificate of `paperclip.piabrota.art` | `/var/lib/acme/paperclip.piabrota.art` |
+| The `paperclip` user and group | None in `/etc/passwd` after the deploy. The files above keep its numeric id. |
+| `API_SERVER_KEY` and `PAPERCLIP_API_KEY` | `/var/lib/hermes-secrets/hermes.env` (not touched) |
+
+`API_SERVER_HOST` and `API_SERVER_PORT` are gone from Hermes. If `API_SERVER_KEY` stays in
+`hermes.env`, Hermes can still open its API server on loopback with the upstream defaults.
+
+### Erase the data for good
+
+Destroys data. Not part of this change. Run it by hand on piabrota2, only if you want no
+Paperclip data. A backup in `/var/lib/paperclip/backups` goes with it. Without `master.key`, the
+encrypted secrets in a restored database are lost.
+
+```console
+sudo rm -rf /var/lib/paperclip
+sudo rm -rf /var/lib/paperclip-secrets
+sudo rm -rf /var/lib/postgresql
+sudo rm -rf /var/lib/acme/paperclip.piabrota.art
+sudo sed -i -e '/^API_SERVER_KEY=/d' -e '/^PAPERCLIP_API_KEY=/d' /var/lib/hermes-secrets/hermes.env
+```
+
+`/var/lib/postgresql` holds only Paperclip's database: PGX has its own state in `/var/lib/pgx`.
+The last line removes the two Paperclip keys from Hermes's secrets. Then run
+`sudo /run/current-system/bin/switch-to-configuration switch` and `sudo systemctl reload hermes-agent`
+(see step 4 of "Setup").
+
 [Paperclip](https://github.com/paperclipai/paperclip) (MIT) runs on piabrota2 (KVM 4) at
 <https://paperclip.piabrota.art>. `paperclip.nix` sets it up. This file is in English only, by the
 owner's order.

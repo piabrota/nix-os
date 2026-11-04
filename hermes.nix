@@ -367,7 +367,7 @@ in
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
     # omp is the wrapper above, for the hermes-omp skill.
     # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
-    extraPackages = [ pkgs.gh pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ];
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
