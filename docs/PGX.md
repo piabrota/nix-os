@@ -5,8 +5,7 @@
 [PGX](https://pgx.dev) ([pgrundev/pgx](https://github.com/pgrundev/pgx)) is a Postgres-compatible
 database engine written in Rust: one process that speaks the PostgreSQL 18 wire protocol and SQL.
 This box runs it as the unit `pgx` (`pgx.nix`), instead of a PostgreSQL server or a Docker
-container. Today nothing on the box uses it: its first user, rax's store on KubeSolo, left with
-KubeSolo on 2026-11-02. It stays for the next workload that needs Postgres.
+container. Today nothing on the box uses it. It stays for the next workload that needs Postgres.
 
 ## What it is, and what it is not
 
@@ -41,8 +40,8 @@ here holds stores you could rebuild, such as a task queue.
   in `/run/pgx` (mode 0750, the `pgx` group only). On the first start it copies the base cluster
   (`pgx init --port 5432 --durability full`) and generates the superuser's password, which stays
   in `/var/lib/pgx/config.json`.
-- Port 5432. A new cluster listens on loopback; the box's own was made listening on every
-  address, for KubeSolo's pods. **The firewall opens no port**, and `pg_hba.conf`, rewritten on
+- Port 5432. A new cluster listens on loopback; the box's own listens on every
+  address. **The firewall opens no port**, and `pg_hba.conf`, rewritten on
   every start, admits the socket (the `pgx` group only) and, over TCP with the password
   (`scram-sha-256`), loopback only.
 - The same sandbox as the Loco apps: no capabilities, read-only system, private `/tmp` and
