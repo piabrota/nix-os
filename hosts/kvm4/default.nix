@@ -4,14 +4,8 @@
 # its GitHub App and PGX. It does not serve www.piabrota.art: DNS points at piabrota, so ACME would
 # fail here and the deploy roll back.
 #
-# Before the first deploy (docs/DEPLOY.md, "A second host"):
-# - Install Hostinger's NixOS template on it, as on piabrota: configuration.nix's boot and disk are
-#   that template's. If /etc/nixos/hardware-configuration.nix on the box says something else (a
-#   disk that is not /dev/sda, no `nixos` label), copy it here and import it.
-# - Set networking.hostName below to the name hPanel shows (srvNNNNNNN).
-# - Copy Hermes's secrets (/var/lib/hermes-secrets/) from piabrota. While both boxes run Hermes,
-#   give this one its own chat bot tokens: one Telegram bot token polled by two gateways gives
-#   each a 409 Conflict.
+# Its setup from an empty VPS (the NixOS template, the hostname, the secrets, the first deploy) is
+# docs/DEPLOY.md, "A second host". Nothing is cloned or built on the VPS.
 { ... }:
 {
   imports = [

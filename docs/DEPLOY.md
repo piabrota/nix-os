@@ -119,22 +119,37 @@ The repository deploys two hosts: `piabrota` (KVM 1) and `kvm4` (KVM 4). Each is
 builds both systems in one job and deploys each in its own job. A host that has no address secret
 is skipped with a notice, so `piabrota` keeps deploying while `kvm4` is being set up.
 
-To bring `kvm4` up, once:
+To bring `kvm4` up from a new, empty VPS, once. Nothing is cloned or built on the VPS: the
+repository stays on GitHub (and on your machine), and the VPS only receives the built system.
 
-1. In hPanel, install the same NixOS template on the KVM 4 VPS as on piabrota, with your SSH key.
-   `configuration.nix`'s boot and disk settings are that template's. On the VPS, compare
-   `/etc/nixos/` with the repository; if its `hardware-configuration.nix` names another disk or
-   label, add it to `hosts/kvm4/` and import it.
-2. In `hosts/kvm4/default.nix`, set `networking.hostName` to the name hPanel shows (srvNNNNNNN),
-   in a pull request.
-3. Get its IPv4 address and host key as in step 2 above. In the `prod` environment, add the secret
-   `DEPLOY_HOST_KVM4` (the address), and add the host key line to `DEPLOY_KNOWN_HOSTS`, under
-   piabrota's line. `DEPLOY_SSH_KEY` stays the same: `keys/deploy.pub` is on both hosts.
-4. Open TCP port 22 in its Hostinger firewall, as in step 4 above.
-5. Write Hermes's secrets on it (`/var/lib/hermes-secrets/`, docs/HERMES.md). While piabrota still
-   runs Hermes, use other chat bot tokens: two gateways on one Telegram token both fail.
-6. The first deploy, as in step 5 above, for this host only: **Run workflow** with **Host**
-   `kvm4` and **SSH user** `h0ffmann`, or `DEPLOY_HOST=<ip> just deploy h0ffmann kvm4`.
+1. **hPanel, the OS.** Install the NixOS template on the KVM 4 VPS (**VPS > OS & Panel >
+   Operating System**, as in docs/FORK.md), with your SSH public key. `configuration.nix`'s boot
+   and disk settings are that template's. Take a snapshot (**Snapshots & Backups**), so you can
+   go back to a clean system.
+2. **The VPS, a look.** Log in with the account the template set up for your key (`root` or
+   `h0ffmann`). Note the hostname (`hostname`, srvNNNNNNN), print the host key
+   (`cat /etc/ssh/ssh_host_ed25519_key.pub`) and look at `/etc/nixos/`. If its
+   `hardware-configuration.nix` names another disk or label than `/dev/sda` and `nixos`, add it
+   to `hosts/kvm4/` and import it.
+3. **The repository.** In a pull request, set `networking.hostName` in `hosts/kvm4/default.nix`
+   to that hostname. Merge it; kvm4 is still skipped, because it has no address secret yet.
+4. **GitHub.** In the `prod` environment, add the secret `DEPLOY_HOST_KVM4` (the IPv4 address
+   from **VPS > Overview**), and add the line `<ip> ssh-ed25519 AAAA...` to `DEPLOY_KNOWN_HOSTS`,
+   under piabrota's line. `DEPLOY_SSH_KEY` stays the same: `keys/deploy.pub` is on both hosts.
+5. **hPanel, the firewall.** Open TCP port 22 from any address, as in step 4 above.
+6. **The first deploy**, before the `deploy` user exists on the VPS, in one of two ways:
+   - From your machine, with Nix, in a clone of this repository:
+     `DEPLOY_HOST=<ip> just deploy root kvm4` (or `h0ffmann` instead of `root`, whichever
+     account step 2 used).
+   - From GitHub, if the account is `h0ffmann`: add the line of `keys/deploy.pub` to
+     `~h0ffmann/.ssh/authorized_keys` on the VPS, run **Actions > deploy > Run workflow** with
+     **Host** `kvm4` and **SSH user** `h0ffmann`, then remove the line again (step 5 above shows
+     the commands).
+   After it, `ssh deploy@<ip>` works, and every merge to `main` deploys kvm4 too.
+7. **Hermes's secrets.** Write `/var/lib/hermes-secrets/hermes.env` (and `github-app.env` for
+   the GitHub App) on the VPS, as docs/HERMES.md says. While piabrota still runs Hermes, use other
+   chat bot tokens: two gateways on one Telegram token both fail. Hermes starts with no platform
+   until the file exists, so step 6 does not wait on it.
 
 When kvm4 runs everything piabrota should hand over, a pull request takes `../../hermes.nix`,
 `./hermes.nix`, `../../hermes-github.nix` and `piabrota.pgx.enable` out of
