@@ -181,8 +181,7 @@ let
   # gets its own rules: hermes/omp.yml, a read-only config overlay. This wrapper is the only omp on
   # Hermes's PATH. omp reads ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the
   # same subscription. omp runs in Hermes's cgroup (1 GB): choom makes the kernel's OOM killer
-  # pick omp before the gateway. The wrapper also appends hermes/omp-append-system.md to omp's
-  # system prompt (read-only in the store).
+  # pick omp before the gateway.
   ompWrapped = pkgs.writeShellApplication {
     name = "omp";
     text = ''

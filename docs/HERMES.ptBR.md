@@ -188,7 +188,9 @@ trabalho, lê o diff e então ele mesmo faz o commit, o push e o pull request. O
   papel chega a outro provedor ou a um modelo local.
 - **Prompt.** O wrapper acrescenta o `hermes/omp-append-system.md` ao prompt de sistema do omp:
   diffs pequenos, uma verificação declarada, nenhuma afirmação de "pronto" sem saída, nenhum commit
-  nem push.
+  nem push. O omp lê o arquivo nesse caminho, e um caminho na linha de comando desliga a busca dele
+  por `APPEND_SYSTEM.md`, então um repositório clonado não troca essas regras (`main.ts` e
+  `system-prompt.ts` na v18.16.0).
 
 Não conferido antes do merge: o pico de memória do omp na máquina, e se um token de
 `claude setup-token` funciona como `ANTHROPIC_OAUTH_TOKEN`. Depois do deploy, rode uma tarefa e
