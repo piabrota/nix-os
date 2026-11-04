@@ -18,8 +18,8 @@ rig ps --nodes --rig piabrota-dev             # tested: one row per seat
 
 Read the result:
 
-- `rig status` prints "Daemon running on port 7433" and `Kernel: skipped`. The kernel rig is off on
-  purpose: it needs Claude Code or Codex.
+- `rig status` prints "Daemon running on port 7433" and `Kernel: skipped`. The unit sets that on
+  purpose (the [reference](../../hermes-omp/references/openrig-seats.md)).
 - `rig status` prints "Daemon not running." and exits 0. `rig ps` and the other commands print
   "Daemon not running." and exit 1. **Stop here.** Do not run `rig up`: it would start a daemon
   of its own (see `safety.md`). Read `journalctl -u openrig -n 50 --no-pager`, then follow
@@ -27,7 +27,8 @@ Read the result:
 - A rig that is stopped does not show in `rig ps`. The footer says "not shown: 1 stopped". Use
   `rig ps --filter status=stopped` or `rig ps --include-archived`.
 - `NRestarts` above 0 since the last deploy, or `ActiveState` not `active`: tell the owner.
-- `rig doctor` shows FAIL rows for Claude Code, Codex and the UI. That is normal here.
+- `rig doctor` shows FAIL rows for Claude Code, Codex and the UI. They are known here (the
+  [reference](../../hermes-omp/references/openrig-seats.md)).
 
 ## 2. Start a rig and check every seat
 
@@ -109,9 +110,11 @@ Signs: ATTN `yes` and a REASON in `rig ps --nodes`; `rig send` is refused with a
 the pane shows a question or a menu.
 
 1. `rig capture <seat> --lines 40`. Read the question. Quote it to the owner.
-2. For an `omp` seat, the usual causes are a cancelled approval request or a cancelled extension
-   dialog. The seat then waits until the next agent run. Send an instruction that needs no
-   answer: "Do not use that tool. Do this instead: ...". From the docs, not run.
+2. For an `omp` seat, a usual cause is a cancelled extension dialog (a cancelled approval request
+   only if the unit runs without `OPENRIG_YOLO`; see the
+   [reference](../../hermes-omp/references/openrig-seats.md)). The seat then waits until the next
+   agent run. Send an instruction that needs no answer: "Do not use that tool. Do this instead:
+   ...". From the docs, not run.
 3. If sends stay refused after the prompt is gone, record it:
    `rig seat clear-attention <seat> --reason "<what you saw in the pane>"`. Use it only when the
    pane proves the prompt is gone. It cannot bypass restore or identity checks.
@@ -151,8 +154,8 @@ rig down piabrota-dev --snapshot                    # tested: "stopped. 1 sessio
 
 ## 7. After a deploy
 
-A deploy that changes the unit restarts `openrig`. systemd ends the daemon, tmux and every seat.
-Nothing restarts the rig. A merge to nix-os deploys, so before the owner merges, take
+A deploy that changes the unit restarts `openrig` and ends every seat (the
+[reference](../../hermes-omp/references/openrig-seats.md)). A merge to nix-os deploys, so before the owner merges, take
 `rig snapshot piabrota-dev`, and check `gh run list -R piabrota/nix-os --workflow deploy.yml
 --limit 1`.
 

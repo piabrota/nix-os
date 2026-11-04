@@ -22,15 +22,17 @@ deploy replaces it. Ask the owner for a change that is not yours to make.
 
 |File|Its job|
 |---|---|
-|`rig.yaml`|Names the rig, picks the permission policy (`none`: the floor, prompts stay on), and lists the members. Each member says which agent folder it uses (`agent_ref`), which profile, which runtime (`omp`) and which working folder (`cwd`, the `work` folder of the unit). The `delegates_to` edge makes the builder start before the reviewer.|
+|`rig.yaml`|Names the rig and lists the members. It sets no permission policy: the unit decides. Each member says which agent folder it uses (`agent_ref`), which profile, which runtime (`omp`) and which working folder (`cwd`, the `work` folder of the unit). The `delegates_to` edge makes the builder start before the reviewer.|
 |`agents/<name>/agent.yaml`|Describes one agent: its default runtime, what it imports, its profile, and its startup files.|
 |`agents/shared/agent.yaml`|A pool that other agents import. It holds only the norms. An agent selects it with `guidance: [shared:norms]`.|
 |`guidance/norms.md`|Merged into the `AGENTS.md` of the seat's working folder, so every `omp` seat reads it.|
 |`guidance/role.md`|The role. It is delivered as a startup file with `delivery_hint: send_text` and `orientation: role`, so one seat's role never replaces another's in the shared `AGENTS.md`.|
 |`startup/context.md`|Text sent after the seat is ready: the limits of the box.|
 
-The model and the tool rules of a seat do not come from the spec. They come from `hermes/omp.yml`,
-through the seat's `omp` shim.
+The model of a seat is `defaults.model` in its `agent.yaml` (`anthropic/claude-sonnet-5-5`, the form
+for which the runner passes the key; see the
+[reference](../../hermes-omp/references/openrig-seats.md)). The tool rules of a seat do not come
+from the spec. They come from `hermes/omp.yml`, through the seat's `omp` wrapper.
 
 ## RigSpec fields
 
@@ -39,7 +41,7 @@ Required: `version` (use `"0.2"`), `name`, `pods` (at least one).
 |Field|Notes|
 |---|---|
 |`summary`|Text for people.|
-|`permission_policy`|`builtin:locked`, `builtin:standard`, `builtin:open`, `builtin:yolo`, `builtin:auto`, a relative path to a policy file, or `none` (the floor, recorded as a choice). A bare name such as `yolo` is refused. `builtin:yolo` turns prompts off. Never choose it without the owner.|
+|`permission_policy`|`builtin:locked`, `builtin:standard`, `builtin:open`, `builtin:yolo`, `builtin:auto`, a relative path to a policy file, or `none` (the floor, recorded as a choice). A bare name such as `yolo` is refused. The specs of this repository set none; do not add one without the owner.|
 |`env`|`NAME: value` pairs for every seat. The value is not secret. Names that start `OPENRIG_` are reserved.|
 |`startup`, `culture_file`, `docs`, `workspace`, `services`, `managed_blocks`, `non_interruptive`|Optional. `non_interruptive` accepts harness warnings: do not set it.|
 |`edges`|Cross-pod edges. Use `pod.member` on both ends.|
@@ -129,10 +131,11 @@ $ rig up rigs/piabrota-dev/rig.yaml --plan
   resolve_spec: ok
   preflight: ok
 Status: planned
-  warning: dev.builder: permission_policy: none (deliberate choice — recorded); launch_posture=floor
+  warning: dev.builder: permission_policy absent; launch_posture=floor
+  warning: dev.reviewer: permission_policy absent; launch_posture=floor
 ```
 
-The two warnings are expected: the floor is chosen on purpose. What each level catches, tested:
+The two warnings are expected: the spec leaves the policy to the unit. What each level catches, tested:
 
 |Mistake|`spec validate`|`up --plan`|
 |---|---|---|

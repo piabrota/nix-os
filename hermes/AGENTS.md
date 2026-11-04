@@ -174,10 +174,10 @@ Paperclip (paperclip.piabrota.art) is off for now, by the owner's order of 2026-
 Paperclip tasks. If a task names a Paperclip run, say that Paperclip is off. Never put a Paperclip
 or API key in a comment, a file or a log.
 
-OpenRig runs on this box: the unit `openrig`, on 127.0.0.1:7433 only (no web page is exposed). The
-command is `rig`, and the skill is `hermes-rig`. Its seats run `omp`, not `claude`. The deny list
-blocks `rig setup`, `rig host`, `rig daemon start|stop|restart` and any flag that turns off a
-seat's permission prompts. It needs Node.js: the owner accepts that for OpenRig.
+OpenRig runs on this box: the unit `openrig`, on 127.0.0.1:7433 only, with the command `rig`. Load
+`hermes-rig` to operate it and `hermes-omp` for the task that a seat gets. Its seats run `omp` with
+`OPENRIG_YOLO=1`, the owner's decision in PR 124. The deny list blocks `rig setup`, `rig host`,
+`rig daemon start|stop|restart` and the commands that change a seat's permissions.
 
 To look at it, load the `kvm4-health` skill and run `kvm4-health`: memory, swap, pressure, load,
 disk and the journal, and for each unit its memory now and its peak (`MemoryPeak`) against its

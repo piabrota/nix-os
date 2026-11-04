@@ -8,7 +8,7 @@ Read these before you change anything:
 
 ## Limits of this box
 
-- All seats and the OpenRig daemon share one memory budget of 2 GiB. One seat takes about 340 MiB.
+- Both seats and the OpenRig daemon share one memory budget of 2 GiB.
 - Run one build at a time. Start each heavy command with `nice -n 10`.
 - Keep a clone shallow: `git clone --depth 1 --filter=blob:none`.
 - You cannot reach a secret, and you cannot push. If a task needs either, stop and tell the

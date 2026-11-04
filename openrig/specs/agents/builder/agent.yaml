@@ -1,12 +1,14 @@
-# The builder seat: writes and tests the code of one task. It runs on omp. The model, and the
-# rules of its tools, come from the omp configuration of the box (hermes/omp.yml), not from this
-# file.
+# The builder seat: writes and tests the code of one task. It runs on omp, on the model below: the
+# form anthropic/<id> is the one for which OpenRig's runner passes the key to omp
+# (hermes/skills/hermes-omp/references/openrig-seats.md). The rules of its tools come from the omp
+# configuration of the box (hermes/omp.yml).
 name: builder
 version: "1.0"
 description: Writes and tests code for one task
 
 defaults:
   runtime: omp
+  model: anthropic/claude-sonnet-5-5
 
 imports:
   - ref: local:../shared

@@ -19,21 +19,12 @@ the owner first (see `commands.md`).
 
 - **Home and state.** The seat runs `omp` with its own `HOME`, a folder under the instance state
   (`state/omp/<seat>/agent`, with `sessions/`). OpenRig copies no `omp` login into it.
-- **The program.** The unit puts a shim called `omp` first on the daemon's path. The shim loads the
-  rules of `hermes/omp.yml` (read-only; bash deny rules; no `git push`, `gh`, `sudo`) and runs
-  `omp` under `choom`, so the kernel picks a seat before the daemon. It has no 35-minute limit.
-- **The token.** The seat uses the owner's Claude subscription, like you. The `openrig` unit gets
-  the token in a root-only step at each start and keeps it in a file that only the `openrig` user
-  reads. The shim reads that file and sets the variable `omp` reads. The daemon's environment
-  never holds the token, and a seat does not inherit the daemon's environment. This skill never
-  reads the file: the deny list blocks its path. If a seat shows a login or authentication error in
-  `rig capture`, tell the owner. Do not look for another token.
-- **Credentials of other providers.** A seat gets a provider key only if its model name has the
-  form `provider/id` and the daemon is set to pass that key. Nothing is set. Do not try.
-- **Approvals.** OpenRig starts `omp` with `--approval-mode always-ask` unless the policy bypasses
-  prompts. A headless runner cancels `omp`'s approval requests, and the seat then needs attention
-  until the next agent run starts. If a seat cannot run a tool, this is the first cause to check.
-  Whether it overrides `tools.approvalMode` in `hermes/omp.yml` is not tested.
+- **What the unit gives the seat.** The `omp` wrapper, the token, the approval mode and the
+  environment of the runner are in
+  [`../../hermes-omp/references/openrig-seats.md`](../../hermes-omp/references/openrig-seats.md).
+  Read it, do not copy it. This skill never reads the token file: the deny list blocks its path.
+  If a seat shows a login or authentication error in `rig capture`, tell the owner. Do not look
+  for another token. If a seat cannot run a tool, tell the owner and name the tool.
 - **Dialogs.** An extension request (`select`, `confirm`, `input`, `editor`) is shown in the pane
   and then cancelled. Send the seat an instruction that needs no dialog.
 - **Model errors.** A failed turn with status 408, 429, 500, 502, 503, 504 or 529 returns to idle at
@@ -61,7 +52,7 @@ gateway. This box does not use it:
 3. The preset takes no guidance, no skills and no startup files, so the specs of `piabrota-dev`
    would not reach it. It has no resume, and it reads prompts from the screen only.
 4. It needs its own provider key and config. The box gives seats one token: the Claude
-   subscription, through the `omp` shim.
+   subscription, through the `omp` wrapper.
 5. Hermes already runs here. Its coding work goes through `omp`, and a seat is an `omp` run that
    stays alive.
 
@@ -69,19 +60,17 @@ Do not install a preset, and do not name a community harness in a spec.
 
 ## The memory rule
 
-Every seat lives in the cgroup of the `openrig` unit. These numbers come from `openrig.nix`:
+Every seat lives in the cgroup of the `openrig` unit. The limits come from `openrig.nix`:
 
 |Item|Value|
 |---|---|
 |`MemoryMax`|2G (2048 MiB), for the daemon, tmux and every seat|
 |`MemoryHigh`|1536M. Above it the kernel slows the unit down. Treat it as the working limit.|
-|Daemon and tmux|About 200 MiB (the idle daemon peaked at 186.7 MiB in a test).|
-|One `omp` seat at work|About 340 MiB.|
 
-On paper, (1536 − 200) / 340 gives three seats. The plan is **two at the same time**, the builder
-and the reviewer: about 880 MiB, which leaves about 650 MiB for growth and for the page cache of a
-git clone, which counts against the unit. A third seat leaves about 300 MiB. Start a third only
-when the owner says so.
+The memory of the daemon and of one seat is in
+[the reference](../../hermes-omp/references/openrig-seats.md). The plan is **two seats at the same
+time**, the builder and the reviewer. That leaves room for growth and for the page cache of a git
+clone, which counts against the unit. Start a third only when the owner says so.
 
 Before you start a rig or add a seat:
 
@@ -89,8 +78,8 @@ Before you start a rig or add a seat:
    start if it shows `WARN` or `CRIT`, or if a peak is already near 1536 MiB.
 2. Count the seats that run: `rig ps --nodes -A`. Two at most.
 3. Never run a heavy one-shot `omp` run of `hermes-omp` at the same time as a large build in a
-   seat. Those runs use the `hermes-agent` budget, but the box has 15.6 GiB in all, and the sum of
-   all `MemoryMax` values is 12.25 GiB.
+   seat. Those runs use the `hermes-agent` budget, but the machine is shared. The sum of all
+   `MemoryMax` values is in `docs/OPENRIG.md`, "Limits".
 
 If the kernel kills a process for lack of memory, `OOMPolicy=continue` keeps the unit alive and the
 `choom` setting aims at a seat. See `troubleshooting.md`.

@@ -6,10 +6,6 @@ version: "0.2"
 name: piabrota-dev
 summary: A builder and a reviewer that work on one task at a time
 
-# The floor on purpose. A built-in policy is only recorded for an omp seat, and the one that
-# bypasses the prompts (builtin:yolo) is not chosen here.
-permission_policy: none
-
 pods:
   - id: dev
     label: Development

@@ -94,7 +94,7 @@
     },
     {
       "title": "OpenRig",
-      "purpose": "openrig.nix, openrig/ and docs/OPENRIG.md: OpenRig 0.7.7 built from source with buildNpmPackage, the openrig unit on piabrota2 (loopback only, MemoryMax 3G for the daemon, tmux and every seat), the omp shim that gives the seats the Claude subscription token, the rig wrapper and deny rules for Hermes, and the RigSpec and AgentSpecs in openrig/specs, installed at /etc/openrig/specs."
+      "purpose": "openrig.nix, openrig/ and docs/OPENRIG.md: OpenRig 0.7.7 built from source with buildNpmPackage, the openrig unit on piabrota2 (loopback only, MemoryMax 2G for the daemon, tmux and every seat), the seats' omp (omp/wrapper.nix with no ceiling) and the root step that gives them the Claude subscription token as ANTHROPIC_API_KEY, the rig wrapper and deny rules for Hermes, and the RigSpec and AgentSpecs in openrig/specs, installed at /etc/openrig/specs."
     },
     {
       "title": "Hermes Agent",

@@ -29,7 +29,7 @@ Seat names have the form `pod-member@rig`. In `piabrota-dev`: `dev-builder@piabr
 |`rig setup`|Install tools and edit `~/.tmux.conf`.|denied|
 |`rig destroy` (`--state`, `--all`)|Erase local OpenRig state and tmux sessions.|owner (never needed)|
 |`rig config` (`get`, `set`, `reset`, `init-workspace`)|`rig config` and `rig config get <key>` read. `set`, `reset` and `init-workspace` change settings.|read allowed, write owner|
-|`rig preflight`, `rig doctor` (`--spec <path>`)|Read-only checks. On this box `doctor` shows FAIL for `claude_install`, `codex_install` and `ui_dist`: that is normal. Its fix line "Run `rig setup`" is denied for you.|allowed|
+|`rig preflight`, `rig doctor` (`--spec <path>`)|Read-only checks. On this box `doctor` shows known FAIL rows (the [reference](../../hermes-omp/references/openrig-seats.md)). Its fix line "Run `rig setup`" is denied for you.|allowed|
 |`rig crash-cart`|Read-only JSON verdict for a daemon that is down.|allowed|
 |`rig host` (`add`, `select`, `rename`, `pair`, `list`, `doctor`), any `--host <id>`|Other machines over SSH or pairing.|denied|
 |`rig file copy`|Copy files across hosts.|owner|

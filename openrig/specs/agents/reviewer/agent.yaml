@@ -1,10 +1,12 @@
-# The reviewer seat: checks the builder's diff and edits nothing. It runs on omp, like the builder.
+# The reviewer seat: checks the builder's diff and edits nothing. It runs on omp, on the same
+# model as the builder (see agents/builder/agent.yaml).
 name: reviewer
 version: "1.0"
 description: Reviews the builder's diff by evidence
 
 defaults:
   runtime: omp
+  model: anthropic/claude-sonnet-5-5
 
 imports:
   - ref: local:../shared
