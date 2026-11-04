@@ -13,14 +13,9 @@
     # its own nixpkgs (unstable): its build patches tools, patchelf among them, for that version, and
     # the patches fail on nixos-26.05's (2026-11-02).
     hermes-agent.url = "github:NousResearch/hermes-agent";
-    # oh-my-pi (omp), the coding agent that Hermes hands repository work to (hermes.nix,
-    # hermes/skills/hermes-omp). Pinned to a release tag, so the weekly flake update does not move
-    # it: a new release is a PR. It keeps its own nixpkgs (unstable), as its bun and Rust
-    # toolchain expect; the runner builds it from source, the VPS builds nothing.
-    omp.url = "github:can1357/oh-my-pi/v18.16.0";
   };
 
-  outputs = { self, nixpkgs, deploy-rs, hermes-agent, omp }:
+  outputs = { self, nixpkgs, deploy-rs, hermes-agent }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -39,7 +34,7 @@
     {
       nixosConfigurations.piabrota = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit hermes-agent omp; };
+        specialArgs = { inherit hermes-agent; };
         modules = [ ./configuration.nix ];
       };
 
@@ -92,7 +87,7 @@
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit hermes-agent omp; };
+          specialArgs = { inherit hermes-agent; };
           modules = [
             ./configuration.nix
             {
