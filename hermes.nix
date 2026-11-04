@@ -191,7 +191,7 @@ let
       export PI_CONFIG_FILES=${./hermes/omp.yml}
       export ANTHROPIC_OAUTH_TOKEN="''${ANTHROPIC_OAUTH_TOKEN:-''${CLAUDE_CODE_OAUTH_TOKEN:-}}"
       export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
-      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp "$@"
+      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp --append-system-prompt ${./hermes/omp-append-system.md} "$@"
     '';
   };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
