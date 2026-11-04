@@ -181,14 +181,15 @@ let
   # gets its own rules: hermes/omp.yml, a read-only config overlay. This wrapper is the only omp on
   # Hermes's PATH. omp reads ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the
   # same subscription. omp runs in Hermes's cgroup (1 GB): choom makes the kernel's OOM killer
-  # pick omp before the gateway.
+  # pick omp before the gateway. The wrapper also appends hermes/omp-append-system.md to omp's
+  # system prompt (read-only in the store).
   ompWrapped = pkgs.writeShellApplication {
     name = "omp";
     text = ''
       export PI_CONFIG_FILES=${./hermes/omp.yml}
       export ANTHROPIC_OAUTH_TOKEN="''${ANTHROPIC_OAUTH_TOKEN:-''${CLAUDE_CODE_OAUTH_TOKEN:-}}"
       export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
-      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp "$@"
+      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp --append-system-prompt ${./hermes/omp-append-system.md} "$@"
     '';
   };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
