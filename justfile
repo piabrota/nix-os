@@ -125,3 +125,7 @@ remote-freeze user="h0ffmann":
 # print the specs of the VPS over SSH
 remote-specs user="h0ffmann":
     ssh {{user}}@{{host}} sh -s < scripts/specs.sh
+
+# check on the VPS that Hermes's plugins, skills, omp and yt-dlp of the last deploy are live (read-only)
+remote-hermes-check user="h0ffmann":
+    ssh {{user}}@{{host}} sh -s < scripts/hermes-check.sh
