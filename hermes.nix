@@ -276,16 +276,16 @@ in
     settings.auxiliary = {
       title_generation = {
         provider = "anthropic";
-        model = "claude-haiku-4-5";
+        model = "claude-haiku-5-5";
       };
       skills_hub = {
         provider = "anthropic";
-        model = "claude-haiku-4-5";
+        model = "claude-haiku-5-5";
       };
       # The judge of /goal (Hermes's Ralph loop): one short verdict after each turn.
       goal_judge = {
         provider = "anthropic";
-        model = "claude-haiku-4-5";
+        model = "claude-haiku-5-5";
       };
     };
     # /goal continues a task on its own until the judge says done. The default budget is 20 turns,
@@ -294,7 +294,7 @@ in
     settings.goals.max_turns = 6;
     settings.delegation = {
       provider = "anthropic";
-      model = "claude-haiku-4-5";
+      model = "claude-haiku-5-5";
       fallback_providers = [ ];
       # Shallow fan-out, for the subscription's quota. How many children run at once depends on
       # the machine: upstream's 10 on kvm4.

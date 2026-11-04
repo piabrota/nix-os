@@ -38,7 +38,7 @@ provider: if Anthropic fails, the turn fails.
 | Model | Does |
 |---|---|
 | `claude-sonnet-5-5` | The main model: it plans, writes, reviews and decides. It also does compression, the dangerous-command approval and the post-turn review. It runs a single grep, list or fetch itself. |
-| `claude-haiku-4-5` | Subagents for read-only fan-out only (three or more tasks, or more than about 20 files), and three side tasks: session titles, skill matching and the `/goal` judge. |
+| `claude-haiku-5-5` | Subagents for read-only fan-out only (three or more tasks, or more than about 20 files), and three side tasks: session titles, skill matching and the `/goal` judge. |
 
 Subagents: at most 2 at a time, 50 iterations each, one level deep.
 

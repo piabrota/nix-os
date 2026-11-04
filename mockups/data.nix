@@ -119,14 +119,13 @@ rec {
     }
     {
       name = "skills";
-      logo = "https://raw.githubusercontent.com/h0ffmann/skills/bcccf4950e100ed0ae25291143f963ee09390a08/docs/drawings/waza.svg";
+      logo = "https://raw.githubusercontent.com/piabrota/skills/bcccf4950e100ed0ae25291143f963ee09390a08/docs/drawings/waza.svg";
       lane = "think";
-      owner = "h0ffmann";
       blurb = "A swiss army knife of agent skills.";
       lang = "Gleam";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
-      site = "h0ffmann.github.io/skills";
+      path = "/skills/";
       state = "live";
     }
     {
