@@ -438,8 +438,8 @@ Depois abra `https://hermes.piabrota.art` e entre como `owner`.
 
 ## Paperclip
 
-O [Paperclip](https://github.com/paperclipai/paperclip) roda na mesma máquina em
-`paperclip.piabrota.art` (`paperclip.nix`), e este Hermes é o agente dele. O adaptador
+O [Paperclip](https://github.com/paperclipai/paperclip) (`paperclip.nix`) está desligado por enquanto (desde 2026-11-04). Ligado, ele roda na
+mesma máquina em `paperclip.piabrota.art`, e este Hermes é o agente dele. O adaptador
 `hermes_gateway` manda cada tarefa ao servidor de API do Hermes em `127.0.0.1:8642`, então a tarefa
 roda aqui, com a mesma assinatura, a mesma lista de bloqueios e as mesmas skills. O Hermes responde
 pela skill `paperclip` do próprio Paperclip. O servidor de API só sobe quando o `hermes.env` tem

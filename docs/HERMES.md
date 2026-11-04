@@ -427,8 +427,8 @@ Then open `https://hermes.piabrota.art` and log in as `owner`.
 
 ## Paperclip
 
-[Paperclip](https://github.com/paperclipai/paperclip) runs on the same box at
-`paperclip.piabrota.art` (`paperclip.nix`), and this Hermes is its agent. Its `hermes_gateway`
+[Paperclip](https://github.com/paperclipai/paperclip) (`paperclip.nix`) is off for now (since 2026-11-04). When on, it runs on the same box at
+`paperclip.piabrota.art`, and this Hermes is its agent. Its `hermes_gateway`
 adapter sends each task to Hermes's API server on `127.0.0.1:8642`, so the task runs here, with the
 same subscription, deny list and skills. Hermes answers through Paperclip's `paperclip` skill.
 The API server starts only when `hermes.env` has `API_SERVER_KEY`; Hermes's key for Paperclip is

@@ -14,7 +14,7 @@
 | `loco.nix` | Apps [Loco](https://loco.rs) como serviços systemd isolados, com SQLite, nginx e HTTPS. |
 | `site.nix` | O site estático de `site/` (Gleam e Lustre, pré-renderizado no build; a VPS recebe só o HTML e o CSS) em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
 | `pgx.nix` | O [PGX](https://pgx.dev), um banco compatível com Postgres em um processo, no lugar de um servidor PostgreSQL ou do Docker, para a próxima carga que precisar de Postgres (hoje nada o usa). Só para dado que dá para refazer; o dado dos apps fica no SQLite. Veja [`docs/PGX.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/PGX.ptBR.md). |
-| `paperclip.nix` | O [Paperclip](https://github.com/paperclipai/paperclip), um painel de controle para um time de agentes de IA, em paperclip.piabrota.art na KVM 4, com o PostgreSQL 17 só num socket. O Hermes é o agente dele: o Paperclip manda cada tarefa ao servidor de API do Hermes no loopback. Veja [`docs/PAPERCLIP.md`](https://github.com/piabrota/nix-os/blob/main/docs/PAPERCLIP.md) (em inglês). |
+| `paperclip.nix` | O [Paperclip](https://github.com/paperclipai/paperclip), um painel de controle para um time de agentes de IA, em paperclip.piabrota.art na KVM 4, com o PostgreSQL 17 só num socket. Desligado por enquanto (`enable = false`). Ligado, o Hermes é o agente dele: o Paperclip manda cada tarefa ao servidor de API do Hermes no loopback. Veja [`docs/PAPERCLIP.md`](https://github.com/piabrota/nix-os/blob/main/docs/PAPERCLIP.md) (em inglês). |
 | `hermes.nix` | O [Hermes Agent](https://github.com/NousResearch/hermes-agent), o agente da Nous Research, pelo módulo NixOS do flake dele: um serviço isolado que responde em plataformas de chat, com o Claude pela assinatura do dono; os segredos ficam na máquina. Veja [Hermes](Hermes). |
 | `kubesolo-purge.nix` | Um oneshot que limpa uma instalação antiga da máquina, uma vez. Uma pessoa o apaga depois. |
 
@@ -43,7 +43,7 @@ geração nova, e o GRUB guarda as cinco últimas.
 
 **Como ler.** De cima para baixo, uma faixa por lugar: pessoas, DNS, cada VPS, GitHub. As setas dizem para onde vai uma requisição ou um deploy; a borda vermelha marca o que fica fora das duas máquinas.
 
-**Fora da figura.** O PGX e o Paperclip na KVM 4, os certificados ACME, os segredos em cada máquina e o deploy à mão.
+**Fora da figura.** O PGX na KVM 4 (o Paperclip está desligado por enquanto), os certificados ACME, os segredos em cada máquina e o deploy à mão.
 
 **Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
 
