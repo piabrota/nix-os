@@ -43,8 +43,10 @@ providers:
   # Warming replays the last request before its cache expires: quota spent for nothing here.
   cacheWarming: "off"
 
-# 1 vCPU and Hermes's 1 GB, shared with the gateway: no language servers, no eval kernels (they
-# would also run code outside the bash rules below), no memory backend, no advisor, no browser.
+# omp runs in the cgroup of the unit that starts it: hermes-agent (8G on piabrota2) for chat,
+# hermes-backend (2G) for the dashboard's Chat tab, the openrig unit for a seat. A run takes about
+# 340 MiB. Still no language servers, no eval kernels (they would also run code outside the bash
+# rules below), no memory backend, no advisor, no browser: each is memory for every run and seat.
 lsp:
   enabled: false
 eval:
@@ -124,3 +126,16 @@ bash:
     - { match: "gem *", approval: deny }
     - { match: "omp *", approval: deny }
     - { match: "hermes *", approval: deny }
+    # OpenRig: a seat or a task talks to rigs (rig send, queue, whoami, ps, up --plan) but never
+    # runs the daemon, the machine's setup, remote hosts, credentials, providers or connectors.
+    # systemd owns the daemon; the owner owns the rest.
+    - { match: "rig setup*", approval: deny }
+    - { match: "rig daemon *", approval: deny }
+    - { match: "rig start*", approval: deny }
+    - { match: "rig host *", approval: deny }
+    - { match: "rig auth *", approval: deny }
+    - { match: "rig provider switch*", approval: deny }
+    - { match: "rig mcp *", approval: deny }
+    - { match: "rig slack *", approval: deny }
+    - { match: "rig gateway *", approval: deny }
+    - { match: "rig destroy*", approval: deny }

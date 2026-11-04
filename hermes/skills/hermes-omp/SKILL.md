@@ -1,14 +1,14 @@
 ---
 name: hermes-omp
 description: "Hand every code implementation or review to omp (oh-my-pi), then check its diff and open the PR yourself."
-version: 1.1.0
+version: 1.2.0
 author: piabrota
 license: MPL-2.0
 platforms: [linux]
 metadata:
   hermes:
     tags: [Coding-Agent, omp, Refactoring, Code-Review]
-    related_skills: [github]
+    related_skills: [github, hermes-rig]
 ---
 
 # hermes-omp
@@ -34,8 +34,33 @@ a typo): fix it yourself and say so.
 
 Do not use omp for chat, notes, research, a question you can answer by reading a file, or a
 change to a Markdown file that has no code. Do those yourself and say that omp did not run.
-Do not start omp from a cron job or from a subagent unless the owner asked for that job. Run one
-omp at a time.
+Do not start omp from a cron job or from a subagent unless the owner asked for that job.
+
+## Where omp runs, and what it can read
+
+omp runs in the cgroup of the unit that starts it, and one run takes about 340 MiB:
+
+| You talk from | Unit | `MemoryMax` | omp runs at once |
+|---|---|---|---|
+| Telegram, Discord, cron | `hermes-agent` | 8G | at most 2, on two different working trees |
+| the dashboard's Chat tab | `hermes-backend` | 2G | 1 |
+| an OpenRig seat | the openrig unit | its own | one per seat (`references/openrig-seats.md`) |
+
+Before a second run, run `kvm4-health` and start it only if the `units` line of your unit is not
+`WARN` or `CRIT`. Each run also spends the owner's Claude quota: run two at once only when the
+owner waits on both. A `nix build` that omp starts runs in `nix-daemon`, not in your unit.
+
+omp can read the working tree, `/var/lib/hermes/workspace` and the store (`/nix/store`). Your
+skills from nix-os are in the store: give omp the store path from `skills.external_dirs`, not a path
+under `~/.hermes`. omp cannot read `~/.hermes` (its rules refuse it), so a skill or a reference that
+you wrote yourself, a log or a session file reaches omp only as a copy:
+`mkdir -p /var/lib/hermes/workspace/omp-tasks/<a-few-words>/` and copy the files there. Never copy
+`.env`, `auth.json` or a file that holds a token.
+
+Tools come from Nix. omp's rules and your deny list refuse `npm install`, `pip`, `npx`, `curl` and
+a fetched script, and they are right to: do not test a Node or Python project by an install. Build
+it with Nix (`nix build .#<package>`, with `fetchNpmDeps` or `buildNpmPackage` and the project's own
+lock file) and test the built binary. Do not ask the owner to loosen a rule for a test.
 
 The owner can also start it by name: the skill is the command `/hermes-omp` (Telegram) or `/skill`
 (Discord).
@@ -49,7 +74,8 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
    Put in it:
    - the repository and the goal, in one or two sentences;
    - what done means, and the checks to run (from the repository's AGENTS.md, only those that fit
-     on 1 vCPU and 1 GB);
+     in the memory of your unit: see the table above; name the unit in the task file);
+   - the input files you copied into `omp-tasks/<a-few-words>/`, by path;
    - the files or the issue to start from, when you know them;
    - a section "How to prove it is done": the exact commands to run, the result that means
      success, and for a bug the test that must fail before the fix and pass after it;
@@ -76,7 +102,8 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
 5. **Deliver.** Commit, push `hermes/<a-few-words>` and open the pull request as the workspace
    AGENTS.md, "Opening a pull request", says, in English. Tell the owner what omp did and what you
    checked.
-6. **Clean up.** Delete the task file and the progress file.
+6. **Clean up.** Delete the task file, the progress file and the directory
+   `omp-tasks/<a-few-words>/`.
 
 ## Tell the owner
 
@@ -112,6 +139,20 @@ For "review PR N" or "review this diff", omp does the review and you check it.
 6. Post one `COMMENT` review and never approve. End the review with the signature line from
    SOUL.md.
 
+### A review that fixes the code
+
+When the owner asks the review to change the code (for example on your own branch before the pull
+request), omp edits the files directly.
+
+1. Commit the work under review first, so the review's changes are a diff of their own.
+2. In the task file, list the areas in priority order. Ask omp to fix each BLOCKER and SHOULD-FIX
+   in place, to fix a NIT only when the fix is one line, and to write `OPEN: <file:line> <why>` for
+   a finding it cannot fix without weakening a guardrail (a deny rule, a sandbox setting, a
+   firewall port, a licence rule). Ask for the checks after the fixes.
+3. Run in the normal mode, not with `--approval-mode write`: omp must run the checks.
+4. Read the diff as in "Check". Commit it separately (`fix: apply review findings`), so the owner
+   sees what the review changed. Show the owner every `OPEN` line.
+
 ## Long tasks
 
 A deploy or a restart of the gateway stops omp, and the wrapper stops every run at 35 minutes.
@@ -130,6 +171,13 @@ A deploy or a restart of the gateway stops omp, and the wrapper stops every run 
   the run stopped, and why.
 - If `NRestarts` of `hermes-agent` rises while you work, stop. Run `hermes doctor` and
   `hermes gateway status`. Tell the owner. Do not hide a restart loop.
+
+## OpenRig
+
+For work on OpenRig (the package, the module, the RigSpec under `openrig/specs/`) or for a rig
+whose seats run omp, read `references/openrig-seats.md` first. It says how OpenRig starts omp,
+which variables reach a seat, and what the openrig unit needs. The `hermes-rig` skill, when it is
+installed, has the `rig` commands.
 
 ## When it fails
 
