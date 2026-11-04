@@ -1,7 +1,7 @@
 # O feed pessoal
 
 `hermes/feeds/build_feed.py` monta um feed só com as fontes do dono e dá uma nota a cada item, conforme os interesses dele.
-Não usa agente nem modelo. Usa apenas a biblioteca padrão do Python.
+Não usa agente nem modelo. Usa apenas a biblioteca padrão do Python 3.11 ou mais novo (`tomllib`).
 
 O `hermes.nix` instala o script como `scripts/feed-build.py` e as fontes como `feeds/feeds.toml`, dentro de `HERMES_HOME`.
 Um cron `no_agent` posta o que o script imprime. Este repositório não cria esse cron. Peça ao Hermes que o crie.
@@ -18,7 +18,7 @@ python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out /tmp/f
 - `--no-state`: grava os arquivos, mas não lê nem grava o estado.
 - `--opml-only`: grava só o `sources.opml`. Não usa a rede.
 - `--source ID`: roda só estes ids de fonte. `--max-seconds N`: para a busca após N segundos (padrão 150).
-- Padrões: `--config`, `--out` e `--state` ficam em `$HERMES_HOME/feeds/` (`HERMES_HOME` é `~/.hermes` se não estiver definido).
+- Padrões: `--config` é `$HERMES_HOME/feeds/feeds.toml`, `--out` é `$HERMES_HOME/feeds/out/` e `--state` é `$HERMES_HOME/feeds/state.json` (`HERMES_HOME` é `~/.hermes` se não estiver definido).
 
 Sai com 0 quando uma fonte funcionou. Sai com 1 quando nenhuma funcionou ou uma gravação falhou.
 Se nenhuma fonte funcionou, o `feed.atom` antigo fica e o `health.json` mostra os erros.

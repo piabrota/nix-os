@@ -394,7 +394,8 @@ in
       exec ${kvm4Health}/bin/kvm4-health --alert --record
     '';
     # The personal feed (docs/FEEDS.md): the script of a no_agent cron job and its sources. The
-    # outputs and the state go to HERMES_HOME/feeds/.
+    # outputs go to HERMES_HOME/feeds/out/ and the state to HERMES_HOME/feeds/state.json; the
+    # tmpfiles rule below gives feeds/ to hermes.
     hermesHomeFiles."scripts/feed-build.py" = ./hermes/feeds/build_feed.py;
     hermesHomeFiles."feeds/feeds.toml" = ./hermes/feeds/feeds.toml;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
@@ -406,10 +407,14 @@ in
     addToSystemPackages = true;
   };
 
-  # omp-tasks: the task files of the hermes-omp skill.
+  # omp-tasks: the task files of the hermes-omp skill. feeds: activation's `install -D` of
+  # feeds/feeds.toml makes the directory as root, 2755, and feeds is not a state directory of the
+  # module, so the feed script could not write out/ or state.json. `d` also fixes the owner and the
+  # mode of a directory that exists.
   systemd.tmpfiles.rules = [
     "d /var/lib/hermes-secrets 0700 root root -"
     "d /var/lib/hermes/workspace/omp-tasks 0770 hermes hermes -"
+    "d /var/lib/hermes/.hermes/feeds 2770 hermes hermes -"
   ];
   # h0ffmann is NOT in the `hermes` group, on purpose. Upstream refuses the gateway control socket
   # when the group of a group-writable home has another member, and then the dashboard Chat tab

@@ -1,7 +1,7 @@
 # The personal feed
 
 `hermes/feeds/build_feed.py` builds one feed from the owner's sources. It scores each item on his interests.
-It uses no agent and no model. It uses only the Python standard library.
+It uses no agent and no model. It uses only the standard library of Python 3.11 or later (`tomllib`).
 
 `hermes.nix` installs the script as `scripts/feed-build.py` and the sources as `feeds/feeds.toml`, in `HERMES_HOME`.
 A `no_agent` cron job posts what the script prints. This repository does not create that job. Ask Hermes to create it.
@@ -18,7 +18,7 @@ python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out /tmp/f
 - `--no-state`: write the files, but do not read or write the state.
 - `--opml-only`: write `sources.opml` and stop. It asks no network.
 - `--source ID`: run only these source ids. `--max-seconds N`: stop the fetch after N seconds (default 150).
-- Defaults: `--config`, `--out` and `--state` are in `$HERMES_HOME/feeds/` (`HERMES_HOME` is `~/.hermes` if unset).
+- Defaults: `--config` is `$HERMES_HOME/feeds/feeds.toml`, `--out` is `$HERMES_HOME/feeds/out/` and `--state` is `$HERMES_HOME/feeds/state.json` (`HERMES_HOME` is `~/.hermes` if unset).
 
 Exit 0 when one source worked. Exit 1 when no source worked or a write failed.
 When no source worked, the old `feed.atom` stays and `health.json` shows the errors.
