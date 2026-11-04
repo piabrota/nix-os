@@ -141,11 +141,25 @@ sends), and pinned by commit in `hermes.nix`:
 | [progress-squash](https://github.com/pierrenode/hermes-progress-squash) (MIT) | plugin | Collapses the redraws of a progress bar in terminal output to one line before the model reads it. No network, no files. |
 | [public-holidays](https://github.com/Akloenx123/hermes-public-holidays) (MIT) | plugin | Holidays and workday maths (Brazil and its states included), computed in code, for cron digests and deadlines. GET to `date.nager.at` with a country code and a year, no key. |
 | [gh-ref, wiki-ref](https://github.com/EloquentBrush0x/hermes-context-refs) (MIT) | plugins | `@gh:owner/repo#N` attaches a public issue or pull request (anonymous GET to `api.github.com`); `@wiki:<title>` attaches a Wikipedia section. No token, no files. |
+| [memory-rewind](https://github.com/AhmetArif0/hermes-memory-rewind) v1.3.2 (MIT) | plugin | A version history of `memories/MEMORY.md`, `memories/USER.md`, `SOUL.md` and `skills/`, in a bare git repository in `plugin-data/memory-rewind/`, written by a background thread after each change. `/memory-history` in chat (read-only); `sudo -u hermes hermes memory-rewind restore <version> memory` on the box puts a file back and prints the command that undoes it. Local `git` only, no network; it never reads `.env`, `auth.json` or the databases. Its disk use grows with each change; not measured on kvm4 yet. `SOUL.md` comes from the store on every activation, so a restore of it lasts until the next deploy. |
+| [hermes-guide](https://github.com/iap/hermes-guide) v0.8.12 (MIT) | plugin | `/hermes-doctor` in chat and `hermes guide` on the box: ten read-only checks (config, MCP, skills, commands, hooks, plugins, memories, sessions, storage, update). Its report quotes short snippets of memory and the session ids and token counts of runaway sessions. Each run makes one `git ls-remote` of its own repository for a release notice (none with `--fast`); `proactive` (the checks at every session start and end) stays off. Its 22 troubleshooting skills are a separate tap and are not installed. |
+| [hermes-plugin-guard](https://github.com/mauricemohr88-debug/hermes-plugin-guard) v0.2.1 (MIT) | plugin | `hermes plugin-guard scan <directory> --fail-on high`: a static scan of a candidate plugin (manifest, Python, dependencies, secrets) that never imports or runs it. One read-only tool, `plugin_guard_review_candidate`, for a plugin installed but not enabled; here every plugin comes from Nix and is enabled, so the CLI is the path. No network. Only `src/` is installed, without the scanner's unsafe test fixtures. The gate for every plugin proposed after it (`hermes/AGENTS.md`, "Plugins"). |
+| [kvm4-health](../hermes/skills/kvm4-health/SKILL.md) (this repository) | skill | `kvm4-health`: memory, swap, pressure, load, disk and the journal, and for `hermes-agent`, `hermes-backend`, `pgx` and the `hermes` user's slice (where cron jobs run) the memory now and `MemoryPeak` against `MemoryMax`, tasks and restarts; growth of `/` a day and of `hermes-agent` with no restart, from a sample every 30 minutes. `WARN` and `CRIT` thresholds are `KH_*` variables. The watchdog is a `no_agent` cron job on `~/.hermes/scripts/kvm4-health-alert.sh`: no model call, and a message only when the findings change (again every 6 hours, and once on recovery). Hermes creates the job once, from the skill. Read-only on the system; it writes only `plugin-data/kvm4-health/`. `just remote-health` runs it from your computer. |
 | [hermes-cron](https://github.com/itpartypattaya/hermes-cron) v1.5.2 (MIT) | skill | Rules for cron jobs: pause, disable or remove; and `no_agent`, the `wakeAgent` pre-check and `[SILENT]`, so that a quiet tick makes no model call. Its read-only doctor script needs `python3`, which is not on Hermes's `PATH` here; the rules work without it. |
 
 Limits from the list's operational playbooks: `agent.max_turns = 60`; subagents at most 2 at a
 time, 50 iterations each, one level deep; `tool_loop_guardrails.hard_stop_enabled`; no update
 checks (Nix owns updates) and no shared metrics.
+
+From the plan in [#88](https://github.com/piabrota/nix-os/issues/88) (wave 1), postponed, with
+the reason: bubblewrap (official, 1.3.0) hides `~/.config/gh` from every sandboxed command, where
+`hermes-github.nix` writes gh's token, so `gh` stops working; its default limit of 256 MB of
+address space per command also stops omp and other large programs. It needs `GH_TOKEN` passed
+another way and a drill on kvm4 first. cronwatch and cron-status-alert are not needed: since
+0.22.4 Hermes sends one failure notice per incident of a cron job to the job's target
+(`failure_deliver`, `cron.failure_repeat_alert_hours`), and the two plugins alert on Feishu and
+Discord only. The backup of `$HERMES_HOME` needs an `age` public key from the owner; it is a
+separate PR, with `hermes backup` and a systemd timer instead of a shell plugin.
 
 Left out, with the reason: cronalytics (needs a writable plugin directory), rtk-hermes (its hook
 order with the deny list is untested), agentburn (its skill runs `uvx`, an unpinned download),
@@ -311,6 +325,8 @@ hermes doctor
 the add-ons of the last deploy in one run, read-only: the unit and when it started, each plugin
 linked and enabled, the `hermes-omp` skill, `omp --version` and `yt-dlp --version`, and plugin
 errors in the journal. It prints `FAIL` for each missing part and never reads the secrets.
+`just remote-health` prints the box's health (`hermes/skills/kvm4-health`): memory, disk, CPU, and
+each Hermes unit against its `MemoryMax`.
 
 The log says which platforms connected; "No messaging platforms enabled" means the `.env` has no
 platform token. Two warnings are expected: the Discord adapter's "Opus codec not found" (voice is

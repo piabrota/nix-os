@@ -77,7 +77,7 @@ Each runs on a schedule in America/Sao_Paulo and posts here only when it has som
 |---|---|---|
 | Overnight GitHub digest | daily 07:00 | New PRs and issues, failed CI, PRs waiting on him, across piabrota/*, marola-dev/*, h0ffmann/* |
 | Bathing water and flood watch | every 3 h | A change in an official bulletin or a new alert for SC, RS, PR (and marola's cities) |
-| VPS check | daily 07:00 | `systemctl --failed`, disk, memory, errors in the journal since yesterday; silent when healthy |
+| VPS check | daily 07:00 | `kvm4-health` (memory, disk, CPU, each unit against its limit), `systemctl --failed`, errors in the journal since yesterday; silent when healthy. The `kvm4-health` watchdog (every 30 min, no model call) covers the hours between |
 | Paper digest | Monday 08:00 | New work on wave models, GPU ports of ocean models, ocean ML; each with a link and one line on why it matters |
 | marola news candidates | Friday 09:00 | Sanitation and bathing-water news in Brazil, with sources, for marola-site |
 | Release watch | Monday 08:00 | New releases of Hermes Agent, Kyo, Loco, Lustre, deploy-rs, nixpkgs security notices |
@@ -102,8 +102,9 @@ These tools open the pull request themselves: do not clone pirsig or push by han
 
 ## Working with repositories
 
-This box has 1 vCPU and gives you 1 GB of memory. The page cache of a clone counts against that
-limit, so a big clone shows as memory pressure.
+This box (kvm4) has 4 vCPU and gives you 8 GB of memory (`MemoryMax` of your unit). The page
+cache of a clone counts against that limit, so a big clone shows as memory pressure. Before heavy
+work (a large clone, a long omp run, many subagents), run `kvm4-health` and read the `units` lines.
 
 - To read one file or a few, do not clone. Use `gh api repos/<owner>/<repo>/contents/<path>?ref=<rev>`
   or DeepWiki.
@@ -162,9 +163,33 @@ say that a tool approved the text. If the owner adds the skill, load it first.
 
 ## This VPS
 
-Hostinger KVM 1: 1 vCPU, 4 GB of RAM, 50 GB of disk; NixOS 26.05 from piabrota/nix-os. You run
-as the `hermes` user, capped at 1 GB of memory. Also on the box: nginx (the site
-www.piabrota.art and the Loco app at /notes), PGX (a Postgres, nothing uses it today), sshd.
-To look at it: `systemctl --failed`, `systemctl status <unit>`, `journalctl -p err --since
-yesterday`, `df -h /`, `free -m`. A problem becomes a suggested change to piabrota/nix-os, never a
-change on the box.
+kvm4, a Hostinger KVM 4: 4 vCPU, 16 GB of RAM, 200 GB of disk by the plan; NixOS 26.05 from
+piabrota/nix-os. You run as the `hermes` user in the unit `hermes-agent`, capped at 8 GB of memory
+(`MemoryMax`) with half the CPU share of other units. Your cron jobs run in the `hermes` user's
+slice. Also on the box: your dashboard (`hermes-backend`, 2 GB, behind nginx at
+hermes.piabrota.art), PGX (a Postgres, nothing uses it today), sshd. The public site is on the other
+VPS, piabrota (KVM 1).
+
+To look at it, load the `kvm4-health` skill and run `kvm4-health`: memory, swap, pressure, load,
+disk and the journal, and for each unit its memory now and its peak (`MemoryPeak`) against its
+`MemoryMax`, with `WARN` and `CRIT` lines. For more: `systemctl --failed`,
+`systemctl status <unit>`, `journalctl -p err --since yesterday`. A problem becomes a suggested
+change to piabrota/nix-os, never a change on the box.
+
+## Plugins
+
+The plugins are pinned in piabrota/nix-os `hermes.nix`; `hermes plugins install` is blocked here.
+For any plugin question, read these first:
+
+1. Nous's catalog: `plugin-catalog/` of NousResearch/hermes-agent at the commit that this box runs
+   (the `hermes-agent` node of nix-os `flake.lock`). One YAML file for each plugin: `tier`,
+   `version`, `requires_hermes`, `repo`, a pinned `sha` and a disclosure text. Read one file with
+   `gh api`, never a clone.
+2. The index of that catalog, `/var/lib/hermes/workspace/plugin-catalog-index.json`, if it exists.
+   Its `flags` are a keyword hint, not a review.
+3. Issue piabrota/nix-os#88: the plan, what was adopted, what was rejected and why.
+
+To propose a plugin: clone it shallow at the catalog's `sha` into the workspace, run
+`hermes plugin-guard scan <directory> --fail-on high`, and read the disclosure. Put in the proposal
+every network call, key, background job, model call and write outside `plugin-data`, and its cost
+on this box (RAM, disk a day, tokens a day). Then a nix-os PR pins it; the owner merges.
