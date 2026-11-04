@@ -49,7 +49,7 @@ The rows go from the nearest layer to the farthest layer.
 |4. The procedure|[`hermes/skills/hermes-omp/SKILL.md`](../hermes/skills/hermes-omp/SKILL.md)|When Hermes uses omp, the shape of the task file, the diff review, what Hermes tells you|A PR to nix-os|After the next deploy (see below)|
 |5. The prompt addition|[`hermes/omp-append-system.md`](../hermes/omp-append-system.md)|The rules that the wrapper appends to omp's system prompt: small diffs, a stated check, no "done" without output|A PR to nix-os|After the next deploy (see below)|
 |6. The settings overlay|[`hermes/omp.yml`](../hermes/omp.yml)|The models per role, the thinking level, the tools, the memory, the bash deny rules, the restricted folders|A PR to nix-os|After the deploy|
-|7. The wrapper|`ompWrapped` in [`hermes.nix`](../hermes.nix)|The environment, `choom`, and the flags that every run gets|A PR to nix-os|After the deploy|
+|7. The wrapper|[`omp/wrapper.nix`](../omp/wrapper.nix) (`ompWrapped` in [`hermes.nix`](../hermes.nix))|The environment, the token, `choom`, the time ceiling, and the flags that every run gets|A PR to nix-os|After the deploy|
 |8. The version|[`omp/package.nix`](../omp/package.nix) (tag `v18.16.0`)|The omp release|A PR to nix-os|After the deploy|
 
 `deploy.yml` ignores a merge that changes only Markdown. That includes the Markdown files under
@@ -62,6 +62,30 @@ gives. A restart of the gateway also stops a run. For a long task, the task file
 file (`omp-tasks/<name>.progress`). omp appends one line after each finished step, and a new run
 continues after the last one. `kvm4-health` reports `NRestarts` of each unit: WARN above 3, CRIT
 above 50.
+
+## OpenRig seats
+
+OpenRig can run omp as a seat of a rig (`runtime: omp` in an AgentSpec). The seat uses the same
+wrapper, built with two arguments:
+
+```nix
+pkgs.callPackage ./omp/wrapper.nix {
+  ceiling = null; # a seat lives as long as its rig
+  appendSystemPrompt = ./hermes/omp-seat-append-system.md;
+}
+```
+
+The wrapper loads `hermes/omp.yml` itself, so a seat has the same deny rules as a Hermes run.
+OpenRig's runner passes only `ANTHROPIC_API_KEY` to omp, and only for a model `anthropic/<id>`.
+The wrapper moves a subscription token (`sk-ant-oat...`) from that variable to
+`ANTHROPIC_OAUTH_TOKEN`. The other settings of the openrig unit (`OPENRIG_NO_KERNEL=1`,
+`OPENRIG_YOLO=1`, the tmux socket, `lsof`) and the reasons for them are in the skill's
+[`references/openrig-seats.md`](../hermes/skills/hermes-omp/references/openrig-seats.md).
+
+`hermes/omp.yml` lets a seat use `rig send`, `rig queue` and `rig whoami`. It refuses `rig setup`,
+`rig daemon`, `rig start`, `rig host`, `rig auth`, `rig provider switch`, `rig mcp`, `rig slack`,
+`rig gateway` and `rig destroy`. Hermes's deny list refuses the same control commands for Hermes,
+but lets Hermes run `rig up`, `rig down` and `rig ps`.
 
 ## Which setting wins
 
@@ -124,6 +148,11 @@ To loosen a rule is your decision, made in a PR to nix-os. This doc does not rec
 - The memory peak of a run with a higher thinking level.
 
 ## Sources
+
+OpenRig at the tag v0.7.7 (commit `f3d8bac`), in
+[github.com/mvschwarz/openrig](https://github.com/mvschwarz/openrig) (Apache-2.0):
+`packages/daemon/src/adapters/pi-runner-protocol.ts`, `pi-runner.ts`, `yolo-mode.ts`, `tmux.ts`,
+and `packages/daemon/src/domain/kernel-boot.ts`.
 
 The omp docs at the tag v18.16.0, in [github.com/can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)
 (MIT): `docs/settings.md`, `docs/config-usage.md`, `docs/cli-reference.md`,
