@@ -8,3 +8,5 @@ build/
 
 # Python bytecode of hermes/plugins/ (just hermes-plugins-test)
 __pycache__/
+
+video-lab/out/
