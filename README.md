@@ -11,6 +11,7 @@
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1682D4?style=flat-square)](https://deepwiki.com/piabrota/nix-os)
+[![Hermes Agent v0.22.7](https://img.shields.io/badge/Hermes_Agent-v0.22.7-1682D4?style=flat-square)](docs/HERMES.md)
 
 </div>
 
@@ -24,8 +25,9 @@
   The GitHub runner builds, [deploy-rs](https://github.com/serokell/deploy-rs)
   copies the result over SSH and switches the VPS, and the VPS rolls back by itself if SSH stops
   answering. The VPS compiles nothing. [`docs/DEPLOY.md`](docs/DEPLOY.md) has the one-time setup.
-- KVM 1 is small (1 vCPU, 4 GB RAM, 50 GB disk); KVM 4 has 4 vCPU and 16 GB. Every change is
-  judged by what it adds to the closure and to memory ([`AGENTS.md`](AGENTS.md), "Resource budget").
+- KVM 1 is small (1 vCPU, 4 GB RAM, 50 GB disk). KVM 4 has 4 vCPU, 15.6 GiB RAM and 197 GB disk
+  (measured 2026-11-04); its Hermes unit is capped at 8 GB. Every change is judged by what it adds
+  to the closure and to memory ([`AGENTS.md`](AGENTS.md), "Resource budget").
 - It is ready to host [Loco](https://loco.rs) apps (Rust and SQLite) behind nginx with HTTPS:
   declare an app and the merge deploys it ([`docs/LOCO.md`](docs/LOCO.md)). Until then it adds
   nothing to the system.
@@ -149,12 +151,12 @@ with that version.
 
 | Input | Pinned at | What for |
 |---|---|---|
-| [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-26.05) `nixos-26.05` | [`08d3a97`](https://github.com/NixOS/nixpkgs/commit/08d3a97586f6b6343b3b5e799980773629432610) (2026-10-28) | the system; `system.stateVersion` is 26.05 |
+| [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-26.05) `nixos-26.05` | [`9bb5222`](https://github.com/NixOS/nixpkgs/commit/9bb52223f4f6a0cc606fd0852d8784f896c137d5) (2026-11-01) | the system; `system.stateVersion` is 26.05 |
 | [deploy-rs](https://github.com/serokell/deploy-rs) | [`1cec052`](https://github.com/serokell/deploy-rs/commit/1cec0527bd09074bbee6d4461900ce5d58267217) (2026-10-19) | the activation and its rollback; the `deploy` binary comes from nixpkgs, so CI does not compile it |
-| [hermes-agent](https://github.com/NousResearch/hermes-agent) `main` | [`d9f15af`](https://github.com/NousResearch/hermes-agent/commit/d9f15af47bd7d608a0cb054013a4be1b90c0302c) (2026-11-02) | Hermes Agent's package and NixOS module (`hermes.nix`); it keeps its own nixpkgs (unstable), for which its build is made |
+| [hermes-agent](https://github.com/NousResearch/hermes-agent) [`v0.22.7`](https://github.com/NousResearch/hermes-agent/releases/tag/v0.22.7) | [`b200f5b`](https://github.com/NousResearch/hermes-agent/commit/b200f5bc60e31588ba2cb60e288029c4a54ba5fa) (2026-11-03) | Hermes Agent's package and NixOS module (`hermes.nix`); it keeps its own nixpkgs (unstable), for which its build is made |
 
-`flake.lock` is the truth; this table is what it held on 2026-10-29. Update with
-`nix flake update` in a pull request.
+`flake.lock` is the truth; this table is what it held on 2026-11-04. The Hermes badge at the top is
+edited by hand: change it with the pin. Update with `nix flake update` in a pull request.
 
 </details>
 

@@ -10,9 +10,24 @@ receitas: `just`.
 | Buildar o sistema sem fazer deploy | `just build` |
 | Rodar o que o CI roda | `just check` |
 | Ver quanto uma mudança acrescenta ao sistema | `nix run nixpkgs#dix -- diff <sistema-antigo> <sistema-novo>` |
-| Ver CPU, RAM, disco e a geração da VPS | `just remote-specs` |
-| Listar os pacotes da VPS com o tamanho de cada um | `just remote-freeze` |
+| Ver CPU, RAM, disco e a geração de uma VPS | `just remote-specs` |
+| Listar os pacotes de uma VPS com o tamanho de cada um | `just remote-freeze` |
 | Relatório de CVEs do sistema | `just cves` |
+
+## As duas máquinas
+
+A `piabrota` (KVM 1) serve a web pública. A `kvm4` (KVM 4) roda o Hermes, o painel dele e o PGX.
+As receitas `just remote-*` leem `DEPLOY_HOST` e, sem ele, usam `piabrota.art`, a máquina
+`piabrota`. Para a `kvm4`, ponha o endereço dela em `DEPLOY_HOST`:
+
+```console
+DEPLOY_HOST=<endereço da kvm4> just remote-specs         # CPU, RAM, disco e geração
+DEPLOY_HOST=<endereço da kvm4> just remote-health        # memória, MemoryPeak contra MemoryMax, disco e CPU, com as unidades do Hermes
+DEPLOY_HOST=<endereço da kvm4> just remote-hermes-check  # os add-ons do Hermes do último deploy estão ativos
+```
+
+O `remote-health` roda o script da skill `kvm4-health`, o mesmo relatório que o Hermes lê com o
+comando `kvm4-health` na máquina.
 
 ## Fazer uma mudança
 
@@ -22,13 +37,14 @@ a não ser no primeiro deploy ([`docs/DEPLOY.md`](https://github.com/piabrota/ni
 
 ## Voltar atrás
 
-- Na VPS: `sudo nixos-rebuild switch --rollback`, ou escolha uma geração mais antiga no menu do
+- Numa VPS: `sudo nixos-rebuild switch --rollback`, ou escolha uma geração mais antiga no menu do
   GRUB pelo console serial.
 - Depois, reverta o commit na `main`. Se não reverter, o próximo deploy traz a mudança de volta.
 
 ## O site em www.piabrota.art
 
-O site está ligado. Os dois nomes, `piabrota.art` e `www`, precisam apontar para a VPS. Os passos do DNS estão em
+O site está ligado. Os dois nomes, `piabrota.art` e `www`, precisam apontar para a VPS `piabrota`
+(KVM 1); o `hermes.piabrota.art` aponta para a `kvm4`. Os passos do DNS estão em
 [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md).
 
 ## Adicionar um app

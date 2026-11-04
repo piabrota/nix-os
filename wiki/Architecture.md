@@ -6,8 +6,8 @@
 
 | File | What it does |
 |---|---|
-| `flake.nix` | The system `nixosConfigurations.piabrota` (nixos-26.05), the deploy-rs node and CI's `checks`. |
-| `configuration.nix` | The Hostinger base: GRUB on `/dev/sda`, cloud-init, the QEMU agent, SSH. It imports the modules below. |
+| `flake.nix` | One system per host, `nixosConfigurations.piabrota` and `.kvm4` (nixos-26.05, from `hosts/<name>/`), a deploy-rs node for each, and CI's `checks`. |
+| `configuration.nix` | What both hosts share: the Hostinger base (GRUB on `/dev/sda`, cloud-init, the QEMU agent, SSH). It imports the modules below. |
 | `piabrota.nix` | The `h0ffmann` user (SSH key only) and the base packages. |
 | `tools.nix` | Light command-line tools, and the disk and memory limits. |
 | `deploy.nix` | The `deploy` user CI logs in as, garbage collection and the boot generation limit. |
