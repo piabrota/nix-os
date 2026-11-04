@@ -156,6 +156,8 @@
         # The site, prerendered from Gleam (site/): the pages and static/, with no runtime. The
         # system's own, so /hermes shows the Hermes that hermes.nix configures.
         site = self.nixosConfigurations.piabrota.config.piabrota.site.root;
+        # The skills website (skills-site/), prerendered from Gleam: served at /skills.
+        skills-site = self.nixosConfigurations.piabrota.config.piabrota.site.skills;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"
           (import ./site/data.nix {

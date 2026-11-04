@@ -34,6 +34,13 @@ in
       defaultText = lib.literalExpression "pkgs.callPackage ./site { inherit (cfg.analytics) measurementId; inherit (cfg) hermes; }, the prerendered pages";
       description = "The directory nginx serves. Read-only: the store.";
     };
+    skills = mkOption {
+      type = types.nullOr types.path;
+      # Gleam and erlang run on the builder; the box gets only the pages (skills-site/default.nix).
+      default = pkgs.callPackage ./skills-site { };
+      defaultText = lib.literalExpression "pkgs.callPackage ./skills-site { }, the prerendered skills website";
+      description = "The skills website, served at /skills/. Read-only: the store. null: no /skills page.";
+    };
     hermes = mkOption {
       type = types.nullOr types.attrs;
       internal = true;
@@ -79,7 +86,12 @@ in
             inherit (cfg) root;
             locations = mapAttrs'
               (path: url: nameValuePair "= ${path}" { return = "302 ${url}"; })
-              cfg.redirects;
+              cfg.redirects
+            // lib.optionalAttrs (cfg.skills != null) {
+              # The pages use relative links, so the slash matters.
+              "= /skills".return = "301 /skills/";
+              "/skills/".alias = "${cfg.skills}/";
+            };
           };
         }
         (genAttrs cfg.redirectFrom (_: tls // {

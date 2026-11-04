@@ -80,12 +80,37 @@ failed.
 |---|---|
 | `http://www.piabrota.art/` | the site |
 | `https://www.piabrota.art/` | the site: design A; B at `/index/`, C at `/paths/`, Hermes's configuration at `/hermes/` |
+| `https://www.piabrota.art/skills/` | the skills website, from `skills-site/` |
+| `…/skills` | 301 to `…/skills/` |
 | `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `…/nixos` | 302 to this repository, so the README link keeps working |
 
 `piabrota.site.httpsOnly = true` turns plain HTTP into a redirect to HTTPS. Add redirects in
 `piabrota.site.redirects`, more names in `piabrota.site.redirectFrom`.
+
+## The skills website at /skills
+
+`https://www.piabrota.art/skills/` is the website that GitHub Pages served for
+[piabrota/skills](https://github.com/piabrota/skills). It moved here.
+
+`skills-site/` holds the Gleam program, unchanged. Do not edit it here: a code change there is not
+tested on the VPS, and no one compiles Gleam on it.
+
+The build reads a pinned commit of piabrota/skills (`rev` and `hash` in `skills-site/default.nix`).
+A new commit of that repository shows on the site only after a PR here moves the pin. To move it:
+
+1. Change `rev` to the new commit.
+2. Get the hash with `nix-prefetch-url --unpack https://github.com/piabrota/skills/archive/<rev>.tar.gz`.
+3. Convert it with `nix hash convert --hash-algo sha256 --to sri <hash>`, and put it in `hash`.
+
+You can also set `hash` to an empty string. The failed build then prints the right one.
+
+Gleam and Erlang run on the CI builder only. The VPS gets the HTML, which is small.
+`allowedReferences = [ ]` keeps them out of the VPS closure. The pages use relative links, so
+they work under `/skills/`. `piabrota.site.skills = null` removes the page.
+
+To preview, run `just skills-site`. It builds into `./result-skills-site`.
 
 
 ## The structure figure
