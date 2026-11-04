@@ -26,7 +26,7 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
 | Limites | `MemoryMax=8G` (metade de 16 GB) e `CPUWeight=50` (metade da fatia das outras unidades) no gateway, para o sshd e um deploy terem espaço. A unidade do painel tem `MemoryMax=2G` ("O painel web"). |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
-| CLI | `hermes` no PATH (`addToSystemPackages`), sobre o mesmo estado do serviço; o `h0ffmann` está no grupo `hermes`. |
+| CLI | `hermes` no PATH (`addToSystemPackages`), sobre o mesmo estado do serviço; o `h0ffmann` o roda com `sudo -u hermes hermes ...` e não está no grupo `hermes` (a aba Chat do painel exige um grupo privado). |
 
 A configuração fica no Nix: no NixOS, `hermes setup`, `hermes config set` e
 `hermes gateway install` recusam mudar o que o módulo gerencia. Mude o `hermes.nix` num PR.
@@ -43,7 +43,7 @@ de segredos na máquina (nunca aqui, e nunca um valor num PR).
 | Discord | Um bot no servidor do dono, que responde só ao usuário permitido. Sem voz: o pacote `full` não está instalado, então o aviso de Opus no log é esperado. | `DISCORD_MAX_ATTACHMENT_BYTES` em 20 MiB, o mesmo limite do Telegram | `DISCORD_BOT_TOKEN`, `DISCORD_ALLOWED_USERS` |
 | Slack | Está no extra `messaging`; aqui só ficam os nomes das variáveis (veja "Configurar uma vez na máquina"). | nada | `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_ALLOWED_USERS` |
 | Cron | O agendador do próprio Hermes, dentro do gateway: uma tarefa por vez, resultado no canal principal (`/sethome`, veja "Discord"), sem cabeçalho e rodapé. Datas em `America/Sao_Paulo`. | `settings.cron.max_parallel_jobs = 1`, `settings.cron.wrap_response = false`, `settings.timezone` | nada |
-| CLI | `hermes` no PATH, sobre o estado do próprio serviço, para quem está no grupo `hermes` (`h0ffmann`). | `addToSystemPackages`, `users.users.h0ffmann.extraGroups` | nada |
+| CLI | `hermes` no PATH, sobre o estado do próprio serviço; o `h0ffmann` o roda com `sudo -u hermes hermes ...`. Ele não está no grupo `hermes`: o upstream recusa o socket de controle do gateway quando esse grupo tem outro membro, e a aba Chat do painel não consegue conectar. | `addToSystemPackages` | nada |
 | Servidores MCP | DeepWiki e Context7, remotos, sem chave; nada roda na máquina por eles. | `mcpServers`; `settings.mcp.auto_reload_on_config_change = false` | nada |
 | Painel web | O `hermes dashboard` do upstream, a unidade `hermes-backend`, só em 127.0.0.1:9119; o nginx o serve em `https://hermes.piabrota.art` com TLS e basic auth (`hermes-web.nix`, veja "O painel web"). | nada: `piabrota.hermesWeb` no `hermes-web.nix` | nada: o arquivo do basic auth é `/var/lib/hermes-web-secrets/htpasswd` |
 
@@ -353,6 +353,10 @@ do módulo do upstream:
   nomes das variáveis, com os valores ocultos.
 - **O Nix é dono da configuração.** Uma mudança feita na página Config dura só até o próximo
   deploy escrever o `config.yaml` de novo. Mude o `hermes.nix` num PR.
+- **A aba Chat exige o grupo `hermes` privado.** O upstream recusa o socket de controle do gateway
+  quando o grupo do diretório com escrita para o grupo tem um membro além do dono. Se a aba Chat
+  mostrar "retrying", rode `sudo -u hermes hermes gateway status` e confira que mais ninguém está
+  no grupo: `getent group hermes` não pode listar nenhum membro.
 
 ### Ligar
 

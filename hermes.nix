@@ -330,7 +330,7 @@ in
     workingDirectory = "/var/lib/hermes/workspace";
     # Scheduled jobs and dates in the owner's time, not the server's UTC.
     settings.timezone = "America/Sao_Paulo";
-    # `hermes` for the admins, on the service's state (HERMES_HOME), through the hermes group.
+    # `hermes` for the admins, on the service's state (HERMES_HOME), run as `sudo -u hermes hermes ...`.
     addToSystemPackages = true;
   };
 
@@ -339,7 +339,9 @@ in
     "d /var/lib/hermes-secrets 0700 root root -"
     "d /var/lib/hermes/workspace/omp-tasks 0770 hermes hermes -"
   ];
-  users.users.h0ffmann.extraGroups = [ "hermes" ];
+  # h0ffmann is NOT in the `hermes` group, on purpose. Upstream refuses the gateway control socket
+  # when the group of a group-writable home has another member, and then the dashboard Chat tab
+  # cannot attach. h0ffmann reaches the state with `sudo -u hermes`.
   # Reads the system journal for its daily VPS check (hermes/AGENTS.md), as the observer account does.
   users.users.hermes.extraGroups = [ "systemd-journal" ];
 
