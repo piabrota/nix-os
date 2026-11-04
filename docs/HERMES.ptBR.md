@@ -163,9 +163,12 @@ terceira entrada de `skills.external_dirs`): o Hermes cria um branch `hermes/*`,
 num arquivo em `/var/lib/hermes/workspace/omp-tasks/`, roda `omp -p --max-time 15m` na cópia de
 trabalho, lê o diff e então ele mesmo faz o commit, o push e o pull request. O omp nunca faz push.
 
-- **Versão.** O input `omp` do flake está fixado na tag `v18.16.0`; a atualização semanal do flake
-  não move uma tag, então uma versão nova é um PR. O runner do GitHub compila o omp do código-fonte
-  (Rust com fat LTO, e bun2nix): nenhum cache binário tem o pacote. A VPS não compila nada.
+- **Versão.** O `omp/package.nix` usa o binário de release da tag `v18.16.0` (`omp-linux-x64`,
+  fixado pelo hash), e não o flake. Do código-fonte, o omp é um build de Rust (fat LTO) e bun2nix
+  com o nixpkgs próprio dele. Nenhum cache binário tem esse build, e ele levava uns 20 minutos no
+  runner. O binário só precisa da glibc, e o autoPatchelf ajusta o interpretador. A atualização
+  semanal do flake não move o binário, então uma versão nova é um PR que muda `version` e `hash`.
+  A VPS não compila nada.
 - **O wrapper.** O `omp` no PATH do Hermes é um wrapper (`ompWrapped` no `hermes.nix`). Ele aponta
   o omp para `hermes/omp.yml` como overlay de configuração. O arquivo é só leitura na store e vale
   mais que o `config.yml` do próprio omp e que o `.omp/` de um repositório clonado. O wrapper passa

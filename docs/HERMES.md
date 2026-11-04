@@ -160,9 +160,11 @@ entry): Hermes makes a `hermes/*` branch, writes the task to a file in
 `/var/lib/hermes/workspace/omp-tasks/`, runs `omp -p --max-time 15m` in the working tree, reads
 the diff, and then commits, pushes and opens the pull request itself. omp never pushes.
 
-- **Version.** The flake input `omp` is pinned to the tag `v18.16.0`; the weekly flake update does
-  not move a tag, so a new release is a PR. The GitHub runner builds it from source (Rust with fat
-  LTO, and bun2nix): no binary cache has it. The VPS builds nothing.
+- **Version.** `omp/package.nix` takes the release binary of the tag `v18.16.0` (`omp-linux-x64`,
+  pinned by its hash), not the flake: from source, omp is a Rust (fat LTO) and bun2nix build with
+  its own nixpkgs, which no binary cache has, and it took about 20 minutes on the runner. The
+  binary needs only glibc; autoPatchelf sets its interpreter. The weekly flake update does not
+  move it, so a new release is a PR that changes `version` and `hash`. The VPS builds nothing.
 - **The wrapper.** `omp` on Hermes's PATH is a wrapper (`ompWrapped` in `hermes.nix`). It points
   omp at `hermes/omp.yml` as a config overlay, which is read-only in the store and outranks omp's
   own `config.yml` and a cloned repository's `.omp/`. It passes `CLAUDE_CODE_OAUTH_TOKEN` as

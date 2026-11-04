@@ -2,7 +2,7 @@
 # `hermes-agent`: its messaging gateway, which answers on the chat platforms whose tokens it has and
 # runs its own cron jobs. Its NixOS module comes from the flake input `hermes-agent`; this file only
 # chooses. State in /var/lib/hermes. See docs/HERMES.md.
-{ config, lib, pkgs, hermes-agent, omp, ... }:
+{ config, lib, pkgs, hermes-agent, ... }:
 let
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
@@ -188,7 +188,7 @@ let
       export PI_CONFIG_FILES=${./hermes/omp.yml}
       export ANTHROPIC_OAUTH_TOKEN="''${ANTHROPIC_OAUTH_TOKEN:-''${CLAUDE_CODE_OAUTH_TOKEN:-}}"
       export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
-      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${omp.packages.x86_64-linux.omp}/bin/omp "$@"
+      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp "$@"
     '';
   };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
