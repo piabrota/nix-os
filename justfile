@@ -118,6 +118,10 @@ figure-check:
 specs:
     sh scripts/specs.sh
 
+# check that the files Hermes loads into its context stay under its 32000-character cut
+context-size:
+    sh scripts/context-size.sh
+
 # list every package of the running system with its size, like pip freeze (--by-size to sort by size)
 freeze *args:
     sh scripts/freeze.sh {{args}}

@@ -281,7 +281,13 @@ results should go.
 
 When the owner asks, Hermes clones a repository, works on a `hermes/*` branch, pushes it and opens
 a pull request, as **piabrota-hermes[bot]**, its own GitHub App. It never merges: the owner does.
-`hermes-github.nix` keeps the App's key root-only and gives Hermes one-hour tokens.
+`hermes-github.nix` keeps the App's key root-only and gives Hermes one-hour tokens. The unit
+`hermes-github-token` mints them every 45 minutes for piabrota, marola-dev and h0ffmann, with the
+rights of contents, pull requests and issues (not workflows). `git` gets the token through a
+credential helper that picks the account by the repository's owner, and `gh` gets it too. Hermes
+pushes only `hermes/*` branches: `hermes/dangerous-patterns.yaml` blocks merges and every other
+push, and a ruleset on each default branch blocks a push to it at GitHub. Without the key file the
+unit does nothing.
 
 1. **Create the App** (once): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
    Name `piabrota-hermes`, any homepage (piabrota.art), **Webhook** off. Repository permissions:

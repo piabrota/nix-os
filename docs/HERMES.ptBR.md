@@ -290,7 +290,13 @@ resultados agendados devem chegar.
 Quando o dono pede, o Hermes clona um repositório, trabalha num branch `hermes/*`, dá push nele e
 abre um pull request, como **piabrota-hermes[bot]**, o GitHub App dele. Ele nunca faz merge: quem
 faz é o dono. O `hermes-github.nix` guarda a chave do App só para o root e entrega ao Hermes tokens
-de uma hora.
+de uma hora. A
+unit `hermes-github-token` gera esses tokens a cada 45 minutos para piabrota, marola-dev e
+h0ffmann, com os direitos de contents, pull requests e issues (não workflows). O `git` recebe o
+token por um credential helper que escolhe a conta pelo dono do repositório, e o `gh` também.
+O Hermes só dá push em branches `hermes/*`: o `hermes/dangerous-patterns.yaml` bloqueia merges e
+todo outro push, e um ruleset em cada branch padrão bloqueia o push nele no próprio GitHub. Sem o
+arquivo da chave, a unit não faz nada.
 
 1. **Crie o App** (uma vez): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
    Nome `piabrota-hermes`, qualquer homepage (piabrota.art), **Webhook** desligado. Permissões de
