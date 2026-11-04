@@ -113,6 +113,20 @@ in
               sub_filter_once off;
               # The minifier writes string literals in backticks.
               sub_filter '`${upstreamDocs}`' '`${docsPath}`';
+              # The backend marks the bundle immutable and answers a revalidation with 304, which
+              # skips sub_filter: a browser that cached a chunk before a sub_filter change would keep
+              # the old one. No validators upstream and no-cache downstream keep every load filtered.
+              # add_header here drops the server's, so the four are repeated.
+              proxy_set_header If-None-Match "";
+              proxy_set_header If-Modified-Since "";
+              proxy_hide_header Cache-Control;
+              proxy_hide_header ETag;
+              proxy_hide_header Last-Modified;
+              add_header Cache-Control no-cache always;
+              add_header X-Frame-Options DENY always;
+              add_header Referrer-Policy no-referrer always;
+              add_header X-Content-Type-Options nosniff always;
+              add_header Strict-Transport-Security "max-age=31536000" always;
               proxy_read_timeout 1h;
               proxy_send_timeout 1h;
               client_max_body_size 32m;
