@@ -359,11 +359,20 @@ order fails on the deploy, and deploy-rs rolls the box back.
    ```console
    ssh h0ffmann@hermes.piabrota.art
    sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
-   pw=$(openssl rand -base64 24); echo "$pw"   # copy it to your password manager
+   pw=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 40)
+   [ ${#pw} -eq 40 ] && echo "$pw" && \
    nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
      | sudo install -m 640 -o root -g nginx /dev/stdin /var/lib/hermes-web-secrets/htpasswd
+   curl -s -o /dev/null -w '%{http_code}\n' -u "owner:$pw" https://hermes.piabrota.art/   # 200
+   curl -s -o /dev/null -w '%{http_code}\n' -u 'owner:' https://hermes.piabrota.art/      # 401
    unset pw
    ```
+
+   Copy the password that `echo` prints to your password manager. It has only letters and
+   digits, so no character changes when you copy it. The box has no `openssl`: do not use
+   `openssl rand`. If `pw` is empty, `htpasswd` writes a file that accepts an empty password.
+   The length check stops that, and the last `curl` must print 401. If it prints 200, delete
+   the file at once.
 
    The deploy makes the directory too. Without the file nginx answers every request with a 500,
    so the dashboard stays closed until the file exists. A change to the file needs no deploy.
