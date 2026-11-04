@@ -1,0 +1,565 @@
+# The personal feed of the owner. Read by hermes/feeds/build_feed.py (docs/FEEDS.md).
+# A source below answered on 2026-11-04. A source that failed that day is not here: see docs/FEEDS.md.
+title = "piabrota - personal feed"
+
+[output]
+max_items = 80          # entries in feed.atom
+max_age_days = 21       # default age limit of an item
+min_score = 4.0         # an item below this score is dropped (pinned items stay)
+digest_items = 15       # items in digest.md and in the stdout digest
+digest_min_score = 6.0  # an item must reach this to be sent on stdout
+digest_max_chars = 1900 # Discord cuts a message at 2000
+pinned_keep = 3
+
+[negative]
+terms = ["airdrop", "nft", "memecoin", "crypto token", "giveaway", "casino", "onlyfans"]
+
+[[group]]
+id = "hermes"
+title = "Hermes Agent and building in public"
+[[group]]
+id = "agents"
+title = "Coding agents and Claude"
+[[group]]
+id = "nix"
+title = "Nix and self-hosting"
+[[group]]
+id = "lang"
+title = "Rust, Gleam and Loco"
+[[group]]
+id = "science"
+title = "Waves, ocean and HPC"
+[[group]]
+id = "podcasts"
+title = "Podcasts"
+
+# Interests. origin = chat: the owner asked Hermes about it. origin = profile: the public profile in hermes/AGENTS.md.
+[[interest]]
+name = "Hermes Agent"
+origin = "chat"
+weight = 5
+terms = ["hermes agent", "hermes-agent", "nous research", "nousresearch", "hermes gateway", "hermes plugin", "hermes skills"]
+[[interest]]
+name = "Coding agents and Claude"
+origin = "chat"
+weight = 4
+terms = ["oh-my-pi", "omp", "claude code", "coding agent", "agent harness", "ralph loop", "subagent", "subagents", "agentic coding", "anthropic", "claude"]
+[[interest]]
+name = "Nix and NixOS"
+origin = "chat"
+weight = 4
+terms = ["nixos", "nix flake", "flakes", "nixpkgs", "deploy-rs", "home-manager", "nix"]
+[[interest]]
+name = "Agent skills, plugins and MCP"
+origin = "chat"
+weight = 3
+terms = ["agent skills", "mcp server", "model context protocol", "plugin ecosystem", "agents.md"]
+[[interest]]
+name = "Building in public"
+origin = "chat"
+weight = 3
+terms = ["building in public", "build in public", "show hn", "indie hacker", "side project", "open source agent"]
+[[interest]]
+name = "Self-hosting and VPS"
+origin = "chat"
+weight = 2
+terms = ["self-hosting", "self-hosted", "vps", "hostinger", "hetzner", "nginx", "systemd", "cloud-init"]
+[[interest]]
+name = "Chat bots"
+origin = "chat"
+weight = 2
+terms = ["discord bot", "telegram bot", "messaging gateway", "chatops"]
+[[interest]]
+name = "CI and code quality"
+origin = "chat"
+weight = 2
+terms = ["github actions", "static analysis", "code smell", "linter", "clippy", "statix", "code review"]
+[[interest]]
+name = "Technical writing"
+origin = "chat"
+weight = 2
+terms = ["asd-ste100", "simplified technical english", "technical writing", "docs as code", "documentation as code"]
+[[interest]]
+name = "Second brain"
+origin = "chat"
+weight = 2
+terms = ["zettelkasten", "second brain", "personal knowledge", "obsidian", "pkm"]
+[[interest]]
+name = "Wave models"
+origin = "profile"
+weight = 4
+terms = ["wavewatch", "ww3", "wave model", "spectral wave", "ocean wave", "ocean model", "wave forecast", "swan", "mom6", "roms"]
+[[interest]]
+name = "GPU and HPC"
+origin = "profile"
+weight = 3
+terms = ["cuda", "rocm", "gpu port", "fortran", "hpc", "openacc", "kokkos", "sycl", "gpu kernel"]
+[[interest]]
+name = "Rust"
+origin = "profile"
+weight = 3
+terms = ["rust", "cargo", "tokio", "axum", "loco", "sea-orm"]
+[[interest]]
+name = "Gleam and BEAM"
+origin = "profile"
+weight = 3
+terms = ["gleam", "erlang", "elixir", "beam vm", "otp"]
+[[interest]]
+name = "Scala and effects"
+origin = "profile"
+weight = 2
+terms = ["scala 3", "kyo", "zio", "effect system"]
+[[interest]]
+name = "Open-water swimming"
+origin = "profile"
+weight = 2
+terms = ["open water swimming", "open-water swimming", "marathon swimming", "swim"]
+[[interest]]
+name = "Water quality"
+origin = "profile"
+weight = 3
+terms = ["bathing water", "water quality", "sanitation", "saneamento", "balneabilidade", "fepam", "cetesb"]
+[[interest]]
+name = "Floods and warnings"
+origin = "profile"
+weight = 2
+terms = ["flood", "cemaden", "defesa civil", "early warning", "cap 1.2"]
+[[interest]]
+name = "Postgres"
+origin = "profile"
+weight = 2
+terms = ["postgres", "postgresql", "sqlite", "pgx"]
+[[interest]]
+name = "ML engineering"
+origin = "profile"
+weight = 2
+terms = ["fine-tuning", "dspy", "llm evaluation", "evals", "open models", "ollama"]
+
+# ---- hermes ----
+[[source]]
+id = "hermes-releases"
+group = "hermes"
+kind = "feed"
+url = "https://github.com/NousResearch/hermes-agent/releases.atom"
+weight = 5
+pinned = true
+limit = 5
+max_age_days = 30
+[[source]]
+id = "hermes-commits"
+group = "hermes"
+kind = "feed"
+url = "https://github.com/NousResearch/hermes-agent/commits/main.atom"
+weight = 2
+limit = 6
+max_age_days = 3
+[[source]]
+id = "hermes-official-plugins"
+group = "hermes"
+kind = "feed"
+url = "https://github.com/NousResearch/hermes-official-plugins/commits/main.atom"
+weight = 3
+limit = 6
+max_age_days = 7
+[[source]]
+id = "awesome-hermes-agent"
+group = "hermes"
+kind = "feed"
+url = "https://github.com/0xNyk/awesome-hermes-agent/commits/main.atom"
+weight = 2
+limit = 6
+max_age_days = 14
+[[source]]
+id = "awesome-hermes-skills"
+group = "hermes"
+kind = "feed"
+url = "https://github.com/ZeroPointRepo/awesome-hermes-skills/commits/main.atom"
+weight = 2
+limit = 6
+max_age_days = 7
+[[source]]
+id = "reddit-hermesagent"
+group = "hermes"
+kind = "feed"
+url = "https://www.reddit.com/r/hermesagent/.rss"
+weight = 4
+limit = 20
+max_age_days = 7
+[[source]]
+id = "hn-hermes-agent"
+group = "hermes"
+kind = "feed"
+url = "https://hnrss.org/newest?q=hermes+agent+OR+hermes-agent"
+weight = 4
+limit = 20
+max_age_days = 14
+[[source]]
+id = "hn-show-hermes"
+group = "hermes"
+kind = "feed"
+url = "https://hnrss.org/show?q=hermes+agent"
+weight = 4
+limit = 10
+max_age_days = 30
+[[source]]
+id = "gh-hermes-new"
+group = "hermes"
+kind = "github_search"
+query = "topic:hermes-agent created:>{d14}"
+weight = 4
+limit = 10
+max_age_days = 14
+[[source]]
+id = "gh-hermes-active"
+group = "hermes"
+kind = "github_search"
+query = "topic:hermes-agent pushed:>{d7} stars:10..3000"
+weight = 2
+limit = 8
+max_age_days = 3650
+requires_match = true
+
+# ---- coding agents ----
+[[source]]
+id = "claude-code-releases"
+group = "agents"
+kind = "feed"
+url = "https://github.com/anthropics/claude-code/releases.atom"
+weight = 4
+pinned = true
+limit = 5
+max_age_days = 30
+[[source]]
+id = "omp-releases"
+group = "agents"
+kind = "feed"
+url = "https://github.com/can1357/oh-my-pi/releases.atom"
+weight = 4
+pinned = true
+limit = 5
+max_age_days = 60
+[[source]]
+id = "simon-willison"
+group = "agents"
+kind = "feed"
+url = "https://simonwillison.net/atom/everything/"
+weight = 3
+limit = 25
+max_age_days = 10
+requires_match = true
+[[source]]
+id = "hn-coding-agent"
+group = "agents"
+kind = "feed"
+url = "https://hnrss.org/newest?q=%22coding+agent%22&points=100"
+weight = 3
+limit = 15
+max_age_days = 21
+[[source]]
+id = "latent-space"
+group = "agents"
+kind = "feed"
+url = "https://www.latent.space/feed"
+weight = 3
+limit = 8
+max_age_days = 14
+[[source]]
+id = "gh-coding-agent-new"
+group = "agents"
+kind = "github_search"
+query = "topic:coding-agent created:>{d14} stars:>50"
+weight = 2
+limit = 8
+max_age_days = 14
+
+# ---- nix ----
+[[source]]
+id = "nixos-discourse"
+group = "nix"
+kind = "feed"
+url = "https://discourse.nixos.org/c/announcements/8.rss"
+weight = 3
+limit = 10
+max_age_days = 30
+[[source]]
+id = "nixos-blog"
+group = "nix"
+kind = "feed"
+url = "https://nixos.org/blog/announcements-rss.xml"
+weight = 2
+limit = 5
+max_age_days = 90
+[[source]]
+id = "lobsters-nix"
+group = "nix"
+kind = "feed"
+url = "https://lobste.rs/t/nix.rss"
+weight = 3
+limit = 25
+max_age_days = 14
+[[source]]
+id = "lobsters-devops"
+group = "nix"
+kind = "feed"
+url = "https://lobste.rs/t/devops.rss"
+weight = 1
+limit = 25
+max_age_days = 7
+requires_match = true
+[[source]]
+id = "hn-nixos"
+group = "nix"
+kind = "feed"
+url = "https://hnrss.org/newest?q=nixos&points=20"
+weight = 3
+limit = 15
+max_age_days = 21
+[[source]]
+id = "deploy-rs"
+group = "nix"
+kind = "feed"
+url = "https://github.com/serokell/deploy-rs/commits/master.atom"
+weight = 1
+limit = 5
+max_age_days = 30
+[[source]]
+id = "gh-nixos-new"
+group = "nix"
+kind = "github_search"
+query = "topic:nixos created:>{d30} stars:>10"
+weight = 2
+limit = 8
+max_age_days = 30
+
+# ---- rust, gleam, loco ----
+[[source]]
+id = "rust-blog"
+group = "lang"
+kind = "feed"
+url = "https://blog.rust-lang.org/feed.xml"
+weight = 3
+pinned = true
+limit = 5
+max_age_days = 30
+[[source]]
+id = "this-week-in-rust"
+group = "lang"
+kind = "feed"
+url = "https://this-week-in-rust.org/atom.xml"
+weight = 2
+limit = 4
+max_age_days = 14
+[[source]]
+id = "lobsters-rust"
+group = "lang"
+kind = "feed"
+url = "https://lobste.rs/t/rust.rss"
+weight = 2
+limit = 25
+max_age_days = 7
+[[source]]
+id = "gleam-releases"
+group = "lang"
+kind = "feed"
+url = "https://github.com/gleam-lang/gleam/releases.atom"
+weight = 3
+pinned = true
+limit = 5
+max_age_days = 60
+[[source]]
+id = "gleam-news"
+group = "lang"
+kind = "feed"
+url = "https://gleam.run/feed.xml"
+weight = 3
+limit = 5
+max_age_days = 60
+[[source]]
+id = "loco-releases"
+group = "lang"
+kind = "feed"
+url = "https://github.com/loco-rs/loco/releases.atom"
+weight = 3
+pinned = true
+limit = 5
+max_age_days = 90
+[[source]]
+id = "hn-gleam"
+group = "lang"
+kind = "feed"
+url = "https://hnrss.org/newest?q=gleam&points=10"
+weight = 2
+limit = 10
+max_age_days = 30
+[[source]]
+id = "gh-gleam"
+group = "lang"
+kind = "github_search"
+query = "language:gleam pushed:>{d30} stars:>20"
+weight = 2
+limit = 8
+max_age_days = 3650
+[[source]]
+id = "gh-rust-new"
+group = "lang"
+kind = "github_search"
+query = "language:rust created:>{d7} stars:>300"
+weight = 1
+limit = 8
+max_age_days = 7
+requires_match = true
+
+# ---- science ----
+[[source]]
+id = "arxiv-ao-ph"
+group = "science"
+kind = "feed"
+url = "https://rss.arxiv.org/rss/physics.ao-ph"
+weight = 3
+limit = 30
+max_age_days = 7
+[[source]]
+id = "arxiv-flu-dyn"
+group = "science"
+kind = "feed"
+url = "https://rss.arxiv.org/rss/physics.flu-dyn"
+weight = 2
+limit = 30
+max_age_days = 7
+requires_match = true
+[[source]]
+id = "arxiv-cs-dc"
+group = "science"
+kind = "feed"
+url = "https://rss.arxiv.org/rss/cs.DC"
+weight = 2
+limit = 45
+max_age_days = 7
+requires_match = true
+[[source]]
+id = "gh-wave-ocean"
+group = "science"
+kind = "github_search"
+query = "wavewatch OR \"ocean model\" pushed:>{d30} stars:>3"
+weight = 3
+limit = 8
+max_age_days = 3650
+
+# ---- podcasts (feeds are 4 to 5 MB: read the first items only) ----
+[[source]]
+id = "pod-latent-space"
+group = "podcasts"
+kind = "feed"
+url = "https://podcast.latent.space/feed.xml"
+weight = 3
+limit = 6
+max_age_days = 21
+[[source]]
+id = "pod-cognitive-revolution"
+group = "podcasts"
+kind = "feed"
+url = "https://feeds.megaphone.fm/RINTP3108857801"
+weight = 2
+limit = 6
+max_age_days = 21
+[[source]]
+id = "pod-oxide-and-friends"
+group = "podcasts"
+kind = "feed"
+url = "https://feeds.transistor.fm/oxide-and-friends"
+weight = 3
+limit = 6
+max_age_days = 30
+[[source]]
+id = "pod-rustacean-station"
+group = "podcasts"
+kind = "feed"
+url = "https://rustacean-station.org/podcast.rss"
+weight = 3
+limit = 6
+max_age_days = 45
+[[source]]
+id = "pod-changelog"
+group = "podcasts"
+kind = "feed"
+url = "https://changelog.com/podcast/feed"
+weight = 2
+limit = 6
+max_age_days = 21
+[[source]]
+id = "pod-changelog-interviews"
+group = "podcasts"
+kind = "feed"
+url = "https://changelog.com/interviews/feed"
+weight = 1
+limit = 6
+max_age_days = 21
+[[source]]
+id = "pod-practical-ai"
+group = "podcasts"
+kind = "feed"
+url = "https://changelog.com/practicalai/feed"
+weight = 2
+limit = 6
+max_age_days = 21
+[[source]]
+id = "pod-software-engineering-daily"
+group = "podcasts"
+kind = "feed"
+url = "https://softwareengineeringdaily.com/feed/podcast/"
+weight = 2
+limit = 8
+max_age_days = 14
+requires_match = true
+[[source]]
+id = "pod-ai-engineering"
+group = "podcasts"
+kind = "feed"
+url = "https://serve.podhome.fm/rss/c9abdd38-a5dc-5eb2-96fd-f833f93208a7"
+weight = 2
+limit = 5
+max_age_days = 45
+[[source]]
+id = "pod-agentic-conversations"
+group = "podcasts"
+kind = "feed"
+url = "https://anchor.fm/s/174cb1b8/podcast/rss"
+weight = 2
+limit = 6
+max_age_days = 21
+[[source]]
+id = "pod-coder-radio"
+group = "podcasts"
+kind = "feed"
+url = "https://feeds.fireside.fm/coder/rss"
+weight = 1
+limit = 6
+max_age_days = 21
+requires_match = true
+[[source]]
+id = "pod-gleaming-the-tube"
+group = "podcasts"
+kind = "feed"
+url = "https://feeds.acast.com/public/shows/65bea6b33f3dbd00160fe247"
+weight = 3
+limit = 4
+max_age_days = 60
+[[source]]
+id = "pod-dwarkesh"
+group = "podcasts"
+kind = "feed"
+url = "https://apple.dwarkesh-podcast.workers.dev/feed.rss"
+weight = 2
+limit = 4
+max_age_days = 21
+requires_match = true
+[[source]]
+id = "chart-apple-us"
+group = "podcasts"
+kind = "apple_chart"
+url = "https://rss.applemarketingtools.com/api/v2/us/podcasts/top/100/podcasts.json"
+weight = 1
+limit = 100
+max_age_days = 3650
+requires_match = true
+genres = ["Technology", "Science", "Education", "Business"]

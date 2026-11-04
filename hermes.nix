@@ -391,6 +391,10 @@ in
       #!/bin/sh
       exec ${kvm4Health}/bin/kvm4-health --alert --record
     '';
+    # The personal feed (docs/FEEDS.md): the script of a no_agent cron job and its sources. The
+    # outputs and the state go to HERMES_HOME/feeds/.
+    hermesHomeFiles."scripts/feed-build.py" = ./hermes/feeds/build_feed.py;
+    hermesHomeFiles."feeds/feeds.toml" = ./hermes/feeds/feeds.toml;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";
