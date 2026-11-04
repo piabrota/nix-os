@@ -100,21 +100,6 @@ with:
 - [`docs/CLAUDE_PROJECT.ptBR.md`](docs/CLAUDE_PROJECT.ptBR.md), em português
 - [`docs/CLAUDE_PROJECT.md`](docs/CLAUDE_PROJECT.md), in English
 
-Kubernetes on this machine: a survey of k3s, k0s, MicroK8s and KubeSolo against the KVM 1 plan,
-with podman and Nomad for comparison. The short answer is not for now:
-
-- [`docs/KUBERNETES.ptBR.md`](docs/KUBERNETES.ptBR.md), em português
-- [`docs/KUBERNETES.md`](docs/KUBERNETES.md), in English
-
-The next step is a test of MicroK8s, with the node declared here and the workloads deployed
-apart:
-
-- [`docs/MICROK8S.ptBR.md`](docs/MICROK8S.ptBR.md), em português
-- [`docs/MICROK8S.md`](docs/MICROK8S.md), in English
-
-KubeSolo ran here from 2026-10-30 to 2026-11-02 and was then removed; `kubesolo-purge.nix`
-clears what it left on the box, once. Git history has its module and its doc.
-
 [Hermes Agent](https://github.com/NousResearch/hermes-agent), Nous Research's agent, runs on KVM 4 as a
 NixOS service (`hermes.nix`), on Claude through the owner's subscription, with its web dashboard at
 hermes.piabrota.art (`hermes-web.nix`). How it is set up, its secrets, and how to check it (the move
@@ -180,7 +165,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
-├── kubesolo-purge.nix       a oneshot that clears what KubeSolo left on the box; delete once it ran
+├── kubesolo-purge.nix       a oneshot that clears an old install from the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
@@ -198,10 +183,6 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── docs/FORK.md             the same, in English
 ├── docs/CLAUDE_PROJECT.ptBR.md  a Claude Project for a fork, in Portuguese
 ├── docs/CLAUDE_PROJECT.md   the same, in English
-├── docs/KUBERNETES.ptBR.md  a survey of small Kubernetes for this VPS, in Portuguese
-├── docs/KUBERNETES.md     the same, in English
-├── docs/MICROK8S.ptBR.md    a plan for testing MicroK8s here, in Portuguese
-├── docs/MICROK8S.md       the same, in English
 ├── docs/HERMES.ptBR.md      Hermes Agent here: setup, secrets, checks, in Portuguese
 ├── docs/HERMES.md         the same, in English
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
