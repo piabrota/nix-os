@@ -1,7 +1,8 @@
 #!/bin/sh
 # The health of kvm4 and of the Hermes units: memory, swap, pressure, load, disk, the journal, and
-# for each unit its memory now, its peak against its MemoryMax, its tasks and restarts. Read-only
-# on the system: it reads /proc, `systemctl show`, `df`, `du` and the journal, and changes nothing.
+# for each unit its memory now, its peak against its MemoryMax, its tasks and its restarts (NRestarts,
+# where a restart loop shows). Read-only on the system: it reads /proc, `systemctl show`, `df`, `du`
+# and the journal, and changes nothing.
 #
 #   kvm4-health.sh            the full report; exit 1 when a line is WARN or CRIT
 #   kvm4-health.sh --alert    only the findings, and only when they change or every 6 h; prints
@@ -37,6 +38,8 @@ done
 : "${KH_DISK_CRIT:=90}"
 : "${KH_DISK_GROWTH_GIB:=5}"    # GiB a day that / grows by
 : "${KH_AGENT_GROWTH_GIB:=1}"   # GiB that hermes-agent grew by in 24 h, with no restart
+: "${KH_RESTARTS_WARN:=3}"      # restarts of a unit since it started, above it: WARN
+: "${KH_RESTARTS_CRIT:=50}"     # above it: CRIT (a restart loop)
 : "${KH_AGENT_CPU_WARN:=200}"   # % of one core, hermes-agent's average since the last sample
 : "${KH_JOURNAL_MIB:=180}"      # journald keeps at most 200 MiB (tools.nix)
 : "${KH_REPEAT_HOURS:=6}"       # --alert repeats the same findings after this many hours
@@ -127,6 +130,8 @@ for u in $units "user-$(id -u hermes 2>/dev/null || echo 0).slice"; do
     agent_start=$(num "$(prop "$u" ActiveEnterTimestampMonotonic)")
   fi
   case "$u" in user-*) name="$u (cron workers)" ;; *) name=$u ;; esac
+  if [ "$restarts" -gt "$KH_RESTARTS_CRIT" ]; then flag CRIT "restarts-crit-$u" "$u restarted $restarts times since it started"
+  elif [ "$restarts" -gt "$KH_RESTARTS_WARN" ]; then flag WARN "restarts-$u" "$u restarted $restarts times since it started"; fi
   if [ "$active" != active ]; then
     case "$u" in user-*) ;; *) flag WARN "down-$u" "$name is $active" ;; esac
     continue
@@ -145,7 +150,6 @@ for u in $units "user-$(id -u hermes 2>/dev/null || echo 0).slice"; do
       else ok "$line"; fi
       ;;
   esac
-  if [ "$restarts" -gt 3 ]; then flag WARN "restarts-$u" "$name restarted $restarts times since boot"; fi
 done
 failed=$(systemctl --failed --plain --no-legend 2>/dev/null | awk '{ print $1 }' | tr '\n' ' ')
 if [ -n "$failed" ]; then flag WARN failed "failed units: $failed"; else ok "no failed unit"; fi

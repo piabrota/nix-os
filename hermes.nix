@@ -225,14 +225,16 @@ let
   # gets its own rules: hermes/omp.yml, a read-only config overlay. This wrapper is the only omp on
   # Hermes's PATH. omp reads ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the
   # same subscription. omp runs in Hermes's cgroup: choom makes the kernel's OOM killer pick omp
-  # before the gateway.
+  # before the gateway. timeout is a hard ceiling of 35 minutes for every run, whatever flags the
+  # caller gives: a restart killed a long run on 2026-11-04, and the ceiling bounds the loss and the
+  # cost. SIGTERM first, SIGKILL 30 seconds later.
   ompWrapped = pkgs.writeShellApplication {
     name = "omp";
     text = ''
       export PI_CONFIG_FILES=${./hermes/omp.yml}
       export ANTHROPIC_OAUTH_TOKEN="''${ANTHROPIC_OAUTH_TOKEN:-''${CLAUDE_CODE_OAUTH_TOKEN:-}}"
       export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
-      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp --append-system-prompt ${./hermes/omp-append-system.md} "$@"
+      exec ${pkgs.coreutils}/bin/timeout --signal=TERM --kill-after=30s 35m ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp --append-system-prompt ${./hermes/omp-append-system.md} "$@"
     '';
   };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
@@ -394,6 +396,11 @@ in
       #!/bin/sh
       exec ${kvm4Health}/bin/kvm4-health --alert --record
     '';
+    # The personal feed (docs/FEEDS.md): the script of a no_agent cron job and its sources. The
+    # outputs go to HERMES_HOME/feeds/out/ and the state to HERMES_HOME/feeds/state.json; the
+    # tmpfiles rule below gives feeds/ to hermes.
+    hermesHomeFiles."scripts/feed-build.py" = ./hermes/feeds/build_feed.py;
+    hermesHomeFiles."feeds/feeds.toml" = ./hermes/feeds/feeds.toml;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";
@@ -403,10 +410,14 @@ in
     addToSystemPackages = true;
   };
 
-  # omp-tasks: the task files of the hermes-omp skill.
+  # omp-tasks: the task files of the hermes-omp skill. feeds: activation's `install -D` of
+  # feeds/feeds.toml makes the directory as root, 2755, and feeds is not a state directory of the
+  # module, so the feed script could not write out/ or state.json. `d` also fixes the owner and the
+  # mode of a directory that exists.
   systemd.tmpfiles.rules = [
     "d /var/lib/hermes-secrets 0700 root root -"
     "d /var/lib/hermes/workspace/omp-tasks 0770 hermes hermes -"
+    "d /var/lib/hermes/.hermes/feeds 2770 hermes hermes -"
   ];
   # h0ffmann is NOT in the `hermes` group, on purpose. Upstream refuses the gateway control socket
   # when the group of a group-writable home has another member, and then the dashboard Chat tab

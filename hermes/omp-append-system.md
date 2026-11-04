@@ -10,3 +10,10 @@ Rules for work on this box. They add to your other instructions.
 - Do not read or print secrets, tokens or the environment.
 - If the task is unclear or needs a decision of the owner, stop and say so in your final answer.
 - End with the changed files, what each change does, and each check command with its result.
+- A run can stop at any time: a deploy, a restart or the time ceiling. After each step, leave every
+  file in a state that works.
+- If the task file names a progress file (`omp-tasks/<name>.progress`), read it first. Continue
+  after the last finished step. Do not redo a finished step. After each finished step, append one
+  line to it: the step number, the files, and the result of its check.
+- Work in small steps. Write a file in full early, then improve it. Do not keep a whole change in
+  your head.

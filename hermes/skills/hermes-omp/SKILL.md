@@ -60,8 +60,11 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
 3. **Run.** From the working tree:
 
    ```
-   terminal(command="omp -p --no-title --max-time 15m < /var/lib/hermes/workspace/omp-tasks/<a-few-words>.md", workdir="/var/lib/hermes/workspace/<repo>", timeout=960)
+   terminal(command="omp -p --no-title --max-time 15m < /var/lib/hermes/workspace/omp-tasks/<a-few-words>.md; rc=$?; cat /var/lib/hermes/workspace/omp-tasks/<a-few-words>.progress 2>/dev/null; exit $rc", workdir="/var/lib/hermes/workspace/<repo>", timeout=960)
    ```
+
+   The command shows the progress file when the run ends. For a task that needs more than 10
+   minutes, follow "Long tasks". The wrapper stops every run at 35 minutes.
 
    For a review only, say so in the task file and add `--approval-mode write`, so omp can read and
    write files but cannot run commands.
@@ -73,7 +76,7 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
 5. **Deliver.** Commit, push `hermes/<a-few-words>` and open the pull request as the workspace
    AGENTS.md, "Opening a pull request", says, in English. Tell the owner what omp did and what you
    checked.
-6. **Clean up.** Delete the task file.
+6. **Clean up.** Delete the task file and the progress file.
 
 ## Tell the owner
 
@@ -108,6 +111,25 @@ For "review PR N" or "review this diff", omp does the review and you check it.
    files, and check that `git status` is clean.
 6. Post one `COMMENT` review and never approve. End the review with the signature line from
    SOUL.md.
+
+## Long tasks
+
+A deploy or a restart of the gateway stops omp, and the wrapper stops every run at 35 minutes.
+
+- Split a task that needs more than 10 minutes into steps in the task file. Give each step one
+  check. Name a progress file in the task file: `omp-tasks/<name>.progress`. Run one omp for each
+  group of steps of at most 15 minutes.
+- Before a run longer than 10 minutes, run `systemctl show hermes-agent -p NRestarts -p ActiveState`
+  and `gh run list -R piabrota/nix-os --workflow deploy.yml --limit 1`. If a deploy is in progress,
+  or `NRestarts` is above 5, do not start. Tell the owner.
+- During the run, tell the owner not to merge a pull request of nix-os. A merge deploys, and a
+  deploy can restart the gateway.
+- Start the run with `terminal(background=true, notify=true)` and end the turn. Do not poll.
+- If the output says `[Stopped by SIGTERM]`, read the progress file and `git status`. Then start a
+  new run with a task file that says: continue after the last finished step. Tell the owner that
+  the run stopped, and why.
+- If `NRestarts` of `hermes-agent` rises while you work, stop. Run `hermes doctor` and
+  `hermes gateway status`. Tell the owner. Do not hide a restart loop.
 
 ## When it fails
 
