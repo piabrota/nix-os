@@ -156,11 +156,12 @@ Brazilian alerts, bathing water or ocean science: those are piabrota's own skill
 ## omp, the coding worker
 
 [oh-my-pi](https://github.com/can1357/oh-my-pi) (omp, MIT, Stencil Labs, a fork of Mario Zechner's
-Pi) is a terminal coding agent on Bun with Rust natives. Hermes hands it large code changes through
-the `hermes-omp` skill (`hermes/skills/hermes-omp/SKILL.md`, the third `skills.external_dirs`
-entry): Hermes makes a `hermes/*` branch, writes the task to a file in
+Pi) is a terminal coding agent on Bun with Rust natives. Hermes hands it every task that writes or
+reviews code through the `hermes-omp` skill (`hermes/skills/hermes-omp/SKILL.md`, the third
+`skills.external_dirs` entry): Hermes makes a `hermes/*` branch, writes the task to a file in
 `/var/lib/hermes/workspace/omp-tasks/`, runs `omp -p --max-time 15m` in the working tree, reads
-the diff, and then commits, pushes and opens the pull request itself. omp never pushes.
+the diff, and then commits, pushes and opens the pull request itself. omp never pushes. How to see
+and tune each layer: [HERMES-OMP.md](HERMES-OMP.md).
 
 - **Version.** `omp/package.nix` takes the release binary of the tag `v18.16.0` (`omp-linux-x64`,
   pinned by its hash), not the flake: from source, omp is a Rust (fat LTO) and bun2nix build with

@@ -1,7 +1,7 @@
 ---
 name: hermes-omp
-description: "Hand a coding task in a repository to omp (oh-my-pi), then check its diff and open the PR yourself."
-version: 1.0.0
+description: "Hand every code implementation or review to omp (oh-my-pi), then check its diff and open the PR yourself."
+version: 1.1.0
 author: piabrota
 license: MPL-2.0
 platforms: [linux]
@@ -26,13 +26,19 @@ the commit, the push and the pull request.
 
 ## When to use it
 
-- The owner asks you to implement, fix, refactor or review code in a repository, and the change
-  touches more than two or three files, or needs many edits.
-- The owner asks for omp by name.
+Use omp for every task that writes or reviews code, config or scripts: implement, fix, refactor,
+review a pull request or a diff. The size of the change does not matter: a one-line fix goes
+through omp too. Do not write code with your own file tools. You do the steps omp cannot do: the
+branch, the commit, the push, the pull request, and a small slip you find in its diff (a blank line,
+a typo): fix it yourself and say so.
 
-Do not use it for chat, notes, research, a one-line fix, or a question you can answer by reading
-a file. Do not start omp from a cron job or from a subagent unless the owner asked for that job.
-Run one omp at a time.
+Do not use omp for chat, notes, research, a question you can answer by reading a file, or a
+change to a Markdown file that has no code. Do those yourself and say that omp did not run.
+Do not start omp from a cron job or from a subagent unless the owner asked for that job. Run one
+omp at a time.
+
+The owner can also start it by name: the skill is the command `/hermes-omp` (Telegram) or `/skill`
+(Discord).
 
 ## Procedure
 
@@ -68,6 +74,40 @@ Run one omp at a time.
    AGENTS.md, "Opening a pull request", says, in English. Tell the owner what omp did and what you
    checked.
 6. **Clean up.** Delete the task file.
+
+## Tell the owner
+
+The owner must see what omp does. Say each of these in chat, in plain words:
+
+- **Before the run**, one short message: the repository and the branch; the mode (write, or
+  review only); the path of the task file; the models and the thinking level that
+  `hermes/omp.yml` sets. Read those values from `hermes/omp.yml` on nix-os `main`. Do not quote
+  them from memory.
+- **While it runs**, facts only: `pgrep -af bin/omp`, `ps -o etime=,rss= -p <pid>`, and the time left
+  under `--max-time`. Its output stays empty until it ends.
+- **After the run**: the files omp changed, the checks omp says it ran and their results, the checks
+  you ran yourself, what you could not verify, any "unsure" label omp wrote, how long it took,
+  and the link to the pull request. Say "omp made the edits". Never say that you wrote them.
+- **When the owner asks how to tune omp**, point to `docs/HERMES-OMP.md` in nix-os, name the layer
+  that fits the wish (task file, repository rules, prompt file, `omp.yml`, wrapper), and offer the PR.
+
+## Review runs
+
+For "review PR N" or "review this diff", omp does the review and you check it.
+
+1. Refetch the head of the PR right before the run: `git fetch --depth 1 origin pull/N/head`, then
+   `git switch --detach FETCH_HEAD`. The owner may have pushed meanwhile.
+2. Copy the diff to `/var/lib/hermes/workspace/omp-tasks/`. omp cannot read `~/.hermes`.
+3. In the task file, list the areas to review in priority order. Ask for `file:line`, a severity
+   (BLOCKER, SHOULD-FIX, NIT) with certain, likely or unsure, the files it read, and what it could
+   not check. Say: edit nothing.
+4. Run with `--approval-mode write`. In that mode omp reads and writes files but cannot run commands.
+   A large PR takes 10 to 12 minutes: run it in the background and end the turn.
+5. Check each top finding yourself with a grep or a file read. Say which findings you confirmed and
+   which you only relay. Then `git switch` back to the default branch, delete the task and diff
+   files, and check that `git status` is clean.
+6. Post one `COMMENT` review and never approve. End the review with the signature line from
+   SOUL.md.
 
 ## When it fails
 

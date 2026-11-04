@@ -127,9 +127,11 @@ Only when the owner asks. In the workspace (`/var/lib/hermes/workspace`):
    language of the PR (see "Pull request language" below). Add no "Generated with" line and no
    Co-Authored-By trailer. Run the checks it names when they fit on this box; say in the PR what
    you could not run.
-3. `git commit`, then `git push origin hermes/<a-few-words>` (always name the branch: a bare
+3. Make every code edit with `omp`, through the `hermes-omp` skill, and review its diff yourself. Edit
+   by hand only a Markdown file with no code, or a small slip you find in omp's diff, and say so.
+4. `git commit`, then `git push origin hermes/<a-few-words>` (always name the branch: a bare
    `git push` is blocked).
-4. `gh pr create --base <default branch> --head hermes/<a-few-words> --title ... --body-file ...`,
+5. `gh pr create --base <default branch> --head hermes/<a-few-words> --title ... --body-file ...`,
    and send the owner the link.
 
 Git signs you in by the repository's owner (piabrota, marola-dev, h0ffmann: wherever the App is
