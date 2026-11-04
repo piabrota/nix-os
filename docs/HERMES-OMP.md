@@ -57,6 +57,12 @@ The rows go from the nearest layer to the farthest layer.
 with the next deploy, or when you run `deploy.yml` by hand on `main`. A merge that changes a `.nix`
 file, `hermes/omp.yml` or another file that is not Markdown deploys the box.
 
+The wrapper runs omp under `timeout`. No run lives more than 35 minutes, whatever flags the caller
+gives. A restart of the gateway also stops a run. For a long task, the task file names a progress
+file (`omp-tasks/<name>.progress`). omp appends one line after each finished step, and a new run
+continues after the last one. `kvm4-health` reports `NRestarts` of each unit: WARN above 3, CRIT
+above 50.
+
 ## Which setting wins
 
 This is the order in omp, highest first (omp docs `config-usage.md`, "Layers", at v18.16.0):
