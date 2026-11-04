@@ -111,7 +111,8 @@ in
               proxy_set_header Accept-Encoding "";
               sub_filter_types application/javascript text/javascript;
               sub_filter_once off;
-              sub_filter '"${upstreamDocs}"' '"${docsPath}"';
+              # The minifier writes string literals in backticks.
+              sub_filter '`${upstreamDocs}`' '`${docsPath}`';
               proxy_read_timeout 1h;
               proxy_send_timeout 1h;
               client_max_body_size 32m;
