@@ -1,4 +1,4 @@
-# kvm4: the Hostinger KVM 4 VPS (4 vCPU and 16 GB RAM by Hostinger's plan list; `just remote-specs`
+# piabrota2: the Hostinger KVM 4 VPS (4 vCPU and 16 GB RAM by Hostinger's plan list; `just remote-specs`
 # gives the real figures), the second host. It runs Hermes: the full Hermes (upstream's `full`
 # package and upstream's defaults), its GitHub App, its web dashboard on hermes.piabrota.art, and
 # PGX. It does not serve www.piabrota.art: that name points at piabrota.
@@ -15,8 +15,10 @@
     ../../hermes-web.nix
   ];
 
-  # Replace with the name Hostinger gave the VPS (see piabrota's file for why it must match).
-  networking.hostName = "kvm4";
+  # piabrota2 is the VPS name in hPanel; Hostinger first named it srv2125808 (srv2125808.hstgr.cloud
+  # stays its address). Without this line NixOS writes `nixos` to /etc/hostname; see
+  # hosts/piabrota/default.nix.
+  networking.hostName = "piabrota2";
 
   # Far above what Hermes used on piabrota (1G and CPUWeight 50), so a runaway task cannot starve
   # sshd and make a deploy roll back: half the RAM, and half the CPU share of other units when the

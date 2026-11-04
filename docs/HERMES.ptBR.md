@@ -20,7 +20,7 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 | | |
 |---|---|
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
-| Host | kvm4 (KVM 4), a segunda VPS, desde a mudança do piabrota (KVM 1) no [MIGRATION-KVM4.md](MIGRATION-KVM4.md). O `hermes.nix` define o que não depende da máquina e deixa o resto nos padrões do upstream: o pacote `full`, 10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB. O `hosts/kvm4` limita o gateway a `MemoryMax=8G` e `CPUWeight=50`. |
+| Host | piabrota2 (KVM 4), a segunda VPS, desde a mudança do piabrota (KVM 1) no [MIGRATION-KVM4.md](MIGRATION-KVM4.md). O `hermes.nix` define o que não depende da máquina e deixa o resto nos padrões do upstream: o pacote `full`, 10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB. O `hosts/piabrota2` limita o gateway a `MemoryMax=8G` e `CPUWeight=50`. |
 | Pacote | O padrão do flake, `full`, uns 700 MB a mais (voz, Bedrock, Modal e afins). Ele soma os extras `anthropic` (o SDK da Anthropic), `messaging` (Telegram, Discord, Slack), `mcp` e `ddgs`. |
 | Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-5-5` para subagentes e três tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
@@ -143,7 +143,7 @@ lê e envia), e está fixado por commit no `hermes.nix`:
 | [progress-squash](https://github.com/pierrenode/hermes-progress-squash) (MIT) | plugin | Reduz a uma linha os redesenhos de uma barra de progresso na saída do terminal antes de o modelo lê-la. Sem rede, sem arquivos. |
 | [public-holidays](https://github.com/Akloenx123/hermes-public-holidays) (MIT) | plugin | Feriados e contas de dias úteis (inclusive do Brasil e dos estados), calculados em código, para os resumos do cron e os prazos. GET em `date.nager.at` com um código de país e um ano, sem chave. |
 | [gh-ref, wiki-ref](https://github.com/EloquentBrush0x/hermes-context-refs) (MIT) | plugins | `@gh:dono/repo#N` anexa uma issue ou um pull request público (GET anônimo em `api.github.com`); `@wiki:<título>` anexa uma seção da Wikipédia. Sem token, sem arquivos. |
-| [memory-rewind](https://github.com/AhmetArif0/hermes-memory-rewind) v1.3.2 (MIT) | plugin | Um histórico de versões de `memories/MEMORY.md`, `memories/USER.md`, `SOUL.md` e `skills/`, num repositório git bare em `plugin-data/memory-rewind/`, gravado por uma thread em segundo plano depois de cada mudança. `/memory-history` no chat (só leitura); `sudo -u hermes hermes memory-rewind restore <versão> memory` na máquina devolve um arquivo e imprime o comando que desfaz a restauração. Só `git` local, sem rede; nunca lê `.env`, `auth.json` nem os bancos. O uso de disco cresce a cada mudança; ainda não foi medido no kvm4. O `SOUL.md` vem da store a cada ativação, então restaurá-lo vale só até o próximo deploy. |
+| [memory-rewind](https://github.com/AhmetArif0/hermes-memory-rewind) v1.3.2 (MIT) | plugin | Um histórico de versões de `memories/MEMORY.md`, `memories/USER.md`, `SOUL.md` e `skills/`, num repositório git bare em `plugin-data/memory-rewind/`, gravado por uma thread em segundo plano depois de cada mudança. `/memory-history` no chat (só leitura); `sudo -u hermes hermes memory-rewind restore <versão> memory` na máquina devolve um arquivo e imprime o comando que desfaz a restauração. Só `git` local, sem rede; nunca lê `.env`, `auth.json` nem os bancos. O uso de disco cresce a cada mudança; ainda não foi medido no piabrota2. O `SOUL.md` vem da store a cada ativação, então restaurá-lo vale só até o próximo deploy. |
 | [hermes-guide](https://github.com/iap/hermes-guide) v0.8.12 (MIT) | plugin | `/hermes-doctor` no chat e `hermes guide` na máquina: dez checagens só de leitura (config, MCP, skills, comandos, hooks, plugins, memórias, sessões, armazenamento, atualização). O relatório cita trechos curtos da memória e os ids e contagens de tokens de sessões descontroladas. Cada execução faz um `git ls-remote` do próprio repositório para avisar de versão nova (nenhum com `--fast`); o `proactive` (as checagens no início e no fim de cada sessão) fica desligado. As 22 skills de diagnóstico dele são um tap à parte e não estão instaladas. |
 | [hermes-plugin-guard](https://github.com/mauricemohr88-debug/hermes-plugin-guard) v0.2.1 (MIT) | plugin | `hermes plugin-guard scan <diretório> --fail-on high`: uma varredura estática de um plugin candidato (manifesto, Python, dependências, segredos) que nunca importa nem roda o código. Uma ferramenta só de leitura, `plugin_guard_review_candidate`, para um plugin instalado e não habilitado; aqui todo plugin vem do Nix e está habilitado, então o caminho é a CLI. Sem rede. Só o `src/` é instalado, sem as fixtures de teste inseguras do scanner. É o portão de todo plugin proposto depois dele (`hermes/AGENTS.md`, "Plugins"). |
 | [kvm4-health](../hermes/skills/kvm4-health/SKILL.md) (este repositório) | skill | `kvm4-health`: memória, swap, pressão, carga, disco e o journal, e para `hermes-agent`, `hermes-backend`, `pgx` e a slice do usuário `hermes` (onde rodam os jobs do cron) a memória agora e o `MemoryPeak` contra o `MemoryMax`, tarefas e reinícios; o crescimento do `/` por dia e o do `hermes-agent` sem reinício, a partir de uma amostra a cada 30 minutos. Os limites de `WARN` e `CRIT` são variáveis `KH_*`. O vigia é um job do cron `no_agent` sobre `~/.hermes/scripts/kvm4-health-alert.sh`: nenhuma chamada ao modelo, e uma mensagem só quando os achados mudam (de novo a cada 6 horas, e uma vez na recuperação). O Hermes cria o job uma vez, a partir da skill. Só leitura no sistema; ele grava apenas em `plugin-data/kvm4-health/`. `just remote-health` roda o script do seu computador. |
@@ -157,7 +157,7 @@ Do plano da [#88](https://github.com/piabrota/nix-os/issues/88) (onda 1), adiado
 o bubblewrap (oficial, 1.3.0) esconde o `~/.config/gh` de todo comando no sandbox, e é ali que o
 `hermes-github.nix` grava o token do gh, então o `gh` para de funcionar; o limite padrão de 256 MB
 de espaço de endereçamento por comando também derruba o omp e outros programas grandes. Ele precisa
-do `GH_TOKEN` passado de outro jeito e de um ensaio no kvm4 antes. O cronwatch e o
+do `GH_TOKEN` passado de outro jeito e de um ensaio no piabrota2 antes. O cronwatch e o
 cron-status-alert não são necessários: desde a 0.22.4 o Hermes manda um aviso de falha por
 incidente de um job do cron para o destino do job (`failure_deliver`,
 `cron.failure_repeat_alert_hours`), e os dois plugins só alertam no Feishu e no Discord. O backup do
@@ -290,7 +290,13 @@ resultados agendados devem chegar.
 Quando o dono pede, o Hermes clona um repositório, trabalha num branch `hermes/*`, dá push nele e
 abre um pull request, como **piabrota-hermes[bot]**, o GitHub App dele. Ele nunca faz merge: quem
 faz é o dono. O `hermes-github.nix` guarda a chave do App só para o root e entrega ao Hermes tokens
-de uma hora.
+de uma hora. A
+unit `hermes-github-token` gera esses tokens a cada 45 minutos para piabrota, marola-dev e
+h0ffmann, com os direitos de contents, pull requests e issues (não workflows). O `git` recebe o
+token por um credential helper que escolhe a conta pelo dono do repositório, e o `gh` também.
+O Hermes só dá push em branches `hermes/*`: o `hermes/dangerous-patterns.yaml` bloqueia merges e
+todo outro push, e um ruleset em cada branch padrão bloqueia o push nele no próprio GitHub. Sem o
+arquivo da chave, a unit não faz nada.
 
 1. **Crie o App** (uma vez): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
    Nome `piabrota-hermes`, qualquer homepage (piabrota.art), **Webhook** desligado. Permissões de
@@ -424,7 +430,7 @@ Depois abra `https://hermes.piabrota.art` e entre como `owner`.
 
 - `systemctl status hermes-backend` e `journalctl -u hermes-backend` na máquina.
 - `curl -s -o /dev/null -w '%{http_code}\n' https://hermes.piabrota.art/` dá `401` sem a senha.
-- **Desligar:** `piabrota.hermesWeb.enable = false` no `hosts/kvm4/default.nix`, num PR.
+- **Desligar:** `piabrota.hermesWeb.enable = false` no `hosts/piabrota2/default.nix`, num PR.
 - **Levar para outra máquina:** ligue a opção na máquina que roda o Hermes e aponte o registro de
   DNS para ela antes.
 

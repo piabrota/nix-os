@@ -3,9 +3,10 @@
 [English](Hermes-EN)
 
 O [Hermes Agent](https://github.com/NousResearch/hermes-agent), o agente da Nous Research, roda
-nesta VPS como piabrota-hermes: ele responde no Telegram e no Discord, roda as próprias tarefas
-agendadas e, quando o dono pede, abre pull requests. Esta página é um mapa de como ele roda e de
-como ele é configurado, no estado de [#72](https://github.com/piabrota/nix-os/pull/72) e
+na `piabrota2` (a VPS KVM 4) como piabrota-hermes: ele responde no Telegram e no Discord, roda as
+próprias tarefas agendadas e, quando o dono pede, abre pull requests. Esta página é um mapa de
+como ele roda e de como ele é configurado, no estado de
+[#72](https://github.com/piabrota/nix-os/pull/72) e
 [#74](https://github.com/piabrota/nix-os/pull/74). O guia completo é
 [`docs/HERMES.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/HERMES.ptBR.md); a
 configuração em si é [`hermes.nix`](https://github.com/piabrota/nix-os/blob/main/hermes.nix).
@@ -22,8 +23,11 @@ muda o `hermes.nix`. Este wiki não copia esse YAML: leia lá.
 | | |
 |---|---|
 | Unidade | `hermes-agent`, um serviço systemd do módulo NixOS do flake do Hermes (o input `hermes-agent`, fixado no `flake.lock`). Modo nativo, sem contêiner. |
-| Pacote | `minimal`, mais os extras `anthropic`, `messaging`, `mcp` e `ddgs`. O padrão, `full`, ocupa uns 700 MB a mais. |
-| Limites | `MemoryMax=1G` (um quarto da RAM) e `CPUWeight=50`: o sshd, o nginx e os apps usam a única vCPU primeiro. |
+| Versão | A release v0.22.7 (commit `b200f5b`, de 2026-11-03), fixada no `flake.lock`. |
+| Host | `piabrota2`, a VPS KVM 4 (`hosts/piabrota2/default.nix`). |
+| Pacote | `full`, o padrão do flake do Hermes, mais os extras `anthropic`, `messaging`, `mcp` e `ddgs`. |
+| Limites | `MemoryMax=8G` (metade da RAM) e `CPUWeight=50`: com os quatro núcleos ocupados, o sshd e as outras unidades têm o dobro da parcela de CPU do Hermes. |
+| Painel | `hermes.piabrota.art`, atrás do nginx, com TLS e basic auth. Unidade `hermes-backend`, `MemoryMax=2G` (`hermes-web.nix`). |
 | Estado | `/var/lib/hermes`. O diretório de trabalho é `/var/lib/hermes/workspace`. |
 | Segredos | Um arquivo na máquina, `/var/lib/hermes-secrets/hermes.env`, só do root. A ativação copia esse arquivo para o `.env` do Hermes. Nunca no repositório, no store ou na página `/hermes`. |
 | GitHub | Um App próprio, piabrota-hermes[bot] (`hermes-github.nix`): só branches `hermes/*` e pull requests, nunca um merge. |

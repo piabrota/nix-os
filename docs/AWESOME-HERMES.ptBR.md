@@ -184,7 +184,7 @@ entradas, cada uma com merge de um mantenedor, fixada num commit completo e exam
 - 🧪 [kenpritchard/hermes-delegation-gate](https://github.com/kenpritchard/hermes-delegation-gate)
   (MIT, 99 linhas): pede `/approve` antes de abrir subagentes. Com ele, os jobs do cron falham
   fechados.
-- ✅ Onda 1 da [#88](https://github.com/piabrota/nix-os/issues/88), no kvm4, cada um no commit do
+- ✅ Onda 1 da [#88](https://github.com/piabrota/nix-os/issues/88), no piabrota2, cada um no commit do
   catálogo (MIT): [hermes-plugin-guard](https://github.com/mauricemohr88-debug/hermes-plugin-guard)
   (`hermes plugin-guard scan`, o portão estático do próximo plugin; só o `src/`),
   [memory-rewind](https://github.com/AhmetArif0/hermes-memory-rewind) (um histórico git da memória,
@@ -193,7 +193,7 @@ entradas, cada uma com merge de um mantenedor, fixada num commit completo e exam
 - 🧪 [bubblewrap](https://github.com/NousResearch/hermes-official-plugins/tree/main/bubblewrap)
   (oficial): um sandbox `bwrap` por comando. Ainda não: ele esconde o `~/.config/gh`, onde fica o
   token do gh, e o limite de 256 MB de espaço de endereçamento derruba o omp. Precisa de um ensaio
-  no kvm4.
+  no piabrota2.
 - 🧪 Só no CI: [hermes-labs-ai/lintlang](https://github.com/hermes-labs-ai/lintlang)
   (Apache-2.0) faz lint do `SOUL.md`, do `AGENTS.md` e das skills.
 - ⛔ Pesados demais para 1 GB, ou pedem servidor ou nuvem: [hermes-lcm](https://github.com/stephenschoettler/hermes-lcm)

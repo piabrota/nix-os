@@ -1,4 +1,4 @@
-# Recipes for the piabrota VPSs (hosts/: piabrota, kvm4). Must parse with just 1.21 (Ubuntu 24.04's apt package):
+# Recipes for the piabrota VPSs (hosts/: piabrota, piabrota2). Must parse with just 1.21 (Ubuntu 24.04's apt package):
 # no [group], no [positional-arguments] attribute. CI checks it with that version.
 
 host := env_var_or_default("DEPLOY_HOST", "piabrota.art")
@@ -7,7 +7,7 @@ host := env_var_or_default("DEPLOY_HOST", "piabrota.art")
 default:
     @just --list
 
-# build a host's system closure here, without deploying it (piabrota or kvm4)
+# build a host's system closure here, without deploying it (piabrota or piabrota2)
 build node="piabrota":
     nix build .#nixosConfigurations.{{node}}.config.system.build.toplevel --print-build-logs
 
@@ -117,6 +117,10 @@ figure-check:
 # print the specs of this machine
 specs:
     sh scripts/specs.sh
+
+# check that the files Hermes loads into its context stay under its 32000-character cut
+context-size:
+    sh scripts/context-size.sh
 
 # list every package of the running system with its size, like pip freeze (--by-size to sort by size)
 freeze *args:

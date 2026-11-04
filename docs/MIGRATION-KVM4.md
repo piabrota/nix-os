@@ -1,7 +1,7 @@
 # Moving Hermes from KVM 1 to KVM 4
 
 A checklist, in order. After it, **VPS 1 (KVM 1, `piabrota`)** serves the public web only, and
-**VPS 2 (KVM 4, `kvm4`)** runs Hermes, its GitHub App, its dashboard on `hermes.piabrota.art`,
+**VPS 2 (KVM 4, `piabrota2`)** runs Hermes, its GitHub App, its dashboard on `hermes.piabrota.art`,
 and PGX. [www.piabrota.art/hosts](https://www.piabrota.art/hosts) and the README's first figure
 show the split. English only.
 
@@ -10,7 +10,7 @@ and runs Hermes. That merge takes Hermes off KVM 1, and `deploy.yml` skips KVM 4
 the secret `DEPLOY_HOST_KVM4`. Merged too early, Hermes is down until KVM 4 is up.
 
 Commands that start with `ssh kvm1` or `ssh kvm4` run from your computer: `kvm1` is
-`h0ffmann@piabrota.art`, `kvm4` is `h0ffmann@<KVM 4 IPv4>` (or `root@` before the first
+`h0ffmann@piabrota.art`, `piabrota2` is `h0ffmann@<KVM 4 IPv4>` (or `root@` before the first
 deploy, as the template set up).
 
 ## 1. The new VPS (KVM 4), before the merge
@@ -19,8 +19,8 @@ Hermes on KVM 1 keeps working during all of section 1.
 
 - [ ] **Empty VPS.** Follow [docs/DEPLOY.md](DEPLOY.md), "A second host", steps 1 to 5: the
   NixOS template with your SSH key and a snapshot, a look at the hostname, the host key and
-  `/etc/nixos/`, the hostname in `hosts/kvm4/default.nix`, the secret `DEPLOY_HOST_KVM4` and
-  kvm4's line in `DEPLOY_KNOWN_HOSTS`, port 22. Nothing is cloned on the VPS. The hostname goes
+  `/etc/nixos/`, the hostname in `hosts/piabrota2/default.nix`, the secret `DEPLOY_HOST_KVM4` and
+  piabrota2's line in `DEPLOY_KNOWN_HOSTS`, port 22. Nothing is cloned on the VPS. The hostname goes
   into this same pull request: send it (srvNNNNNNN, from hPanel or `hostname`) and it is committed
   here, or commit it yourself.
 - [ ] **Firewall.** In hPanel, open TCP 80 and 443 on KVM 4 too, beside 22: Let's Encrypt checks
@@ -33,7 +33,7 @@ Hermes on KVM 1 keeps working during all of section 1.
 
   ```console
   git switch claude/project-hermes-web-dashboard
-  DEPLOY_HOST=<KVM 4 IPv4> just deploy root kvm4   # or h0ffmann, whichever the template set up
+  DEPLOY_HOST=<KVM 4 IPv4> just deploy root piabrota2   # or h0ffmann, whichever the template set up
   ```
 
 - [ ] **The dashboard's password**, on KVM 4 ([docs/HERMES.md](HERMES.md), "The web

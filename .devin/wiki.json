@@ -1,19 +1,19 @@
 {
   "repo_notes": [
     {
-      "content": "nix-os is the NixOS configuration of ONE small, live VPS (Hostinger KVM 1: 1 vCPU, 4 GB RAM, 50 GB disk), hostname srv2108887, serving www.piabrota.art. It is a flake with one system, nixosConfigurations.piabrota, on nixos-26.05. It is not a library or a template for many machines, though docs/FORK.md explains how to fork it for another VPS."
+      "content": "nix-os is the NixOS configuration of TWO small, live VPSs, one flake with a system per host, both on nixos-26.05: `piabrota` (Hostinger KVM 1: 1 vCPU, 4 GB RAM, 50 GB disk; hostname srv2108887) serves www.piabrota.art, the public web; `piabrota2` (Hostinger KVM 4; measured on 2026-11-04: 4 vCPU, 15.6 GiB RAM, 196.8 GiB disk) runs Hermes Agent, its dashboard on hermes.piabrota.art and PGX. The systems are nixosConfigurations.piabrota and nixosConfigurations.piabrota2, built by mkHost from hosts/<name>/default.nix, which imports configuration.nix (what both hosts share) and adds the host's own name and roles. It is not a library or a template for many machines, though docs/FORK.md explains how to fork it for another VPS."
     },
     {
-      "content": "A merge to main IS the deploy: .github/workflows/deploy.yml builds the system on a GitHub runner (job `build`, which saves the Nix store in GitHub's Actions cache) and deploy-rs copies it over SSH as the `deploy` user and switches the VPS (job `deploy`). If SSH does not answer within 60 seconds after the switch, or a unit fails during activation, deploy-rs rolls the VPS back ('magic rollback'). The VPS never compiles. Changes to Markdown only do not deploy. When a deploy fails, .github/workflows/deploy-doctor.yml runs piabrota/agents' deploy-doctor on a GitHub runner; nothing of piabrota/agents runs on the box."
+      "content": "A merge to main IS the deploy: .github/workflows/deploy.yml builds both systems on a GitHub runner (job `build`, which saves the Nix store in GitHub's Actions cache) and deploy-rs copies each one over SSH as the `deploy` user and switches its VPS (job `deploy`, a matrix with one job per host; a host whose address secret is not set is skipped, not failed). If SSH does not answer within 60 seconds after the switch, or a unit fails during activation, deploy-rs rolls that VPS back ('magic rollback'). The VPSs never compile. Changes to Markdown only do not deploy. When a deploy fails, .github/workflows/deploy-doctor.yml runs piabrota/agents' deploy-doctor on a GitHub runner; nothing of piabrota/agents runs on the boxes."
     },
     {
       "content": "AGENTS.md is the source of truth for rules: the file table, 'Do not break the machine' (settings that keep the VPS reachable: qemu guest agent, cloud-init, OpenSSH, GRUB on /dev/sda, the deploy user, magic rollback; never change system.stateVersion), the resource budget, and the rules for commits and PRs. Prefer its wording when documenting rules."
     },
     {
-      "content": "Resource budget: every change is judged by what it adds to the system closure (measured with dix) and to resident memory. No GUI, fonts or desktop services; no heavy runtimes for small jobs; no resident daemons the host does not need. tools.nix removes the NixOS manual and caps the journal; deploy.nix sets garbage collection and keeps five boot generations."
+      "content": "Resource budget: every change is judged by what it adds to the system closure (measured with dix) and to resident memory. No GUI, fonts or desktop services; no heavy runtimes for small jobs; no resident daemons the host does not need. The rules hold on both hosts: piabrota2 has room for the full Hermes, not for heavy tools on every host, and a tool that only one host needs goes in that host's directory. tools.nix removes the NixOS manual and caps the journal; deploy.nix sets garbage collection and keeps five boot generations."
     },
     {
-      "content": "The repository's own modules use the option namespace piabrota.*: piabrota.site (site.nix), piabrota.loco.apps.<name> (loco.nix), piabrota.pgx (pgx.nix). configuration.nix imports them and turns them on, with hermes.nix (services.hermes-agent, the upstream module from the flake input hermes-agent) and kubesolo-purge.nix."
+      "content": "The repository's own modules use the option namespace piabrota.*: piabrota.site (site.nix), piabrota.loco.apps.<name> (loco.nix), piabrota.pgx (pgx.nix), piabrota.hermesWeb (hermes-web.nix). configuration.nix imports the modules that every host shares (site, loco, pgx, kubesolo-purge.nix); each host turns on its own roles: piabrota turns on piabrota.site and imports apps.nix; piabrota2 imports hermes.nix (services.hermes-agent, the upstream module from the flake input hermes-agent), hermes-github.nix and hermes-web.nix, and turns on piabrota.hermesWeb and piabrota.pgx."
     },
     {
       "content": "Secrets never live in the repository (it is public). They are files on the box written by hand: /var/lib/loco-secrets/<app>.env for Loco apps, /var/lib/hermes-secrets/hermes.env for Hermes Agent (copied into its .env at activation), and PGX's generated password. Units read them with EnvironmentFile or systemd LoadCredential. Document where a secret lives and how it is written, never a value."
@@ -22,10 +22,10 @@
       "content": "KubeSolo (single-node Kubernetes) ran here from 2026-10-30 to 2026-11-02 with rax and piabrota/agents on it, and was then removed with k8s/ and its docs (git history has them). kubesolo-purge.nix is a oneshot that clears, once, what it left on the box (pods, mounts, /var/lib/kubesolo, cni0, KUBE- and CNI- rules); it runs only while /var/lib/kubesolo exists and is deleted in a later PR. docs/KUBERNETES.md and docs/MICROK8S.md are research only."
     },
     {
-      "content": "Hermes Agent (github.com/NousResearch/hermes-agent, Nous Research) runs as the unit hermes-agent from its flake's NixOS module (hermes.nix): native mode, not a container; the minimal package plus the anthropic, messaging, mcp and ddgs extras; MemoryMax 1G and CPUWeight 50; state in /var/lib/hermes. Two Claude models on the owner's subscription (CLAUDE_CODE_OAUTH_TOKEN, never an API key) and no fallback provider: claude-sonnet-5-5 is the main model, claude-haiku-5-5 takes the subagents (read-only fan-out only, at most 2, one level deep) and three side tasks (titles, skill matching, the /goal judge). goals.max_turns is 6 and agent.max_turns 60. A deploy that changes its settings, environment, skills, plugins or documents reloads the unit (reloadTriggers): SIGUSR1 drains the turns in flight for at most 600 s (agent.restart_after_turn_timeout), the gateway exits 75 and Restart=always starts it with the new config; a new package restarts it at once. hermes-github.nix gives it write access as the GitHub App piabrota-hermes[bot] (hermes/* branches and PRs only, humans merge). Upstream calls Nix a best-effort Tier 2 platform, so flake.lock pins a commit and only the weekly flake-update PR moves it. www.piabrota.art/hermes shows its configuration as YAML, built by site/hermes.nix from the evaluated system with every secret-named key dropped. See docs/HERMES.md and the wiki pages wiki/Hermes-EN.md and wiki/Hermes.md."
+      "content": "Hermes Agent (github.com/NousResearch/hermes-agent, Nous Research) runs on the host piabrota2 as the unit hermes-agent from its flake's NixOS module (hermes.nix): native mode, not a container; pinned to the release v0.22.7 (commit b200f5bc60e31588ba2cb60e288029c4a54ba5fa, 2026-11-03) in flake.lock; the full package (upstream's default) plus the anthropic, messaging, mcp and ddgs extras; MemoryMax 8G and CPUWeight 50 (hosts/piabrota2/default.nix); state in /var/lib/hermes. Measured at rest on 2026-11-04: hermes-agent about 0.4 GiB. Its web dashboard is the unit hermes-backend (hermes-web.nix, MemoryMax 2G) on 127.0.0.1:9119 behind nginx at hermes.piabrota.art with TLS and basic auth; h0ffmann runs the CLI with `sudo -u hermes hermes ...` and is not in the hermes group. Two Claude models on the owner's subscription (CLAUDE_CODE_OAUTH_TOKEN, never an API key) and no fallback provider: claude-sonnet-5-5 is the main model, claude-haiku-5-5 takes the subagents (read-only fan-out only, at most 2, one level deep) and three side tasks (titles, skill matching, the /goal judge). goals.max_turns is 6 and agent.max_turns 60. A deploy that changes its settings, environment, skills, plugins or documents reloads the unit (reloadTriggers): SIGUSR1 drains the turns in flight for at most 600 s (agent.restart_after_turn_timeout), the gateway exits 75 and Restart=always starts it with the new config; a new package restarts it at once. hermes-github.nix gives it write access as the GitHub App piabrota-hermes[bot] (hermes/* branches and PRs only, humans merge). Upstream calls Nix a best-effort Tier 2 platform, so flake.lock pins a commit and only the weekly flake-update PR moves it. www.piabrota.art/hermes shows its configuration as YAML, built by site/hermes.nix from the evaluated system with every secret-named key dropped. See docs/HERMES.md, docs/MIGRATION-KVM4.md (the move from KVM 1 to KVM 4) and the wiki pages wiki/Hermes-EN.md and wiki/Hermes.md."
     },
     {
-      "content": "PGX (pgx.dev) is a Postgres-compatible engine in Rust used for data that can be lost; nothing uses it since KubeSolo left, and it stays for the next workload that needs Postgres. Apps keep their own data in SQLite: no PostgreSQL server or Redis for an app."
+      "content": "PGX (pgx.dev) is a Postgres-compatible engine in Rust used for data that can be lost; it runs on piabrota2 (MemoryMax 256M, about 0.1 GiB at rest on 2026-11-04), nothing uses it since KubeSolo left, and it stays for the next workload that needs Postgres. Apps keep their own data in SQLite: no PostgreSQL server or Redis for an app."
     },
     {
       "content": "Documentation is bilingual: pt-BR first with an English mirror (docs/X.ptBR.md and docs/X.md; wiki/ pages Home, Arquitetura, Operacao, Hermes, Maquetes with Home-EN, Architecture, Operations, Hermes-EN, Mockups). Mirrors change together. This DeepWiki should be written in English and may cite either language's file."
@@ -40,11 +40,16 @@
   "pages": [
     {
       "title": "Overview",
-      "purpose": "What nix-os is: one live VPS as a flake, what it serves, how a merge becomes a deploy, the machine's size, and where to start reading (README.md, AGENTS.md)."
+      "purpose": "What nix-os is: two live VPSs as one flake (piabrota, KVM 1, serves the public web; piabrota2, KVM 4, runs Hermes, its dashboard and PGX), what each serves, how a merge becomes a deploy, the machines' sizes, and where to start reading (README.md, AGENTS.md)."
+    },
+    {
+      "title": "Two hosts and the move to KVM 4",
+      "purpose": "How one flake builds two systems: hosts/<name>/default.nix (hosts/piabrota and hosts/piabrota2: the host name, the roles, piabrota2's Hermes limits), configuration.nix (what both hosts share), the mkHost and mkNode helpers in flake.nix, the deploy matrix in .github/workflows/deploy.yml and freeze.yml (one job per host, skipped when the address secret is missing), docs/MIGRATION-KVM4.md (the checklist that moved Hermes, its GitHub App, its dashboard and PGX from KVM 1 to KVM 4), hermes-web.nix (the dashboard behind nginx, TLS and basic auth at hermes.piabrota.art) and the /hosts page of the site, which shows what each VPS does.",
+      "parent": "Overview"
     },
     {
       "title": "The flake and its modules",
-      "purpose": "flake.nix's outputs (nixosConfigurations, deploy, checks, packages, devShells) and configuration.nix with the modules it imports, the piabrota.* options each defines, and how they fit together.",
+      "purpose": "flake.nix's outputs (nixosConfigurations for each host, deploy, checks, packages, devShells) and configuration.nix with the modules it imports, the piabrota.* options each defines, and how they fit together.",
       "parent": "Overview"
     },
     {
@@ -59,16 +64,16 @@
     },
     {
       "title": "Deploying",
-      "purpose": "deploy.yml's build and deploy jobs, deploy-rs and magic rollback, the Nix store cache, deploy.nix (the deploy user, five boot generations, the weekly nix.gc of paths older than 14 days, min-free 2 GiB and max-free 8 GiB instead of a garbage collection on each deploy, the weekly store optimisation), the secrets the workflow uses, and docs/DEPLOY.md's one-time setup."
+      "purpose": "deploy.yml's build job and its deploy job (one matrix job per host), deploy-rs and magic rollback, the Nix store cache, deploy.nix (the deploy user, five boot generations, the weekly nix.gc of paths older than 14 days, min-free 2 GiB and max-free 8 GiB instead of a garbage collection on each deploy, the weekly store optimisation), the secrets the workflow uses, and docs/DEPLOY.md's one-time setup."
     },
     {
       "title": "CI and checks",
-      "purpose": "ci.yml (on PRs: nixpkgs-fmt, statix, deadnix, shellcheck, figure-check, the justfile parse; nix flake check by hand only), the justfile's recipes, the flake's checks (the system, deploy-rs, loco-example, the pgx VM test, mockups, drawing), cves.yml, freeze.yml and the scripts in scripts/.",
+      "purpose": "ci.yml (on PRs: nixpkgs-fmt, statix, deadnix, shellcheck, figure-check, the justfile parse; nix flake check by hand only), the justfile's recipes, the flake's checks (both systems, deploy-rs, loco-example, the pgx VM test, mockups, drawing), cves.yml, freeze.yml and the scripts in scripts/.",
       "parent": "Deploying"
     },
     {
       "title": "The site",
-      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), nginx with ACME, the www redirect, and site/DESIGN.md's look."
+      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, and site/DESIGN.md's look."
     },
     {
       "title": "Mockups, figures and drawings",
@@ -81,15 +86,15 @@
     },
     {
       "title": "PGX",
-      "purpose": "pgx.nix and pgx/: the release packaged with autoPatchelfHook, the pgx unit and its sandbox, pg_hba.conf for loopback only, the pgx CLI wrapper, the VM test, and docs/PGX.md's cost and limits."
+      "purpose": "pgx.nix and pgx/: the release packaged with autoPatchelfHook, the pgx unit (on piabrota2) and its sandbox, pg_hba.conf for loopback only, the pgx CLI wrapper, the VM test, and docs/PGX.md's cost and limits."
     },
     {
       "title": "Hermes Agent",
-      "purpose": "hermes.nix, docs/HERMES.md and wiki/Hermes-EN.md: what Hermes Agent is here, the upstream NixOS module from the flake input hermes-agent, the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills, MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, checking it, updating and turning it off."
+      "purpose": "hermes.nix, hermes-web.nix, docs/HERMES.md, docs/MIGRATION-KVM4.md and wiki/Hermes-EN.md: what Hermes Agent is here and that it runs on piabrota2, the upstream NixOS module from the flake input hermes-agent (pinned to the release v0.22.7), the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills, MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, the dashboard (hermes-web.nix: hermes-backend behind nginx, TLS and basic auth), the move from KVM 1, checking it, updating and turning it off."
     },
     {
       "title": "Hermes runtime and deploys",
-      "purpose": "How the hermes-agent unit runs and restarts: native mode, the minimal package and its extras, MemoryMax=1G and CPUWeight=50, /var/lib/hermes, the time zone; what activation rewrites on a deploy (config.yaml, .env, SOUL.md, AGENTS.md, plugin links), the reloadTriggers and ExecReload with SIGUSR1, the drain of turns, cron jobs and subagents for at most agent.restart_after_turn_timeout (600 s), exit code 75 and Restart=always, the immediate restart on a new package, and how to check that a deploy took effect.",
+      "purpose": "How the hermes-agent unit runs and restarts on piabrota2: native mode, the full package (upstream's default) and its extras, MemoryMax=8G and CPUWeight=50 (hosts/piabrota2/default.nix), the dashboard unit hermes-backend with MemoryMax=2G, /var/lib/hermes, the time zone; what activation rewrites on a deploy (config.yaml, .env, SOUL.md, AGENTS.md, plugin links), the reloadTriggers and ExecReload with SIGUSR1, the drain of turns, cron jobs and subagents for at most agent.restart_after_turn_timeout (600 s), exit code 75 and Restart=always, the immediate restart on a new package, and how to check that a deploy took effect.",
       "parent": "Hermes Agent"
     },
     {

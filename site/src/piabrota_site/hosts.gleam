@@ -19,7 +19,7 @@ pub const hosts = [
     "piabrota.art and /nixos: redirects",
     "/notes: a Loco app on SQLite",
   ]),
-  #("VPS 2 · KVM 4", "kvm4 · 4 vCPU, 16 GB", [
+  #("VPS 2 · KVM 4", "piabrota2 · 4 vCPU, 16 GB", [
     "hermes-agent: the full Hermes, its chats, cron jobs and omp",
     "hermes.piabrota.art: Hermes's dashboard, behind basic auth",
     "piabrota-hermes[bot]: pull requests on hermes/* branches",

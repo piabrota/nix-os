@@ -4,7 +4,7 @@
 # chooses. State in /var/lib/hermes. See docs/HERMES.md.
 # Every host gets this file. It sets what does not depend on the machine and leaves the rest at
 # upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
-# KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to kvm4).
+# KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
 { config, lib, pkgs, hermes-agent, ... }:
 let
   # The release tag of the pinned hermes-agent input (flake.lock): v0.22.7 is b200f5b.
@@ -306,7 +306,7 @@ in
       model = "claude-haiku-5-5";
       fallback_providers = [ ];
       # Shallow fan-out, for the subscription's quota. How many children run at once depends on
-      # the machine: upstream's 10 on kvm4.
+      # the machine: upstream's 10 on piabrota2.
       max_iterations = 50;
       max_spawn_depth = 1;
     };

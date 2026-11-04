@@ -177,7 +177,7 @@ rules). Prefer the catalog's commit when you pin a plugin from it.
   unpinned download.
 - 🧪 [kenpritchard/hermes-delegation-gate](https://github.com/kenpritchard/hermes-delegation-gate)
   (MIT, 99 lines): asks for `/approve` before subagents fan out. Cron runs fail closed with it.
-- ✅ Wave 1 of [#88](https://github.com/piabrota/nix-os/issues/88), on kvm4, each at its catalog
+- ✅ Wave 1 of [#88](https://github.com/piabrota/nix-os/issues/88), on piabrota2, each at its catalog
   commit (MIT): [hermes-plugin-guard](https://github.com/mauricemohr88-debug/hermes-plugin-guard)
   (`hermes plugin-guard scan`, the static gate for the next plugin; its `src/` only),
   [memory-rewind](https://github.com/AhmetArif0/hermes-memory-rewind) (a git history of memory,
@@ -185,7 +185,7 @@ rules). Prefer the catalog's commit when you pin a plugin from it.
   (`/hermes-doctor`, read-only checks; one `git ls-remote` a run).
 - 🧪 [bubblewrap](https://github.com/NousResearch/hermes-official-plugins/tree/main/bubblewrap)
   (official): a `bwrap` sandbox per command. Not yet: it hides `~/.config/gh`, where gh's token is,
-  and its 256 MB address-space limit stops omp. It needs a drill on kvm4.
+  and its 256 MB address-space limit stops omp. It needs a drill on piabrota2.
 - 🧪 CI only: [hermes-labs-ai/lintlang](https://github.com/hermes-labs-ai/lintlang)
   (Apache-2.0) lints `SOUL.md`, `AGENTS.md` and skills.
 - ⛔ Too heavy for 1 GB, or a server or a cloud: [hermes-lcm](https://github.com/stephenschoettler/hermes-lcm)
