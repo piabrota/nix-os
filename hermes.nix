@@ -7,6 +7,8 @@
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to kvm4).
 { config, lib, pkgs, hermes-agent, ... }:
 let
+  # The release tag of the pinned hermes-agent input (flake.lock): v0.22.7 is b200f5b.
+  hermesVersion = "0.22.7";
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
   # Copied, not linked: a link into the input keeps its whole source (234 MiB) in the closure, and
@@ -253,7 +255,14 @@ in
     enable = true;
     # The flake's default, `full`: every portable extra (voice, Bedrock, Modal and the like).
     # A small host can take `minimal` instead.
-    package = lib.mkDefault hermes-agent.packages.x86_64-linux.default;
+    # The flake builds it with version "0.0.0" (its stamp, install-stamp.json, takes the version
+    # from this argument). At 0.0.0 the dashboard and `hermes --version` show v0.0.0, and Hermes
+    # refuses every plugin whose requires_hermes is higher, among them the deny list and tripwire.
+    # hermesVersion is the release that the input `hermes-agent` pins in flake.lock: change it in
+    # the same pull request as the pin (and the badge in README.md).
+    package = lib.mkDefault (hermes-agent.packages.x86_64-linux.default.override {
+      version = hermesVersion;
+    });
     # The extras every host uses, added to the package's own: Anthropic's SDK and the chat platforms
     # (Telegram, Discord, Slack), already in `full`; mcp, the MCP client, without which mcpServers
     # below do nothing; ddgs, DuckDuckGo search.
