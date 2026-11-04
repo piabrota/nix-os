@@ -15,8 +15,9 @@
     ../../hermes-web.nix
   ];
 
-  # Replace with the name Hostinger gave the VPS (see piabrota's file for why it must match).
-  networking.hostName = "kvm4";
+  # The name Hostinger gave the VPS (srv2125808.hstgr.cloud). It must match what cloud-init sets;
+  # see piabrota's file for why.
+  networking.hostName = "srv2125808";
 
   # Far above what Hermes used on piabrota (1G and CPUWeight 50), so a runaway task cannot starve
   # sshd and make a deploy roll back: half the RAM, and half the CPU share of other units when the

@@ -336,6 +336,14 @@ web app is part of the Hermes package that `hermes.nix` installs, so it adds no 
   and so is every write to `/api/env`: activation writes `.env` from the secrets file on each
   deploy, so an edit there is lost anyway. The page still lists the names of the variables, with
   their values redacted.
+  This holds for a browser behind nginx. It does not hold for a process on the box. The backend
+  listens on `127.0.0.1:9119` with its own auth gate off, nginx rules do not apply to a local
+  request, and in that mode the backend hands its session token to a local client (upstream
+  `hermes_cli/web_server_dashboard.py` sets `window.__HERMES_SESSION_TOKEN__`). Treat any local
+  account as able to use the dashboard's API, including the route that reveals a value of `.env`.
+  This was read in the upstream code and was not tested here. A file for
+  `backend.sessionTokenFile` (readable by `hermes` only), or a firewall rule by user ID, would
+  close it. Neither is done yet.
 - **Nix owns the config.** A change made in the Config page lasts only until the next deploy
   writes `config.yaml` again. Change `hermes.nix` in a PR instead.
 
@@ -354,7 +362,7 @@ order fails on the deploy, and deploy-rs rolls the box back.
    ssh h0ffmann@hermes.piabrota.art
    sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
    pw=$(openssl rand -base64 24); echo "$pw"   # copy it to your password manager
-   nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
+   printf '%s' "$pw" | nix shell nixpkgs#apacheHttpd -c htpasswd -niB -C 12 owner \
      | sudo install -m 640 -o root -g nginx /dev/stdin /var/lib/hermes-web-secrets/htpasswd
    unset pw
    ```

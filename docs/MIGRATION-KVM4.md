@@ -20,9 +20,9 @@ Hermes on KVM 1 keeps working during all of section 1.
 - [ ] **Empty VPS.** Follow [docs/DEPLOY.md](DEPLOY.md), "A second host", steps 1 to 5: the
   NixOS template with your SSH key and a snapshot, a look at the hostname, the host key and
   `/etc/nixos/`, the hostname in `hosts/kvm4/default.nix`, the secret `DEPLOY_HOST_KVM4` and
-  kvm4's line in `DEPLOY_KNOWN_HOSTS`, port 22. Nothing is cloned on the VPS. The hostname goes
-  into this same pull request: send it (srvNNNNNNN, from hPanel or `hostname`) and it is committed
-  here, or commit it yourself.
+  kvm4's line in `DEPLOY_KNOWN_HOSTS`, port 22. Nothing is cloned on the VPS. The hostname
+  (`srv2125808`, from hPanel) is already in this same pull request. Check that `hostname` on the
+  VPS prints the same name.
 - [ ] **Firewall.** In hPanel, open TCP 80 and 443 on KVM 4 too, beside 22: Let's Encrypt checks
   port 80, and the dashboard is on 443.
 - [ ] **DNS.** At Porkbun, an `A` record `hermes.piabrota.art` with KVM 4's IPv4 address (an
@@ -51,19 +51,28 @@ Hermes on KVM 1 keeps working during all of section 1.
 
 ## 2. The cutover (Hermes is down for a few minutes)
 
-Do these steps in one sitting, right before the merge. Two gateways on one Telegram token both
-fail (409 Conflict), so KVM 1's stops before KVM 4's gets the token.
+Do these steps in one sitting, right before the merge. Two gateways on one token of Telegram,
+Discord or Slack clash (Telegram answers 409 Conflict), so KVM 1's stops before KVM 4's gets the
+token.
 
-- [ ] **Stop Hermes on KVM 1.**
+- [ ] **Stop Hermes on KVM 1.** Hermes runs each cron job in its own user scope, so stopping the
+  unit can leave a job that still writes `state.db` and still posts from KVM 1. Stop the user
+  manager of the `hermes` user too (if that unit exists), and check that no process of `hermes`
+  is left before the copy starts. `pgrep` must print nothing.
 
   ```console
   ssh kvm1 sudo systemctl stop hermes-agent hermes-github-token.timer hermes-github-token
+  ssh kvm1 'sudo systemctl stop "user@$(id -u hermes).service"'
+  ssh kvm1 pgrep -u hermes -a
   ```
 
-- [ ] **Stop Hermes on KVM 4**, so nothing writes while the state arrives.
+- [ ] **Stop Hermes on KVM 4**, so nothing writes while the state arrives. KVM 4 ran Hermes in
+  section 1, so it has its own `state.db`, WAL files and sessions. Move them aside first: an
+  extract over them can mix two databases.
 
   ```console
   ssh kvm4 sudo systemctl stop hermes-agent hermes-backend
+  ssh kvm4 'sudo mv /var/lib/hermes /var/lib/hermes.kvm4-first'
   ```
 
 - [ ] **Copy the state and the secrets** from KVM 1 to KVM 4, through your computer (the two VPSs
@@ -72,12 +81,29 @@ fail (409 Conflict), so KVM 1's stops before KVM 4's gets the token.
   token, the bot tokens and allowed users) and `github-app.env` (the App's key). Nothing is
   printed or written on your disk.
 
+  The copy leaves out `config.yaml`. Activation deep-merges the settings of `hermes.nix` into the
+  `config.yaml` on disk and never deletes a key, so KVM 1's file would bring back its old limits.
+  Activation writes a fresh `config.yaml` from `hermes.nix` instead. A setting that you changed
+  by hand with `hermes config set` on KVM 1 is not carried over.
+
   ```console
+  set -o pipefail
   ssh kvm1 'sudo tar -C /var/lib -czf - hermes hermes-secrets' \
-    | ssh kvm4 'sudo tar -C /var/lib -xzf -'
+    | ssh kvm4 'sudo tar -C /var/lib --exclude=hermes/.hermes/config.yaml -xzf -'
   ssh kvm4 'sudo chown -R hermes:hermes /var/lib/hermes \
     && sudo chown -R root:root /var/lib/hermes-secrets && sudo chmod 700 /var/lib/hermes-secrets \
-    && sudo chmod 600 /var/lib/hermes-secrets/*'
+    && sudo find /var/lib/hermes-secrets -type f -exec chmod 600 {} +'
+  ```
+
+  If the copy prints an error, run `ssh kvm4 sudo rm -rf /var/lib/hermes` and copy again. The
+  old state of KVM 4 is safe in `/var/lib/hermes.kvm4-first`.
+
+- [ ] **Check the copy.** Count the files on both sides. The two numbers must match, except for
+  `config.yaml`: KVM 4 has one file less.
+
+  ```console
+  ssh kvm1 'sudo find /var/lib/hermes /var/lib/hermes-secrets | wc -l'
+  ssh kvm4 'sudo find /var/lib/hermes /var/lib/hermes-secrets | wc -l'
   ```
 
 - [ ] **Start Hermes on KVM 4.** Activation copies `hermes.env` into Hermes's `.env` and rewrites
@@ -93,8 +119,9 @@ fail (409 Conflict), so KVM 1's stops before KVM 4's gets the token.
   - Send Hermes a message on Telegram or Discord; it answers.
   - Open `https://hermes.piabrota.art`, log in, and see the old sessions under **Sessions**.
 - [ ] **Optional: PGX's data.** Nothing uses PGX today, and it is for data you can lose. To keep
-  it anyway: `ssh kvm1 sudo systemctl stop pgx`, the same tar pipe for `/var/lib/pgx`, then
-  `chown -R pgx:pgx` and `systemctl restart pgx` on KVM 4.
+  it anyway: `ssh kvm1 sudo systemctl stop pgx`, and also `ssh kvm4 sudo systemctl stop pgx`
+  before the extract, then the same tar pipe for `/var/lib/pgx`, then `chown -R pgx:pgx` and
+  `systemctl restart pgx` on KVM 4.
 - [ ] **Merge the pull request** (with #84 in it, or after #84). `deploy.yml` deploys both:
   KVM 1 loses Hermes, its GitHub App and PGX; KVM 4 gets the same system it already runs. Merge
   soon after the cutover: until then, any other deploy to KVM 1 starts its Hermes again, and the
@@ -119,6 +146,8 @@ fail (409 Conflict), so KVM 1's stops before KVM 4's gets the token.
 
   The `hermes` and `pgx` users and groups may stay in `/etc/passwd`; they own nothing and run
   nothing.
+- [ ] **Delete KVM 4's first state**, after the check of section 2 passes:
+  `ssh kvm4 sudo rm -rf /var/lib/hermes.kvm4-first`.
 - [ ] **Update the numbers.** After a deploy, `just remote-specs` (KVM 1) and
   `DEPLOY_HOST=<KVM 4 IPv4> just remote-specs` (KVM 4) give the real figures; change
   `AGENTS.md`, "Resource budget", if they differ from Hostinger's plan list.
