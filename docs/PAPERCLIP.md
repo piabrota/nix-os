@@ -15,7 +15,7 @@ that already runs on the box, or in omp.
 | Paperclip server | unit `paperclip`, `127.0.0.1:3100` | The npm release `paperclipai` 2026.1023.0 on Node.js 24 (`paperclip/package.nix`). `MemoryMax=2G`, `CPUWeight=50`. State in `/var/lib/paperclip`. |
 | Database | unit `postgresql`, PostgreSQL 17 | A Unix socket only (port 5433), peer authentication. `MemoryMax=1G`. PGX keeps `127.0.0.1:5432`. |
 | Signing secrets | `/var/lib/paperclip-secrets/paperclip.env` | The unit `paperclip-secrets` makes them the first time and keeps them. Never in the repository. |
-| Web | nginx, `paperclip.piabrota.art` | TLS from Let's Encrypt, WebSockets, a rate limit on `/api/auth/`. |
+| Web | nginx, `paperclip.piabrota.art` | TLS from Let's Encrypt, WebSockets, a rate limit on `/api/auth/`, and HTTP basic auth with the same users and file as `hermes.piabrota.art` (`/var/lib/hermes-web-secrets/htpasswd`, docs/HERMES.md, "The web dashboard"). Hermes and the `paperclipai` CLI use `127.0.0.1:3100` and need no password. |
 | Configuration | the store | Nix writes `config.json`, read-only. A change is a pull request. |
 | Commands | `paperclipai`, `paperclip-hermes-key` | `paperclipai` runs as the `paperclip` user with the server's configuration and secrets. `paperclip-hermes-key` is for `sudo` (see "Setup"). |
 
