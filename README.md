@@ -146,8 +146,10 @@ with that version.
 
 ```
 .
-├── flake.nix, flake.lock    the system, the deploy-rs node, the checks
-├── configuration.nix        the Hostinger KVM base: boot, disk, cloud-init, guest agent, SSH
+├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
+├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
+├── hosts/piabrota/          KVM 1: the public web, and Hermes cut to KVM 1's limits (hermes.nix)
+├── hosts/kvm4/              KVM 4: the full Hermes, its GitHub App, PGX (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit

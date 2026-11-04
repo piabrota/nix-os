@@ -1,4 +1,4 @@
-# Recipes for the piabrota VPS. Must parse with just 1.21 (Ubuntu 24.04's apt package):
+# Recipes for the piabrota VPSs (hosts/: piabrota, kvm4). Must parse with just 1.21 (Ubuntu 24.04's apt package):
 # no [group], no [positional-arguments] attribute. CI checks it with that version.
 
 host := env_var_or_default("DEPLOY_HOST", "piabrota.art")
@@ -7,14 +7,14 @@ host := env_var_or_default("DEPLOY_HOST", "piabrota.art")
 default:
     @just --list
 
-# build the system closure here, without deploying it
-build:
-    nix build .#nixosConfigurations.piabrota.config.system.build.toplevel --print-build-logs
+# build a host's system closure here, without deploying it (piabrota or kvm4)
+build node="piabrota":
+    nix build .#nixosConfigurations.{{node}}.config.system.build.toplevel --print-build-logs
 
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh
@@ -28,9 +28,9 @@ hermes-plugins-test:
 cves: build
     nix run --inputs-from . nixpkgs#vulnix -- --closure ./result || [ $? -eq 2 ]
 
-# deploy by hand, as CI does (needs SSH to the box as `user`; magic rollback included)
-deploy user="deploy":
-    nix run .#deploy-rs -- .#piabrota --hostname {{host}} --ssh-user {{user}} --skip-checks
+# deploy one host by hand, as CI does (needs SSH to the box as `user`; magic rollback included)
+deploy user="deploy" node="piabrota":
+    nix run .#deploy-rs -- .#{{node}} --hostname {{host}} --ssh-user {{user}} --skip-checks
 
 # write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:

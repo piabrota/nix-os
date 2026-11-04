@@ -17,8 +17,9 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 
 | File | Is |
 |---|---|
-| `flake.nix`, `flake.lock` | The flake: `nixosConfigurations.piabrota` on `nixos-26.05` (with the input `hermes-agent`, passed to the modules as `specialArgs`), the deploy-rs node `deploy.nodes.piabrota`, `checks` (the system, the deploy-rs checks, and `checks.pgx`, a VM test), `packages.deploy-rs`, `packages.pgx`, `packages.site`, `packages.mockups`, `devShells.site` (gleam and node, for `site/` only). |
-| `configuration.nix` | The host: GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH. It imports the nine modules below. |
+| `flake.nix`, `flake.lock` | The flake: one system per host, `nixosConfigurations.piabrota` and `nixosConfigurations.kvm4` (`mkHost`, from `hosts/<name>`), on `nixos-26.05` (with the input `hermes-agent`, passed to the modules as `specialArgs`), a deploy-rs node per host, `deploy.nodes.piabrota` and `deploy.nodes.kvm4` (`mkNode`), `checks` (both systems, the deploy-rs checks, and `checks.pgx`, a VM test), `packages.deploy-rs`, `packages.pgx`, `packages.site`, `packages.mockups`, `devShells.site` (gleam and node, for `site/` only). |
+| `configuration.nix` | What every host has in common: the Hostinger KVM template (GRUB on `/dev/sda` (BIOS, MBR), root on the `nixos` label with auto-resize, serial console, QEMU guest agent, cloud-init (NoCloud, ConfigDrive), OpenSSH) and the modules every host imports (users, tools, deploy, observer, the Loco and site modules, PGX off, the KubeSolo purge). No host name and no role: those are in `hosts/`. |
+| `hosts/<name>/` | One directory per host; `default.nix` imports `configuration.nix`, sets `networking.hostName` and imports the host's roles. `piabrota` (KVM 1, srv2108887): the public web (`site.nix` on, `apps.nix`), and until `kvm4` is live also Hermes with `hosts/piabrota/hermes.nix` (KVM 1's cuts: the `minimal` package, `MemoryMax=1G`, `CPUWeight=50`, 2 subagents, one cron job and one kernel at a time, 20 MiB media) and PGX. `kvm4` (KVM 4): the full Hermes (`full` package, upstream's defaults, no memory cap), `hermes-github.nix` and PGX; no public web, since DNS points at piabrota. A new host is a directory, a line in `nixosConfigurations` and `deploy.nodes`, and its pair in the address map of `deploy.yml` and `freeze.yml`. |
 | `piabrota.nix` | Users and Nix settings: the `h0ffmann` user (SSH key only, passwordless sudo), flakes on, the base packages. Nothing unfree: `allowUnfree` is off. |
 | `tools.nix` | Light CLI tools and defaults taken from [gvolpe/nix-config](https://github.com/gvolpe/nix-config), plus the size and memory limits. See "Resource budget". |
 | `deploy.nix` | The `deploy` user that CI logs in as (key from `keys/deploy.pub`), garbage collection, store optimisation, the boot generation limit, `max-jobs`/`cores`. |
@@ -35,7 +36,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
 | `scripts/hermes-check.sh` | POSIX sh, read-only, run as `h0ffmann` on the box (`just remote-hermes-check`): the `hermes-agent` unit and when it started, each plugin of `hermes.nix` linked in `/var/lib/hermes/.hermes/plugins/nix-managed-*` and in `hermes plugins list --enabled`, the `hermes-omp`, `hermes-cron` and `evidence-ledger-research` skills in `hermes skills list`, `omp --version` (the pinned tag) and `yt-dlp --version` from Hermes's profile, and plugin errors in the journal since the start. It never reads the secrets or prints the environment. Its two plugin lists follow `extraPlugins` and `ownPlugins` in `hermes.nix`: change them together. |
 | `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size, and the total. `--by-size` sorts by size. |
-| `.github/workflows/freeze.yml` | After each deploy and by hand: `scripts/freeze.sh` on the VPS, into the run summary and the `freeze` artifact. |
+| `.github/workflows/freeze.yml` | After each deploy and by hand: `scripts/freeze.sh` on the VPS, into the run summary and one `freeze-<host>` artifact per host. |
 | `justfile` | `build`, `check`, `cves`, `deploy`, `site`, `site-test`, `mockups`, `figure-init`, `figure`, `figure-check`, `specs`, `remote-specs`, `remote-hermes-check`, `freeze`, `remote-freeze`, `drawing`. |
 | `mockups/`, `docs/mockups/`, `wiki/mockups/` | Three mockups of the piabrota.art homepage (fabric, index, paths), each at 1280 and 390 px, as SVG in pure Nix; the facts in `mockups/data.nix` come from the org profile (piabrota/.github). `checks.mockups` fails if their tests fail or a committed SVG (in `docs/` or the wiki's copy) is not their output; run `just mockups` after a change. The site in `site/` builds the same three designs from the same `data.nix`; the mockups themselves are never built into the system. See [docs/MOCKUPS.md](docs/MOCKUPS.md). |
 | `docs/archify/`, `docs/img/`, `wiki/img/`, `vendor/archify` | The README's and the wiki's figures, drawn by [archify](https://github.com/tt-a1i/archify) (a submodule pinned to the commit piabrota/pirsig uses) with piabrota's look, as in pirsig and gramatico: English sources in `docs/archify/*.json`, pt-BR mirrors in `docs/archify/pt/`, PNGs in `docs/img/` and copied to `wiki/img/`, each with a reading card. `just figure` draws them (node, jq, perl, Chrome); `just figure-check`, also in CI, fails on a stale or missing PNG. The `figure` skill has the rules. |
@@ -95,11 +96,17 @@ an app's own data stays in SQLite.
 
 ## Resource budget
 
-The VPS is on Hostinger's **KVM 1** plan (hPanel, 2026-10-29, from the owner):
+`piabrota` is on Hostinger's **KVM 1** plan (hPanel, 2026-10-29, from the owner). `kvm4` is on
+the **KVM 4** plan (the owner, 2026-11-03); its row is Hostinger's plan list, not yet read on the
+machine:
 
-| CPU | RAM | Disk | Bandwidth |
-|---|---|---|---|
-| 1 vCPU core | 4 GB | 50 GB | 4 TB a month |
+| Host | CPU | RAM | Disk | Bandwidth |
+|---|---|---|---|---|
+| piabrota | 1 vCPU core | 4 GB | 50 GB | 4 TB a month |
+| kvm4 | 4 vCPU cores ⚠ | 16 GB ⚠ | 200 GB ⚠ | not checked |
+
+The rules below hold on both hosts; kvm4 has room for the full Hermes, not for heavy tools on
+every host. A tool only one host needs goes in that host's directory.
 
 These are the plan's figures. What the system can use is less (the kernel, zram, the root
 partition). Read the machine's own numbers (`just remote-specs`, or the summary of the last
@@ -148,6 +155,7 @@ need NixOS):
 
 ```console
 just build        # nix build .#nixosConfigurations.piabrota.config.system.build.toplevel
+just build kvm4   # the same for the KVM 4 host
 just check        # what CI runs: nix flake check, nixpkgs-fmt, statix, deadnix, shellcheck
 ```
 
@@ -175,11 +183,15 @@ to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 `deploy.yml` builds the system on the GitHub runner, and deploy-rs copies it to the VPS over SSH
 as the `deploy` user and activates it. The VPS compiles nothing; it fetches from
 `cache.nixos.org` what the cache has. If SSH does not answer within 60 seconds after the switch,
-deploy-rs rolls the VPS back (magic rollback). The secrets are `DEPLOY_SSH_KEY`, `DEPLOY_HOST`
-and `DEPLOY_KNOWN_HOSTS` in the `prod` environment.
+deploy-rs rolls the VPS back (magic rollback). It does this for each host (a matrix job per
+node): a host's failure does not stop the other's deploy. The secrets are `DEPLOY_SSH_KEY` (one key
+for both hosts), `DEPLOY_HOST` (piabrota's address), `DEPLOY_HOST_KVM4` and `DEPLOY_KNOWN_HOSTS`
+(one line per host) in the `prod` environment. Until `DEPLOY_HOST_KVM4` exists, kvm4's job is
+skipped with a notice.
 
 A human can deploy by hand with the same tool, for example the first time, before the `deploy`
-user exists: `DEPLOY_HOST=<ip> just deploy h0ffmann`. To undo a bad switch on the VPS:
+user exists: `DEPLOY_HOST=<ip> just deploy h0ffmann kvm4`, or **Run workflow** with the host
+`kvm4` and the SSH user `h0ffmann`. To undo a bad switch on the VPS:
 `sudo nixos-rebuild switch --rollback`, or pick an older generation in the GRUB menu on the
 serial console; then revert the commit on `main`, or the next deploy brings it back.
 

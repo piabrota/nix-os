@@ -84,7 +84,7 @@ stays; read the release notes for anything else.
 
 ## Turning it off
 
-Set `piabrota.pgx.enable = false` in `configuration.nix` and merge: the unit and the release leave
+Set `piabrota.pgx.enable = false` in the host's `hosts/<name>/default.nix` and merge: the unit and the release leave
 the system. `/var/lib/pgx` stays on the disk; remove it by hand (`sudo rm -r /var/lib/pgx`) when it
 is no longer wanted.
 

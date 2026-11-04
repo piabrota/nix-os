@@ -20,10 +20,11 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 | | |
 |---|---|
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
-| Pacote | `minimal`, mais os extras `anthropic` (o SDK da Anthropic) e `messaging` (Telegram, Discord, Slack). O padrão do flake, `full`, traz uns 700 MB a mais (voz, Bedrock, Modal e afins). |
+| Hosts | O mesmo `hermes.nix` em todo host que o importa. Ele define o que não depende da máquina e deixa o resto nos padrões do upstream. No piabrota (KVM 1), o `hosts/piabrota/hermes.nix` corta para 1 vCPU e 4 GB (os limites desta tabela). No kvm4 (KVM 4), nada corta: o pacote `full`, os padrões do upstream (10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB) e sem `MemoryMax`. Enquanto os dois rodam o Hermes, cada um precisa dos seus próprios tokens de bot. |
+| Pacote | piabrota: `minimal`. kvm4: o padrão do flake, `full`, uns 700 MB a mais (voz, Bedrock, Modal e afins). Os dois somam os extras `anthropic` (o SDK da Anthropic), `messaging` (Telegram, Discord, Slack), `mcp` e `ddgs`. |
 | Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-4-5` para subagentes e três tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
-| Limites | `MemoryMax=1G` (um quarto da RAM) e `CPUWeight=50`: sshd, nginx e os apps ganham a CPU primeiro. |
+| Limites | piabrota: `MemoryMax=1G` (um quarto da RAM) e `CPUWeight=50`: sshd, nginx e os apps ganham a CPU primeiro. kvm4: nenhum. |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
 | CLI | `hermes` no PATH (`addToSystemPackages`), sobre o mesmo estado do serviço; o `h0ffmann` está no grupo `hermes`. |
 
@@ -335,7 +336,7 @@ para se o nome de um segredo passar. Os caminhos da store mantêm o nome e perde
 
 - **Atualizar:** o PR semanal do `flake-update.yml` move o input `hermes-agent` junto com o resto,
   com a diferença do closure (`dix`). O CI constrói; o merge faz o deploy.
-- **Desligar:** tire o `./hermes.nix` dos `imports` do `configuration.nix` num PR. O deploy para e
+- **Desligar:** tire o `../../hermes.nix` dos `imports` do host (`hosts/<nome>/default.nix`) num PR. O deploy para e
   remove a unit; `/var/lib/hermes` e `/var/lib/hermes-secrets` ficam na máquina até alguém apagar.
 
 ## Fontes e o que não foi conferido

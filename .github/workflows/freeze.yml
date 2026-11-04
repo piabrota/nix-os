@@ -1,8 +1,8 @@
 name: freeze
 
-# Like `pip freeze`, for the VPS: every package of the running system with its version and
-# size (scripts/freeze.sh), in the run summary and as the `freeze` artifact. Runs after each
-# deploy and by hand.
+# Like `pip freeze`, for each VPS: every package of the running system with its version and
+# size (scripts/freeze.sh), in the run summary and as the `freeze-<host>` artifact. Runs after
+# each deploy and by hand. A host whose address secret is not set yet is skipped.
 on:
   workflow_run:
     workflows: [deploy]
@@ -14,12 +14,25 @@ permissions:
 
 jobs:
   freeze:
+    name: freeze ${{ matrix.node }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [piabrota, kvm4]
     runs-on: ubuntu-latest
     environment: prod
+    env:
+      # The same map as deploy.yml's.
+      DEPLOY_HOST: ${{ secrets[fromJSON('{"piabrota":"DEPLOY_HOST","kvm4":"DEPLOY_HOST_KVM4"}')[matrix.node]] }}
     steps:
       - uses: actions/checkout@v7
 
+      - name: Is the host set up?
+        id: host
+        run: echo "ready=$([ -n "$DEPLOY_HOST" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
       - name: SSH key and pinned host key
+        if: steps.host.outputs.ready == 'true'
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -30,13 +43,12 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Freeze
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        if: steps.host.outputs.ready == 'true'
         run: |
           ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s < scripts/freeze.sh > freeze.txt
           ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s -- --by-size < scripts/freeze.sh > by-size.txt
           {
-            echo '### piabrota: what the running system holds'
+            echo '### ${{ matrix.node }}: what the running system holds'
             echo
             tail -n 1 freeze.txt
             echo
@@ -56,8 +68,9 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
+        if: steps.host.outputs.ready == 'true'
         with:
-          name: freeze
+          name: freeze-${{ matrix.node }}
           path: |
             freeze.txt
             by-size.txt

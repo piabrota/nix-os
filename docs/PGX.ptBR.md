@@ -83,7 +83,7 @@ PostgreSQL 18 e fica; leia as notas da release para o resto.
 
 ## Desligando
 
-Ponha `piabrota.pgx.enable = false` no `configuration.nix` e faça o merge: a unit e a release
+Ponha `piabrota.pgx.enable = false` no `hosts/<nome>/default.nix` do host e faça o merge: a unit e a release
 saem do sistema. O `/var/lib/pgx` fica no disco; apague à mão (`sudo rm -r /var/lib/pgx`) quando
 não servir mais.
 

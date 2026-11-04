@@ -2,7 +2,8 @@
 
 Every change to the VPS goes through GitHub. A push to `main` runs `.github/workflows/deploy.yml`:
 
-1. The GitHub runner builds the whole system (`nixosConfigurations.piabrota`). The VPS builds
+1. The GitHub runner builds the whole system of each host (`nixosConfigurations.piabrota`,
+   `nixosConfigurations.kvm4`; see "A second host"). The VPS builds
    nothing, so its small CPU, RAM and disk are not used for compiles. The build job saves the
    system's closure to GitHub's Actions cache under the commit's key. The deploy job restores that
    cache and does not build again, and the next merge builds only what changed.
@@ -110,6 +111,35 @@ This builds on your machine, copies to the VPS and activates, with the same roll
 After either one, `ssh deploy@<ip>` works with the key of step 1. From then on, every merge to
 `main` deploys by itself, and you can start a deploy again from the **Actions** tab
 (`deploy`, **Run workflow**, SSH user `deploy`).
+
+## A second host
+
+The repository deploys two hosts: `piabrota` (KVM 1) and `kvm4` (KVM 4). Each is a directory in
+`hosts/` that imports `configuration.nix` (what both share) and the roles it runs. Every merge
+builds both systems in one job and deploys each in its own job. A host that has no address secret
+is skipped with a notice, so `piabrota` keeps deploying while `kvm4` is being set up.
+
+To bring `kvm4` up, once:
+
+1. In hPanel, install the same NixOS template on the KVM 4 VPS as on piabrota, with your SSH key.
+   `configuration.nix`'s boot and disk settings are that template's. On the VPS, compare
+   `/etc/nixos/` with the repository; if its `hardware-configuration.nix` names another disk or
+   label, add it to `hosts/kvm4/` and import it.
+2. In `hosts/kvm4/default.nix`, set `networking.hostName` to the name hPanel shows (srvNNNNNNN),
+   in a pull request.
+3. Get its IPv4 address and host key as in step 2 above. In the `prod` environment, add the secret
+   `DEPLOY_HOST_KVM4` (the address), and add the host key line to `DEPLOY_KNOWN_HOSTS`, under
+   piabrota's line. `DEPLOY_SSH_KEY` stays the same: `keys/deploy.pub` is on both hosts.
+4. Open TCP port 22 in its Hostinger firewall, as in step 4 above.
+5. Write Hermes's secrets on it (`/var/lib/hermes-secrets/`, docs/HERMES.md). While piabrota still
+   runs Hermes, use other chat bot tokens: two gateways on one Telegram token both fail.
+6. The first deploy, as in step 5 above, for this host only: **Run workflow** with **Host**
+   `kvm4` and **SSH user** `h0ffmann`, or `DEPLOY_HOST=<ip> just deploy h0ffmann kvm4`.
+
+When kvm4 runs everything piabrota should hand over, a pull request takes `../../hermes.nix`,
+`./hermes.nix`, `../../hermes-github.nix` and `piabrota.pgx.enable` out of
+`hosts/piabrota/default.nix`. Copy `/var/lib/hermes` (memory, sessions) to kvm4 first if you
+want to keep them. piabrota then serves the public web only.
 
 ## Every day
 

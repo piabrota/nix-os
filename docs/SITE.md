@@ -3,7 +3,7 @@
 `site.nix` serves the site in `site/` (Gleam, prerendered at build time) on `www.piabrota.art`,
 over HTTP and HTTPS, through nginx with a Let's Encrypt certificate. `piabrota.art` answers with a
 301 to `https://www.piabrota.art`, keeping the path (NixOS's `globalRedirect` points at HTTPS when
-the name has a certificate). `configuration.nix` turns it on (`piabrota.site.enable = true`).
+the name has a certificate). `hosts/piabrota/default.nix` turns it on (`piabrota.site.enable = true`), on piabrota only.
 
 The site has three designs, grown from the [mockups](MOCKUPS.md), each with a switcher to the
 other two:
@@ -35,7 +35,7 @@ fonts stand in until they load. None of them is stored here. To change a design,
 
 ## Analytics
 
-`piabrota.site.analytics.measurementId = "G-…";` (in `configuration.nix`) adds Google Analytics 4
+`piabrota.site.analytics.measurementId = "G-…";` (in `hosts/piabrota/default.nix`) adds Google Analytics 4
 to every page: Google's tag (`gtag.js`), built into the pages by `site/default.nix`. Empty, the
 default, means no analytics and no script at all. The ID is public (it is in every page's source),
 so it can be committed. ⚠ Google Analytics sets cookies and sends visits to Google: under the LGPD
