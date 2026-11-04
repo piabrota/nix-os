@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
-from .brain import (Brain, BrainError, REFRESH_SECONDS, data_dir, fail, ok, slugify,
+from .brain import (Brain, BrainError, REFRESH_SECONDS, fail, ok, open_brain, slugify,
                     yaml_str)
 
 PLUGIN = "pirsig-notes"
@@ -95,8 +95,7 @@ SUBMIT = {
 
 
 def brain(ctx=None) -> Brain:
-    get = (lambda k, d: ctx.get_config(k, default=d)) if ctx is not None else (lambda k, d: d)
-    return Brain(data_dir(PLUGIN), repo=get("repo", "piabrota/pirsig"), base=get("base", "main"))
+    return open_brain(PLUGIN, ctx)
 
 
 def search(args: dict, ctx=None, **_) -> str:
@@ -111,6 +110,7 @@ def search(args: dict, ctx=None, **_) -> str:
         scored = []
         for n in b.notes():
             title, body = n["title"].lower(), n["body"].lower()
+            # A hit in the title counts three times a hit in the body.
             score = sum(3 * (w in title) + (w in body) for w in words)
             if score:
                 scored.append((score, n))
@@ -125,50 +125,96 @@ def words(text: str) -> int:
     return len([w for w in text.split() if re.search(r"\w", w)])
 
 
+def title_of(n: dict) -> str:
+    return str(n.get("title", "")).strip()
+
+
+# The rules below each take one note, the titles of the whole call and the stems of the brain,
+# and return the problems of that rule, without the "note N:" prefix that `validate` adds.
+
+def rule_title(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    title = title_of(n)
+    if not title or "\n" in title or len(title) > 160:
+        return ["the title is one line of at most 160 characters"]
+    return []
+
+
+def rule_type(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    return [] if n.get("type") in TYPES else [f"type is one of {', '.join(TYPES)}"]
+
+
+def rule_status(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    if n.get("status") in STATUSES:
+        return []
+    return [f"status is one of {', '.join(STATUSES)} (approved is the owner's word)"]
+
+
+def rule_source(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    if n.get("type") == "literature" and not str(n.get("source", "")).strip():
+        return ["a literature note needs its source"]
+    return []
+
+
+def rule_body(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    body = str(n.get("body", "")).strip()
+    if not body:
+        return ["no body"]
+    count = words(body)
+    if count > MAX_WORDS:
+        return [f"{count} words; more than {MAX_WORDS} is more than one idea"]
+    return []
+
+
+def rule_email(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    texts = (title_of(n), str(n.get("body", "")).strip(), str(n.get("source", "")))
+    return ["an email address; people appear by nickname only" for t in texts if EMAIL.search(t)]
+
+
+def rule_tags(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    return [f"tag {tag!r} is not lowercase-with-hyphens"
+            for tag in n.get("tags") or [] if not TAG.fullmatch(str(tag))]
+
+
+def link_problems(link: dict, title: str, titles: list[str], existing: set[str]) -> list[str]:
+    target, why = str(link.get("target", "")).strip(), str(link.get("why", "")).strip()
+    problems = [] if why else [f"the link to {target!r} has no reason"]
+    if target.lower() == title.lower():
+        problems.append("links to itself")
+    elif target.lower() not in {t.lower() for t in titles} and target not in existing:
+        problems.append(f"{target!r} is no title in this call and no note in the brain")
+    return problems
+
+
+def rule_links(n: dict, titles: list[str], existing: set[str]) -> list[str]:
+    links = n.get("links") or []
+    problems = [p for link in links for p in link_problems(link, title_of(n), titles, existing)]
+    # A note with no neighbour is allowed only if it says so in `proposed_link`.
+    if not links and not str(n.get("proposed_link", "")).strip():
+        problems.append("no link; link a neighbour or give proposed_link")
+    return problems
+
+
+# The order is the order of the messages in the tool's answer.
+NOTE_RULES = (rule_title, rule_type, rule_status, rule_source, rule_body, rule_email, rule_tags,
+              rule_links)
+
+
 def validate(notes: list, existing: set[str]) -> list[str]:
-    problems = []
     if not isinstance(notes, list) or not 1 <= len(notes) <= MAX_NOTES:
         return [f"give 1 to {MAX_NOTES} notes"]
-    titles = [str(n.get("title", "")).strip() for n in notes]
-    if len(set(t.lower() for t in titles)) != len(titles):
+    titles = [title_of(n) for n in notes]
+    problems = []
+    if len({t.lower() for t in titles}) != len(titles):
         problems.append("two notes have the same title: one idea, one note")
     for i, n in enumerate(notes, 1):
-        at = f"note {i}"
-        title = titles[i - 1]
-        if not title or "\n" in title or len(title) > 160:
-            problems.append(f"{at}: the title is one line of at most 160 characters")
-        if n.get("type") not in TYPES:
-            problems.append(f"{at}: type is one of {', '.join(TYPES)}")
-        if n.get("status") not in STATUSES:
-            problems.append(f"{at}: status is one of {', '.join(STATUSES)} (approved is the owner's word)")
-        if n.get("type") == "literature" and not str(n.get("source", "")).strip():
-            problems.append(f"{at}: a literature note needs its source")
-        body = str(n.get("body", "")).strip()
-        if not body:
-            problems.append(f"{at}: no body")
-        elif words(body) > MAX_WORDS:
-            problems.append(f"{at}: {words(body)} words; more than {MAX_WORDS} is more than one idea")
-        for text in (title, body, str(n.get("source", ""))):
-            if EMAIL.search(text):
-                problems.append(f"{at}: an email address; people appear by nickname only")
-        for tag in n.get("tags") or []:
-            if not TAG.fullmatch(str(tag)):
-                problems.append(f"{at}: tag {tag!r} is not lowercase-with-hyphens")
-        links = n.get("links") or []
-        for link in links:
-            target, why = str(link.get("target", "")).strip(), str(link.get("why", "")).strip()
-            if not why:
-                problems.append(f"{at}: the link to {target!r} has no reason")
-            if target.lower() == title.lower():
-                problems.append(f"{at}: links to itself")
-            elif target.lower() not in {t.lower() for t in titles} and target not in existing:
-                problems.append(f"{at}: {target!r} is no title in this call and no note in the brain")
-        if not links and not str(n.get("proposed_link", "")).strip():
-            problems.append(f"{at}: no link; link a neighbour or give proposed_link")
+        for rule in NOTE_RULES:
+            problems += [f"note {i}: {p}" for p in rule(n, titles, existing)]
     return problems
 
 
 def render(n: dict, stem_of: dict[str, str], titles: dict[str, str], created: datetime) -> str:
+    # The tags `status/...`, `hermes` record who wrote the note; `fromkeys` drops repeats and
+    # keeps the order.
     tags = list(dict.fromkeys([*(n.get("tags") or []), f"status/{n['status']}", "hermes"]))
     fm = [
         "---",
@@ -182,6 +228,7 @@ def render(n: dict, stem_of: dict[str, str], titles: dict[str, str], created: da
            f"created: {created:%Y-%m-%dT%H:%M:00+00:00}", "---", ""]
     out = "\n".join(fm) + f"\n# {n['title'].strip()}\n\n{n['body'].strip()}\n"
     if str(n.get("proposed_link", "")).strip():
+        # Tells the reader of the file that no neighbour is known, so a person links it by hand.
         out += f"\n⚠ {n['proposed_link'].strip()}\n"
     lines = []
     for link in n.get("links") or []:
@@ -202,6 +249,7 @@ def build(notes: list, existing: dict[str, str], now: datetime) -> dict[str, str
         stem = f"{created:%Y%m%d%H%M}-{slugify(n['title'])}"
         stems[n["title"].strip().lower()] = stem
         titles[stem] = n["title"].strip()
+        # `render` needs the minute that the stem was made from.
         n["_created"] = created
     files = {}
     for n in notes:
@@ -241,11 +289,13 @@ def submit(args: dict, ctx=None, **_) -> str:
         return fail("say in `request` what the owner asked for")
     try:
         b = brain(ctx)
+        # `sync()` with no age always fetches: `validate` must see the notes of the brain now.
         b.sync()
         existing = {n["stem"]: n["title"] for n in b.notes()}
         problems = validate(notes, set(existing))
         if problems:
             return fail("the notes break the smart-note rules; fix them and call again", problems=problems)
+        # The id is the UTC minute; `build` adds one minute for each next note.
         now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
         files = build(notes, existing, now)
         first = notes[0]["title"].strip()

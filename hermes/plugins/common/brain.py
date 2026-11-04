@@ -118,8 +118,16 @@ class Brain:
             raise BrainError("nothing to submit")
         self.sync()
         branch = self.branch_name(slug)
+        # The ruleset on GitHub also blocks other branches; this refuses before any git write.
         if not branch.startswith(BRANCH_PREFIX):
             raise BrainError(f"refused: {branch} is not a {BRANCH_PREFIX}* branch")
+        targets = self.checked_targets(files)
+        self.push_branch(branch, targets, title, body)
+        url = self.create_pr(branch, title, body)
+        return {"branch": branch, "pr": url.splitlines()[-1] if url else ""}
+
+    def checked_targets(self, files: dict[str, str | bytes]) -> list[tuple[str, Path, str | bytes]]:
+        """Resolve every path before any write, so one bad path leaves the checkout untouched."""
         allowed = (self.path / "brain").resolve()
         targets = []
         for rel, content in files.items():
@@ -128,30 +136,37 @@ class Brain:
                 raise BrainError(f"refused: {rel} is outside brain/")
             if target.exists():
                 raise BrainError(f"refused: {rel} is already in {self.repo}; a note is never rewritten")
-            targets.append((target, content))
+            targets.append((rel, target, content))
+        return targets
+
+    def push_branch(self, branch: str, targets: list[tuple[str, Path, str | bytes]],
+                    title: str, body: str) -> None:
         self.git("checkout", "--quiet", "-B", branch)
         try:
-            for target, content in targets:
+            for _, target, content in targets:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 if isinstance(content, bytes):
                     target.write_bytes(content)
                 else:
                     target.write_text(content, encoding="utf-8")
-            self.git("add", "--sparse", "--", *files)
+            self.git("add", "--sparse", "--", *(rel for rel, _, _ in targets))
             self.git("commit", "--quiet", "-m", title, "-m", commit_body(body))
             self.git("push", "--quiet", "origin", f"HEAD:refs/heads/{branch}")
         finally:
+            # Back to the base even when git failed, so the next call starts from a clean tree.
             self.git("checkout", "--quiet", "--force", self.base)
             self.git("clean", "--quiet", "-fd")
+
+    def create_pr(self, branch: str, title: str, body: str) -> str:
+        """Open the PR with `gh` and return its URL."""
         with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as f:
             f.write(body)
             body_file = f.name
         try:
-            url = run(["gh", "pr", "create", "--repo", self.repo, "--base", self.base,
-                       "--head", branch, "--title", title, "--body-file", body_file]).strip()
+            return run(["gh", "pr", "create", "--repo", self.repo, "--base", self.base,
+                        "--head", branch, "--title", title, "--body-file", body_file]).strip()
         finally:
             os.unlink(body_file)
-        return {"branch": branch, "pr": url.splitlines()[-1] if url else ""}
 
     def notes(self) -> list[dict]:
         """Every Markdown note of the brain's slip-box and inbox: stem, title, zid, kind."""
@@ -168,6 +183,13 @@ class Brain:
                     "body": body,
                 })
         return out
+
+
+def open_brain(plugin: str, ctx=None) -> Brain:
+    """The Brain of `plugin`. Hermes' plugin config sets `repo` and `base`; without a ctx (the
+    tests) the defaults hold."""
+    get = (lambda k, d: ctx.get_config(k, default=d)) if ctx is not None else (lambda k, d: d)
+    return Brain(data_dir(plugin), repo=get("repo", DEFAULT_REPO), base=get("base", DEFAULT_BASE))
 
 
 def commit_body(pr_body: str) -> str:

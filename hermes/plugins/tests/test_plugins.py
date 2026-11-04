@@ -144,6 +144,44 @@ class NotesRules(unittest.TestCase):
         self.assertIn("- [[10 Repo awesome-ocean-science]] Repo: awesome-ocean-science: an example", second)
         self.assertIn("⚠ uma nota sobre Luhmann", second)
 
+    def test_batch_size(self):
+        for batch in ([], "not a list", [note()] * 21):
+            with self.subTest(batch=str(batch)[:20]):
+                self.assertEqual(notes.validate(batch, self.existing), ["give 1 to 20 notes"])
+
+    def test_same_title_in_one_call(self):
+        self.assertEqual(notes.validate([note(title="A"), note(title="a")], self.existing),
+                         ["two notes have the same title: one idea, one note"])
+
+    def test_title_length_and_literature_source(self):
+        self.assertEqual(notes.validate([note(title="a" * 160)], self.existing), [])
+        self.assertEqual(notes.validate([note(type="literature", source="Autor, 2020")], self.existing), [])
+        for title in ("a" * 161, ""):
+            with self.subTest(len(title)):
+                self.assertEqual(notes.validate([note(title=title)], self.existing),
+                                 ["note 1: the title is one line of at most 160 characters"])
+
+    def test_word_limit_and_emails(self):
+        self.assertEqual(notes.validate([note(body="palavra " * 501)], self.existing),
+                         ["note 1: 501 words; more than 500 is more than one idea"])
+        self.assertEqual(notes.validate([note(title="a@b.co", body="c@d.co e")], self.existing),
+                         ["note 1: an email address; people appear by nickname only"] * 2)
+
+    def test_every_rule_in_order_with_the_note_number(self):
+        bad = note(title="x\ny", type="poem", status="approved", body="", source="a@b.co", tags=["Big"],
+                   links=[{"target": "x\ny", "why": ""}])
+        self.assertEqual(notes.validate([note(title="Ok"), bad], self.existing), [
+            "note 2: the title is one line of at most 160 characters",
+            "note 2: type is one of fleeting, literature, permanent",
+            "note 2: status is one of unverified, partial, verified, open-question "
+            "(approved is the owner's word)",
+            "note 2: no body",
+            "note 2: an email address; people appear by nickname only",
+            "note 2: tag 'Big' is not lowercase-with-hyphens",
+            "note 2: the link to 'x\\ny' has no reason",
+            "note 2: links to itself",
+        ])
+
 
 class NotesPullRequest(Fixture):
     def test_search(self):
@@ -176,6 +214,24 @@ class NotesPullRequest(Fixture):
         for bad in ("src/evil.rs", "brain/../src/main.rs", "brain/Zettelkasten/10 Repo awesome-ocean-science.md"):
             with self.subTest(bad), self.assertRaises(brain.BrainError):
                 b.open_pr({bad: "x"}, "x", "t", "b")
+
+    def test_open_pr_needs_files_and_takes_bytes(self):
+        b = notes.brain()
+        with self.assertRaisesRegex(brain.BrainError, "nothing to submit"):
+            b.open_pr({}, "x", "t", "b")
+        out = b.open_pr({"brain/Inbox/x.bin": b"\x00\x01"}, "bin", "t", "b")
+        self.assertIn("brain/Inbox/x.bin", self.origin_files(out["branch"]))
+
+    def test_both_plugins_read_repo_and_base_from_the_config(self):
+        class Ctx:
+            def get_config(self, key, default):
+                return {"repo": "a/b", "base": "dev"}.get(key, default)
+
+        for mod in (notes, videos):
+            with self.subTest(mod.PLUGIN):
+                b = mod.brain(Ctx())
+                self.assertEqual((b.repo, b.base), ("a/b", "dev"))
+                self.assertEqual((mod.brain().repo, mod.brain().base), ("piabrota/pirsig", "main"))
 
 
 LEITURA = """# Uma leitura
@@ -266,6 +322,123 @@ class Videos(Fixture):
     def test_fetch_refuses_other_hosts(self):
         self.assertIn("error", json.loads(videos.fetch({"url": "https://example.com/v"})))
         self.assertIn("error", json.loads(videos.fetch({"url": "http://youtube.com/watch?v=x"})))
+
+    def test_captions_fallbacks(self):
+        pick = videos.pick_captions
+        self.assertEqual(pick({"language": "pt", "subtitles": {"en": []}}), ("en", True))
+        self.assertEqual(pick({"subtitles": {"en": [], "de": []}}), ("en", True))
+        self.assertEqual(pick({"language": "pt", "subtitles": {"live_chat": []},
+                               "automatic_captions": {"pt": []}}), (None, False))
+        self.assertEqual(pick({"automatic_captions": {"pt-orig": []}}), (None, False))
+
+    def test_parse_reports_misplaced_lines(self):
+        text = "\n".join([
+            "stray", "-> a: b", "### [k=x t=0:00-0:10] Early", "text of x", "-> y: because",
+            "# Title", "## Part", "### Loose", "intro", "-> z: q"])
+        doc, problems = videos.parse(text)
+        self.assertEqual(problems, [
+            "link outside a note: -> a: b",
+            "note before the first part: ### [k=x t=0:00-0:10] Early",
+            "note without [k= t=]: ### Loose",
+            "link outside a note: -> z: q"])
+        self.assertEqual(doc, {"title": "Title", "parts": [
+            {"title": "", "body": "", "notes": [
+                {"key": "x", "from": 0, "to": 10, "title": "Early", "body": "text of x",
+                 "links": [{"target": "y", "why": "because"}]}]},
+            {"title": "Part", "body": "intro", "notes": []}]})
+
+    def test_reading_time(self):
+        def doc(body, title=""):
+            return {"parts": [{"title": title, "body": body, "notes": []}]}
+
+        self.assertEqual(videos.reading(doc("Uma frase. Outra frase.", title="T")),
+                         {"words": 5, "mean": 1.7, "long_share": 0.0, "minutes": 1})
+        # 230 words are 0.97 min; a mean sentence over 20 words or over 25 % long words adds 15 %.
+        self.assertEqual(videos.reading(doc("palavra " * 230)),
+                         {"words": 230, "mean": 230.0, "long_share": 0.0, "minutes": 2})
+        sentence = "extraordinario " * 5 + "palavra " * 4 + "fim. "
+        self.assertEqual(videos.reading(doc(sentence * 23)),
+                         {"words": 230, "mean": 10.0, "long_share": 0.5, "minutes": 2})
+
+    def test_check_dir_needs_its_files(self):
+        d = videos.work_dir("2026-11-03-vazio")
+        d.mkdir(parents=True)
+        self.assertEqual(videos.check_dir(d), {"problems": ["no video.json", "no leitura.markdown",
+                                                            "no figuras.json"]})
+
+    def test_check_dir_notes_and_figures_file(self):
+        leitura = "# T\n## P\n### [k=a t=0:00-1:00] A\n-> a: \n### [k=a t=1:00-0:50] A again\n"
+        _, d = self.folder(leitura=leitura)
+        (d / "figuras.json").write_text("{not json")
+        problems = videos.check_dir(d)["problems"]
+        self.assertEqual(problems[:4], ["a: ends before it starts", "stops at 00:01:00 of 00:02:00",
+                                        "repeated note keys", "a: link to a has no reason"])
+        self.assertTrue(problems[4].startswith("figuras.json is not JSON: "), problems)
+        self.assertEqual(len(problems), 5)
+
+    def test_check_dir_figures(self):
+        leitura = LEITURA.replace("![fig](mapa)", "![fig](mapa)\n\n![fig](semjson)\n\n![fig](Bad)\n\n"
+                                  "![fig](ausente)")
+        full = {f: "x" for f in videos.FIGURE_FIELDS}
+        _, d = self.folder(leitura=leitura, figures={"mapa": {"title": "x"}, "semjson": full, "Bad": full})
+        self.assertEqual(videos.check_dir(d)["problems"], [
+            "figure mapa: no alt", "figure mapa: no takeaway", "figure mapa: no read",
+            "figure mapa: no missing", "figure mapa: no evidence",
+            "figure semjson: no figuras/semjson.json (Archify's source)",
+            "figure Bad: no figuras/Bad.json (Archify's source)",
+            "figure ausente has no entry in figuras.json"])
+
+    def fake_ytdlp(self, info):
+        """A yt-dlp stub: it writes `info` as the info file and one caption event, and logs its arguments."""
+        info_file, log = self.tmp / "info.json", self.tmp / "ytdlp.log"
+        info_file.write_text(json.dumps(info))
+        script = self.tmp / "bin" / "yt-dlp"
+        script.write_text(
+            f"#!{sys.executable}\n"
+            "import json, sys\n"
+            "a = sys.argv[1:]\n"
+            f"open({str(log)!r}, 'a').write(' '.join(a) + '\\n')\n"
+            "out = a[a.index('-o') + 1]\n"
+            "if '--write-info-json' in a:\n"
+            f"    open(out.replace('%(ext)s', 'info.json'), 'w').write(open({str(info_file)!r}).read())\n"
+            "if '--sub-langs' in a:\n"
+            "    sub = a[a.index('--sub-langs') + 1]\n"
+            "    events = [{'tStartMs': 1000, 'segs': [{'utf8': 'olá mundo'}]}]\n"
+            "    open(out.replace('%(ext)s', sub + '.json3'), 'w').write(json.dumps({'events': events}))\n")
+        script.chmod(0o755)
+        return log
+
+    def test_fetch_writes_the_work_folder(self):
+        base = {"id": "abc", "title": "Uma leitura", "upload_date": "20261103", "duration": 95,
+                "webpage_url": "https://www.youtube.com/watch?v=abc", "channel": "Canal", "language": "pt"}
+        for info, flag, kind, sub in (
+                ({**base, "automatic_captions": {"pt-orig": []}}, "--write-auto-subs", "automatic", "pt-orig"),
+                ({**base, "subtitles": {"pt": []}}, "--write-subs", "manual", "pt")):
+            with self.subTest(kind):
+                log = self.fake_ytdlp(info)
+                out = json.loads(videos.fetch({"url": "https://youtu.be/abc"}))
+                self.assertNotIn("error", out, out)
+                self.assertEqual((out["name"], out["captions"], out["captions_kind"], out["duration"]),
+                                 ("2026-11-03-uma-leitura", sub, kind, "00:01:35"))
+                self.assertEqual(out["transcript_words"], 3)  # the time stamp counts as a word
+                self.assertIn(f"{flag} --sub-langs {sub} --sub-format json3", log.read_text())
+                d = videos.work_dir(out["name"])
+                self.assertEqual((d / "transcript.txt").read_text(), "[00:00:00] olá mundo\n")
+                self.assertTrue((d / "transcript.json3").is_file() and (d / "figuras").is_dir())
+                self.assertEqual(json.loads((d / "video.json").read_text())["captions"], sub)
+
+    def test_fetch_refuses_without_captions_bad_answers_and_known_videos(self):
+        info = {"id": "abc", "title": "Uma leitura", "upload_date": "20261103", "duration": 95,
+                "webpage_url": "https://www.youtube.com/watch?v=abc", "language": "pt"}
+        url = {"url": "https://youtu.be/abc"}
+        self.fake_ytdlp(info)
+        self.assertIn("no captions in the spoken language (pt)", json.loads(videos.fetch(url))["error"])
+        self.fake_ytdlp({**{k: v for k, v in info.items() if k != "upload_date"}, "subtitles": {"pt": []}})
+        self.assertEqual(json.loads(videos.fetch(url))["error"],
+                         "yt-dlp gave an unexpected answer: 'upload_date'")
+        self.fake_ytdlp({**info, "subtitles": {"pt": []}})
+        (videos.brain().sync(max_age=600) / "brain" / "Videos" / "2026-11-03-uma-leitura").mkdir(parents=True)
+        self.assertIn("2026-11-03-uma-leitura is already in the brain", json.loads(videos.fetch(url))["error"])
 
 
 class Registration(unittest.TestCase):

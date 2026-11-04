@@ -1,6 +1,9 @@
+//! Creates the `notes` table. Loco's `create_table` adds `created_at` and `updated_at` to the
+//! columns listed here.
 use loco_rs::schema::*;
 use sea_orm_migration::prelude::*;
 
+/// `up` creates the table; `down` drops it, and the notes in it.
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
