@@ -138,6 +138,18 @@ in
       default = 3100;
       description = "Paperclip's loopback port (upstream's default).";
     };
+    htpasswdFile = mkOption {
+      # A string, not a path: a path literal copies the file into the world-readable store.
+      type = types.str;
+      default = config.piabrota.hermesWeb.htpasswdFile;
+      defaultText = lib.literalExpression "config.piabrota.hermesWeb.htpasswdFile";
+      description = ''
+        The basic-auth users in front of the site, the same file as hermes.piabrota.art's by
+        default (docs/HERMES.md, "The web dashboard"). Without it nginx answers every request
+        with a 500. Hermes and the CLI call Paperclip on 127.0.0.1, past nginx, so they need no
+        password.
+      '';
+    };
     memoryMax = mkOption {
       type = types.str;
       default = "2G";
@@ -295,6 +307,7 @@ in
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
           enableACME = true;
+          basicAuthFile = cfg.htpasswdFile;
           extraConfig = ''
             add_header X-Frame-Options DENY always;
             add_header Referrer-Policy no-referrer always;
@@ -307,7 +320,9 @@ in
               proxyWebsockets = true;
               recommendedProxySettings = true;
               # Live updates are server-sent events and WebSockets; attachments are uploads.
+              # The browser's Basic credentials stay at nginx; Paperclip's UI uses its session cookie.
               extraConfig = ''
+                proxy_set_header Authorization "";
                 proxy_buffering off;
                 proxy_read_timeout 1h;
                 proxy_send_timeout 1h;
@@ -318,6 +333,7 @@ in
               proxyPass = local;
               recommendedProxySettings = true;
               extraConfig = ''
+                proxy_set_header Authorization "";
                 limit_req zone=paperclip_auth burst=20 nodelay;
                 limit_req_status 429;
               '';
