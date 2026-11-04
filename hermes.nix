@@ -172,11 +172,14 @@ let
     "web/news-post"
     "web/web-ui"
   ];
+  # The category folder is kept on purpose: Hermes reads the category of a skill from its folder.
+  # A flat copy shows every skill as "general".
   ownerSkills = pkgs.runCommand "hermes-owner-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings
     (path: ''
-      cp -r ${ownerSkillsSrc}/skills/${path} $out/${baseNameOf path}
+      mkdir -p $out/${dirOf path}
+      cp -r ${ownerSkillsSrc}/skills/${path} $out/${path}
     '')
     ownerSkillPaths);
   # oh-my-pi (omp), the coding agent Hermes hands repository work to (hermes/skills/hermes-omp,
@@ -198,11 +201,13 @@ let
     mkdir $out
   '' + lib.concatMapStrings
     (path: ''
-      cp -r ${hermes-agent}/optional-skills/${path} $out/${baseNameOf path}
+      mkdir -p $out/${dirOf path}
+      cp -r ${hermes-agent}/optional-skills/${path} $out/${path}
     '')
     skills + ''
-    cp -r ${abvxSkills}/skills/evidence-ledger-research $out/evidence-ledger-research
-    cp -r ${hermesCron}/skills/hermes-cron $out/hermes-cron
+    mkdir -p $out/research $out/devops
+    cp -r ${abvxSkills}/skills/evidence-ledger-research $out/research/evidence-ledger-research
+    cp -r ${hermesCron}/skills/hermes-cron $out/devops/hermes-cron
   '');
 in
 {
