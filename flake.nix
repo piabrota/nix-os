@@ -124,6 +124,8 @@
           modules = [
             ./hosts/piabrota
             {
+              # As in nixosConfigurations.piabrota: without kvm4's facts the site's /hermes test fails.
+              piabrota.site.hermes = self.nixosConfigurations.kvm4.config.piabrota.site.hermes;
               piabrota.loco.apps.example = {
                 package = pkgs.runCommand "example-loco" { } ''
                   mkdir -p $out/bin $out/share/example/config
