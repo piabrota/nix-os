@@ -102,6 +102,42 @@ let
     rev = "d73f177b13c368c5c2445f6595f4008ed6c79a78"; # MIT
     hash = "sha256-NyQWrzgt361Hg7rTws7f5lgYbcNXf6VHOCH1gvznhtk=";
   };
+  # Wave 1 of issue #88 (plugins for a long-living instance), each at its catalog commit, MIT.
+  # memory-rewind v1.3.2: a version history of memories/, SOUL.md and skills/ in a bare git
+  # repository in plugin-data/memory-rewind, written by a background thread; local git, no
+  # network. `/memory-history` in chat; `hermes memory-rewind restore` on the box only.
+  memoryRewind = pkgs.fetchFromGitHub {
+    owner = "AhmetArif0";
+    repo = "hermes-memory-rewind";
+    rev = "354927184de03cdc4a9e9e48ddb2865c36368b1f";
+    hash = "sha256-Rf5LEIrGLcS9q12TeYrEKt/jnyjP0VNE12tJtftxaD8=";
+  };
+  # hermes-guide v0.8.12: `/hermes-doctor` and `hermes guide`, ten read-only checks. Each run
+  # makes one `git ls-remote` of its own repository for a release notice (none with --fast);
+  # `proactive`, the checks at every session start and end, stays off.
+  hermesGuide = pkgs.fetchFromGitHub {
+    name = "hermes-guide";
+    owner = "iap";
+    repo = "hermes-guide";
+    rev = "ca10574b22c703215fb5321dd32568d4203ba472";
+    hash = "sha256-Gwe55b9xlp3X/tIV08opM4rA9ogXq7dDDPHi284TsW8=";
+  };
+  # hermes-plugin-guard v0.2.1: `hermes plugin-guard scan <dir>`, a static scan of a candidate
+  # plugin that never imports or runs it, and one read-only tool. The plugin is the repository's
+  # src/, which leaves out the scanner's deliberately unsafe test fixtures.
+  pluginGuard = pkgs.runCommand "hermes-plugin-guard" { } "cp -r ${pkgs.fetchFromGitHub {
+    owner = "mauricemohr88-debug";
+    repo = "hermes-plugin-guard";
+    rev = "857d881be77249c192c5fefa8254db186a7abbca";
+    hash = "sha256-XQGm8nJanbCQzrfvpfABdwRy8NwzGlH9HvGiPU/V5cE=";
+  }}/src $out";
+  # The kvm4-health skill's script as a command (hermes/skills/kvm4-health), with the tools it
+  # reads with on its PATH, for chat and for the watchdog cron job below.
+  kvm4Health = pkgs.writeShellApplication {
+    name = "kvm4-health";
+    runtimeInputs = with pkgs; [ coreutils gawk gnugrep gnused config.systemd.package ];
+    text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/kvm4-health/scripts/kvm4-health.sh} "$@"'';
+  };
   # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
   subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
   # The owner's own plugins, in this repository (hermes/plugins/, docs/HERMES-PLUGINS.md): smart
@@ -265,7 +301,7 @@ in
       max_iterations = 50;
       max_spawn_depth = 1;
     };
-    # The third directory holds this repository's own skills (hermes/skills/): hermes-omp.
+    # The third directory holds this repository's own skills (hermes/skills/): hermes-omp, kvm4-health.
     settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
@@ -273,9 +309,18 @@ in
       dangerousPatterns
       (subPlugin "tripwire" tripwire)
       publicHolidays
+      (subPlugin "memory-rewind" memoryRewind)
+      hermesGuide
+      pluginGuard
     ] ++ lib.mapAttrsToList subPlugin (labs // more) ++ map ownPlugin ownPlugins;
-    settings.plugins.enabled = [ "custom-dangerous-patterns" "tripwire" "public-holidays" ]
-      ++ builtins.attrNames (labs // more) ++ ownPlugins;
+    settings.plugins.enabled = [
+      "custom-dangerous-patterns"
+      "tripwire"
+      "public-holidays"
+      "memory-rewind"
+      "hermes-guide"
+      "hermes-plugin-guard"
+    ] ++ builtins.attrNames (labs // more) ++ ownPlugins;
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for a subscription's quota (the fan-out limits
     # are in settings.delegation above): fewer turns per run, a hard stop on tool loops, and no
@@ -321,7 +366,8 @@ in
     # ast-grep for the skill of that name, yt-dlp for pirsig-videos (captions only: the light
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
     # omp is the wrapper above, for the hermes-omp skill.
-    extraPackages = [ pkgs.gh pkgs.ast-grep pkgs.yt-dlp-light ompWrapped ];
+    # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
+    extraPackages = [ pkgs.gh pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
@@ -330,6 +376,12 @@ in
     # and a brief of the owner's projects, sources and jobs (hermes/AGENTS.md, which Hermes reads
     # from its working directory). Installed on every activation, so edit them here, not on the box.
     hermesHomeFiles."SOUL.md" = ./hermes/SOUL.md;
+    # The script of the kvm4-health watchdog, a no_agent cron job: a cron script must be a file in
+    # HERMES_HOME/scripts. It prints nothing while the box is healthy, so a tick posts nothing.
+    hermesHomeFiles."scripts/kvm4-health-alert.sh" = ''
+      #!/bin/sh
+      exec ${kvm4Health}/bin/kvm4-health --alert --record
+    '';
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";

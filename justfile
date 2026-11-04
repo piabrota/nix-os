@@ -17,7 +17,7 @@ check:
     nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
-    nix run nixpkgs#shellcheck -- scripts/*.sh
+    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
@@ -133,3 +133,7 @@ remote-specs user="h0ffmann":
 # check on the VPS that Hermes's plugins, skills, omp and yt-dlp of the last deploy are live (read-only)
 remote-hermes-check user="h0ffmann":
     ssh {{user}}@{{host}} sh -s < scripts/hermes-check.sh
+
+# the health of the VPS and its Hermes units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only)
+remote-health user="h0ffmann":
+    ssh {{user}}@{{host}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh
