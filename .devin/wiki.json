@@ -93,6 +93,10 @@
       "purpose": "paperclip.nix, paperclip/ and docs/PAPERCLIP.md (Paperclip is off for now: piabrota.paperclip.enable = false on piabrota2): Paperclip's npm release packaged with buildNpmPackage (the lock without other platforms' binaries), the paperclip unit on piabrota2 with PostgreSQL 17 on a socket only, its read-only config.json, the signing secrets made on the box, nginx and ACME for paperclip.piabrota.art, and the integration with Hermes: the hermes_gateway adapter on Hermes's loopback API server, the two keys in hermes.env, Paperclip's skill in Hermes, the one-time setup and the cost."
     },
     {
+      "title": "OpenRig",
+      "purpose": "openrig.nix, openrig/ and docs/OPENRIG.md: OpenRig 0.7.7 built from source with buildNpmPackage, the openrig unit on piabrota2 (loopback only, MemoryMax 3G for the daemon, tmux and every seat), the omp shim that gives the seats the Claude subscription token, the rig wrapper and deny rules for Hermes, and the RigSpec and AgentSpecs in openrig/specs, installed at /etc/openrig/specs."
+    },
+    {
       "title": "Hermes Agent",
       "purpose": "hermes.nix, hermes-web.nix, docs/HERMES.md, docs/MIGRATION-KVM4.md and wiki/Hermes-EN.md: what Hermes Agent is here and that it runs on piabrota2, the upstream NixOS module from the flake input hermes-agent (pinned to the release v0.22.7), the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills, MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, the dashboard (hermes-web.nix: hermes-backend behind nginx, TLS and basic auth), the move from KVM 1, checking it, updating and turning it off."
     },

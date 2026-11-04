@@ -1,0 +1,31 @@
+# The reviewer seat: checks the builder's diff and edits nothing. It runs on omp, like the builder.
+name: reviewer
+version: "1.0"
+description: Reviews the builder's diff by evidence
+
+defaults:
+  runtime: omp
+
+imports:
+  - ref: local:../shared
+
+profiles:
+  default:
+    summary: Reviews one diff and says how sure it is
+    uses:
+      skills: []
+      guidance: [shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

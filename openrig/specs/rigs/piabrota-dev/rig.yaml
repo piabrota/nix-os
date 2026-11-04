@@ -1,0 +1,35 @@
+# The first rig of piabrota: one pod with a builder and a reviewer, both on omp (claude is unfree
+# and Codex is not installed here). Start it with
+#   rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
+# Nothing starts it: Hermes or a human does. docs/OPENRIG.md, "Specs".
+version: "0.2"
+name: piabrota-dev
+summary: A builder and a reviewer that work on one task at a time
+
+# The floor on purpose. A built-in policy is only recorded for an omp seat, and the one that
+# bypasses the prompts (builtin:yolo) is not chosen here.
+permission_policy: none
+
+pods:
+  - id: dev
+    label: Development
+    summary: The builder writes and tests the code. The reviewer checks the diff.
+    members:
+      - id: builder
+        agent_ref: "local:../../agents/builder"
+        profile: default
+        runtime: omp
+        # Made by the unit (StateDirectory in openrig.nix). A seat makes its clone here.
+        cwd: /var/lib/openrig/work
+      - id: reviewer
+        agent_ref: "local:../../agents/reviewer"
+        profile: default
+        runtime: omp
+        cwd: /var/lib/openrig/work
+    edges:
+      # The builder asks the reviewer to check its diff. The builder starts first.
+      - kind: delegates_to
+        from: builder
+        to: reviewer
+
+edges: []

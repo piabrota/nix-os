@@ -32,10 +32,11 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `hermes-web.nix` | `piabrota.hermesWeb.enable`, on: Hermes's web dashboard (`hermes dashboard`) as the unit `hermes-backend` on `127.0.0.1:9119` only (`MemoryMax=2G`), on piabrota2, behind nginx at `hermes.piabrota.art` with ACME and HTTP basic auth against `/var/lib/hermes-web-secrets/htpasswd` (written by hand on the box; without it every request is a 500). nginx refuses `/api/env/reveal` and writes to `/api/env`, so no secret reaches the browser. `checks.hermes-docs-url` fails if a Hermes bump renames the docs address that nginx swaps. The DNS record must point at the box before it is on. See [docs/HERMES.md](docs/HERMES.md), "The web dashboard". |
 | `hermes/plugins/` | The owner's two Hermes plugins, `pirsig-notes` and `pirsig-videos`, which open pull requests to piabrota/pirsig on `hermes/*` branches; `common/brain.py` is shared and copied into each at build time (`ownPlugin` in `hermes.nix`); `tests/` runs in `checks.hermes-plugins` and `just hermes-plugins-test`. Python, because Hermes plugins are Python. See [docs/HERMES-PLUGINS.md](docs/HERMES-PLUGINS.md). |
 | `hermes/feeds/` | The owner's personal feed: `build_feed.py` (stdlib Python, no agent) scores RSS, Atom, GitHub and podcast sources from `feeds.toml`. `tests/` run offline. `hermes.nix` installs it. See docs/FEEDS.md. |
-| `kubesolo-purge.nix` | Temporary oneshot that clears an old install from the box (pods, mounts, state, network rules). It runs only while `/var/lib/kubesolo` exists. A human deletes it later. |
+| `kubesolo-purge.nix` | Temporary oneshot that clears an old install from the box. It runs only while `/var/lib/kubesolo` exists. A human deletes it later. |
 | `pgx.nix`, `pgx/` | `piabrota.pgx.enable`, on: [PGX](https://pgx.dev), a Postgres-compatible engine in Rust (v0.1, AGPL-3.0), as the unit `pgx` (state in `/var/lib/pgx`, port 5432 with no port opened in the firewall, `MemoryMax=256M`), from its release (`pgx/package.nix`; not in nixpkgs). For data you can lose, never an app's own data; nothing uses it. `checks.pgx` (`pgx/test.nix`) boots it in a VM. See [docs/PGX.md](docs/PGX.md). |
-| `paperclip.nix`, `paperclip/` | `piabrota.paperclip.enable`, **off** on piabrota2 since 2026-11-04 (`enable = false`; the import stays). When on: the unit `paperclip`, PostgreSQL 17 on a socket, nginx at `paperclip.piabrota.art`, Hermes as its agent, `pi_local` on omp. See [docs/PAPERCLIP.md](docs/PAPERCLIP.md). |
-| `docs/VIDEO-PIPELINE.md`, `video-lab/` | Spec of the faceless video pipeline (English only). `video-lab/dummy/run.sh` makes a 28 s test video from `ffmpeg` alone: `just video-dummy`, output in `video-lab/out/` (not in git). |
+| `paperclip.nix`, `paperclip/` | `piabrota.paperclip.enable`, **off** on piabrota2 since 2026-11-04 (the import stays). When on: the unit `paperclip`, PostgreSQL 17, nginx at `paperclip.piabrota.art`, Hermes as its agent. See [docs/PAPERCLIP.md](docs/PAPERCLIP.md). |
+| `openrig.nix`, `openrig/`, `docs/OPENRIG.md` | `piabrota.openrig.enable`, on at piabrota2: OpenRig 0.7.7 (Node, from source) as the unit `openrig`, loopback only, `MemoryMax=3G`; seats run `omp`. Hermes runs `rig` and the skill hermes-rig. `openrig/specs/` has the RigSpec and AgentSpecs, in `/etc/openrig/specs`. |
+| `docs/VIDEO-PIPELINE.md`, `video-lab/` | Spec of the faceless video pipeline (English only). `just video-dummy` makes a 28 s test video from `ffmpeg` alone; the output is not in git. |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
 | `observer.nix`, `keys/observer.pub` | The `observer` account: SSH key only, no sudo, not a Nix trusted user, in `systemd-journal`. A coding agent's session logs in with it (`ssh piabrota-observer`, the private key on the owner's computer) to read logs and unit states while it debugs. It only reads. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
@@ -135,7 +136,7 @@ Rules for anything you add:
    needs Python, Perl modules, Haskell or a JVM. `tig`, `diff-so-fancy`, `lnav` and
    `nix-output-monitor` from gvolpe's list were left out for this reason. Hermes Agent
    (`hermes.nix`) is a Python runtime the owner asked for, not a small job: it gets its own
-   `MemoryMax`.
+   `MemoryMax`. OpenRig (`openrig.nix`) is the owner's exception for Node 24, with its own limit.
 5. **No resident daemons** unless the host needs them. Each service costs RAM all the time.
 6. Prefer NixOS `programs.<name>` options over a bare package when the option only writes a file
    in `/etc` (tmux, git, htop): the cost is the same, and the defaults are in the repo.

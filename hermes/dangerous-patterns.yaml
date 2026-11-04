@@ -65,3 +65,29 @@ deny_patterns:
     enabled: true
     group: INSTALL
     pattern: '\b(?:uvx|npx|pnpx|bunx)\b.*|\b(?:pip3?|npm|pnpm|yarn|bun|cargo|go|gem)\s+(?:install|add|get)\b.*|\buv\s+(?:pip\s+install|tool\s+(?:install|run)|add|run)\b.*|\bhermes\s+(?:pm|plugins?|skills)\s+install\b.*'
+
+  # --- OpenRig (openrig.nix): Hermes runs `rig` against the daemon on 127.0.0.1 and nothing more ---
+  # systemd owns the daemon. `rig setup` installs tools and edits ~/.tmux.conf. `rig host` and
+  # --host pair with or run on other machines over SSH. A seat's permission prompts stay on: only
+  # the repository's specs, through a reviewed pull request, choose a policy. The OpenRig skill
+  # for Hermes (hermes/skills/hermes-rig) lists what is allowed.
+  - description: '[OPENRIG] rig setup or rig start (installs tools, edits ~/.tmux.conf, starts a daemon)'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:setup|start)\b.*'
+  - description: '[OPENRIG] rig daemon start, stop or restart (systemd owns the daemon)'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+daemon\s+(?:start|stop|restart)\b.*'
+  - description: '[OPENRIG] rig host (pairing and remote hosts) and any rig command with --host'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+host\b.*|\brig\b[^|;&]*\s--host\b.*'
+  - description: '[OPENRIG] turning off a seat''s permission prompts or changing its policy'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:seat\s+set-permissions|policy\s+apply)\b.*|\brig\b[^|;&]*\s--(?:policy|permission-mode|codex-permissions|dangerously-interact|non-interruptive)\b.*|\bOPENRIG_YOLO\b'
+  - description: '[OPENRIG] a pointer at another daemon or at the daemon''s own state'
+    enabled: true
+    group: OPENRIG
+    pattern: '\bOPENRIG_(?:URL|HOME|DB|BIND_HOST)=|openrig-secrets|/var/lib/openrig\b'
