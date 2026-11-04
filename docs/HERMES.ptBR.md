@@ -367,11 +367,20 @@ falha no deploy, e o deploy-rs volta a máquina para a versão anterior.
    ```console
    ssh h0ffmann@hermes.piabrota.art
    sudo install -d -m 750 -o root -g nginx /var/lib/hermes-web-secrets
-   pw=$(openssl rand -base64 24); echo "$pw"   # copie para o gerenciador de senhas
+   pw=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 40)
+   [ ${#pw} -eq 40 ] && echo "$pw" && \
    nix shell nixpkgs#apacheHttpd -c htpasswd -nbB -C 12 owner "$pw" \
      | sudo install -m 640 -o root -g nginx /dev/stdin /var/lib/hermes-web-secrets/htpasswd
+   curl -s -o /dev/null -w '%{http_code}\n' -u "owner:$pw" https://hermes.piabrota.art/   # 200
+   curl -s -o /dev/null -w '%{http_code}\n' -u 'owner:' https://hermes.piabrota.art/      # 401
    unset pw
    ```
+
+   Copie a senha que o `echo` mostra para o gerenciador de senhas. Ela só tem letras e
+   algarismos, então nenhum caractere muda na cópia. A máquina não tem `openssl`: não use
+   `openssl rand`. Se `pw` ficar vazia, o `htpasswd` grava um arquivo que aceita senha vazia.
+   A conferência do tamanho impede isso, e o último `curl` tem de mostrar 401. Se mostrar 200,
+   apague o arquivo na hora.
 
    O deploy também cria o diretório. Sem o arquivo, o nginx responde 500 a toda requisição, então
    o painel fica fechado até o arquivo existir. Mudar o arquivo não precisa de deploy.
