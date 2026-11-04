@@ -27,7 +27,7 @@ muda o `hermes.nix`. Este wiki não copia esse YAML: leia lá.
 | Estado | `/var/lib/hermes`. O diretório de trabalho é `/var/lib/hermes/workspace`. |
 | Segredos | Um arquivo na máquina, `/var/lib/hermes-secrets/hermes.env`, só do root. A ativação copia esse arquivo para o `.env` do Hermes. Nunca no repositório, no store ou na página `/hermes`. |
 | GitHub | Um App próprio, piabrota-hermes[bot] (`hermes-github.nix`): só branches `hermes/*` e pull requests, nunca um merge. |
-| CLI | `hermes`, para os usuários do grupo `hermes`. |
+| CLI | `hermes`, rodado pelo `h0ffmann` com `sudo -u hermes hermes ...`. Ele não está no grupo `hermes`: a aba Chat do painel exige o grupo privado. |
 | Fuso horário | `America/Sao_Paulo`. |
 
 ## Os modelos

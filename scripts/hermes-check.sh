@@ -1,7 +1,8 @@
 #!/bin/sh
 # Check on the box that the Hermes add-ons of the last deploy are live: the unit restarted after
 # the deploy, the plugins of hermes.nix are linked and loaded, the hermes-omp skill is found, and
-# omp and yt-dlp answer. Read-only. Run it as h0ffmann (the hermes group), not root:
+# omp and yt-dlp answer. Read-only. Run it as h0ffmann (passwordless sudo), not root: it reads the
+# Hermes home and calls hermes through `sudo -n -u hermes`, as h0ffmann is not in the hermes group:
 #   sh scripts/hermes-check.sh                       (on the box)
 #   ssh h0ffmann@piabrota.art sh -s < scripts/hermes-check.sh   (just remote-hermes-check)
 # It never reads /var/lib/hermes-secrets or the .env, and prints no environment. Keep the two
@@ -13,6 +14,7 @@ progress-squash gh-ref wiki-ref"
 own="pirsig-notes pirsig-videos"
 
 home=/var/lib/hermes/.hermes
+as_hermes() { sudo -n -u hermes "$@"; }
 bin=/etc/profiles/per-user/hermes/bin
 fails=0
 ok() { printf 'ok    %s\n' "$1"; }
@@ -30,27 +32,27 @@ printf '      memory peak   %s\n' "$(systemctl show hermes-agent -p MemoryPeak -
 
 section "plugins linked by activation ($home/plugins)"
 for p in $community $own; do
-  if [ -f "$home/plugins/nix-managed-$p/plugin.yaml" ]; then ok "$p"; else bad "$p: no nix-managed-$p"; fi
+  if as_hermes test -f "$home/plugins/nix-managed-$p/plugin.yaml"; then ok "$p"; else bad "$p: no nix-managed-$p"; fi
 done
 
 section "plugins enabled (hermes plugins list --enabled)"
 if command -v hermes >/dev/null 2>&1; then
-  list=$(hermes plugins list --enabled --plain 2>&1)
+  list=$(as_hermes hermes plugins list --enabled --plain 2>&1)
   for p in $community $own; do
     if printf '%s\n' "$list" | grep -qw -- "$p"; then ok "$p"; else bad "$p: not in the enabled list"; fi
   done
 else
-  bad "no hermes CLI on PATH (log in again after the deploy: the hermes group is new)"
+  bad "no hermes CLI on PATH"
 fi
 
 section "skills"
 if command -v hermes >/dev/null 2>&1; then
-  skills=$(hermes skills list 2>&1)
+  skills=$(as_hermes hermes skills list 2>&1)
   for s in hermes-omp hermes-cron evidence-ledger-research; do
     if printf '%s\n' "$skills" | grep -qw -- "$s"; then ok "$s"; else bad "$s: not in hermes skills list"; fi
   done
 fi
-if [ -d /var/lib/hermes/workspace/omp-tasks ]; then ok "omp-tasks directory"; else bad "no /var/lib/hermes/workspace/omp-tasks"; fi
+if as_hermes test -d /var/lib/hermes/workspace/omp-tasks; then ok "omp-tasks directory"; else bad "no /var/lib/hermes/workspace/omp-tasks"; fi
 
 section "tools on Hermes's PATH ($bin)"
 v=$("$bin/omp" --version 2>&1 | head -n 1)

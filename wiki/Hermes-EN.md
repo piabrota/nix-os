@@ -27,7 +27,7 @@ reads them from the evaluated system, so the page changes with every merge that 
 | State | `/var/lib/hermes`. The working directory is `/var/lib/hermes/workspace`. |
 | Secrets | A file on the box, `/var/lib/hermes-secrets/hermes.env`, root only. Activation copies it into Hermes's `.env`. Never in the repository, the store or the `/hermes` page. |
 | GitHub | Its own App, piabrota-hermes[bot] (`hermes-github.nix`): `hermes/*` branches and pull requests only, never a merge. |
-| CLI | `hermes`, for the users in the `hermes` group. |
+| CLI | `hermes`, run by `h0ffmann` with `sudo -u hermes hermes ...`. He is not in the `hermes` group: the dashboard Chat tab needs it private. |
 | Time zone | `America/Sao_Paulo`. |
 
 ## The models
