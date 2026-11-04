@@ -92,6 +92,8 @@ bash:
     - { match: "*.hermes/*", approval: deny }
     - { match: "*/.env*", approval: deny }
     - { match: "*auth.json*", approval: deny }
+    - { match: "*/proc/*/environ*", approval: deny }
+    - { match: "*/proc/self/*", approval: deny }
     - { match: "*.ssh/*", approval: deny }
     - { match: "env", approval: deny }
     - { match: "printenv*", approval: deny }
