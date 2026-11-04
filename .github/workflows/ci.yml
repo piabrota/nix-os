@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
-      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hermes-web.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix omp/package.nix pgx/test.nix site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
+      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hermes-web.nix hosts/*/*.nix kubesolo-purge.nix observer.nix operator.nix pgx/package.nix omp/package.nix pgx/test.nix site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
       - run: nix run nixpkgs#statix -- check .
       - run: nix run nixpkgs#deadnix -- --fail .
       - run: nix run nixpkgs#shellcheck -- scripts/*.sh

@@ -117,7 +117,7 @@
     },
     {
       "title": "Claude and MCP setup",
-      "purpose": ".claude/skills (the vendored skills and their licences), .mcp.json (mcp-nixos, OpenPencil, DeepWiki) and docs/CLAUDE_PROJECT.md.",
+      "purpose": ".claude/skills (the vendored skills and their licences), .mcp.json (mcp-nixos, OpenPencil, DeepWiki), docs/CLAUDE_PROJECT.md, and the accounts an agent's session uses on the hosts: observer (read-only) and operator (observer plus a sudo allow-list of restarts, timer jobs and Hermes commands, docs/OPERATOR.md).",
       "parent": "Working on this repository"
     }
   ]
