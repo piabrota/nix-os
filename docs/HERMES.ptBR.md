@@ -436,6 +436,16 @@ Depois abra `https://hermes.piabrota.art` e entre como `owner`.
 - **Levar para outra máquina:** ligue a opção na máquina que roda o Hermes e aponte o registro de
   DNS para ela antes.
 
+## Paperclip
+
+O [Paperclip](https://github.com/paperclipai/paperclip) roda na mesma máquina em
+`paperclip.piabrota.art` (`paperclip.nix`), e este Hermes é o agente dele. O adaptador
+`hermes_gateway` manda cada tarefa ao servidor de API do Hermes em `127.0.0.1:8642`, então a tarefa
+roda aqui, com a mesma assinatura, a mesma lista de bloqueios e as mesmas skills. O Hermes responde
+pela skill `paperclip` do próprio Paperclip. O servidor de API só sobe quando o `hermes.env` tem
+`API_SERVER_KEY`; a chave do Hermes no Paperclip é `PAPERCLIP_API_KEY`, no mesmo arquivo. A
+configuração está no [PAPERCLIP.md](PAPERCLIP.md) (só em inglês).
+
 ## A página /hermes
 
 A página [www.piabrota.art/hermes](https://www.piabrota.art/hermes) mostra esta configuração em

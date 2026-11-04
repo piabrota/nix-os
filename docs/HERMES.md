@@ -425,6 +425,15 @@ Then open `https://hermes.piabrota.art` and log in as `owner`.
 - **Move to another host:** set the option on the host that runs Hermes and point the DNS record
   at that host first.
 
+## Paperclip
+
+[Paperclip](https://github.com/paperclipai/paperclip) runs on the same box at
+`paperclip.piabrota.art` (`paperclip.nix`), and this Hermes is its agent. Its `hermes_gateway`
+adapter sends each task to Hermes's API server on `127.0.0.1:8642`, so the task runs here, with the
+same subscription, deny list and skills. Hermes answers through Paperclip's `paperclip` skill.
+The API server starts only when `hermes.env` has `API_SERVER_KEY`; Hermes's key for Paperclip is
+`PAPERCLIP_API_KEY` in the same file. The setup is [PAPERCLIP.md](PAPERCLIP.md).
+
 ## The /hermes page
 
 [www.piabrota.art/hermes](https://www.piabrota.art/hermes) shows this configuration in plain YAML,

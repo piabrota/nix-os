@@ -311,7 +311,10 @@ in
       max_spawn_depth = 1;
     };
     # The third directory holds this repository's own skills (hermes/skills/): hermes-omp, kvm4-health.
-    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ];
+    # Another module's directories (Paperclip's skill, paperclip.nix) join here: the module merges
+    # settings with recursiveUpdate, which keeps only one definition of a list.
+    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ]
+      ++ config.piabrota.paperclip.hermesSkillDirs or [ ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
     extraPlugins = [
