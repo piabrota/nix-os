@@ -90,7 +90,7 @@
     },
     {
       "title": "Paperclip",
-      "purpose": "paperclip.nix, paperclip/ and docs/PAPERCLIP.md: Paperclip's npm release packaged with buildNpmPackage (the lock without other platforms' binaries), the paperclip unit on piabrota2 with PostgreSQL 17 on a socket only, its read-only config.json, the signing secrets made on the box, nginx and ACME for paperclip.piabrota.art, and the integration with Hermes: the hermes_gateway adapter on Hermes's loopback API server, the two keys in hermes.env, Paperclip's skill in Hermes, the one-time setup and the cost."
+      "purpose": "paperclip.nix, paperclip/ and docs/PAPERCLIP.md: Paperclip's npm release packaged with buildNpmPackage (the lock without other platforms' binaries), the paperclip unit on piabrota2 with PostgreSQL 17 on a socket only, its read-only config.json, the signing secrets made on the box, nginx and ACME for paperclip.piabrota.art, and the integration with Hermes: the hermes_gateway adapter on Hermes's loopback API server, the two keys in hermes.env, Paperclip's skill in Hermes, the pi_local adapter on omp and the claude_local adapter on Claude Code (the one unfree package, allowed by name), the one-time setup and the cost."
     },
     {
       "title": "Hermes Agent",

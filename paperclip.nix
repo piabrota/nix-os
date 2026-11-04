@@ -15,8 +15,10 @@
 # API_SERVER_KEY Hermes opens no API server, and Paperclip runs with no agent.
 #
 # The second path: Paperclip's `pi_local` adapter runs the box's `omp` (omp/wrapper.nix) through a
-# shim, with the same Claude subscription token as Hermes. `claude_local` cannot work here: its
-# `claude` CLI is unfree.
+# shim, with the same Claude subscription token as Hermes.
+#
+# The third path: Paperclip's `claude_local` adapter runs Claude Code (`claude`) with that token.
+# Claude Code is unfree: `claude.enable` lets in that one package by name, and nothing else.
 # paperclip.piabrota.art must point at the box before this is on, or the ACME order fails on the
 # deploy.
 { config, lib, pkgs, ... }:
@@ -179,6 +181,17 @@ in
         description = ''
           Run Paperclip's pi_local adapter on the box's omp, through a shim, with Hermes's Claude
           subscription token (copied to a file only the paperclip user reads at each start).
+        '';
+      };
+    };
+    claude = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.services.hermes-agent.enable;
+        defaultText = lib.literalExpression "config.services.hermes-agent.enable";
+        description = ''
+          Run Paperclip's claude_local adapter: Claude Code (unfree; only this package is let in)
+          on the unit's PATH, with Hermes's Claude subscription token, as for omp.
         '';
       };
     };
@@ -350,20 +363,30 @@ in
       networking.firewall.allowedTCPPorts = [ 80 443 ];
     }
 
-    (mkIf cfg.omp.enable {
+    # The token of Hermes's Claude subscription, for the omp and Claude Code agents.
+    (mkIf (cfg.omp.enable || cfg.claude.enable) {
       assertions = [{
         assertion = config.services.hermes-agent.enable;
-        message = "piabrota.paperclip.omp needs services.hermes-agent (hermes.nix) on the same host: it uses Hermes's omp wrapper and token.";
+        message = "piabrota.paperclip.omp and piabrota.paperclip.claude need services.hermes-agent (hermes.nix) on the same host: they use Hermes's token.";
       }];
-      systemd.services.paperclip = {
-        environment.PAPERCLIP_PI_COMMAND = "${piShim}/bin/paperclip-pi";
-        serviceConfig = {
-          # `-` lets Paperclip start if this step fails: the token is for the agents, not the server.
-          ExecStartPre = [ "-+${claudeToken}" ];
-          # The leading `-` makes the file optional.
-          EnvironmentFile = [ "-${claudeEnv}" ];
-        };
+      systemd.services.paperclip.serviceConfig = {
+        # `-` lets Paperclip start if this step fails: the token is for the agents, not the server.
+        ExecStartPre = [ "-+${claudeToken}" ];
+        # The leading `-` makes the file optional.
+        EnvironmentFile = [ "-${claudeEnv}" ];
       };
+    })
+
+    (mkIf cfg.omp.enable {
+      systemd.services.paperclip.environment.PAPERCLIP_PI_COMMAND = "${piShim}/bin/paperclip-pi";
+    })
+
+    (mkIf cfg.claude.enable {
+      # The one unfree package of the system. A second name here is a decision of the owner.
+      nixpkgs.config.allowUnfreePredicate = p: lib.getName p == "claude-code";
+      # claude_local runs the `claude` it finds on PATH. The package's wrapper turns off its
+      # self-update and brings ripgrep, procps, bubblewrap and socat.
+      systemd.services.paperclip.path = [ pkgs.claude-code ];
     })
 
     (mkIf cfg.hermes.enable {
