@@ -56,8 +56,9 @@ Symptom: STARTUP `pending`, `failed` or `attention_required`; the pane shows a s
 2. A shell in the pane: the `omp` process did not start. Read the journal for the `omp` wrapper. A
    login or authentication error: the token file of the unit is empty or wrong. Tell the owner.
    Do not look for a token.
-3. `node: command not found` in the pane: the `PATH` of the unit did not reach the pane. This is a
-   nix-os fix (`__NIXOS_SET_ENVIRONMENT_DONE` in `openrig.nix`), not a relaunch. Tell the owner.
+3. `node: command not found` in the pane: the pane has a clean environment. It finds its tools only
+   in the per-user profile of `openrig` (`users.users.openrig.packages`), and `USER` comes from
+   the RigSpec `env:`. A relaunch does not fix it. This is a nix-os fix. Tell the owner.
    `/bin/rm: No such file or directory` in the pane is harmless on NixOS.
 4. `failed` with a good pane: wait 30 seconds, the monitor re-reads it. Then check again.
 5. A seat with no session file after a restore: `rig seat launch <seat> --fresh --plan`, then

@@ -37,6 +37,12 @@ with a skill `hermes-rig`."
 |Sandbox|`NoNewPrivileges`, `CapabilityBoundingSet=""`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ProtectKernel*`, `ProtectProc=invisible`, `RestrictNamespaces`, `LockPersonality`, `SystemCallFilter=@system-service ~@privileged` with `EPERM`, and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`.|
 |Restart|`Restart=on-failure`, `RestartSec=10s`, at most 5 starts in 600 s. After that the unit stays down.|
 
+**The pane has its own tools.** OpenRig starts each seat pane with a clean environment, so the
+unit's `path` does not reach it. The pane's login bash builds its `PATH` from the per-user profile
+of `$USER`. The user `openrig` has `tmux`, `bash`, `git`, `ps`, `lsof`, `node`, `rig` and the seat
+`omp` in `users.users.openrig.packages`, and the rig spec sets `USER`, `LOGNAME` and `HOME` in its
+`env:`. `openrig.nix` keeps one list (`seatTools`) for the unit and the profile.
+
 **The CLI needs no state file.** With `OPENRIG_URL` set, `rig` talks to the daemon over HTTP and
 reads no file of the daemon's state. The `hermes` user has no access to `/var/lib/openrig` (mode
 0700), and it needs none. The owner-user check of the CLI runs only on macOS. So any local user

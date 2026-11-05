@@ -9,7 +9,8 @@ piabrota's words; it copies no OpenRig text. Paths are under `packages/daemon/sr
 - A seat with `runtime: omp` is a tmux session. The daemon types
   `node <daemon dist>/pi-runner.js --runtime omp --approval-mode <mode> ...` into the pane, and the
   runner starts `omp --mode rpc` from `PATH` (`adapters/pi-runner-protocol.ts`,
-  `buildPiRunnerCommand`). So the pane needs `node`, `omp` and `tmux` on the unit's `PATH`.
+  `buildPiRunnerCommand`). So the pane needs `node`, `omp` and `tmux` on its `PATH`. The unit's
+  `path` does not reach the pane: see the last row of the table below.
 - The runner gives omp a **deny-by-default environment** (`buildPiChildEnv`): `PATH`, `HOME`,
   `USER`, `LOGNAME`, `SSH_AUTH_SOCK`, `TERM`, `LANG`, `LC_ALL`, `SHELL`, `TMPDIR`, the
   `OPENRIG_*` identity variables, and one provider key. For Anthropic that key is
@@ -26,15 +27,15 @@ piabrota's words; it copies no OpenRig text. Paths are under `packages/daemon/sr
 
 | Need | Setting | Why |
 |---|---|---|
-| omp with piabrota's rules and no time ceiling | `pkgs.callPackage ./omp/wrapper.nix { ceiling = null; appendSystemPrompt = ./hermes/omp-seat-append-system.md; }` on the unit's `path` | the wrapper loads `hermes/omp.yml` itself, so the overlay survives the runner's environment filter; the default 35 min ceiling would kill a seat |
+| omp with piabrota's rules and no time ceiling | `pkgs.callPackage ./omp/wrapper.nix { ceiling = null; appendSystemPrompt = ./hermes/omp-seat-append-system.md; }` in `seatTools` | the wrapper loads `hermes/omp.yml` itself, so the overlay survives the runner's environment filter; the default 35 min ceiling would kill a seat |
 | the subscription token for the seats | the token as `ANTHROPIC_API_KEY` in the unit's root-only `EnvironmentFile` | the only Anthropic variable the runner passes; the wrapper moves an `sk-ant-oat` value to `ANTHROPIC_OAUTH_TOKEN`, so omp signs in as a subscription, not as an API key |
 | seats that can use their tools | `OPENRIG_YOLO=1` | see `--approval-mode` above; omp's own deny rules in `hermes/omp.yml` still refuse push, `gh`, installs, secrets and `rig` control |
 | a daemon with no kernel rig | `OPENRIG_NO_KERNEL=1` (or `rig daemon start --no-kernel`) | the kernel rig boots only on Claude Code or Codex (`domain/kernel-boot.ts`); this box has neither, so without it the daemon reports `auth_blocked` |
 | a model the runner forwards a key for | `model: anthropic/claude-sonnet-5-5` in each omp AgentSpec | no `provider/` prefix, no key in the seat |
 | a tmux socket it can create | `RuntimeDirectory=openrig` and `TMUX_TMPDIR=/run/openrig`, or `PrivateTmp=true` | under `ProtectSystem=strict` tmux needs a writable socket directory (`adapters/tmux.ts`, `session_unconfirmed`) |
-| `lsof` | `pkgs.lsof` on the unit's `path` | the database-conflict check calls it (`daemon-db-path.ts`); without it the daemon warns and goes on |
-| `git` | `pkgs.git` on the unit's `path` | omp's work in a seat is git work |
-| the unit's `PATH` in the pane | `__NIXOS_SET_ENVIRONMENT_DONE=1` | the pane shell is bash and NixOS resets `PATH` in it (`/etc/set-environment`), so `node` and `omp` on the unit's `path` are not enough |
+| `lsof` | `pkgs.lsof` in the one `seatTools` list (unit `path` and per-user profile) | the database-conflict check calls it (`daemon-db-path.ts`); without it the daemon warns and goes on |
+| `git` | `pkgs.git` in `seatTools` | omp's work in a seat is git work |
+| `node`, `omp`, `rig` and `tmux` in the pane | `users.users.openrig.packages = seatTools`, and `USER`, `LOGNAME`, `HOME` in the `env:` of the rig spec | OpenRig starts the pane with a clean environment (`env -i`, `adapters/tmux.ts`), so the unit's `path` does not reach it. The pane's login bash runs `/etc/set-environment`, which builds `PATH` from the per-user profile of `$USER` |
 
 The daemon runs in the foreground under systemd (`node .../daemon/dist/index.js`, as Hermes
 tested on 2026-11-04). `rig daemon start` forks a detached daemon: under systemd that is the same

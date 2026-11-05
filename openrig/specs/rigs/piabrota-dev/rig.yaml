@@ -6,6 +6,13 @@ version: "0.2"
 name: piabrota-dev
 summary: A builder and a reviewer that work on one task at a time
 
+# OpenRig starts each pane with a clean environment: no USER. NixOS builds the pane's PATH from the
+# per-user profile of $USER (users.users.openrig.packages in openrig.nix), so the seat needs these.
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+
 pods:
   - id: dev
     label: Development
