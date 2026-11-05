@@ -16,4 +16,9 @@
 
   # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
   piabrota.site.enable = true;
+
+  # Live metrics (metrics.nix, docs/METRICS.md): the agent only. It dials out to the hub on
+  # piabrota2 and opens no port. Its limit is 64M (measured: 17 MiB idle); this host has 4 GB.
+  piabrota.metrics.agent.enable = true;
+  piabrota.metrics.agent.hubUrl = "https://metrics.piabrota.art";
 }
