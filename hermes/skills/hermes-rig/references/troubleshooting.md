@@ -56,10 +56,13 @@ Symptom: STARTUP `pending`, `failed` or `attention_required`; the pane shows a s
 2. A shell in the pane: the `omp` process did not start. Read the journal for the `omp` wrapper. A
    login or authentication error: the token file of the unit is empty or wrong. Tell the owner.
    Do not look for a token.
-3. `failed` with a good pane: wait 30 seconds, the monitor re-reads it. Then check again.
-4. A seat with no session file after a restore: `rig seat launch <seat> --fresh --plan`, then
+3. `node: command not found` in the pane: the `PATH` of the unit did not reach the pane. This is a
+   nix-os fix (`__NIXOS_SET_ENVIRONMENT_DONE` in `openrig.nix`), not a relaunch. Tell the owner.
+   `/bin/rm: No such file or directory` in the pane is harmless on NixOS.
+4. `failed` with a good pane: wait 30 seconds, the monitor re-reads it. Then check again.
+5. A seat with no session file after a restore: `rig seat launch <seat> --fresh --plan`, then
    without `--plan` and with `--reason "<why>"`.
-5. Fix: relaunch is yours. A broken wrapper, token or spec is the owner's pull request.
+6. Fix: relaunch is yours. A broken wrapper, token or spec is the owner's pull request.
 
 ## A seat is at a prompt
 

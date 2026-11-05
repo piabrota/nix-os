@@ -34,6 +34,7 @@ piabrota's words; it copies no OpenRig text. Paths are under `packages/daemon/sr
 | a tmux socket it can create | `RuntimeDirectory=openrig` and `TMUX_TMPDIR=/run/openrig`, or `PrivateTmp=true` | under `ProtectSystem=strict` tmux needs a writable socket directory (`adapters/tmux.ts`, `session_unconfirmed`) |
 | `lsof` | `pkgs.lsof` on the unit's `path` | the database-conflict check calls it (`daemon-db-path.ts`); without it the daemon warns and goes on |
 | `git` | `pkgs.git` on the unit's `path` | omp's work in a seat is git work |
+| the unit's `PATH` in the pane | `__NIXOS_SET_ENVIRONMENT_DONE=1` | the pane shell is bash and NixOS resets `PATH` in it (`/etc/set-environment`), so `node` and `omp` on the unit's `path` are not enough |
 
 The daemon runs in the foreground under systemd (`node .../daemon/dist/index.js`, as Hermes
 tested on 2026-11-04). `rig daemon start` forks a detached daemon: under systemd that is the same

@@ -123,6 +123,9 @@ in
         TMUX_TMPDIR = "/run/openrig";
         # The system user has no login shell; tmux and the seats need a real one.
         SHELL = "/run/current-system/sw/bin/bash";
+        # NixOS resets PATH in a bash pane (/etc/set-environment). This guard keeps the unit's
+        # PATH, so the pane still finds node and omp.
+        __NIXOS_SET_ENVIRONMENT_DONE = "1";
         LANG = "C.UTF-8";
       };
       # tmux holds the seats. node starts the seats' runner (the daemon types `node ...` in a pane).
