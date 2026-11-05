@@ -58,7 +58,8 @@ pt-BR in the pt-BR wiki pages.
 ## Rules
 
 - Commit the JSON, `docs/archify/figures.lock`, the PNGs and their wiki copies; never the HTML
-  (`build/`).
+  (`build/`). Nix builds the HTML pages for `/figures/` from the JSON (`figures-site/`): no HTML is
+  committed.
 - Every box and label traces to a file you read; the card's evidence names it.
 - `just figure` needs node, jq, perl and Chrome (`CHROME` names another binary; Archify's own browser
   check uses `ARCHIFY_CHROME`), and the network for the Google Fonts. It runs where the agent runs,

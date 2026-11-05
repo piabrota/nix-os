@@ -28,6 +28,7 @@ muda o `hermes.nix`. Este wiki não copia esse YAML: leia lá.
 | Pacote | `full`, o padrão do flake do Hermes, mais os extras `anthropic`, `messaging`, `mcp` e `ddgs`. |
 | Limites | `MemoryMax=8G` (metade da RAM) e `CPUWeight=50`: com os quatro núcleos ocupados, o sshd e as outras unidades têm o dobro da parcela de CPU do Hermes. |
 | Painel | `hermes.piabrota.art`, atrás do nginx, com TLS e basic auth. Unidade `hermes-backend`, `MemoryMax=2G` (`hermes-web.nix`). |
+| OpenRig | A `piabrota2` também roda o OpenRig (unidade `openrig`), que o Hermes comanda com a CLI `rig` e a skill `hermes-rig`. É o motor da fábrica de software: veja [Fábrica](Fabrica). |
 | Estado | `/var/lib/hermes`. O diretório de trabalho é `/var/lib/hermes/workspace`. |
 | Segredos | Um arquivo na máquina, `/var/lib/hermes-secrets/hermes.env`, só do root. A ativação copia esse arquivo para o `.env` do Hermes. Nunca no repositório, no store ou na página `/hermes`. |
 | GitHub | Um App próprio, piabrota-hermes[bot] (`hermes-github.nix`): só branches `hermes/*` e pull requests, nunca um merge. |

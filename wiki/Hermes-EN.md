@@ -27,6 +27,7 @@ reads them from the evaluated system, so the page changes with every merge that 
 | Package | `full`, the default of Hermes's flake, plus the extras `anthropic`, `messaging`, `mcp` and `ddgs`. |
 | Limits | `MemoryMax=8G` (half the RAM) and `CPUWeight=50`: when the four cores are busy, sshd and the other units get twice Hermes's CPU share. |
 | Dashboard | `hermes.piabrota.art`, behind nginx, with TLS and basic auth. Unit `hermes-backend`, `MemoryMax=2G` (`hermes-web.nix`). |
+| OpenRig | `piabrota2` also runs OpenRig (unit `openrig`), which Hermes operates with the `rig` CLI and the skill `hermes-rig`. It is the engine of the software factory: see [Factory](Factory). |
 | State | `/var/lib/hermes`. The working directory is `/var/lib/hermes/workspace`. |
 | Secrets | A file on the box, `/var/lib/hermes-secrets/hermes.env`, root only. Activation copies it into Hermes's `.env`. Never in the repository, the store or the `/hermes` page. |
 | GitHub | Its own App, piabrota-hermes[bot] (`hermes-github.nix`): `hermes/*` branches and pull requests only, never a merge. |

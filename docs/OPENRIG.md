@@ -22,6 +22,70 @@ operator: it gives the task, reads the result and does the steps that a seat may
 push, pull request). The owner's order (2026-11-04): "Add OpenRig to piabrota2, operated by Hermes
 with a skill `hermes-rig`."
 
+## The software factory
+
+The owner's order (2026-11-05): OpenRig is the engine that will automate the SDLC (software
+development life cycle). This is the open software factory behind piabrota. The direction: the rig
+does the build and the review, Hermes routes the work and checks the result, and a human merges.
+The rig has not yet done a task: see "Status today".
+
+### Status today
+
+- OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
+  is at https://rig.piabrota.art behind basic auth (see "The web UI").
+- One rig is specified, `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`): two seats on
+  `omp`, `dev-builder` and `dev-reviewer`. Both run without approval prompts
+  (`permission_policy: builtin:yolo`, the owner's decision in PR 124). They use the owner's Claude
+  subscription (see "The token of the seats").
+- Hermes operates the rig with the `rig` CLI and the skill `hermes-rig`. Hermes does not start seats
+  from cron.
+- **The seats are idle.** No task has gone through the builder to reviewer loop yet.
+- Today Hermes makes a pull request by running `omp` itself (the skill `hermes-omp`). Then Hermes
+  checks the diff, commits, pushes a `hermes/*` branch and opens the pull request. A human merges.
+  A merge to `main` deploys (`deploy.yml`).
+
+### The stages
+
+|Stage|Who does it|State|
+|---|---|---|
+|Idea and triage|The owner, with the skills `/triage` and `/mip`|Today|
+|Build|The builder seat|Next: the seat has not run a task|
+|Review|The reviewer seat|Next: the seat has not run a task|
+|Pull request|Hermes: `hermes/*` branch, English, ASD-STE100|Today, after a run of `omp` by Hermes|
+|Merge|A human, always|Today|
+|Deploy|`deploy.yml`: deploy-rs, magic rollback|Today|
+|Watch|`kvm4-health`, the watchers, the daily VPS check|Today|
+
+### How a task will go through
+
+1. The owner gives Hermes a task. Hermes writes it as the skill `hermes-omp` says.
+2. Hermes checks `kvm4-health` and `rig status`, then starts the rig (`rig up`) and sends the task
+   to the builder seat (`rig send`).
+3. The builder writes and tests the change in its own clone. It asks the reviewer seat to check the
+   diff (the edge `delegates_to`).
+4. The reviewer checks the diff by evidence and answers.
+5. Hermes reads the answer, checks the diff itself, commits, pushes a `hermes/*` branch and opens
+   the pull request. The seats cannot push.
+6. A human reviews and merges. The merge deploys.
+
+Steps 2 to 5 **will** run this way. They have not run yet.
+
+### The guardrails that stay
+
+- Humans merge. No seat and no agent merges.
+- The deny list of Hermes and `hermes/omp.yml` stay in force. A seat cannot push: `omp.yml` denies
+  `git push`, `gh` and `sudo`.
+- No secret in a spec, a task or a message.
+- At most two seats at the same time (`MemoryHigh=1536M`).
+- The UI is behind basic auth and TLS. It has a terminal for each seat: see "The web UI".
+
+### What is next, and what is not proved
+
+- **Next.** Send the first real task through the builder and the reviewer, and compare the result
+  with a run of `omp` by Hermes. Decide then if Hermes sends all code tasks to the rig.
+- **Not proved.** A task through the loop. The messages between the two seats. A pull request that
+  starts from a seat's diff. See "Not tested".
+
 ## Design
 
 |Part|What it is|
