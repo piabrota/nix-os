@@ -44,6 +44,7 @@
   piabrota.openrig.web.enable = true;
   piabrota.openrig.web.domain = "rig.piabrota.art";
   # The rigs wave-forecaster-dev and wave-forecaster-dev-integrate: the seats' Rust tools, their
-  # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md).
-  piabrota.openrig.waveForecaster.enable = true;
+  # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md). Off: the
+  # specs are in /etc/openrig/specs as a definition only. The owner turns this on to use them.
+  piabrota.openrig.waveForecaster.enable = false;
 }
