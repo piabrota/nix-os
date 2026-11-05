@@ -27,8 +27,8 @@ Read the result:
 - A rig that is stopped does not show in `rig ps`. The footer says "not shown: 1 stopped". Use
   `rig ps --filter status=stopped` or `rig ps --include-archived`.
 - `NRestarts` above 0 since the last deploy, or `ActiveState` not `active`: tell the owner.
-- `rig doctor` shows FAIL rows for Claude Code, Codex and the UI. They are known here (the
-  [reference](../../hermes-omp/references/openrig-seats.md)).
+- `rig doctor` shows FAIL rows for Claude Code and Codex. They are known here (the
+  [reference](../../hermes-omp/references/openrig-seats.md)). A FAIL on `ui_dist` is not: tell the owner.
 
 ## 2. Start a rig and check every seat
 

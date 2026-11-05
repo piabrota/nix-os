@@ -15,8 +15,8 @@ metadata:
 
 [OpenRig](https://github.com/mvschwarz/openrig) (v0.7.7) is a control plane for teams of coding
 agents. A daemon keeps the state. Each agent is a **seat**: a program in a tmux pane. The command
-is `rig`. On this box the daemon is the systemd unit `openrig` on `127.0.0.1:7433` (no web page,
-no public port). The seats run `omp`, with the same Claude subscription as you. One rig is
+is the systemd unit `openrig` on `127.0.0.1:7433` (the web UI is on at that address, for the
+owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp`, with the same Claude subscription as you. One rig is
 specified: `piabrota-dev`, with a builder seat and a reviewer seat. This skill and its
 `references/` are enough to run it: you do not need the web.
 

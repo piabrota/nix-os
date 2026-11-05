@@ -292,6 +292,12 @@ in
         model = "claude-haiku-5-5";
       };
     };
+    # Compress the conversation at 40 % of the context window, not 50 %. Sonnet has 1,000,000
+    # tokens, so this is about 400,000 tokens. Hermes floors the ratio at 0.75 only for windows
+    # under 512K, so 0.40 holds here. Trade-off: each compression rewrites the cached prompt prefix
+    # once, and every later turn is cheaper because the context is smaller. Compression stays on
+    # Sonnet (see above).
+    settings.compression.threshold = 0.40;
     # /goal continues a task on its own until the judge says done. The default budget is 20 turns,
     # each up to agent.max_turns (60) model calls; 6 keeps one goal within the subscription's quota.
     # `/goal resume` continues for 6 more.

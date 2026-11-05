@@ -40,4 +40,7 @@
   piabrota.paperclip.enable = false;
   # Hermes operates it with `rig` and the skill hermes-rig; docs/OPENRIG.md.
   piabrota.openrig.enable = true;
+  # The web UI at rig.piabrota.art, behind the dashboard's login (docs/OPENRIG.md, "The web UI").
+  piabrota.openrig.web.enable = true;
+  piabrota.openrig.web.domain = "rig.piabrota.art";
 }

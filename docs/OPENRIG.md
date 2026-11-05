@@ -29,7 +29,7 @@ with a skill `hermes-rig`."
 |Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module.|
 |User|The system user and group `openrig`, no login shell. State in `/var/lib/openrig` (`HOME`, and `OPENRIG_HOME` is `.openrig` in it). Seats work in `/var/lib/openrig/work`.|
 |Unit|`openrig` runs `node .../daemon/dist/index.js` in the foreground, as `openrig`.|
-|Network|The daemon listens on `127.0.0.1:7433` (`OPENRIG_BIND_HOST`). No nginx, no firewall port, no ACME. The web page of OpenRig is not shown.|
+|Network|The daemon listens on `127.0.0.1:7433` (`OPENRIG_BIND_HOST`) and serves the web UI there. No firewall port, no ACME. The option `piabrota.openrig.web` adds an nginx vhost at `rig.piabrota.art` with basic auth: it is on.|
 |Path|`tmux`, `bash`, `git`, `ps`, `lsof`, `node`, `rig` and the seat `omp`. NixOS adds `coreutils`, `findutils`, `grep`, `sed`.|
 |Seat `omp`|`omp/wrapper.nix` with `ceiling = null` and `hermes/omp-seat-append-system.md`: the one wrapper of the repository, as PR 124 decided. Its rules (`hermes/omp.yml`) are the guard of a seat.|
 |Permissions|The rig sets `permission_policy: builtin:yolo`: the seats run without approval prompts. This is the owner's decision in PR 124. `OPENRIG_YOLO=1` in the unit does not do it: a rig with no policy gets the floor, and a policy wins over the variable. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
@@ -74,9 +74,62 @@ a wall. The seat norms say: never read a secret.
 `openrig/package.nix` builds OpenRig from source (the tag `v0.7.7`, commit `f3d8bac4...`) with
 `buildNpmPackage`. The source hash and the hash of the npm dependencies are fixed. No prebuilt
 binary is used. The native addon `better-sqlite3` is compiled from its bundled source. The web UI is
-not built. The package has the layout of the npm package `@openrig/cli`, so `rig` finds its daemon.
+built with `tsc` and `vite`, and only its `dist` folder is installed (see "The web UI"). The package has the layout of the npm package `@openrig/cli`, so `rig` finds its daemon.
 No script of an npm package runs at build time. `nodejs_24` is the one Node on the box, and only
 OpenRig uses it. The owner accepts Node.js for OpenRig (the rule 4 of `AGENTS.md` says so).
+
+## The web UI
+
+OpenRig has a web UI: React and vite, the package `packages/ui` of the source. `openrig/package.nix`
+builds it into `@openrig/cli/ui/dist`. The unit sets `OPENRIG_UI_ENABLED=true`, so the daemon serves
+it at `http://127.0.0.1:7433`. The setting is read once, at start. Upstream keeps the UI in
+maintenance mode: expect no new features.
+
+**It is on at https://rig.piabrota.art** (`hosts/piabrota2/default.nix`). The login is the same as
+for `hermes.piabrota.art`: the file `/var/lib/hermes-web-secrets/htpasswd` (see `hermes-web.nix`). The
+deploy makes the certificate: nginx asks Let's Encrypt for it (ACME) on the first start of the vhost.
+The DNS record of the name already points at the box.
+
+**To give the UI its own login**, set `piabrota.openrig.web.htpasswdFile` to another file. The
+file has one `name:bcrypt-hash` line per user (`htpasswd -B`), mode 0640, owner root, group nginx.
+Its directory must exist: `hermes-web.nix` makes only its own. Without the file every request gets
+a 500, and the UI stays closed.
+
+**The SSH tunnel stays as a fallback.** The port stays on loopback. On your computer, run:
+
+```console
+ssh -L 7433:127.0.0.1:7433 h0ffmann@<host>
+```
+
+Then open `http://localhost:7433` in a browser. The daemon accepts `localhost` as a name, and the
+page's own origin as an origin.
+
+**To open it on another domain**, add a DNS A record for the name, pointing at piabrota2. Without
+it the ACME order fails on the deploy. Then change `piabrota.openrig.web.domain` and open a pull
+request.
+
+The vhost gives TLS from Let's Encrypt and HTTP basic auth, with the headers and the rate limit of
+`hermes-web.nix`. It proxies to `127.0.0.1:7433` with the WebSocket headers and a one-hour read
+timeout for the terminal. It opens no new port: nginx uses 80 and 443. When the vhost is on, the
+unit gets `OPENRIG_ALLOWED_HOSTS=<name>` and `OPENRIG_ALLOWED_ORIGINS=https://<name>`. The daemon's
+browser boundary for `/api/*` needs both: it refuses a Host or an Origin that it does not know.
+nginx hides the basic-auth header from the daemon.
+
+**The risk.** The UI has a terminal for each seat, and it can type into the seats. The seats run
+without approval prompts (`OPENRIG_YOLO=1`). So whoever reaches the UI can run commands as the
+user `openrig`, with the Claude token of the seats in reach. Never expose it without auth.
+
+**The terminal has no token here.** The daemon asks for a terminal bearer token only on a bind that
+is not loopback or tailnet, or when `OPENRIG_TERMINAL_BEARER_TOKEN` is set (read from the source of
+0.7.7, not tested). The unit sets neither. So the gate of the terminal is the SSH tunnel, or the
+basic auth of nginx plus the browser boundary. A local user on the box who can reach port 7433 can
+also use the API (see "The CLI needs no state file"). A token does not fit the vhost: the UI sends it
+as an `Authorization` header, and the header of the basic auth uses the same name. The unit
+rewrites `/var/lib/openrig-secrets/.env` at each start, so a token cannot live there. Do not write
+a token value in this repository.
+
+**Not proved.** A browser session, the certificate, the login and the real unit. The smoke test ran
+the built daemon on a scratch port.
 
 ## Limits
 
@@ -169,7 +222,7 @@ exists.
 
 ## What is not done
 
-- **No web page.** The UI of OpenRig is not built and not exposed.
+- **No public web page without auth.** The daemon runs on loopback only. The public vhost (`rig.piabrota.art`) has TLS and basic auth (see "The web UI").
 - **No `rig setup`.** It installs tools and edits `~/.tmux.conf`. The deny list blocks it.
 - **No herdr, no remote hosts.** `rig host`, `rig up --host` and pairing are blocked.
 - **No Claude Code or Codex seat.** `claude` is unfree and not installed. Seats use `omp`.

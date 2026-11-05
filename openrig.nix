@@ -2,8 +2,10 @@
 # ("seats", each in a tmux pane), as the unit `openrig` on piabrota2. Hermes operates it with the
 # `rig` command and the skill hermes-rig. See docs/OPENRIG.md.
 #
-# The daemon (openrig/package.nix) runs in the foreground on 127.0.0.1 only: no nginx, no firewall
-# port, no ACME, no web page. Its tmux server and every seat run inside this unit's cgroup, so
+# The daemon (openrig/package.nix) runs in the foreground on 127.0.0.1 only: no firewall port and no
+# ACME of its own. It serves the web UI of the package on that loopback port (`ui.enabled`).
+# `piabrota.openrig.web` adds an nginx vhost with TLS and basic auth in front of it; the option is off by
+# default. Its tmux server and every seat run inside this unit's cgroup, so
 # MemoryMax is one budget for all of them, and a restart of the unit ends them all. The seats run
 # `omp` from omp/wrapper.nix; `claude` is unfree and Codex is not installed. The specs of the first rig
 # are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
@@ -16,6 +18,8 @@ let
   home = "/var/lib/openrig";
   work = "${home}/work";
   url = "http://127.0.0.1:${toString cfg.port}";
+  backend = "127.0.0.1:${toString cfg.port}";
+  origin = "https://${cfg.web.domain}";
   secretsDir = "/var/lib/openrig-secrets";
   tokenFile = "${secretsDir}/.env";
 
@@ -77,6 +81,25 @@ in
         1536M, below it. Two seats fit (docs/OPENRIG.md, "Limits").
       '';
     };
+    web = {
+      enable = mkEnableOption "the web UI of OpenRig behind nginx, TLS and basic auth (docs/OPENRIG.md, \"The web UI\")";
+      domain = mkOption {
+        type = types.str;
+        example = "rig.piabrota.art";
+        description = "The name nginx serves the UI on. Its DNS A record must point at the box before this is on, or the ACME order fails on the deploy.";
+      };
+      htpasswdFile = mkOption {
+        # A string, not a path: a path literal copies the file into the world-readable store.
+        type = types.str;
+        default = config.piabrota.hermesWeb.htpasswdFile;
+        defaultText = lib.literalExpression "config.piabrota.hermesWeb.htpasswdFile";
+        description = ''
+          The basic-auth users, one `name:bcrypt-hash` line each (`htpasswd -B`). The default is the
+          dashboard's file, so the same login opens both. Set a file of its own to give the UI its
+          own users: mode 0640, owner root, group nginx, in a directory that exists.
+        '';
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -104,6 +127,69 @@ in
 
     # The specs of openrig/specs, read-only: rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
     environment.etc."openrig/specs".source = ./openrig/specs;
+
+    # The web vhost. Same gate as hermes-web.nix: TLS from Let's Encrypt and HTTP basic auth against
+    # a bcrypt file on the box, outside the store. The UI can type into the seats, which run without
+    # approval prompts, so without the file every request gets a 500 and the UI stays closed. The
+    # file is the dashboard's by default (hermes-web.nix makes its directory).
+
+    services.nginx = mkIf cfg.web.enable {
+      enable = true;
+      recommendedTlsSettings = true;
+      serverTokens = false;
+      # Slows a password guesser; the UI's polling stays within the burst.
+      appendHttpConfig = ''
+        limit_req_zone $binary_remote_addr zone=openrig_web:1m rate=20r/s;
+        map $http_origin $openrig_web_foreign_origin {
+          default 1;
+          "" 0;
+          "${origin}" 0;
+        }
+      '';
+      virtualHosts.${cfg.web.domain} = {
+        forceSSL = true;
+        enableACME = true;
+        basicAuthFile = cfg.web.htpasswdFile;
+        extraConfig = ''
+          limit_req zone=openrig_web burst=100 nodelay;
+          limit_req_status 429;
+          add_header X-Frame-Options DENY always;
+          add_header Referrer-Policy no-referrer always;
+          add_header X-Content-Type-Options nosniff always;
+          add_header Strict-Transport-Security "max-age=31536000" always;
+          if ($openrig_web_foreign_origin) { return 403; }
+        '';
+        locations."/" = {
+          proxyPass = "http://${backend}";
+          proxyWebsockets = true;
+          # nginx may turn these on for every location (loco.nix); set only what the daemon needs.
+          recommendedProxySettings = false;
+          # The daemon accepts the public name through OPENRIG_ALLOWED_HOSTS and the page's Origin
+          # through OPENRIG_ALLOWED_ORIGINS (both set below), so Host and Origin pass unchanged. The
+          # basic-auth header stays in nginx: the daemon reads `Authorization` as a bearer token.
+          extraConfig = ''
+            proxy_set_header Host $host;
+            proxy_set_header Authorization "";
+            proxy_set_header X-Forwarded-For "";
+            # The terminal WebSocket and the event streams stay open for hours.
+            proxy_buffering off;
+            proxy_read_timeout 1h;
+            proxy_send_timeout 1h;
+            add_header X-Frame-Options DENY always;
+            add_header Referrer-Policy no-referrer always;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Strict-Transport-Security "max-age=31536000" always;
+          '';
+        };
+      };
+    };
+
+    security.acme = mkIf cfg.web.enable {
+      acceptTerms = true;
+      defaults.email = config.piabrota.loco.acmeEmail;
+    };
+
+    networking.firewall.allowedTCPPorts = mkIf cfg.web.enable [ 80 443 ];
 
     systemd.services.openrig = {
       description = "OpenRig, a control plane for AI coding agents";
@@ -136,6 +222,16 @@ in
         # The system user has no login shell; tmux and the seats need a real one.
         SHELL = "/run/current-system/sw/bin/bash";
         LANG = "C.UTF-8";
+        # The daemon serves the web UI of the package on its loopback port (read once at start).
+        # The UI can type into the seats: reach it by an SSH tunnel or the vhost of
+        # piabrota.openrig.web, never by a public port.
+        OPENRIG_UI_ENABLED = "true";
+      } // lib.optionalAttrs cfg.web.enable {
+        # The /api boundary of the daemon: the Host must be this name, and the page's Origin (the
+        # vhost is https, the daemon's own UI origin is http) must be listed. Format: comma lists;
+        # an origin entry is scheme://host[:port].
+        OPENRIG_ALLOWED_HOSTS = cfg.web.domain;
+        OPENRIG_ALLOWED_ORIGINS = origin;
       };
       # What the unit and the seat panes need (the same list serves both, see
       # users.users.openrig.packages). tmux holds the seats. node starts the seats' runner (the
