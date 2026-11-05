@@ -4,7 +4,7 @@
 
 # nix-os
 
-<sub>无 · <i>mu</i> · the piabrota VPSs · <a href="#in-one-minute">in one minute</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
+<sub>无 · <i>mu</i> · the piabrota VPSs · <a href="#in-one-minute">in one minute</a> · <a href="#every-piabrotaart-address">addresses</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="#structure">structure</a> · <a href="#flake-outputs">flake outputs</a> · <a href="docs/drawings/README.md">the drawing</a> · <a href="#license">license</a></sub>
 
 [![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
 [![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
@@ -20,8 +20,12 @@
 
 - nix-os is the NixOS configuration of two live Hostinger VPSs, one flake with a system per host
   in `hosts/`: **KVM 1** (`piabrota`) serves the public web, [piabrota.art](https://piabrota.art);
-  **KVM 4** (`piabrota2`) runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) and its
-  dashboard. [www.piabrota.art/hosts](https://www.piabrota.art/hosts) shows who does what.
+  **KVM 4** (`piabrota2`) runs [Hermes Agent](https://github.com/NousResearch/hermes-agent), its
+  dashboard, and [OpenRig](docs/OPENRIG.md) with its UI. [www.piabrota.art/hosts](https://www.piabrota.art/hosts)
+  shows who does what.
+- OpenRig is the engine of the open software factory behind piabrota: a builder seat and a reviewer
+  seat that will build and review the changes, while Hermes routes the work and a human merges
+  ([`docs/OPENRIG.md`](docs/OPENRIG.md), "The software factory"). The seats have not run a task yet.
 - Every change goes through GitHub. A merge to `main` builds both systems and deploys each one.
   The GitHub runner builds, [deploy-rs](https://github.com/serokell/deploy-rs)
   copies the result over SSH and switches the VPS, and the VPS rolls back by itself if SSH stops
@@ -35,24 +39,81 @@
 - The layout of this README comes from [picasso](https://github.com/h0ffmann/picasso), which took it
   from [Gabriel Volpe's `nix-config`](https://github.com/gvolpe/nix-config).
 
+## Every piabrota.art address
+
+Every name under piabrota.art that this repository serves, with its status on 2026-11-05. The
+status is that of the first request: no redirect is followed.
+
+| Address | What it is | Host | Access | Source |
+|---|---|---|---|---|
+| [`piabrota.art`](https://piabrota.art) | 301 to `https://www.piabrota.art/`, same path | KVM 1 | public | `site.nix` |
+| [`www.piabrota.art/`](https://www.piabrota.art/) | The site, design A. 200 | KVM 1 | public | `site.nix`, `site/` |
+| [`www.piabrota.art/index/`](https://www.piabrota.art/index/) | Design B. 200 | KVM 1 | public | `site/` |
+| [`www.piabrota.art/paths/`](https://www.piabrota.art/paths/) | Design C. 200 | KVM 1 | public | `site/` |
+| `www.piabrota.art/pt-BR/`, `/zh-CN/`, `/ja-JP/` | Design A in Portuguese, Chinese and Japanese. 200 each | KVM 1 | public | `site/default.nix`, [`docs/SITE.md`](docs/SITE.md) |
+| [`www.piabrota.art/hosts/`](https://www.piabrota.art/hosts/) | Who does what on each VPS. 200; `/hosts` gives 301 to the slash form | KVM 1 | public | `site/default.nix` |
+| [`www.piabrota.art/hermes/`](https://www.piabrota.art/hermes/) | Hermes's configuration as plain YAML, no secret. 200; `/hermes` gives 301 | KVM 1 | public | `site.nix`, `site/hermes.nix` |
+| [`www.piabrota.art/skills/`](https://www.piabrota.art/skills/) | The skills website. 200 | KVM 1 | public | `skills-site/` |
+| [`www.piabrota.art/figures/`](https://www.piabrota.art/figures/) | The figures as interactive pages, English and pt-BR. New: it goes live with the deploy of the pull request that adds it, so its status is not checked yet ⚠ | KVM 1 | public | `figures-site/` |
+| [`www.piabrota.art/notes`](https://www.piabrota.art/notes) | The Loco app `notes`. 303 to `/notes/login` | KVM 1 | one password | `apps.nix`, `apps/notes/` |
+| [`www.piabrota.art/nixos`](https://www.piabrota.art/nixos) | 302 to [this repository](https://github.com/piabrota/nix-os) | KVM 1 | public | `site.nix` |
+| [`hermes.piabrota.art`](https://hermes.piabrota.art/) | The Hermes dashboard. 401 without the login | KVM 4 | basic auth | `hermes-web.nix` |
+| [`rig.piabrota.art`](https://rig.piabrota.art/) | The OpenRig web UI. 401 without the login. Its terminal can type into the seats | KVM 4 | basic auth, the dashboard's login file | `openrig.nix`, `hosts/piabrota2/default.nix`, [`docs/OPENRIG.md`](docs/OPENRIG.md) |
+| `paperclip.piabrota.art` | Paperclip. Off since 2026-11-04: no answer | KVM 4 | none while off | `paperclip.nix`, [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md) |
+
+`app.piabrota.art` and `example.piabrota.art` appear only as examples (`loco.nix`, `flake.nix`).
+They are not addresses of piabrota.
+
 ## How it works
 
-![Two hosts: Porkbun DNS sends www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /hosts and the /notes Loco app, and hermes.piabrota.art to VPS 2 (KVM 4), where the dashboard behind basic auth shares its state with the hermes-agent gateway; the owner's Telegram and Discord chats reach the gateway by polling, and it opens pull requests on hermes/* branches as piabrota-hermes[bot]; deploy.yml builds both systems and deploys each on a merge.](docs/img/two-hosts.png)
+![Two hosts: Porkbun DNS sends www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /hosts and the /notes Loco app, and hermes.piabrota.art and rig.piabrota.art to VPS 2 (KVM 4); there the dashboard behind basic auth shares its state with the hermes-agent gateway, and the OpenRig UI behind basic auth fronts the openrig unit with its two omp seats, which the gateway drives with the rig CLI; the owner's Telegram and Discord chats reach the gateway by polling, and it opens pull requests on hermes/* branches as piabrota-hermes[bot]; deploy.yml builds both systems and deploys each on a merge.](docs/img/two-hosts.png)
+
+Interactive page: <https://www.piabrota.art/figures/two-hosts/>
 
 <details open>
 <summary>How to read this figure</summary>
 
-**Takeaway.** KVM 1 serves the public web and nothing else; everything Hermes is on KVM 4.
+**Takeaway.** KVM 1 serves the public web and nothing else; everything Hermes and OpenRig is on KVM 4.
 
 **How to read.** Top to bottom, one lane per place: people, DNS, each VPS, GitHub. Arrows say where a request or a deploy goes; the red border marks what is outside the two boxes.
 
-**Not shown.** PGX on KVM 4 (Paperclip is off for now), the ACME certificates, the secrets on each box, and the deploy by hand.
+**Not shown.** PGX on KVM 4 (Paperclip is off for now), the ACME certificates, the secrets on each box, the clones the seats work in, and the deploy by hand.
 
-**Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
+**Evidence.** [`docs/archify/two-hosts.json`](docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, `openrig.nix`, [`docs/OPENRIG.md`](docs/OPENRIG.md), [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md).
+
+</details>
+
+[OpenRig](https://github.com/mvschwarz/openrig) is the engine of the open software factory behind
+piabrota. The rig `piabrota-dev` has two seats on `omp`: a builder and a reviewer. The builder will
+write the change and the reviewer will check it. Hermes routes the task and checks the result, then
+opens the pull request on a `hermes/*` branch. A human merges, always, and the merge deploys.
+
+**Status today.** OpenRig 0.7.7 runs on KVM 4. The rig is specified and the UI is on. The seats are
+idle: no task has gone through the builder and reviewer loop. Today Hermes makes a pull request by
+running `omp` itself (skill `hermes-omp`). The guardrails stay: humans merge, the deny list and
+`hermes/omp.yml` apply, no secret goes in a spec or a task, at most two seats run at once, and the UI
+is behind basic auth and TLS.
+
+![The software factory: the owner sends a task to Hermes on VPS 2; Hermes sends it to the builder seat of the OpenRig rig piabrota-dev, which delegates its diff to the reviewer seat, and the verdict goes back to Hermes; Hermes commits, pushes a hermes/* branch and opens a pull request on GitHub; a human merges it, always; deploy.yml then deploys the two VPSs with deploy-rs and magic rollback.](docs/img/software-factory.png)
+
+Interactive page: <https://www.piabrota.art/figures/software-factory/>
+
+<details open>
+<summary>How to read this figure</summary>
+
+**Takeaway.** The rig will do the build and the review, Hermes routes and checks, and only a human merges.
+
+**How to read.** Top to bottom, one lane per stage: people, Hermes, the rig, GitHub, deploy. Arrows say what goes next; the red border marks where a person comes in.
+
+**Not shown.** The skills `/triage` and `/mip` that come before the task, the watchers after the deploy (`kvm4-health`), the deny list, and the token of the seats.
+
+**Evidence.** [`docs/archify/software-factory.json`](docs/archify/software-factory.json), the source of the figure; `openrig/specs/rigs/piabrota-dev/rig.yaml`, [`docs/OPENRIG.md`](docs/OPENRIG.md), `.github/workflows/deploy.yml`, the skills `hermes-rig` and `hermes-omp`. ⚠ No task has gone through the rig yet: the seats, the verdict arrow and the pull request from a seat's diff are the plan, not a run.
 
 </details>
 
 ![How nix-os works: a pull request runs ci.yml on every push; a merge to main runs deploy.yml, which builds the system on the GitHub runner; deploy-rs copies the closure to the VPS over SSH and switches it, the VPS fetching store paths from cache.nixos.org; if SSH falls silent for 60 s, magic rollback restores the old system; after the switch, freeze.yml lists the VPS's packages, and cves.yml reports vulnix on the same push.](docs/img/how-nix-os-works.png)
+
+Interactive page: <https://www.piabrota.art/figures/how-nix-os-works/>
 
 <details open>
 <summary>How to read this figure</summary>
@@ -68,6 +129,8 @@
 </details>
 
 ![piabrota.art: a browser resolves the two A records on Porkbun, which point at the VPS; nginx answers piabrota.art with a 301 to https://www and serves www.piabrota.art over HTTP and HTTPS, with /nixos a 302 to the repository and a Let's Encrypt certificate per name; the page was built before the deploy, site/ in Gleam prerendered by Nix into /nix/store as three pages and style.css, which is nginx's root.](docs/img/piabrota-art.png)
+
+Interactive page: <https://www.piabrota.art/figures/piabrota-art/>
 
 <details open>
 <summary>How to read this figure</summary>
@@ -107,6 +170,11 @@ from KVM 1 is [`docs/MIGRATION-KVM4.md`](docs/MIGRATION-KVM4.md)):
 
 - [`docs/HERMES.ptBR.md`](docs/HERMES.ptBR.md), em português
 - [`docs/HERMES.md`](docs/HERMES.md), in English
+
+[OpenRig](https://github.com/mvschwarz/openrig) runs on KVM 4 as the unit `openrig`, with its web UI at
+rig.piabrota.art (`openrig.nix`). Its rig `piabrota-dev` is the engine of the software factory that
+Hermes operates. How it is set up, its limits and its status are in [`docs/OPENRIG.md`](docs/OPENRIG.md),
+in English.
 
 PGX, a Postgres-compatible engine in one process, runs on KVM 4 for the next workload that needs
 Postgres, instead of a PostgreSQL server or Docker (`pgx.nix`): what it is, its cost and its limits:
@@ -158,7 +226,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
 ├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
 ├── hosts/piabrota/          KVM 1: the public web only
-├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, PGX; Paperclip off for now (docs/DEPLOY.md)
+├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, OpenRig, PGX; Paperclip off for now (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
@@ -171,6 +239,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
+├── openrig.nix, openrig/    OpenRig, the engine of the software factory: its package, its rig specs and its UI (docs/OPENRIG.md)
 ├── kubesolo-purge.nix       a oneshot that clears an old install from the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
@@ -194,6 +263,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
 ├── docs/PGX.md            the same, in English
 ├── docs/PAPERCLIP.md      Paperclip and Hermes here: setup, cost, updating
+├── docs/OPENRIG.md        OpenRig and the software factory here: setup, UI, status, guardrails
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR beyond Markdown: lints and the justfile parse; the full flake check by hand), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use

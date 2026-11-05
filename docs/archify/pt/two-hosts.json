@@ -2,7 +2,7 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Duas máquinas: a KVM 1 serve a web pública, a KVM 4 roda o Hermes",
+    "title": "Duas máquinas: a KVM 1 serve a web pública, a KVM 4 roda o Hermes e o OpenRig",
     "locale": "pt-BR",
     "quality_profile": "showcase",
     "legend": {
@@ -25,7 +25,7 @@
     },
     {
       "id": "kvm4",
-      "label": "VPS 2 · KVM 4 (kvm4)"
+      "label": "VPS 2 · KVM 4 (piabrota2)"
     },
     {
       "id": "gh",
@@ -44,13 +44,13 @@
       "col": 0,
       "type": "external",
       "label": "um navegador",
-      "sublabel": "só https no hermes",
+      "sublabel": "https no hermes e no rig",
       "width": 170
     },
     {
       "id": "chats",
       "lane": "people",
-      "col": 2,
+      "col": 4,
       "type": "external",
       "label": "Telegram, Discord",
       "sublabel": "as conversas do dono",
@@ -68,7 +68,7 @@
     {
       "id": "www",
       "lane": "kvm1",
-      "col": 2,
+      "col": 3,
       "type": "frontend",
       "label": "www.piabrota.art",
       "sublabel": "o site, /hermes, /hosts",
@@ -77,7 +77,7 @@
     {
       "id": "apps",
       "lane": "kvm1",
-      "col": 3,
+      "col": 4,
       "type": "backend",
       "label": "/notes",
       "sublabel": "app Loco, SQLite",
@@ -86,7 +86,7 @@
     {
       "id": "dash",
       "lane": "kvm4",
-      "col": 2,
+      "col": 1,
       "type": "frontend",
       "label": "hermes.piabrota.art",
       "sublabel": "painel, basic auth",
@@ -95,7 +95,7 @@
     {
       "id": "gateway",
       "lane": "kvm4",
-      "col": 3,
+      "col": 2,
       "type": "backend",
       "label": "hermes-agent",
       "sublabel": "gateway, cron, omp",
@@ -113,10 +113,28 @@
     {
       "id": "github",
       "lane": "gh",
-      "col": 3,
+      "col": 2,
       "type": "external",
       "label": "piabrota-hermes[bot]",
       "sublabel": "só pull requests",
+      "width": 170
+    },
+    {
+      "id": "rigui",
+      "lane": "kvm4",
+      "col": 4,
+      "type": "frontend",
+      "label": "rig.piabrota.art",
+      "sublabel": "UI do OpenRig, basic auth",
+      "width": 170
+    },
+    {
+      "id": "openrig",
+      "lane": "kvm4",
+      "col": 3,
+      "type": "backend",
+      "label": "openrig",
+      "sublabel": "2 seats omp",
       "width": 170
     }
   ],
@@ -177,6 +195,25 @@
       "to": "dash",
       "label": "merge",
       "role": "branch"
+    },
+    {
+      "id": "e10",
+      "from": "records",
+      "to": "rigui",
+      "label": "KVM 4",
+      "role": "branch"
+    },
+    {
+      "id": "e11",
+      "from": "rigui",
+      "to": "openrig",
+      "label": "proxy"
+    },
+    {
+      "id": "e12",
+      "from": "gateway",
+      "to": "openrig",
+      "label": "CLI rig"
     }
   ]
 }

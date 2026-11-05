@@ -16,7 +16,7 @@ receitas: `just`.
 
 ## As duas máquinas
 
-A `piabrota` (KVM 1) serve a web pública. A `piabrota2` (KVM 4) roda o Hermes, o painel dele e o PGX.
+A `piabrota` (KVM 1) serve a web pública. A `piabrota2` (KVM 4) roda o Hermes, o painel dele, o OpenRig e o PGX.
 As receitas `just remote-*` leem `DEPLOY_HOST` e, sem ele, usam `piabrota.art`, a máquina
 `piabrota`. Para a `piabrota2`, ponha o endereço dela em `DEPLOY_HOST`:
 
@@ -44,10 +44,40 @@ a não ser no primeiro deploy ([`docs/DEPLOY.md`](https://github.com/piabrota/ni
 ## O site em www.piabrota.art
 
 O site está ligado. Os dois nomes, `piabrota.art` e `www`, precisam apontar para a VPS `piabrota`
-(KVM 1); o `hermes.piabrota.art` aponta para a `piabrota2`. Os passos do DNS estão em
+(KVM 1); o `hermes.piabrota.art` e o `rig.piabrota.art` apontam para a `piabrota2`. Os passos do DNS estão em
 [`docs/SITE.md`](https://github.com/piabrota/nix-os/blob/main/docs/SITE.md).
 
 ## Adicionar um app
 
 Empacote o app no flake dele, crie o registro DNS, ponha os segredos na VPS e declare o app aqui:
 [`docs/LOCO.md`](https://github.com/piabrota/nix-os/blob/main/docs/LOCO.md).
+
+## O OpenRig e a interface do rig
+
+A interface web do OpenRig está em [rig.piabrota.art](https://rig.piabrota.art/). O login é o mesmo
+do painel do Hermes (basic auth). Cuidado: o terminal dela escreve nos seats, e os seats rodam sem
+pedir aprovação. Quem entra na interface roda comandos como o usuário `openrig`. Nunca abra a
+interface sem autenticação.
+
+Se o endereço não abrir, use o túnel SSH. Na sua máquina, rode:
+
+```console
+ssh -L 7433:127.0.0.1:7433 h0ffmann@<endereço da piabrota2>
+```
+
+Depois abra `http://localhost:7433` no navegador.
+
+Para olhar o rig, o Hermes roda estes comandos (skill `hermes-rig`):
+
+```console
+rig status                         # tem de dizer "Daemon running"
+rig ps --nodes --rig piabrota-dev  # uma linha por seat: dev-builder e dev-reviewer
+```
+
+Na máquina, o `kvm4-health` lista a unidade `openrig` com a memória dela contra o `MemoryMax`.
+
+**A regra.** O Hermes sobe e derruba os seats, só quando o dono pede. Nenhum cron faz isso. Um
+deploy que muda a unidade `openrig` a reinicia e acaba com os seats, e depois dele nada sobe o rig
+sozinho. Hoje os seats estão parados: nenhuma tarefa passou por eles. O guia completo é
+[`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md), em inglês; a
+[Fábrica](Fabrica) diz o que o rig vai fazer.
