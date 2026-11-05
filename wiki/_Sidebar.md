@@ -6,6 +6,7 @@
 - [Hermes](Hermes)
 - [Fábrica](Fabrica)
 - [Runtimes](Runtimes)
+- [Reels](Reels)
 - [Maquetes](Maquetes)
 
 **English**
@@ -16,4 +17,5 @@
 - [Hermes](Hermes-EN)
 - [Factory](Factory)
 - [Runtimes](Runtimes-EN)
+- [Reels](Reels-EN)
 - [Mockups](Mockups)

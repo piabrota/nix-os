@@ -1,0 +1,120 @@
+# The Reels Fabric: five seats that make one 15 s or 30 s vertical reel (1080x1920), screenplay first.
+# Pod `story` writes and approves the screenplay (screenplay.json, the one source of the reel). Pod
+# `studio` directs, builds and checks the video from the approved screenplay with the `reel`
+# toolkit (reels/, docs/REELS.md). Claude is the only model: no image, video, voice or music
+# service, no network. Every seat runs omp, as in piabrota-dev; a member can switch to
+# `runtime: claude-code` with one line (docs/RUNTIMES.md).
+#
+# Start it BY PHASES, TWO SEATS AT A TIME. The unit `openrig` has MemoryMax=2G and an omp seat costs
+# about 300 MiB. Neither the owner nor Hermes may run more than two seats at the same time, and no
+# seat may start another one. Do not run it at the same time as another rig (docs/OPENRIG.md).
+#   rig import /etc/openrig/specs/rigs/reels-fabric/rig.yaml --materialize-only
+# That records the five seats and starts none. A seat that never started starts with
+# `rig launch <rig> <pod>.<member>` (docs/reference/rig-spec.md, "Starting one materialized seat").
+# `rig seat launch <seat> --fresh --reason "<why>"` is for a seat that has run before: it starts a
+# blank conversation.
+#   phase 1, story:   rig launch reels-fabric story.writer
+#                     rig launch reels-fabric story.script-editor
+#                     rig send story-writer@reels-fabric "<slug>, <15|30>, <the owner's brief>" --verify
+#                     The writer and the script editor pass the screenplay between them, at most 3
+#                     rounds. Done when `reel approve` has written screenplay.approved. Then stop both:
+#                     rig seat stop story-writer@reels-fabric --reason "phase 1 done"
+#                     rig seat stop story-script-editor@reels-fabric --reason "phase 1 done"
+#                     The owner may read `reel screenplay-view <slug>` before phase 2 starts.
+#   phase 2, studio:  rig launch reels-fabric studio.director
+#                     rig launch reels-fabric studio.maker
+#                     rig send studio-director@reels-fabric "<slug>, <project path>, direct it" --verify
+#                     Done when the shotlist and the storyboard are made and out/<slug>/reel.mp4 exists.
+#                     Then stop the director.
+#   phase 3, qa:      rig launch reels-fabric studio.qa     (with the maker still up: two seats)
+#                     rig send studio-qa@reels-fabric "<slug>, <out path>, check it" --verify
+#                     Done when `reel publish` has run. Then stop both.
+# A seat that has nobody to send to ends with a final answer: the operator starts the next seat and
+# sends it the task. A QA fail goes to a seat that is stopped by then: start it in place of the
+# director or the maker, so that two seats run. The owner decides the brief, the start of phase 2
+# and what to do with the published reel; nothing here posts to Instagram.
+# The seat names are <pod>-<member>@reels-fabric: story-writer, story-script-editor,
+# studio-director, studio-maker, studio-qa. Hermes talks to a seat with
+# `rig send <seat> "<task>" --verify`.
+# The gate is in the toolkit: every stage after the screenplay refuses to run unless
+# screenplay.approved holds the hash of screenplay.json.
+# A rig keeps the spec it was made from: after a change here, `rig archive` it and import it again.
+version: "0.2"
+name: reels-fabric
+summary: A story pod that writes and approves one screenplay and a studio pod that directs, builds and checks the reel
+
+# See rigs/wave-forecaster-dev/rig.yaml and rigs/piabrota-dev/rig.yaml: the seats run without
+# approval prompts, and the deny rules of hermes/omp.yml stay the guard.
+permission_policy: builtin:yolo
+
+# OpenRig starts each pane with a clean environment. NixOS builds the pane's PATH from the profile of
+# $USER (users.users.openrig.packages in openrig.nix). REELS_HOME and REELS_OUTBOX tell `reel`
+# where the projects and the finished reels go; they match its own defaults. Values are not secret.
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+  REELS_HOME: /var/lib/openrig/work/reels-fabric
+  REELS_OUTBOX: /var/lib/rig-outbox/reels-fabric
+
+pods:
+  - id: story
+    label: Story
+    summary: The writer makes the brief and the screenplay. The script editor reviews them and approves the hash.
+    members:
+      - id: writer
+        agent_ref: "local:../../agents/reels-writer"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        # Its own folder (StateDirectory in openrig.nix): the norms land in its AGENTS.md.
+        cwd: /var/lib/openrig/work/reels-fabric/writer
+      - id: script-editor
+        agent_ref: "local:../../agents/reels-script-editor"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/script-editor
+    edges:
+      # The writer asks the script editor to review the screenplay.
+      - kind: delegates_to
+        from: writer
+        to: script-editor
+
+  - id: studio
+    label: Studio
+    summary: The director plans the pictures, the maker builds the reel, QA checks the file against the screenplay.
+    members:
+      - id: director
+        agent_ref: "local:../../agents/reels-director"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/director
+      - id: maker
+        agent_ref: "local:../../agents/reels-maker"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/maker
+      - id: qa
+        agent_ref: "local:../../agents/reels-qa"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/qa
+    edges:
+      # The director hands the shotlist to the maker. The maker hands the reel to QA.
+      - kind: delegates_to
+        from: director
+        to: maker
+      - kind: delegates_to
+        from: maker
+        to: qa
+
+edges:
+  # The script editor hands the approved screenplay to the director. A chain, so no cycle:
+  # writer, script-editor, director, maker, qa.
+  - kind: delegates_to
+    from: story.script-editor
+    to: studio.director

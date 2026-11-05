@@ -1,0 +1,35 @@
+# The qa seat of reels-fabric: checks the finished file against the screenplay, beat by beat, and publishes on a pass.
+name: reels-qa
+version: "1.0"
+description: Checks one finished reel against its screenplay and publishes it on a pass
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../reels-shared
+
+profiles:
+  default:
+    summary: Reads the video facts and the frames, writes qa.md and publishes only after a pass
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, reels-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

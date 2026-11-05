@@ -1,0 +1,35 @@
+# The writer seat of reels-fabric: writes the brief and the screenplay. The only seat that edits screenplay.json.
+name: reels-writer
+version: "1.0"
+description: Writes the brief and the screenplay of one reel
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../reels-shared
+
+profiles:
+  default:
+    summary: Writes brief.md and screenplay.json, lints them and hands them to the script editor
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, reels-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

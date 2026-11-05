@@ -33,8 +33,9 @@ The rig has not yet done a task: see "Status today".
 
 - OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
   is at https://rig.piabrota.art behind basic auth (see "The web UI").
-- One rig is specified, `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`): two seats on
-  `omp`, `dev-builder` and `dev-reviewer`. Both run without approval prompts
+- Four rigs are specified: `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`: two seats on
+  `omp`, `dev-builder` and `dev-reviewer`), the two rigs of wave-forecaster-dev and `reels-fabric`
+  (below). All run without approval prompts
   (`permission_policy: builtin:yolo`, the owner's decision in PR 124). They use the owner's Claude
   subscription (see "The token of the seats").
 - Hermes operates the rig with the `rig` CLI and the skill `hermes-rig`. Hermes does not start seats
@@ -266,6 +267,21 @@ openrig/specs/
   rigs/wave-forecaster-dev-integrate/rig.yaml  # pod "wire": integrator and auditor
 ```
 
+The block reels-fabric adds one rig and six agents (see "reels-fabric" below):
+
+```text
+openrig/specs/
+  agents/
+    reels-shared/agent.yaml            # one guidance resource: the norms of every reels seat
+    reels-shared/guidance/norms.md
+    reels-writer/...                   # agent.yaml, guidance/role.md, startup/context.md
+    reels-script-editor/...
+    reels-director/...
+    reels-maker/...
+    reels-qa/...
+  rigs/reels-fabric/rig.yaml           # pod "story": writer, script-editor; pod "studio": director, maker, qa
+```
+
 - `rig.yaml` has one pod, `dev`, with the members `builder` and `reviewer`. Both use the runtime
   `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`. An edge
   `delegates_to` goes from `builder` to `reviewer`. The rig sets `permission_policy: builtin:yolo`
@@ -310,6 +326,7 @@ pros, cons, a spec line, credentials, permission mapping, state and the status o
 |`piabrota-dev`|`omp`|
 |`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (off)|
 |`wave-forecaster-dev-integrate`|`omp`|
+|`reels-fabric`|`omp`, five seats|
 
 ## wave-forecaster-dev
 
@@ -388,6 +405,32 @@ When the porter reports a bundle, Hermes fetches it into its own clone of chaceo
 ```console
 git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:hermes/wf-<slug>
 ```
+
+## reels-fabric
+
+The rig `reels-fabric` makes one 15 s or 30 s vertical video (1080x1920) for Instagram Reels. Claude
+is the only model: no image, video, voice or music service, no network. The screenplay
+(`screenplay.json`) is the one source, and a hash gate stops every stage after it until the
+screenplay is approved. The guide is [`REELS.md`](REELS.md), and the wiki's `Reels` pages summarise it.
+
+|Part|Setting|
+|---|---|
+|Rig|`openrig/specs/rigs/reels-fabric/rig.yaml`: pod `story` (`writer`, `script-editor`) and pod `studio` (`director`, `maker`, `qa`), all on `omp`, `anthropic/claude-sonnet-5-5`, `builtin:yolo`. The edges form a chain: writer, script editor, director, maker, QA.|
+|Option|`piabrota.openrig.reels.enable`. Off at piabrota2. The specs are in `/etc/openrig/specs` as a definition only.|
+|Tools|The toolkit `reel` (`reels/`, built by `reels/default.nix`) with `ffmpeg-headless` and `jq`, in the profile of the user `openrig` and in the unit's `path`. Two font files (Inter and Fjalla One) are the owner's exception to "no fonts".|
+|Folders|`/var/lib/openrig/work/reels-fabric/{writer,script-editor,director,maker,qa}` (the seats' own folders), `projects` (shared, one folder for each slug) and `out` (the renders), all `StateDirectory`.|
+|Outbox|`/var/lib/rig-outbox/reels-fabric` (owner `openrig`, group `hermes`, 2750 with setgid, a default ACL for the group, files older than 14 days removed). `reel publish` writes `reel.mp4`, `qa.json`, `screenplay.json` and `review/` to `<slug>/` and gives the group read access to them. The unit has it in `ReadWritePaths`. The parent is shared with the wave rig.|
+|Env|The rig sets `REELS_HOME=/var/lib/openrig/work/reels-fabric` and `REELS_OUTBOX=/var/lib/rig-outbox/reels-fabric`.|
+
+**Three phases, two seats at a time.** The rig has five seats, and a render adds an `ffmpeg` of up to
+540 MiB. So the operator starts the seats in phases, and never more than two at once: `story` (writer
+and script editor, until `reel approve`), `studio` (director and maker, until `reel.mp4` exists) and
+`qa` (the QA seat with the maker still up, until `reel publish`). The exact commands are in
+[`REELS.md`](REELS.md), "The phases". The owner decides the brief, the start of phase 2 and what to do
+with the published reel. A human approves or the script editor does: Hermes never approves.
+
+**Not proved.** A live run of the rig, OpenRig's validation of the specs, and Instagram's acceptance
+of the file. The toolkit ran on this box: the numbers are in [`REELS.md`](REELS.md), "Measured numbers".
 
 ## What is not done
 

@@ -1,0 +1,59 @@
+{
+  "schema": "reels.style/1",
+  "name": "piabrota",
+  "summary": "The look of site/DESIGN.md: a dark sheet, one red, Fjalla One for titles, Inter for text.",
+  "colors": {
+    "bg": "#0B0D12",
+    "surface": "#14171F",
+    "border": "#2A303C",
+    "fg": "#EDEFF3",
+    "muted": "#9AA3B2",
+    "accent": "#BC2318",
+    "accent_text": "#FF6B5E"
+  },
+  "fonts": {
+    "title": {
+      "family": "Fjalla One",
+      "bold": false,
+      "lh": 0.80,
+      "w": {
+        "upper": 0.325,
+        "lower": 0.27,
+        "digit": 0.295,
+        "space": 0.11,
+        "other": 0.16
+      }
+    },
+    "text": {
+      "family": "Inter Variable",
+      "bold": false,
+      "lh": 1.02,
+      "w": {
+        "upper": 0.62,
+        "lower": 0.46,
+        "digit": 0.49,
+        "space": 0.25,
+        "other": 0.3
+      }
+    }
+  },
+  "motion": {
+    "ease": "out_cubic",
+    "stagger": 0.14,
+    "enter_s": 0.45,
+    "pop": 1.06,
+    "blur": 10,
+    "bg_zoom": [
+      1.0,
+      1.05
+    ],
+    "grain": 3
+  },
+  "background": {
+    "glow_color": "accent",
+    "glow_opacity": 0.28,
+    "glow_x": 0.12,
+    "glow_y": 0.10,
+    "glow_r": 0.75
+  }
+}

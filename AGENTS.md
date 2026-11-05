@@ -38,7 +38,7 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `kubesolo-purge.nix` | Temporary oneshot that clears an old install from the box. It runs only while `/var/lib/kubesolo` exists. A human deletes it later. |
 | `pgx.nix`, `pgx/` | `piabrota.pgx.enable`, on: [PGX](https://pgx.dev), a Postgres-compatible engine in Rust (v0.1, AGPL-3.0), as the unit `pgx` (state in `/var/lib/pgx`, port 5432 with no port opened in the firewall, `MemoryMax=256M`), from its release (`pgx/package.nix`; not in nixpkgs). For data you can lose, never an app's own data; nothing uses it. `checks.pgx` (`pgx/test.nix`) boots it in a VM. See [docs/PGX.md](docs/PGX.md). |
 | `paperclip.nix`, `paperclip/` | `piabrota.paperclip.enable`, **off** on piabrota2 since 2026-11-04 (the import stays). When on: the unit `paperclip`, PostgreSQL 17, nginx at `paperclip.piabrota.art`, Hermes as its agent. See [docs/PAPERCLIP.md](docs/PAPERCLIP.md). |
-| `openrig.nix`, `openrig/`, `docs/OPENRIG.md` | `piabrota.openrig.enable`, on at piabrota2: OpenRig 0.7.7 as the unit `openrig`, the engine of the software factory (builder and reviewer seats; Hermes routes, a human merges), loopback only with its web UI (`piabrota.openrig.web`: basic-auth vhost at rig.piabrota.art, on), `MemoryMax=2G`; seats run `omp` (`omp/wrapper.nix`), the port rig's `claude-code`. Hermes runs `rig` and the skill hermes-rig. `openrig/specs/` is in `/etc/openrig/specs`: the rigs piabrota-dev, and wave-forecaster-dev and wave-forecaster-dev-integrate for h0ffmann/chaceon (`piabrota.openrig.waveForecaster.enable`, off: the specs are a definition only; on, it adds Rust tools and `claude` in the seat profile, `managed-settings.json`, a read-only token from `hermes-github.nix`, the outbox `/var/lib/rig-outbox`). |
+| `openrig.nix`, `openrig/`, `docs/OPENRIG.md` | `piabrota.openrig.enable`, on at piabrota2: OpenRig 0.7.7 as the unit `openrig`, the engine of the software factory (builder and reviewer seats; Hermes routes, a human merges), loopback only with its web UI (`piabrota.openrig.web`: basic-auth vhost at rig.piabrota.art, on), `MemoryMax=2G`; seats run `omp` (`omp/wrapper.nix`), the port rig's `claude-code`. Hermes runs `rig` and the skill hermes-rig. `openrig/specs/` is in `/etc/openrig/specs`: the rigs piabrota-dev, wave-forecaster-dev and wave-forecaster-dev-integrate for h0ffmann/chaceon (`piabrota.openrig.waveForecaster.enable`, off: the specs are a definition only; on, it adds Rust tools and `claude` in the seat profile, `managed-settings.json`, a read-only token from `hermes-github.nix`, the outbox `/var/lib/rig-outbox`), and reels-fabric (`reels/`, the toolkit `reel`; `piabrota.openrig.reels.enable`, off; two font files: the owner's exception to no fonts; docs/REELS.md). |
 | `docs/VIDEO-PIPELINE.md`, `video-lab/` | Spec of the faceless video pipeline (English only). `just video-dummy` makes a 28 s test video from `ffmpeg` alone; the output is not in git. |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
 | `observer.nix`, `keys/observer.pub` | The `observer` account: SSH key only, no sudo, not a Nix trusted user, in `systemd-journal`. A coding agent's session logs in with it (`ssh piabrota-observer`, the private key on the owner's computer) to read logs and unit states while it debugs. It only reads. |
@@ -54,14 +54,14 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `.github/workflows/cves.yml` | On every push to `main` that changes more than Markdown (not on PRs), and each Monday: `vulnix --closure` on the built system, into the run summary. A report, not a gate: name matching gives false matches. `just cves` runs it here. |
 | `.claude/skills/`, `.mcp.json` | Vendored skills at pinned commits (four Nix, three frontend, three writing skills for `site/locale/`, `figure`, and `archify` as a link into `vendor/archify`); their README lists them and their licences. Refresh a skill by recopying upstream, never by editing its body. `.mcp.json`: the mcp-nixos, OpenPencil (limited to `site/design/`) and DeepWiki (remote, public repositories only) MCP servers; they run where the agent runs, never on the VPS. |
 | `.github/workflows/code-smell-report.yml` | On every PR, not after a merge: an MIT-licensed [analyzer](https://github.com/Done-0/fuck-u-code) scores the Python, Rust and shell from 0 (best) to 100, in the run summary and in one PR comment that each run updates (merge below 55, refactor first above). A report, not a gate. It does not read Nix or Gleam. |
-| `.github/workflows/ci.yml` | On every PR that changes more than Markdown (a new push cancels the PR's older run): `nixpkgs-fmt`, `statix` (rules in `statix.toml`), `deadnix`, `shellcheck`, the DeepWiki and figure checks, the justfile parse with Ubuntu's `just`. They build nothing. `nix flake check` (about 10 minutes) runs only by hand (`gh workflow run ci.yml --ref <branch>`), by the owner's choice of 2026-11-03; `deploy.yml` builds each merge before it touches the VPS. |
+| `.github/workflows/ci.yml` | On every PR that changes more than Markdown (a new push cancels the PR's older run): `nixpkgs-fmt`, `statix` (rules in `statix.toml`), `deadnix`, `shellcheck`, the DeepWiki and figure checks, the justfile parse with Ubuntu's `just`. They build nothing. `nix flake check` (about 10 minutes) runs only by hand (`gh workflow run ci.yml --ref <branch>`), by the owner's choice; `deploy.yml` builds each merge before it touches the VPS. |
 | `.github/dependabot.yml` | One grouped PR a week that bumps the GitHub Actions the workflows use. Not nixpkgs: that is `nix flake update` in its own PR. |
 | `wiki/`, `.github/workflows/wiki.yml` | The GitHub wiki's pages, in pt-BR first with English mirrors, and their images (`img/`, `mockups/`), which `just figure` and `just mockups` write. `wiki.yml` copies `wiki/` to the wiki after a merge that changes it; never edit the wiki directly. Change each page and its mirror together. |
 | `.github/workflows/deploy.yml` | On a push to `main` that changes more than Markdown: deploy-rs to the VPS, then `scripts/specs.sh` into the run summary. Run by hand on another branch, it only builds (a drill): `gh workflow run deploy.yml --ref drill/<name>`; the VPS is never touched, and piabrota/agents' deploy-doctor proposes the fix against that branch. |
 | `.github/workflows/deploy-doctor.yml` | When `deploy` fails: piabrota/agents' deploy-doctor on a GitHub runner, as piabrota-ops. It is the only doctor: nothing of piabrota/agents runs on the box. Needs the repository secret `CLAUDE_CODE_OAUTH_TOKEN` besides `OPS_BOT_APP_ID` and `OPS_BOT_KEY`; without them it warns and the failure goes undiagnosed. |
 | `.github/workflows/flake-update.yml` | Each Monday and by hand: `nix flake update`, the system built before and after, and a PR in English labelled `flake-update` with the `dix` closure difference, opened as piabrota-ops (`OPS_BOT_APP_ID`, `OPS_BOT_KEY`) so CI runs on it. It merges nothing. |
 | `docs/LOCO.md` | How to add a Loco app: package it in its own flake, DNS, secrets on the box, declare it here. |
-| `docs/MIGRATION-KVM4.md` | The checklist that moves Hermes, its GitHub App, its dashboard and PGX from piabrota (KVM 1) to piabrota2 (KVM 4): setup and first deploy before the merge, the cutover of the state and secrets, and the clean-up on piabrota. English only. |
+| `docs/MIGRATION-KVM4.md` | The checklist that moves Hermes, its GitHub App, its dashboard and PGX from piabrota (KVM 1) to piabrota2 (KVM 4): setup, first deploy, the cutover of state and secrets, the clean-up on piabrota. English only. |
 | `docs/DEPLOY.md` | How the deploy works and its one-time setup (key, secrets, firewall, first deploy). |
 | `docs/FORK.ptBR.md`, `docs/FORK.md` | How to run your own VPS from a fork, in pt-BR first and its English mirror: what to change, and the manual steps on Hostinger and GitHub. Change both when a file they name changes. |
 | `docs/MOCKUPS.ptBR.md`, `docs/MOCKUPS.md` | The homepage mockups and how to change them, in pt-BR first and its English mirror; the wiki's `Maquetes` and `Mockups` pages are the same. Change them together. |
@@ -69,11 +69,11 @@ the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/D
 | `docs/PGX.ptBR.md`, `docs/PGX.md` | PGX here: what it is and is not, its cost, what `pgx.nix` does, using it, backups, updating, turning it off, in pt-BR first and its English mirror. Change both together, and with `pgx.nix`. |
 | `docs/HERMES.ptBR.md`, `docs/HERMES.md` | Hermes Agent here: what it is, what `hermes.nix` picks, the one-time setup of its secrets on the box, checking it, updating and turning it off, in pt-BR first and its English mirror. Change both together, and with `hermes.nix`. |
 | `docs/HERMES-OMP.ptBR.md`, `docs/HERMES-OMP.md` | omp, the default coding worker of Hermes: the rule (every task that writes or reviews code goes through omp), the eight layers the owner can edit and which wins, what stays fixed, and omp as an OpenRig seat. In pt-BR first and its English mirror. Change both together, and with `hermes/omp.yml`, the wrapper and the skill. |
-| `docs/RUNTIMES.ptBR.md`, `docs/RUNTIMES.md` | The OpenRig runtimes compared; the wiki's `Runtimes` pages match. pt-BR first, English mirror; change both together, and with `openrig.nix`. |
-| `docs/AWESOME-HERMES.ptBR.md`, `docs/AWESOME-HERMES.md` | What exists for Hermes judged against this box: in use, worth a test, or left out with the reason; and the gaps piabrota has to write itself. Each setting it lists is checked at the pinned commit. In pt-BR first and its English mirror. Change both together, and with `hermes.nix`. |
-| `docs/HERMES-FORKS.md` | Should piabrota fork Hermes (2026-11-03): upstream tailored from outside, patch files in nix-os, or a fork; the cost of each and the signals that would make a fork worth it. Today: no fork. English only, by the owner's order. |
+| `docs/RUNTIMES.ptBR.md`, `docs/RUNTIMES.md`, `docs/REELS.ptBR.md`, `docs/REELS.md` | The OpenRig runtimes compared; the Reels Fabric; the wiki's `Runtimes` and `Reels` pages match. pt-BR first, English mirror; change both together, and with `openrig.nix` (REELS: and `reels/profile.json`). |
+| `docs/AWESOME-HERMES.ptBR.md`, `docs/AWESOME-HERMES.md` | What exists for Hermes judged against this box: in use, worth a test, or left out with the reason; and the gaps to write ourselves. Each setting is checked at the pinned commit. In pt-BR first and its English mirror. Change both together, and with `hermes.nix`. |
+| `docs/HERMES-FORKS.md` | Should piabrota fork Hermes: upstream tailored from outside, patch files in nix-os, or a fork; the cost of each and the signals for a fork. Today: no fork. English only, by the owner's order. |
 | `docs/HERMES-SKILLS.md` | The owner's skills in Hermes: the 29 commands, the 22 left out and why, and why h0ffmann/skills is a pin by commit and not a git submodule. English only, by the owner's order. Change it with `ownerSkillPaths` in `hermes.nix`. |
-| `docs/FEEDS.ptBR.md`, `docs/FEEDS.md` | The personal feed: how to run it, the outputs, the score, the interests, the sources left out. In pt-BR first and its English mirror. Change both together, and with `feeds.toml`. |
+| `docs/FEEDS.ptBR.md`, `docs/FEEDS.md` | The personal feed: how to run it, the outputs, the score, the sources left out. In pt-BR first and its English mirror. Change both together, and with `feeds.toml`. |
 | `docs/PAPERCLIP.md` | Paperclip on piabrota2, **off** (`enable = false`): turn it on, data on the disk, erase it; then Hermes link, setup, cost, updating. English only, by the owner's order. |
 | `docs/CLAUDE_PROJECT.ptBR.md`, `docs/CLAUDE_PROJECT.md` | How to set up a Claude Project on a fork, in pt-BR first and its English mirror. For people only: an agent working here does not act on them. Change both together. |
 | `.devin/wiki.json`, `scripts/deepwiki-check.jq` | How [DeepWiki](https://deepwiki.com/piabrota/nix-os) writes this repository's wiki: notes on what it must know and its pages, one per part of the repository. Add or change a page when a module or a doc it names changes. CI's `jq` check keeps it within DeepWiki's limits (at most 30 pages, unique titles, existing parents, at most 100 notes of 10,000 characters). DeepWiki rebuilds from `main`; the wiki is not in this repository. |
@@ -108,9 +108,8 @@ an app's own data stays in SQLite.
 
 ## Resource budget
 
-`piabrota` is on Hostinger's **KVM 1** plan (hPanel, 2026-10-29, from the owner). `piabrota2` is on
-the **KVM 4** plan (the owner, 2026-11-03); its row is Hostinger's plan list, not yet read on the
-machine:
+`piabrota` is on Hostinger's **KVM 1** plan (hPanel, from the owner). `piabrota2` is on **KVM 4** (the
+owner); its row is Hostinger's plan list, not read on the machine:
 
 | Host | CPU | RAM | Disk | Bandwidth |
 |---|---|---|---|---|
@@ -153,9 +152,8 @@ What `tools.nix` does for the budget:
 - `zramSwap` gives compressed swap in RAM, up to 50 % of memory.
 - `programs.command-not-found` is off: it needs a channel database.
 
-Measured against nixos-26.05 (13050.08d3a97586f6) on 2026-10-29, adding `tools.nix` made the
-system closure 25.9 MiB smaller (1.49 GiB to 1.46 GiB): the tools add about 38 MiB, the removed
-documentation saves more.
+Measured on 2026-10-29 (nixos-26.05), `tools.nix` made the system closure 25.9 MiB smaller (1.49 to
+1.46 GiB): the tools add about 38 MiB, the removed documentation saves more.
 
 `deploy.nix` sets garbage collection (weekly, paths older than 14 days, and when free disk falls under 2 GiB), a weekly store optimisation,
 five boot generations and `max-jobs = 1`, `cores = 1`. Change them there, not in a second module.
@@ -189,7 +187,7 @@ Update nixpkgs with `nix flake update` in its own PR; CI runs with `--no-update-
 
 ## Deploy
 
-An agent never deploys and never runs `just deploy`. To look at the box while debugging, it may log in as `observer` (`observer.nix`) and run read-only commands; it never asks the owner for root access to fix something there: the fix goes in a PR. It prepares the change and its PR; the merge
+An agent never deploys and never runs `just deploy`. To look at the box while debugging, it may log in as `observer` (`observer.nix`) for read-only commands; it never asks the owner for root access: the fix goes in a PR. It prepares the PR; the merge
 to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 
 `deploy.yml` builds the system on the GitHub runner, and deploy-rs copies it to the VPS over SSH
@@ -218,7 +216,7 @@ Ubuntu while 24.04 is supported.
 
 ## Commits and PRs
 
-- **Hard rule: every PR is in English only** (the owner, 2026-11-03). The title, the body, the
+- **Hard rule: every PR is in English only** (the owner). The title, the body, the
   commit messages, issues and review comments are in English, with no pt-BR half and no mirror.
   Write the body with the sections of the `bipr` skill of
   [h0ffmann/ptbr-writer](https://github.com/h0ffmann/ptbr-writer/blob/main/skills/bipr/SKILL.md)
