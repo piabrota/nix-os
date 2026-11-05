@@ -48,8 +48,8 @@ write the task that a seat gets, and both for a code task on a seat.
 3. **Two seats at the same time, no more.** The unit has `MemoryMax=2G`, `MemoryHigh=1536M`
    (the memory of one seat: the [reference](../hermes-omp/references/openrig-seats.md)). Run
    `kvm4-health` before you start. A third seat needs the owner.
-4. **Seats run without approval prompts, and you never change that.** The unit sets
-   `OPENRIG_YOLO=1`: the owner's decision in PR 124 (the
+4. **Seats run without approval prompts, and you never change that.** The rig sets
+   `permission_policy: builtin:yolo`: the owner's decision in PR 124 (the
    [reference](../hermes-omp/references/openrig-seats.md)). The deny rules of `hermes/omp.yml`
    are the guard. Never answer a trust or consent prompt of OpenRig. Show it to the owner
    (`references/safety.md`).

@@ -120,11 +120,17 @@ in
         # Loopback by name, so a Tailscale interface (none here) would not add a listener.
         OPENRIG_BIND_HOST = "127.0.0.1";
         OPENRIG_URL = url;
-        # Seats run without approval prompts and without a kernel rig: the owner's decision (PR 124)
-        # and the reasons are in hermes/skills/hermes-omp/references/openrig-seats.md. The deny
-        # rules of hermes/omp.yml stay the guard.
+        # Seats run without approval prompts: the owner's decision (PR 124). The rig's
+        # `permission_policy: builtin:yolo` (openrig/specs/rigs/piabrota-dev/rig.yaml) does that. This
+        # variable alone does not: a rig with no policy gets the floor, and a policy wins over it. The
+        # reasons are in hermes/skills/hermes-omp/references/openrig-seats.md. The deny rules of
+        # hermes/omp.yml stay the guard. No kernel rig: this box has no Claude Code or Codex.
         OPENRIG_YOLO = "1";
         OPENRIG_NO_KERNEL = "1";
+        # The daemon setting recovery.provider_auth_env_allowlist. It names the variable only, never a
+        # value. The value stays in the unit's root-only EnvironmentFile. A seat whose model is
+        # `anthropic/<id>` then gets the key (the double opt-in of OpenRig). Other variables stay out.
+        OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST = "ANTHROPIC_API_KEY";
         # tmux's socket goes here (a private 0700 directory of the unit), not in /tmp.
         TMUX_TMPDIR = "/run/openrig";
         # The system user has no login shell; tmux and the seats need a real one.

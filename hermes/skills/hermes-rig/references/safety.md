@@ -25,13 +25,13 @@ access. The safety of the box is therefore the loopback bind, the unit's sandbox
    of `rig doctor` that say "Run `rig setup`" do not apply to you.
 4. **Never pair, add or use remote hosts.** `rig host ...` and any `--host <id>` are denied. They
    reach other machines over SSH. This box runs one instance.
-5. **Never change a seat's permissions.** Seats run without approval prompts: the unit sets
-   `OPENRIG_YOLO=1`, the owner's decision in PR 124 (the
+5. **Never change a seat's permissions.** Seats run without approval prompts: the rig sets
+   `permission_policy: builtin:yolo`, the owner's decision in PR 124 (the
    [reference](../../hermes-omp/references/openrig-seats.md)). The deny rules of `hermes/omp.yml`
    are the guard. Denied for you: `rig seat set-permissions`, `rig policy apply`, `--policy`,
    `--permission-mode`, `--codex-permissions`, `--non-interruptive`, `--dangerously-interact`,
    `--type-without-checking` and `OPENRIG_YOLO`. If a seat waits on a trust or consent prompt,
-   show it to the owner. The specs set no permission policy.
+   show it to the owner. Do not add, remove or change the `permission_policy` of a spec.
 6. **Never put a secret in a spec, a task, a message or a queue item.** A spec and a message are
    readable by the daemon, stored in its database and visible in a pane. `rig up --env K=V` is
    visible to local processes: no secrets there either.

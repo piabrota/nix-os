@@ -41,7 +41,7 @@ Required: `version` (use `"0.2"`), `name`, `pods` (at least one).
 |Field|Notes|
 |---|---|
 |`summary`|Text for people.|
-|`permission_policy`|`builtin:locked`, `builtin:standard`, `builtin:open`, `builtin:yolo`, `builtin:auto`, a relative path to a policy file, or `none` (the floor, recorded as a choice). A bare name such as `yolo` is refused. The specs of this repository set none; do not add one without the owner.|
+|`permission_policy`|`builtin:locked`, `builtin:standard`, `builtin:open`, `builtin:yolo`, `builtin:auto`, a relative path to a policy file, or `none` (the floor, recorded as a choice). A bare name such as `yolo` is refused. `piabrota-dev` sets `builtin:yolo` by the owner's decision (PR 124): do not change it. A rig with no policy gets the floor, and `OPENRIG_YOLO=1` does not widen it.|
 |`env`|`NAME: value` pairs for every seat. The value is not secret. Names that start `OPENRIG_` are reserved.|
 |`startup`, `culture_file`, `docs`, `workspace`, `services`, `managed_blocks`, `non_interruptive`|Optional. `non_interruptive` accepts harness warnings: do not set it.|
 |`edges`|Cross-pod edges. Use `pod.member` on both ends.|
@@ -135,7 +135,8 @@ Status: planned
   warning: dev.reviewer: permission_policy absent; launch_posture=floor
 ```
 
-The two warnings are expected: the spec leaves the policy to the unit. What each level catches, tested:
+The two warnings came while the spec had no policy. `piabrota-dev` now sets `builtin:yolo`, so they
+should go (not run). What each level catches, tested:
 
 |Mistake|`spec validate`|`up --plan`|
 |---|---|---|

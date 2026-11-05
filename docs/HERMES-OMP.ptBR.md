@@ -111,8 +111,11 @@ pkgs.callPackage ./omp/wrapper.nix {
 O wrapper carrega o `hermes/omp.yml` sozinho, então o seat tem as mesmas regras de bloqueio de uma
 execução do Hermes. O runner do OpenRig passa ao omp só a `ANTHROPIC_API_KEY`, e só para um modelo
 `anthropic/<id>`. O wrapper move um token da assinatura (`sk-ant-oat...`) dessa variável para a
-`ANTHROPIC_OAUTH_TOKEN`. As outras configurações da unit do openrig (`OPENRIG_NO_KERNEL=1`,
-`OPENRIG_YOLO=1`, o socket do tmux, o `lsof`) e o motivo de cada uma estão em
+`ANTHROPIC_OAUTH_TOKEN`. O seat recebe a chave só depois de dois opt-ins: a unit nomeia a variável
+em `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST`, e o modelo do seat é `anthropic/<id>`. Os seats
+rodam sem pedido de aprovação porque o rig define `permission_policy: builtin:yolo`; o
+`OPENRIG_YOLO=1` da unit não faz isso. As outras configurações da unit do openrig
+(`OPENRIG_NO_KERNEL=1`, o socket do tmux, o `lsof`) e o motivo de cada uma estão em
 [`references/openrig-seats.md`](../hermes/skills/hermes-omp/references/openrig-seats.md), na skill.
 
 O `hermes/omp.yml` deixa o seat usar `rig send`, `rig queue` e `rig whoami`. Ele recusa `rig setup`,
