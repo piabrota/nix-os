@@ -3,7 +3,7 @@
 [English](RUNTIMES.md)
 
 Runtime é o programa que um seat roda. O campo `runtime:` do membro, na spec de uma rig, o nomeia.
-O OpenRig 0.7.7 traz seis embutidos: `claude-code`, `codex`, `pi`, `omp`, `terminal` e `stub`. Ele
+O OpenRig traz seis embutidos (como lidos na v0.7.7): `claude-code`, `codex`, `pi`, `omp`, `terminal` e `stub`. Ele
 também carrega harnesses da comunidade, que a spec nomeia como `runtime: <nome>`. Esta página os
 compara e diz quais esta máquina roda. O resto da instalação do OpenRig está em
 [`OPENRIG.md`](OPENRIG.md).

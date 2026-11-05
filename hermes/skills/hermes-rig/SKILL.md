@@ -13,7 +13,7 @@ metadata:
 
 # hermes-rig
 
-[OpenRig](https://github.com/mvschwarz/openrig) (v0.7.7) is a control plane for teams of coding
+[OpenRig](https://github.com/mvschwarz/openrig) (the version pinned in `openrig/package.nix`) is a control plane for teams of coding
 agents. A daemon keeps the state. Each agent is a **seat**: a program in a tmux pane. The command
 is the systemd unit `openrig` on `127.0.0.1:7433` (the web UI is on at that address, for the
 owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp` or

@@ -1,4 +1,4 @@
-# OpenRig (github.com/mvschwarz/openrig, Apache-2.0), built from source at a release tag. The
+# OpenRig (github.com/mvschwarz/openrig, Apache-2.0), built from source at the pinned commit. The
 # source is an npm workspace (daemon, UI, TUI, CLI). This file repeats the steps of
 # scripts/build-package.sh, which needs git and the network: it builds the daemon, the UI, the TUI
 # and the CLI with tsc and vite, writes the build stamp, makes the context packs, and puts the
@@ -9,10 +9,11 @@
 # lock's optional package @esbuild/linux-x64; nothing is downloaded. better-sqlite3
 # 13 ships prebuilt .node files in its tarball: they are removed here and the addon is compiled
 # from the bundled SQLite source. Bump `version`, `commit` and both hashes together.
+# A job bumps `version`, `commit` and both hashes: scripts/openrig-bump.sh
 { lib, buildNpmPackage, fetchFromGitHub, makeWrapper, nodejs_24 }:
 let
   version = "0.7.7";
-  # The commit of the tag v${version}.
+  # The commit that is built: a release tag, or a commit of upstream main (scripts/openrig-bump.sh).
   commit = "f3d8bac42e1f874aa0f784e412909fab27dded1b";
 in
 (buildNpmPackage.override { nodejs = nodejs_24; }) {

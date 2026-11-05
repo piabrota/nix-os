@@ -28,7 +28,7 @@ basic auth. Hermes operates the rig with the `rig` CLI and the skill `hermes-rig
 
 ## The status today
 
-- OpenRig 0.7.7 runs on `piabrota2`, and its UI is on.
+- OpenRig (the version pinned in `openrig/package.nix`) runs on `piabrota2`, and its UI is on.
 - The rig is specified in `openrig/specs/rigs/piabrota-dev/rig.yaml`. Both seats run without approval
   prompts (`permission_policy: builtin:yolo`, the owner's decision). They use the owner's Claude
   subscription.

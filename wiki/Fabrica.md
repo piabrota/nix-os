@@ -28,7 +28,7 @@ rig.piabrota.art, atrás de basic auth. O Hermes comanda o rig com a CLI `rig` e
 
 ## O estado de hoje
 
-- O OpenRig 0.7.7 roda na `piabrota2`, e a interface está ligada.
+- O OpenRig (a versão fixada em `openrig/package.nix`) roda na `piabrota2`, e a interface está ligada.
 - O rig está especificado em `openrig/specs/rigs/piabrota-dev/rig.yaml`. Os dois seats rodam sem pedir
   aprovação (`permission_policy: builtin:yolo`, decisão do dono). Eles usam a assinatura do Claude do
   dono.

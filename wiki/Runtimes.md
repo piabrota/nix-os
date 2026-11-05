@@ -3,7 +3,7 @@
 [English](Runtimes-EN)
 
 Runtime é o programa que um seat do [OpenRig](https://github.com/mvschwarz/openrig) roda. Esta
-página é um mapa dos seis que o OpenRig 0.7.7 traz embutidos, dos harnesses da comunidade e de quais
+página é um mapa dos seis que o OpenRig traz embutidos (como lidos na v0.7.7), dos harnesses da comunidade e de quais
 a `piabrota2` roda. O guia completo, com uma linha de spec, as credenciais, o mapeamento de
 permissão e o estado de cada um, é o
 [`docs/RUNTIMES.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/RUNTIMES.ptBR.md). Ele
