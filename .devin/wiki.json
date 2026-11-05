@@ -128,6 +128,11 @@
       "title": "Claude and MCP setup",
       "purpose": ".claude/skills (the vendored skills and their licences), .mcp.json (mcp-nixos, OpenPencil, DeepWiki) and docs/CLAUDE_PROJECT.md.",
       "parent": "Working on this repository"
+    },
+    {
+      "title": "The thesis rig",
+      "parent": "OpenRig",
+      "purpose": "openrig/specs/rigs/wave-forecaster-thesis, openrig/specs/agents/thesis-*, thesis/ and docs/THESIS.md: six Claude Code seats (editor, librarian, three writers, reviewer; only the librarian has the web) write one UFRJ Escola Politécnica final-year project in pt-BR, one independent section at a time, and the command `thesis` (POSIX sh, jq, awk, pandoc, pdfLaTeX; no model, no network) does the mechanical work: thesis fetch claims a section with an atomic file, submit runs lint, build-section, cite-check, slop and readability, verdict records a sha256 of the accepted text, assemble and publish build and hand over the PDF to /var/lib/rig-outbox/wave-forecaster-thesis. Covers the project tree (thesis.json, sections, sources, refs.bib, REFERENCES.md, state, claims, review, build), the template (h0ffmann/forecast-energy-demand pinned by commit, an overlay for the UFRJ front pages, the ABNT author-date CSL instead of coppe.bst, the Lua filter, raw TeX off, the template interface for a second template such as CoppeTeX), the four gates and what each cannot prove (slop is a local heuristic, not a detector), the UFRJ rules (Resolução 05/2012 in force, Norma 2026 a proposal), the option piabrota.openrig.thesis.enable (off), and the deployment notes. No seat has run the rig; the proved part is the toolkit on a sample thesis."
     }
   ]
 }

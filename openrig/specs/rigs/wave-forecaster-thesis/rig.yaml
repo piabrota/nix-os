@@ -1,0 +1,199 @@
+# The thesis rig of wave-forecaster research: six Claude Code seats write one final-year thesis
+# (Projeto de Graduação, Escola Politécnica, UFRJ) in Brazilian Portuguese, as a PDF. The editor
+# plans it. Writers each fetch one section, write it to the pinned template and hand it in. The
+# librarian checks every source on the web. The reviewer is the last gate. The toolkit `thesis`
+# (thesis/, docs/OPENRIG.md) does the work that needs no model: fetch, build, lint, gates, assemble.
+# Every seat runs Claude Code (`runtime: claude-code`), the only model is Claude, and only the
+# librarian may use the web. The rig never merges and never publishes anywhere but the outbox.
+#
+# Before the first start, `piabrota.openrig.thesis.enable` must be on: the option makes the folders
+# below, the outbox and the toolkit. Without it `thesis` is not on the seats' PATH.
+#
+# Run it BY PHASES, TWO SEATS AT A TIME. The unit `openrig` has MemoryMax=2G. The memory of a Claude
+# Code seat is NOT measured. Until the owner has measured it, neither the owner nor Hermes may run
+# more than two seats at once, and no seat may start another one. Do not run this rig at the same
+# time as another rig (docs/OPENRIG.md).
+#   rig import /etc/openrig/specs/rigs/wave-forecaster-thesis/rig.yaml --materialize-only
+# That records the six seats and starts none. A seat that never ran starts with
+# `rig launch wave-forecaster-thesis <pod>.<member>` (docs/reference/rig-spec.md, "Starting one
+# materialized seat"). A seat that ran before starts blank with
+#   rig seat launch <seat> --fresh --reason "<why>"
+# The seat names are <pod>-<member>@wave-forecaster-thesis: plan-editor, writing-writer-a,
+# writing-writer-b, writing-writer-c, writing-librarian, review-reviewer. Hermes talks to a seat with
+# `rig send <seat> "<task>" --verify`.
+#   phase 0, brief:     the owner decides title, author, advisor, course (Curso de Engenharia ...),
+#                       the sections, which results exist and which sources to use. The owner gives
+#                       them to the operator, who sends them to the editor.
+#   phase 1, plan:      editor + librarian (two seats). The editor runs `thesis new <slug>` and
+#                       fills thesis.json, notes/glossary.md and notes/facts.md. The librarian
+#                       verifies the sources and writes refs.bib and REFERENCES.md. Done when
+#                       `thesis status <slug>` shows every section `todo` with its sources verified.
+#                       Then stop both.
+#   phase 2, writing:   writer-a and writer-b (two seats), then writer-c. Each loops `thesis fetch`,
+#                       writes, `thesis submit`. A writer that needs a source asks the librarian:
+#                       start the librarian in place of a writer, so that two seats run. All three
+#                       writers at once only after the owner has measured the memory and raised
+#                       the limit. Done when no section is `todo`.
+#   phase 3, review:    reviewer with the editor or one writer (two seats at most). The reviewer
+#                       runs the gates, reads each section against its sources and records a
+#                       verdict. A `revise` verdict goes back to a writer: start it in place of
+#                       another seat. At most 3 rounds for a section, then the owner decides.
+#   phase 4, assembly:  editor + reviewer. The editor runs `thesis assemble` and `thesis pdf-qa`.
+#                       The reviewer runs the final gates and writes review/final.md. The editor
+#                       runs `thesis publish`. The owner reads the PDF and decides. The ficha
+#                       catalográfica, the signatures and the deposit are the owner's, by hand.
+# A rig keeps the spec it was made from: after a change here, `rig archive` it and import it again.
+version: "0.2"
+name: wave-forecaster-thesis
+summary: An editor, three writers, a librarian and a reviewer that write one UFRJ final-year thesis in pt-BR, one independent section at a time
+
+# `builtin:yolo` gives a Claude seat `--dangerously-skip-permissions`: without a policy a seat gets
+# the floor (`--permission-mode acceptEdits`), and in a pane nobody answers its prompts. The guard
+# is /etc/claude-code/managed-settings.json (openrig.nix): its deny rules hold in bypass mode. They
+# are no sandbox; the unit's sandbox is the hard layer. See rigs/wave-forecaster-dev/rig.yaml.
+permission_policy: builtin:yolo
+
+# OpenRig starts each pane with a clean environment. NixOS builds the pane's PATH from the profile
+# of $USER (users.users.openrig.packages in openrig.nix), which has `thesis`, pandoc, TeX and the
+# `claude` of the box. THESIS_HOME and THESIS_OUTBOX tell `thesis` where the projects and the
+# finished PDFs go; they match its own defaults. Values are not secret.
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+  THESIS_HOME: /var/lib/openrig/work/wave-forecaster-thesis
+  THESIS_OUTBOX: /var/lib/rig-outbox/wave-forecaster-thesis
+
+# `claude_permissions` records native Claude tool rules for one member (docs/reference/rig-spec.md,
+# "Per-member Claude tool rules"). It accepts only `allow` and `deny` lists of `Tool` or
+# `Tool(specifier)` strings, and bare tool names pass the check. A bare name in `deny` removes the
+# tool from the seat, even in bypass mode. In bypass mode an `allow` rule does not constrain: the
+# librarian's `allow` only records its intent. Native enforcement is not proved (docs/OPENRIG.md).
+# `Edit(...)` rules also cover `Write`. A path with `//` at the start is absolute.
+pods:
+  - id: plan
+    label: Plan
+    summary: The editor turns the owner's brief into thesis.json, assembles the accepted sections into the PDF and publishes it.
+    members:
+      - id: editor
+        agent_ref: "local:../../agents/thesis-editor"
+        profile: default
+        runtime: claude-code
+        # A full Claude model id, as in rigs/wave-forecaster-dev/rig.yaml. The member names the
+        # model too: it wins over the AgentSpec default.
+        model: claude-sonnet-5-5
+        # Its own folder (StateDirectory in openrig.nix): the norms land in its CLAUDE.md.
+        cwd: /var/lib/openrig/work/wave-forecaster-thesis/editor
+        claude_permissions:
+          # No web. The editor never edits a section's prose: it sends it back.
+          deny:
+            - WebFetch
+            - WebSearch
+            - Edit(//var/lib/openrig/work/wave-forecaster-thesis/projects/*/sections/**)
+    edges: []
+
+  - id: writing
+    label: Writing
+    summary: Three writers write independent sections. The librarian checks and records every source.
+    members:
+      - id: writer-a
+        agent_ref: "local:../../agents/thesis-writer"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-thesis/writer-a
+        claude_permissions:
+          deny: [WebFetch, WebSearch]
+      # The same agent spec as writer-a: only the folder, and so the seat name, differ.
+      - id: writer-b
+        agent_ref: "local:../../agents/thesis-writer"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-thesis/writer-b
+        claude_permissions:
+          deny: [WebFetch, WebSearch]
+      - id: writer-c
+        agent_ref: "local:../../agents/thesis-writer"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-thesis/writer-c
+        claude_permissions:
+          deny: [WebFetch, WebSearch]
+      - id: librarian
+        agent_ref: "local:../../agents/thesis-librarian"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-thesis/librarian
+        claude_permissions:
+          # The only seat with the web. In bypass mode the allow rules record intent only.
+          allow: [WebFetch, WebSearch]
+    edges:
+      # A writer and the librarian are peers: the writer asks for a source, the librarian answers.
+      # No launch order, no escalation.
+      - kind: collaborates_with
+        from: writer-a
+        to: librarian
+      - kind: collaborates_with
+        from: writer-b
+        to: librarian
+      - kind: collaborates_with
+        from: writer-c
+        to: librarian
+
+  - id: review
+    label: Review
+    summary: The reviewer runs the four gates, reads each section against its sources and records the verdict. It edits no prose.
+    members:
+      - id: reviewer
+        agent_ref: "local:../../agents/thesis-reviewer"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-thesis/reviewer
+        claude_permissions:
+          # No web. The reviewer writes only review/ and verdicts: no edit of a section.
+          deny:
+            - WebFetch
+            - WebSearch
+            - Edit(//var/lib/openrig/work/wave-forecaster-thesis/projects/*/sections/**)
+    edges: []
+
+edges:
+  # Both kinds of delegation set the launch order, and a cycle is refused. The graph is a DAG:
+  # editor, then librarian and writers, then reviewer. `delegates_to` also names the editor as the
+  # orchestrator of each writer and of the librarian for the queue (docs/reference/edge-types.md).
+  # The editor hands the source list to the librarian and the section work to the writers.
+  - kind: delegates_to
+    from: plan.editor
+    to: writing.librarian
+  - kind: delegates_to
+    from: plan.editor
+    to: writing.writer-a
+  - kind: delegates_to
+    from: plan.editor
+    to: writing.writer-b
+  - kind: delegates_to
+    from: plan.editor
+    to: writing.writer-c
+  # A writer hands a drafted section to the reviewer. The librarian hands its sources too: the
+  # reviewer reads sources/<key>.md to check each claim.
+  - kind: delegates_to
+    from: writing.writer-a
+    to: review.reviewer
+  - kind: delegates_to
+    from: writing.writer-b
+    to: review.reviewer
+  - kind: delegates_to
+    from: writing.writer-c
+    to: review.reviewer
+  - kind: delegates_to
+    from: writing.librarian
+    to: review.reviewer
+  # The reviewer and the editor are peers: the reviewer returns the final gates and the open items
+  # to the editor. This kind sets no launch order, so it makes no cycle.
+  - kind: collaborates_with
+    from: review.reviewer
+    to: plan.editor

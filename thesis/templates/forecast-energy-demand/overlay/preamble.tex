@@ -1,0 +1,61 @@
+% Overlay preamble of the thesis toolkit (piabrota/nix-os, MPL-2.0). It is read AFTER the pinned
+% template's shared/thesis_pack.tex and pandoc's own table and citation macros, and it changes no
+% pinned file. What it adds to the template:
+%   - a Times clone (TeX Gyre Termes) as the body font: Res. 05/2012 asks for "Times New Roman 12";
+%   - single spacing in quotes, captions, references and footnotes (SiBI Manual, as read in snippets);
+%   - the sheets that the template lacks: resumo, abstract, agradecimentos, dedicatória;
+%   - captions in the ABNT form "Figura 1 -- text", table caption above, figure caption below.
+\usepackage[T1]{fontenc}
+\usepackage{tgtermes}
+\usepackage{setspace}
+\usepackage{caption}
+\captionsetup{font={small,stretch=1},labelsep=endash,skip=6pt}
+\captionsetup[table]{position=above}
+\captionsetup[figure]{position=below}
+\usepackage[hidelinks]{hyperref}
+
+% Sheets of the pre-textual part: a centred bold title, then the text.
+\newcommand{\thesispretitle}[1]{\begin{center}\bfseries\Large #1\end{center}\vspace{0.6cm}}
+\newenvironment{thesisreference}{\begin{singlespace}\noindent\small}{\end{singlespace}\vspace{0.6cm}}
+
+% A long quotation (three lines or more): 4 cm indent, small type, single spacing (NBR 10520).
+\renewenvironment{quote}
+  {\begin{singlespace}\small\list{}{\leftmargin=4cm\rightmargin=0pt\topsep=6pt}\item\relax}
+  {\endlist\end{singlespace}\par}
+
+% The reference list: single spacing, left aligned, one blank line between entries.
+\let\thesisCSLRefs\CSLReferences
+\let\thesisendCSLRefs\endCSLReferences
+\renewenvironment{CSLReferences}[2]
+  {\begin{singlespace}\raggedright\thesisCSLRefs{#1}{#2}}
+  {\thesisendCSLRefs\end{singlespace}}
+\setlength{\emergencystretch}{3em}
+
+% Monospace for URLs and code: TeX Gyre Cursor. The default T1 typewriter (ec) is a bitmap font
+% that the small TeX set does not carry.
+\usepackage{tgcursor}
+% Figures are `figures/<name>` in the markdown: the folder next to pt/ in the build tree.
+\graphicspath{{./}{../}{../shared/fig/}}
+
+% Chapter and section titles: Res. 05/2012 allows type up to Times 24. The class's \huge and \Huge are 24.88 pt.
+\makeatletter
+\renewcommand\huge{\@setfontsize\huge{24}{28}}
+\renewcommand\Huge{\@setfontsize\Huge{24}{28}}
+\makeatother
+
+% The page layout, written to the log for `thesis pdf-qa` (one value a line; the margins follow from
+% 1in + offset + margin). The text block of the pinned template is what the Poli rule measures.
+\AtEndDocument{%
+  \typeout{thesis-layout paperwidth=\the\paperwidth}%
+  \typeout{thesis-layout paperheight=\the\paperheight}%
+  \typeout{thesis-layout hoffset=\the\hoffset}%
+  \typeout{thesis-layout voffset=\the\voffset}%
+  \typeout{thesis-layout oddsidemargin=\the\oddsidemargin}%
+  \typeout{thesis-layout topmargin=\the\topmargin}%
+  \typeout{thesis-layout headheight=\the\headheight}%
+  \typeout{thesis-layout headsep=\the\headsep}%
+  \typeout{thesis-layout textwidth=\the\textwidth}%
+  \typeout{thesis-layout textheight=\the\textheight}%
+  \typeout{thesis-layout baselineskip=\the\baselineskip}%
+  \typeout{thesis-layout baselinestretch=\baselinestretch}%
+}

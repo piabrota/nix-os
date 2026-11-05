@@ -1,0 +1,184 @@
+$documentclass-line$
+% The thesis of one project, made by `thesis assemble` from the pinned template
+% (h0ffmann/forecast-energy-demand) and this overlay. Pandoc fills this file from build/meta.json,
+% so every value from thesis.json is escaped for LaTeX. Do not edit: the next build rewrites it.
+\input{../shared/thesis_pack}
+$common.latex()$
+\input{../overlay/preamble}
+\hypersetup{pdftitle={$title-plain$},pdfauthor={$author-plain$},pdflang={pt-BR}}
+\begin{document}
+\frontmatter
+
+% --- Capa (norma 2026, 3: UFRJ logo left, Poli logo right, same height, the name in three lines)
+\thispagestyle{empty}
+\noindent
+$if(has-ufrj-logo)$\includegraphics[height=2.4cm]{../assets/ufrj-logo}$else$\rule{0pt}{2.4cm}$endif$%
+\hfill\includegraphics[height=2.4cm]{../shared/fig/Polinew-eps-converted-to}
+
+\vspace{1.2cm}
+\begin{center}
+\singlespacing
+\large UNIVERSIDADE FEDERAL DO RIO DE JANEIRO\\
+ESCOLA POLITÉCNICA\\
+CURSO DE $course-upper$
+
+\vspace{3cm}
+\Large\bfseries $title-upper$
+
+\vspace{3cm}
+\large\mdseries $author$
+\end{center}
+\vfill
+\begin{center}
+\singlespacing
+Rio de Janeiro\\
+$year$
+\end{center}
+\clearpage
+
+% --- Folha de rosto (no number, no logo)
+\thispagestyle{empty}
+\begin{center}
+\singlespacing
+\large UNIVERSIDADE FEDERAL DO RIO DE JANEIRO\\
+ESCOLA POLITÉCNICA\\
+CURSO DE $course-upper$
+
+\vspace{2cm}
+\large\bfseries $title-upper$
+
+\vspace{1.5cm}
+\large\mdseries $author$
+\end{center}
+\vspace{2.5cm}
+\hfill\parbox{8cm}{\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000\singlespacing
+Projeto de Graduação apresentado ao Curso de $course$ da Escola Politécnica, Universidade Federal do Rio de Janeiro, como requisito parcial à obtenção do título de $degree$.}
+
+\vspace{1.5cm}
+\hfill\parbox{8cm}{\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000\singlespacing Orientador: $advisor$}
+\vfill
+\begin{center}
+\singlespacing
+Rio de Janeiro\\
+$month-name$ de $year$
+\end{center}
+\clearpage
+
+% --- Folha de aprovação (no number, no logo)
+\thispagestyle{empty}
+\begin{center}
+\singlespacing
+\large\bfseries $title-upper$
+
+\vspace{0.8cm}
+\large\mdseries $author$
+\end{center}
+\vspace{1cm}
+\begin{singlespace}\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000\noindent
+PROJETO DE GRADUAÇÃO SUBMETIDO AO CORPO DOCENTE DO CURSO DE $course-upper$ DA ESCOLA POLITÉCNICA DA UNIVERSIDADE FEDERAL DO RIO DE JANEIRO COMO PARTE DOS REQUISITOS NECESSÁRIOS PARA A OBTENÇÃO DO GRAU DE $degree-upper$.
+\end{singlespace}
+
+\vspace{0.8cm}\noindent Examinada por:
+\begin{flushright}
+\singlespacing
+\parbox{10cm}{\vspace{1cm}\hrulefill\\[-1pt]\centering $advisor$\\[0.9cm]}
+$for(examiners)$
+\parbox{10cm}{\hrulefill\\[-1pt]\centering $it$\\[0.9cm]}
+$endfor$
+$if(no-examiners)$
+\parbox{10cm}{\hrulefill\\[-1pt]\centering\mbox{}\\[0.9cm]}
+\parbox{10cm}{\hrulefill\\[-1pt]\centering\mbox{}\\[0.9cm]}
+$endif$
+\end{flushright}
+\vfill
+\begin{center}
+\singlespacing
+RIO DE JANEIRO, RJ -- BRASIL\\
+$month-upper$ DE $year$
+\end{center}
+\clearpage
+
+% --- Ficha catalográfica (norma 2026, 8: only the SiBI card goes on this sheet)
+\thispagestyle{empty}
+\begin{center}\singlespacing
+\vspace*{\fill}
+\fbox{\parbox{12cm}{\centering\vspace{0.5cm}
+\textbf{FICHA CATALOGRÁFICA}\\[0.5cm]
+Esta folha é reservada à ficha catalográfica. A ficha vem do Gerador de Fichas Catalográficas do SiBI/UFRJ (http://fichacatalografica.sibi.ufrj.br/) e não é gerada aqui.\\[0.5cm]
+Dados que o gerador pede: título, autor, orientador, UFRJ/Escola Politécnica/Curso de $course$, $year$, número de páginas pré-textuais (\pageref{front:last}) e de páginas textuais e pós-textuais (\pageref{body:last}).\vspace{0.5cm}}}
+\vspace*{\fill}
+\end{center}
+\clearpage
+
+$for(sections)$
+$if(it.is-dedicatoria)$
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{flushright}\begin{minipage}{0.6\textwidth}\itshape
+\input{sections/$it.file$}
+\end{minipage}\end{flushright}
+\clearpage
+$endif$
+$endfor$
+$for(sections)$
+$if(it.is-agradecimentos)$
+\thesispretitle{Agradecimentos}
+\input{sections/$it.file$}
+\clearpage
+$endif$
+$endfor$
+$for(sections)$
+$if(it.is-resumo)$
+\thesispretitle{RESUMO}
+\begin{thesisreference}
+$author-ref$. \textbf{$title$}. $year$. Projeto de Graduação (Graduação em $course$) -- Escola Politécnica, Universidade Federal do Rio de Janeiro, Rio de Janeiro, $year$. Orientador: $advisor$.
+\end{thesisreference}
+\input{sections/$it.file$}
+
+\noindent\textbf{Palavras-chave}: $for(it.keywords)$$it$$sep$; $endfor$.
+\clearpage
+$endif$
+$endfor$
+$for(sections)$
+$if(it.is-abstract)$
+\thesispretitle{ABSTRACT}
+\begin{thesisreference}
+$author-ref$. \textbf{$title$}. $year$. Undergraduate Project (Graduação em $course$) -- Escola Politécnica, Universidade Federal do Rio de Janeiro, Rio de Janeiro, $year$. Advisor: $advisor$.
+\end{thesisreference}
+\selectlanguage{english}
+\input{sections/$it.file$}
+
+\noindent\textbf{Keywords}: $for(it.keywords)$$it$$sep$; $endfor$.
+\selectlanguage{brazil}
+\clearpage
+$endif$
+$endfor$
+
+\tableofcontents
+$if(list-figures)$\listoffigures$endif$
+$if(list-tables)$\listoftables$endif$
+\clearpage
+\label{front:last}
+
+\mainmatter
+$for(sections)$
+$if(it.is-chapter)$
+\input{sections/$it.file$}
+$endif$
+$endfor$
+
+\chapter*{Referências Bibliográficas}
+\addcontentsline{toc}{chapter}{Referências Bibliográficas}
+\input{refs}
+
+$if(has-appendix)$
+\appendix
+$for(sections)$
+$if(it.is-appendix)$
+\input{sections/$it.file$}
+$endif$
+$endfor$
+$endif$
+\label{body:last}
+\backmatter
+\end{document}

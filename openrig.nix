@@ -64,6 +64,12 @@ let
   # WAVEWATCH III to Rust in h0ffmann/chaceon, a private repository. docs/OPENRIG.md,
   # "wave-forecaster-dev".
   wf = cfg.waveForecaster;
+  # The rig wave-forecaster-thesis (thesis/, docs/THESIS.md): seats that write a UFRJ final project in
+  # independent sections with the `thesis` toolkit, pandoc and TeX. Claude Code seats, like the port rig.
+  th = cfg.thesis;
+  thesisPkg = pkgs.callPackage ./thesis/default.nix { };
+  # `claude` and its deny rules serve every rig that runs Claude Code seats.
+  claudeSeats = wf.enable || th.enable;
   # One read-only token per repository of cfg.githubRead, written by hermes-github.nix.
   seatTokens = "/run/openrig-github";
   # Where a seat leaves a git bundle for Hermes. Not under /var/lib/openrig: Hermes may not read
@@ -71,6 +77,8 @@ let
   outbox = "/var/lib/rig-outbox";
   wfFolders = [ "openrig/work/wave-forecaster-dev" ]
     ++ map (seat: "openrig/work/wave-forecaster-dev/${seat}") [ "porter" "auditor" "integrator" ];
+  thFolders = [ "openrig/work/wave-forecaster-thesis" "openrig/work/wave-forecaster-thesis/projects" "openrig/work/wave-forecaster-thesis/out" ]
+    ++ map (seat: "openrig/work/wave-forecaster-thesis/${seat}") [ "editor" "writer-a" "writer-b" "writer-c" "librarian" "reviewer" ];
 
   # git credential helper of the seats: the read-only token of the repository, from the path git
   # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
@@ -215,9 +223,11 @@ let
   };
 
   # What a chaceon seat runs: `just check` (rustup's toolchain, gcc as the linker of build
-  # scripts) and `just lint-sh`, and Claude Code for the port rig. No Docker, no Vulkan, no CUDA:
+  # scripts) and `just lint-sh`. Claude Code is in claudeTools. No Docker, no Vulkan, no CUDA:
   # those gates stay with the owner.
-  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone seatClaude ];
+  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone ];
+  claudeTools = [ seatClaude ];
+  thTools = [ thesisPkg ];
 in
 {
   # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
@@ -259,6 +269,9 @@ in
     waveForecaster.enable = mkEnableOption ''
       the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
       outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
+    thesis.enable = mkEnableOption ''
+      the rig wave-forecaster-thesis: the `thesis` toolkit with pandoc and a small TeX set in the seats'
+      profile, a folder per seat, the outbox for Hermes and Claude Code seats (docs/THESIS.md)'';
     web = {
       enable = mkEnableOption "the web UI of OpenRig behind nginx, TLS and basic auth (docs/OPENRIG.md, \"The web UI\")";
       domain = mkOption {
@@ -293,7 +306,7 @@ in
       # OpenRig starts a pane shell with a clean environment, so the unit's `path` does not reach
       # it. NixOS builds the pane's PATH from the per-user profile of $USER (the RigSpec `env:` sets
       # USER, see openrig/specs/rigs/piabrota-dev/rig.yaml).
-      packages = seatTools ++ lib.optionals wf.enable wfTools;
+      packages = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
     };
     users.groups.openrig = { };
 
@@ -302,10 +315,14 @@ in
       ++ lib.optionals (cfg.githubRead != [ ]) [ "d ${seatTokens} 0750 root openrig -" ]
       # The outbox: the seats write, Hermes (group hermes) reads. The default ACL gives the group
       # read access to new files in spite of the unit's UMask. Bundles older than 14 days go.
+      ++ lib.optionals claudeSeats [ "d ${outbox} 0750 openrig hermes -" ]
       ++ lib.optionals wf.enable [
-      "d ${outbox} 0750 openrig hermes -"
       "d ${outbox}/wave-forecaster-dev 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-dev - - - - default:group::r-X"
+    ]
+      ++ lib.optionals th.enable [
+      "d ${outbox}/wave-forecaster-thesis 0750 openrig hermes 14d"
+      "a+ ${outbox}/wave-forecaster-thesis - - - - default:group::r-X"
     ];
 
     piabrota.openrig.githubRead = lib.optionals wf.enable [ "h0ffmann/chaceon" ];
@@ -316,9 +333,9 @@ in
     # The specs of openrig/specs, read-only: rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
     environment.etc."openrig/specs".source = ./openrig/specs;
 
-    # The rules of a Claude seat (the port rig's, with waveForecaster on): Claude Code reads this file
+    # The rules of a Claude seat (the port rig and the thesis rig: waveForecaster or thesis on): Claude Code reads this file
     # first, and no setting of a cloned repository can override it.
-    environment.etc."claude-code/managed-settings.json" = mkIf wf.enable {
+    environment.etc."claude-code/managed-settings.json" = mkIf claudeSeats {
       text = builtins.toJSON claudeManagedSettings;
     };
 
@@ -436,7 +453,7 @@ in
       # the seats work on clones. The NixOS default adds coreutils, findutils, grep, sed and systemd.
       # The tools of the chaceon rigs are in this path too, so that a Claude seat that OpenRig starts
       # with a clean environment (a permission mode set by `rig seat set-permissions`) finds `claude`.
-      path = seatTools ++ lib.optionals wf.enable wfTools;
+      path = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
@@ -446,12 +463,12 @@ in
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
-        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders;
+        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals th.enable thFolders;
         StateDirectoryMode = "0700";
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = work;
-        ReadWritePaths = lib.optionals wf.enable [ outbox ];
+        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ];
         UMask = "0077";
         Restart = "on-failure";
         RestartSec = "10s";
