@@ -9,7 +9,7 @@ This page does not repeat it. It says what is only true of this module and this 
 
 ## What it is
 
-[OpenRig](https://github.com/mvschwarz/openrig) (`mvschwarz/openrig`, version 0.7.7, Apache-2.0) is a
+[OpenRig](https://github.com/mvschwarz/openrig) (`mvschwarz/openrig`, the version pinned in `openrig/package.nix`, Apache-2.0) is a
 control plane for a team of AI coding agents. A daemon keeps the state in SQLite. Each agent is a
 "seat": a program in a tmux pane. The `rig` command starts rigs (teams), sends messages to seats
 and reads their output.
@@ -31,7 +31,7 @@ The rig has not yet done a task: see "Status today".
 
 ### Status today
 
-- OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
+- OpenRig (the version pinned in `openrig/package.nix`) runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
   is at https://rig.piabrota.art behind basic auth (see "The web UI").
 - Four rigs are specified. `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`) has two seats on
   `omp`, `dev-builder` and `dev-reviewer`. Both run without approval prompts
@@ -137,7 +137,7 @@ a wall. The seat norms say: never read a secret.
 
 ## Packaging
 
-`openrig/package.nix` builds OpenRig from source (the tag `v0.7.7`, commit `f3d8bac4...`) with
+`openrig/package.nix` builds OpenRig from source (the commit pinned in that file) with
 `buildNpmPackage`. The source hash and the hash of the npm dependencies are fixed. No prebuilt
 binary is used. The native addon `better-sqlite3` is compiled from its bundled source. The web UI is
 built with `tsc` and `vite`, and only its `dist` folder is installed (see "The web UI"). The package has the layout of the npm package `@openrig/cli`, so `rig` finds its daemon.
@@ -187,7 +187,7 @@ user `openrig`, with the Claude token of the seats in reach. Never expose it wit
 
 **The terminal has no token here.** The daemon asks for a terminal bearer token only on a bind that
 is not loopback or tailnet, or when `OPENRIG_TERMINAL_BEARER_TOKEN` is set (read from the source of
-0.7.7, not tested). The unit sets neither. So the gate of the terminal is the SSH tunnel, or the
+v0.7.7, not tested). The unit sets neither. So the gate of the terminal is the SSH tunnel, or the
 basic auth of nginx plus the browser boundary. A local user on the box who can reach port 7433 can
 also use the API (see "The CLI needs no state file"). A token does not fit the vhost: the UI sends it
 as an `Authorization` header, and the header of the basic auth uses the same name. The unit
@@ -316,8 +316,8 @@ exists.
 
 ## Runtimes
 
-A runtime is what a seat runs. OpenRig 0.7.7 has six (`claude-code`, `codex`, `pi`, `omp`,
-`terminal`, `stub`) and community harnesses. [`RUNTIMES.md`](RUNTIMES.md) compares them: features,
+A runtime is what a seat runs. OpenRig has six (`claude-code`, `codex`, `pi`, `omp`,
+`terminal`, `stub`; read at v0.7.7) and community harnesses. [`RUNTIMES.md`](RUNTIMES.md) compares them: features,
 pros, cons, a spec line, credentials, permission mapping, state and the status on this box.
 
 |Rig|Runtime|
@@ -476,13 +476,68 @@ that were not checked on the box.
   state folder. Use `journalctl -u openrig` (with the `observer` account) for the daemon log.
 - A full system build and the deploy. A build of the unit file and an evaluation ran.
 
+## The daily version bump
+
+`scripts/openrig-bump.sh` moves the pin of `openrig/package.nix` (`version`, `commit`, the source
+`hash` and `npmDepsHash`, and no other line). The workflow
+[`scripts/openrig-bump.workflow.yml`](../scripts/openrig-bump.workflow.yml) runs it every day at
+06:30 UTC as piabrota-ops and opens a pull request.
+
+**What it follows.** The branch `main` of `mvschwarz/openrig`, not the releases (the owner's order,
+2026-11-05). Main is unreleased code. Releases come from another branch, so the pinned commit is
+not an ancestor of main. Its `package.json` says 0.7.1, so the script builds the version string:
+the highest of `package.json`, the newest heading of `CHANGELOG.md` and the base of the current pin,
+then `-main.` and the first seven characters of the commit (for example `0.7.8-main.73cf813`). The
+daemon reports this string, and it ignores a prerelease tag when it checks `min_daemon_version`
+of a bundle: a base below the pin would refuse a bundle that the pin accepts. `rig --version` prints
+the version of upstream's `package.json` and the short commit. The commit is the proof of what runs.
+`scripts/openrig-bump.sh --channel release` follows the latest release instead, and never goes
+back. The workflow takes the same choice as its input `channel`.
+
+**One pull request.** The branch is always `agents/openrig-bump`, and the label is `openrig-bump`.
+When a pull request with this label is open, the job does not stack a second one. It computes the
+bump again from the current `main` of this repository, replaces the branch with a force push, and
+edits the title and the body of the open pull request. If upstream main has not moved since that
+pull request, the job stops without a change. The job opens a pull request only if both builds
+pass. A failed build makes the job red and opens nothing.
+
+**Install the workflow.** An agent may not write under `.github/workflows/`. Copy the draft and
+commit it:
+
+```console
+cp scripts/openrig-bump.workflow.yml .github/workflows/openrig-bump.yml
+```
+
+Run it by hand with `gh workflow run openrig-bump.yml` (add `-f channel=release` for the releases).
+It needs the same App as `flake-update.yml`: the variable `OPS_BOT_APP_ID` and the secret
+`OPS_BOT_KEY`. Pause it: disable the workflow in the Actions tab, or delete the file.
+
+**Before you merge.** The pull request is a proposal. Check these points:
+
+1. Read the list of commits in the body. Main has no release notes.
+2. Read the list of migration files. A new migration under `packages/daemon/src/db/migrations` runs
+   at the first start and only goes forward. Before the merge, take `rig snapshot <rig>` of every rig
+   and copy the daemon database (`/var/lib/openrig/.openrig/openrig.sqlite`, with its `-wal` and
+   `-shm` files, with the unit stopped: path read in `daemon-db-path.ts` of upstream, the unit sets
+   only `OPENRIG_HOME`).
+3. After the deploy, run `rig doctor`. Run `rig spec validate` on the specs against the new
+   `docs/reference/rig-spec.md` of upstream.
+4. Merge when no seat runs. The deploy restarts the unit and ends every seat (see "What a deploy
+   does to the seats").
+
+**What the bump does not prove.** The job builds the package and runs `rig --version`. It does not
+start the daemon, validate a spec or start a seat. A change of behaviour in upstream shows only on
+the box. The facts in this file and in `RUNTIMES.md` were read at v0.7.7: they do not follow the pin.
+
+**Pin back.** Revert the merge commit. After a migration this is not safe: an older daemon can
+fail to read a database that a newer daemon migrated. Restore the copy of the database first.
+
 ## Update
 
-Edit `openrig/package.nix`: change `version` and `commit` (the commit of the new tag), set both
-hashes to `lib.fakeHash`, build, and copy each real hash from the error. The names are `hash` in
-`src` and `npmDepsHash`. Check that `scripts/build-package.sh` of the new tag still matches the build
-steps in the package, and run `rig spec validate` on the specs. Update the version in this file
-and in `AGENTS.md`. Read the reference again: its facts come from one tag.
+The daily bump above does this work. By hand: run `scripts/openrig-bump.sh` (it writes the four
+lines of `openrig/package.nix`), build, and check that `scripts/build-package.sh` of the new commit
+still matches the build steps of the package. Run `rig spec validate` on the specs. Read the
+reference again: its facts come from one tag.
 
 ## Turn it off
 

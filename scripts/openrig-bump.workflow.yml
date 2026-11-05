@@ -1,0 +1,272 @@
+# Copy this file to .github/workflows/openrig-bump.yml. An agent may not write there.
+# Every day (and by hand) it moves the OpenRig pin of openrig/package.nix to the HEAD of upstream
+# main (or the latest release) with scripts/openrig-bump.sh, builds the package, and opens ONE pull
+# request as piabrota-ops: the branch agents/openrig-bump, the label openrig-bump. An open pull
+# request is refreshed, not stacked. Nothing merges by itself: a merge deploys. See docs/OPENRIG.md.
+name: openrig bump
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "main: the HEAD of upstream main (unreleased code). release: the latest release."
+        type: choice
+        options:
+          - main
+          - release
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openrig-bump
+  cancel-in-progress: false
+
+env:
+  BRANCH: agents/openrig-bump
+  # The package alone, from the flake's own nixpkgs (the NixOS module calls it the same way:
+  # pkgs.callPackage ./openrig/package.nix { }), not the whole system.
+  PKG_EXPR: 'let f = builtins.getFlake (toString ./.); in f.inputs.nixpkgs.legacyPackages.x86_64-linux.callPackage ./openrig/package.nix { }'
+
+jobs:
+  bump:
+    # The pull request and the branch logic assume the default branch.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.OPS_BOT_APP_ID }}
+          private-key: ${{ secrets.OPS_BOT_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      # Is a bump pull request open? Which upstream commit does its branch pin?
+      - name: Find the open bump pull request
+        id: open
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --label openrig-bump --state open --head "$BRANCH" \
+            --json number --jq '.[0].number // empty')
+          remote_sha=$(git ls-remote --heads origin "$BRANCH" | cut -f1)
+          pr_commit=
+          if [ -n "$pr" ] && [ -n "$remote_sha" ]; then
+            git fetch --depth 1 origin "$BRANCH"
+            pr_commit=$(git show FETCH_HEAD:openrig/package.nix | sed -n 's/^  commit = "\([0-9a-f]\{40\}\)";$/\1/p')
+          fi
+          {
+            echo "number=$pr"
+            echo "remote_sha=$remote_sha"
+            echo "pr_commit=$pr_commit"
+          } >>"$GITHUB_OUTPUT"
+          echo "open pull request: ${pr:-none}; branch on the remote: ${remote_sha:-none}; its pin: ${pr_commit:-none}"
+
+      # Needs no Nix: jq, curl and gh are on the runner. Exit 0 = current, 10 = a newer pin exists.
+      - name: Is there something newer?
+        id: check
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          CHANNEL: ${{ inputs.channel || 'main' }}
+          PR_COMMIT: ${{ steps.open.outputs.pr_commit }}
+        run: |
+          rc=0
+          sh scripts/openrig-bump.sh --check --channel "$CHANNEL" --output check.out || rc=$?
+          case $rc in
+            0)
+              echo "run=false" >>"$GITHUB_OUTPUT"
+              echo "The pin is current. Nothing to do."
+              ;;
+            10)
+              commit=$(sed -n 's/^commit=//p' check.out)
+              if [ -n "$PR_COMMIT" ] && [ "$PR_COMMIT" = "$commit" ]; then
+                echo "run=false" >>"$GITHUB_OUTPUT"
+                echo "The open pull request pins $commit already. Upstream did not move. Nothing to do."
+              else
+                echo "run=true" >>"$GITHUB_OUTPUT"
+              fi
+              ;;
+            *)
+              echo "::error::scripts/openrig-bump.sh --check failed (exit $rc)"
+              exit 1
+              ;;
+          esac
+
+      # The runner has about 14 GB free. The toolchains that nothing here uses give back about 20 GB.
+      - name: Free disk space on the runner
+        if: steps.check.outputs.run == 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+      - if: steps.check.outputs.run == 'true'
+        uses: cachix/install-nix-action@v31
+
+      # The store of the last deploy: it holds the old package already, so only the new one compiles.
+      - if: steps.check.outputs.run == 'true'
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-openrig-bump-${{ github.run_id }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-deploy-
+          save: false
+
+      - name: Build the old package
+        if: steps.check.outputs.run == 'true'
+        run: nix build --impure --expr "$PKG_EXPR" -o old --print-build-logs
+
+      - name: Move the pin
+        id: bump
+        if: steps.check.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          CHANNEL: ${{ inputs.channel || 'main' }}
+        run: |
+          sh scripts/openrig-bump.sh --channel "$CHANNEL" --output bump.out
+          cat bump.out >>"$GITHUB_OUTPUT"
+
+      # A failed build makes the job red and opens no pull request.
+      - name: Build the new package
+        if: steps.check.outputs.run == 'true' && steps.bump.outputs.changed == 'true'
+        run: |
+          if ! nix build --impure --expr "$PKG_EXPR" -o new --print-build-logs >build.log 2>&1; then
+            tail -n 120 build.log
+            echo "::error::The new OpenRig package did not build. No pull request."
+            exit 1
+          fi
+          tail -n 5 build.log
+
+      # No daemon, no state: only what the build must prove. rig --version prints the version of
+      # upstream's package.json and the short commit of the build stamp.
+      - name: Smoke test
+        if: steps.check.outputs.run == 'true' && steps.bump.outputs.changed == 'true'
+        env:
+          NEW: ${{ steps.bump.outputs.new }}
+          COMMIT: ${{ steps.bump.outputs.commit }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/rig-home"
+          printed=$(HOME="$RUNNER_TEMP/rig-home" new/bin/rig --version)
+          echo "rig --version: $printed"
+          short=$(printf '%.8s' "$COMMIT")
+          case $printed in
+            *"($short)"*) ;;
+            *)
+              echo "::error::rig --version does not show the commit $short"
+              exit 1
+              ;;
+          esac
+          stamp=new/lib/node_modules/@openrig/cli/dist/build-info.js
+          grep -q "semver: \"$NEW\"" "$stamp" || { echo "::error::the build stamp has no semver $NEW"; exit 1; }
+          grep -q "commit: \"$COMMIT\"" "$stamp" || { echo "::error::the build stamp has no commit $COMMIT"; exit 1; }
+          echo "The build stamp holds $NEW and $COMMIT."
+
+      # dix 2 (the nixpkgs of the flake) has no subcommand; flake-update.yml runs dix 3 of the registry.
+      - name: Closure difference
+        if: steps.check.outputs.run == 'true' && steps.bump.outputs.changed == 'true'
+        run: |
+          rev=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
+          nix run "github:NixOS/nixpkgs/$rev#dix" -- --color=never old new >dix.txt
+          nix path-info -S -h ./old ./new >sizes.txt
+          cat dix.txt sizes.txt
+
+      - name: Commit, push and open or refresh the pull request as piabrota-ops
+        if: steps.check.outputs.run == 'true' && steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+          CHANNEL: ${{ inputs.channel || 'main' }}
+          PR: ${{ steps.open.outputs.number }}
+          REMOTE_SHA: ${{ steps.open.outputs.remote_sha }}
+          OLD: ${{ steps.bump.outputs.old }}
+          NEW: ${{ steps.bump.outputs.new }}
+          OLD_COMMIT: ${{ steps.bump.outputs.old_commit }}
+          COMMIT: ${{ steps.bump.outputs.commit }}
+          COMPARE_URL: ${{ steps.bump.outputs.compare_url }}
+          AHEAD_BY: ${{ steps.bump.outputs.ahead_by }}
+          COMMITTED_AT: ${{ steps.bump.outputs.committed_at }}
+          MIGRATIONS: ${{ steps.bump.outputs.migrations }}
+        run: |
+          id=$(gh api "users/${SLUG}%5Bbot%5D" --jq .id)
+          git config user.name "${SLUG}[bot]"
+          git config user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+
+          # The branch starts from the current main of this repository every time.
+          git switch -c "$BRANCH"
+          git add openrig/package.nix
+          git commit -m "chore(openrig): bump OpenRig to $NEW" \
+            -m "The pin moves from $OLD ($OLD_COMMIT) to $NEW ($COMMIT)."
+          if [ -n "$REMOTE_SHA" ]; then
+            git push --force-with-lease="refs/heads/$BRANCH:$REMOTE_SHA" origin "$BRANCH"
+          else
+            git push origin "$BRANCH"
+          fi
+
+          gh label create openrig-bump --repo "$GITHUB_REPOSITORY" --color 5319e7 \
+            --description "The daily OpenRig version bump" 2>/dev/null || true
+
+          old7=$(printf '%.7s' "$OLD_COMMIT")
+          new7=$(printf '%.7s' "$COMMIT")
+          # The backticks in these printf formats are Markdown, not command substitution.
+          # shellcheck disable=SC2016
+          {
+            printf '## Summary\n\n'
+            printf 'This pull request moves OpenRig from `%s` (`%s`) to `%s` (`%s`).\n' "$OLD" "$old7" "$NEW" "$new7"
+            if [ "$CHANNEL" = release ]; then
+              printf 'It follows the latest release of mvschwarz/openrig.\n'
+            else
+              printf 'It follows the branch `main` of mvschwarz/openrig. This is unreleased code.\n'
+            fi
+            printf 'The new commit is dated %s. It is %s commits after the pinned commit ([compare](%s)).\n' "$COMMITTED_AT" "$AHEAD_BY" "$COMPARE_URL"
+            printf 'A job opens this pull request every day and replaces it while it stays open. The owner merges it.\n\n'
+
+            printf '## Tested\n\n'
+            printf -- '- The job proved its method. The source hash and the `npmDepsHash` that it computes for the old pin equal the values in `openrig/package.nix`.\n'
+            printf -- '- The job built the old package and the new package on a GitHub runner.\n'
+            printf -- '- `rig --version` of the new build shows the new commit. The build stamp holds `%s` and `%s`.\n' "$NEW" "$COMMIT"
+            printf -- '- The job compared the closures with `dix` (below).\n\n'
+            printf 'The job did **not** run these:\n\n'
+            printf -- '- The rig specs were not checked again against the new `rig-spec.md`. `rig spec validate` did not run.\n'
+            printf -- '- The daemon did not start. No seat started.\n'
+            printf -- '- The whole system was not built. The deploy builds it after the merge.\n\n'
+
+            printf '## What changed\n\n'
+            printf 'Four lines of `openrig/package.nix`: `version`, `commit`, the source `hash` and `npmDepsHash`. Nothing else.\n\n'
+            cat bump.out.notes.md
+            printf '\n<details><summary>Closure difference (dix)</summary>\n\n```text\n'
+            head -c 20000 dix.txt
+            printf '\n```\n\nClosure sizes:\n\n```text\n'
+            cat sizes.txt
+            printf '```\n\n</details>\n\n'
+
+            printf '## Risk\n\n'
+            if [ "$CHANNEL" != release ]; then
+              printf -- '- **Unreleased code.** Main has no release notes and no release testing. Read the commit list.\n'
+            fi
+            if [ "$MIGRATIONS" -gt 0 ]; then
+              printf -- '- **%s database migration files changed.** A new migration is a one-way door: the daemon migrates the database at its first start. Before you merge, run `rig snapshot <rig>` for every rig. Also copy the daemon database, `/var/lib/openrig/.openrig/openrig.sqlite` with its `-wal` and `-shm` files, while the unit is stopped.\n' "$MIGRATIONS"
+              printf -- '- **A downgrade after a migration is not safe.** To go back, revert this pull request and restore the copy of the database.\n'
+            else
+              printf -- '- No migration file changed. A revert of this pull request is a normal rollback.\n'
+            fi
+            printf -- '- **A merge deploys and restarts the unit `openrig`.** The restart ends every live seat. Merge when no seat is running.\n'
+            printf -- '- After the deploy, run `rig doctor`, and run `rig spec validate` on the specs.\n'
+          } >body.md
+
+          title="chore(openrig): bump OpenRig to $NEW"
+          if [ -n "$PR" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file body.md
+            echo "Refreshed pull request #$PR."
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$BRANCH" --label openrig-bump \
+              --title "$title" --body-file body.md
+          fi

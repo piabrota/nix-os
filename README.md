@@ -88,7 +88,7 @@ piabrota. The rig `piabrota-dev` has two seats on `omp`: a builder and a reviewe
 write the change and the reviewer will check it. Hermes routes the task and checks the result, then
 opens the pull request on a `hermes/*` branch. A human merges, always, and the merge deploys.
 
-**Status today.** OpenRig 0.7.7 runs on KVM 4. The rig is specified and the UI is on. The seats are
+**Status today.** OpenRig (the version pinned in `openrig/package.nix`) runs on KVM 4. The rig is specified and the UI is on. The seats are
 idle: no task has gone through the builder and reviewer loop. Today Hermes makes a pull request by
 running `omp` itself (skill `hermes-omp`). The guardrails stay: humans merge, the deny list and
 `hermes/omp.yml` apply, no secret goes in a spec or a task, at most two seats run at once, and the UI

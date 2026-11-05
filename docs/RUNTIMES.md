@@ -3,7 +3,7 @@
 [Português](RUNTIMES.ptBR.md)
 
 A runtime is the program that a seat runs. The member's `runtime:` field in a rig spec names it.
-OpenRig 0.7.7 has six built in: `claude-code`, `codex`, `pi`, `omp`, `terminal` and `stub`. It also
+OpenRig has six built in (as read at v0.7.7): `claude-code`, `codex`, `pi`, `omp`, `terminal` and `stub`. It also
 loads community harnesses, which a spec names as `runtime: <name>`. This page compares them and says
 which ones this box runs. The rest of the OpenRig setup is in [`OPENRIG.md`](OPENRIG.md).
 
