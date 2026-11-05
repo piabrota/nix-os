@@ -1,0 +1,6 @@
+omp: start in /var/lib/hermes/workspace/omp-tasks
+> bash: Running echo command
+< bash ok (34 ms)
+    hello-stream
+omp says: done
+omp: done, 2 turns, cost $0.0448

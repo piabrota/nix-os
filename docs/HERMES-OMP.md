@@ -22,8 +22,7 @@ The setup is in [HERMES.md](HERMES.md#omp-the-coding-worker). The skill is also 
 Before the run, Hermes tells you the repository, the branch, the mode (write or review only), the
 task file, the models and the thinking level.
 
-While the run goes on, Hermes tells you the state of the process and the time left. The output of
-omp stays empty until the run ends.
+While the run goes on, Hermes shows you what omp does, as it happens ("Seeing omp work" below).
 
 After the run, Hermes tells you these facts:
 
@@ -36,6 +35,38 @@ After the run, Hermes tells you these facts:
 omp keeps each session in `~/.omp/agent/sessions/<encoded-cwd>/<timestamp>_<sessionId>.jsonl`, under
 Hermes's home. The command `omp --export <session>` writes a session as HTML (omp docs `session.md`
 and `cli-reference.md`). Not tried on this box.
+
+## Seeing omp work
+
+Hermes runs omp in the background and pipes its output through `omp-stream`:
+
+```
+omp -p --mode json --no-title --max-time 15m < task.md 2>&1 | omp-stream
+```
+
+`--mode json` makes omp print one JSON event per line. `omp-stream`
+([`hermes/skills/hermes-omp/scripts/omp-stream.sh`](../hermes/skills/hermes-omp/scripts/omp-stream.sh),
+a command on Hermes's PATH, in `hermes.nix`) prints one plain line per event, at once:
+
+```
+omp: start in <cwd>
+> bash: <intent, or the command or path>
+< bash ok (34 ms)
+    <the first 5 lines of the result>
+    ... <N> more lines
+omp says: <a finished text of omp>
+omp: done, <N> turns, cost $<sum>
+```
+
+A line that is not JSON prints as `omp stderr: <line>`. Keys and tokens print as `[redacted]`. A run
+with no `omp: done` line ended in an abnormal way.
+
+Hermes starts the run with `terminal(background=true, notify=true, heartbeat=120)`. Each heartbeat
+delivers the new lines to the chat. Each heartbeat costs one turn of Hermes, so a run of 15 minutes
+costs up to 8 turns. The filter calls no model.
+
+Test: `sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh` (needs `jq`). It runs a recorded
+run (`scripts/fixtures/`) and three more cases: a line that is not JSON, a tool error and a secret.
 
 ## The layers: what you can edit
 
