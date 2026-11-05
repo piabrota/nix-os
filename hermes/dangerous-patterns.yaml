@@ -70,18 +70,18 @@ deny_patterns:
   # Hermes may plan, start, stop and talk to rigs (rig up, down, ps, send, queue, capture). A restart
   # of the daemon goes through a deploy, never through `rig daemon`; `rig setup` installs tools and
   # edits ~/.tmux.conf. The first rule is the owner's (PR 124) and covers setup, start and daemon
-  # control. The others close what it leaves open: `rig host` and --host, changes to a seat's
-  # permission policy (the repository's specs choose it, through a reviewed pull request; the unit
-  # sets OPENRIG_YOLO, Hermes never does), and a pointer at another daemon or at the daemon's state.
-  # The skill hermes-rig lists what is allowed.
+  # control; each rule below blocks something that the ones before it leave open: credentials,
+  # providers and connectors; every `rig host` command and any --host; a change to a seat's
+  # permission policy (the unit sets OPENRIG_YOLO=1, Hermes never does); and a pointer at another
+  # daemon or at the daemon's state. The skill hermes-rig lists what is allowed.
   - description: '[OPENRIG] rig setup, rig start or daemon control'
     enabled: true
     group: OPENRIG
     pattern: '\brig\s+(?:setup|start|daemon\s+(?:start|stop|restart))\b.*'
-  - description: '[OPENRIG] remote hosts, credentials, providers, MCP grants or connectors'
+  - description: '[OPENRIG] credentials, providers, MCP grants or connectors'
     enabled: true
     group: OPENRIG
-    pattern: '\brig\s+(?:host\s+(?:add|pair|select|rename)|auth\s+(?:save|switch)|provider\s+switch|mcp\s+(?:token\s+add|serve\b[^|;&]*--http)|slack\s+setup)\b.*'
+    pattern: '\brig\s+(?:auth\s+(?:save|switch)|provider\s+switch|mcp\s+(?:token\s+add|serve\b[^|;&]*--http)|slack\s+setup)\b.*'
   - description: '[OPENRIG] rig host (pairing and remote hosts) and any rig command with --host'
     enabled: true
     group: OPENRIG

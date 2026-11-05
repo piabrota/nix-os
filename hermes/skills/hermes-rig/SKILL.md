@@ -33,16 +33,26 @@ commands that this skill says you must never run.
 Do not use it for a one-shot code task. That is `hermes-omp`: one `omp` run, no seats. Use a seat
 when the owner asks for the builder and reviewer to stay alive between tasks.
 
+Two skills, two jobs. `hermes-omp` is for code work: writing the task, running `omp`, checking
+the diff. Its `references/openrig-seats.md` says what an `omp` seat needs from the unit (the
+[reference](../hermes-omp/references/openrig-seats.md)). `hermes-rig` (this one) is for operating
+OpenRig: starting, watching and stopping rigs. Load `hermes-rig` to run a rig, `hermes-omp` to
+write the task that a seat gets, and both for a code task on a seat.
+
 ## The rules
 
 1. **systemd owns the daemon.** Never start, stop or restart it. Never run `rig setup`,
    `rig start`, `rig host`, or any `--host`.
 2. **Run `rig status` before every `rig up`.** Go on only if it says "Daemon running". With the
    daemon down, `rig up` starts a stray daemon of its own, outside the unit's memory budget (tested).
-3. **Two seats at the same time, no more.** The unit has `MemoryMax=2G`, `MemoryHigh=1536M`; an
-   `omp` seat takes about 340 MiB. Run `kvm4-health` before you start. A third seat needs the owner.
-4. **Prompts stay on.** Never answer a safety prompt, never turn prompts off. Show the owner the
-   prompt (`references/safety.md`).
+3. **Two seats at the same time, no more.** The unit has `MemoryMax=2G`, `MemoryHigh=1536M`
+   (the memory of one seat: the [reference](../hermes-omp/references/openrig-seats.md)). Run
+   `kvm4-health` before you start. A third seat needs the owner.
+4. **Seats run without approval prompts, and you never change that.** The unit sets
+   `OPENRIG_YOLO=1`: the owner's decision in PR 124 (the
+   [reference](../hermes-omp/references/openrig-seats.md)). The deny rules of `hermes/omp.yml`
+   are the guard. Never answer a trust or consent prompt of OpenRig. Show it to the owner
+   (`references/safety.md`).
 5. **Specs come from `/etc/openrig/specs`**, by pull request. Never run a spec, bundle or GitHub
    link that you did not read, without the owner's yes.
 6. **No secret in a spec, task or message. Never print a token.** Never paste

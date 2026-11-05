@@ -53,18 +53,18 @@ Symptom: STARTUP `pending`, `failed` or `attention_required`; the pane shows a s
 
 1. Check: `rig seat status <seat>`, `rig capture <seat> --lines 40`, `rig ps --nodes --rig
    piabrota-dev`.
-2. A shell in the pane: the `omp` process did not start. Read the journal for the shim. A login or
-   authentication error: the token file of the unit is empty or wrong. Tell the owner. Do not look
-   for a token.
+2. A shell in the pane: the `omp` process did not start. Read the journal for the `omp` wrapper. A
+   login or authentication error: the token file of the unit is empty or wrong. Tell the owner.
+   Do not look for a token.
 3. `failed` with a good pane: wait 30 seconds, the monitor re-reads it. Then check again.
 4. A seat with no session file after a restore: `rig seat launch <seat> --fresh --plan`, then
    without `--plan` and with `--reason "<why>"`.
-5. Fix: relaunch is yours. A broken shim, token or spec is the owner's pull request.
+5. Fix: relaunch is yours. A broken wrapper, token or spec is the owner's pull request.
 
 ## A seat is at a prompt
 
 See `operations.md`, section 5. Read the pane, send an instruction that needs no dialog, or tell
-the owner. Never answer a safety prompt and never turn prompts off.
+the owner. Never answer a trust or consent prompt and never change the permissions of a seat.
 
 ## `better-sqlite3` does not load
 
@@ -100,7 +100,7 @@ or `WARN` or `CRIT` for `openrig`; a seat's process died mid-task.
 3. Fix, yours: `rig seat clean <seat> --reason "<why>"`, then
    `rig seat launch <seat> --fresh --plan`, or restore with `rig up piabrota-dev --existing` if the
    rig is stopped. Run one seat until the cause is known.
-4. Fix, the owner's: a higher `memoryMax` (changes the sum of limits, 12.25 GiB now), or lighter
+4. Fix, the owner's: a higher `memoryMax` (it changes the sum of limits in `docs/OPENRIG.md`), or lighter
    tasks. Do not start a third seat.
 
 ## A deploy ended the seats
@@ -136,8 +136,7 @@ device" for `openrig`; `rig` commands time out or fail on write.
 |`/bin/rm: No such file or directory` printed in a terminal seat (tested)|A harmless line from the daemon's paste step on NixOS. It shows in a shell seat only.|
 |`rig up <spec>` refuses|A rig of that name has live seats. Read `rig ps --nodes --rig <name>`. Do not force it.|
 |"lsof isn't installed" warning at start|Ownership of the database file is unknown. The unit has `lsof` in its path, so you should not see it.|
-|`fetch openrig-core returned 404` in the journal at start|The daemon tried to fetch a plugin and fell back to the bundled one (tested). Not an error.|
-|`rig doctor` FAIL on `claude_install`, `codex_install`, `ui_dist`|Expected on this box.|
+|`fetch openrig-core returned 404` in the journal at start, or `rig doctor` FAIL on `claude_install`, `codex_install`, `ui_dist`|Known here, not an error: the [reference](../../hermes-omp/references/openrig-seats.md).|
 
 Source: `rig` help of the built OpenRig `v0.7.7`; `docs/reference/agent-startup-guide.md` and
 `checked-seat-stop.md`; `openrig.nix` of piabrota/nix-os for the limits and the restart rules;

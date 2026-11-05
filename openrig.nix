@@ -5,7 +5,7 @@
 # The daemon (openrig/package.nix) runs in the foreground on 127.0.0.1 only: no nginx, no firewall
 # port, no ACME, no web page. Its tmux server and every seat run inside this unit's cgroup, so
 # MemoryMax is one budget for all of them, and a restart of the unit ends them all. The seats run
-# `omp` (a shim below); `claude` is unfree and Codex is not installed. The specs of the first rig
+# `omp` from omp/wrapper.nix; `claude` is unfree and Codex is not installed. The specs of the first rig
 # are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
 # runs `rig up`.
 { config, lib, pkgs, ... }:
@@ -31,38 +31,23 @@ let
     '';
   };
 
-  # The `omp` of the seats. The daemon starts each seat's omp with a short allowlist of variables
-  # (PATH, HOME and a few more): CLAUDE_CODE_OAUTH_TOKEN and ANTHROPIC_OAUTH_TOKEN never cross, and
-  # HOME is the seat's own. So this shim reads the subscription token from the file below, which
-  # the unit's root pre-start step fills, and sets the variable omp reads. It also differs from
-  # omp/wrapper.nix in two ways: no 35 minute ceiling (a seat lives for days) and no appended
-  # system prompt (hermes/omp-append-system.md is for Hermes's one-shot runs; a seat gets its rules
-  # from openrig/specs). It keeps the read-only overlay hermes/omp.yml, with its bash deny rules,
-  # and choom, so the kernel's OOM killer picks a seat before the daemon.
-  seatOmp = pkgs.writeShellApplication {
-    name = "omp";
-    runtimeInputs = [ pkgs.coreutils pkgs.gnugrep ];
-    text = ''
-      # The quotes are stripped in case the line was written with them. The value is never printed.
-      token=$(grep -m1 '^CLAUDE_CODE_OAUTH_TOKEN=' ${tokenFile} 2>/dev/null | cut -d= -f2- | tr -d "\"'" || true)
-      if [ -n "$token" ]; then
-        export ANTHROPIC_OAUTH_TOKEN="$token"
-      fi
-      unset token
-      export PI_CONFIG_FILES=${./hermes/omp.yml}
-      export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
-      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${pkgs.callPackage ./omp/package.nix { }}/bin/omp "$@"
-    '';
+  # The `omp` of the seats: the one wrapper of omp/wrapper.nix, with no time ceiling (a seat lives
+  # as long as its rig) and the seat rules appended. What a seat needs from this unit, and why, is
+  # in hermes/skills/hermes-omp/references/openrig-seats.md.
+  seatOmp = pkgs.callPackage ./omp/wrapper.nix {
+    ceiling = null;
+    appendSystemPrompt = ./hermes/omp-seat-append-system.md;
   };
 
   # Runs as root (the `+` of ExecStartPre) at each start: copies the one line CLAUDE_CODE_OAUTH_TOKEN
-  # of Hermes's secrets file, and nothing else, to a file that only the openrig user reads. It
-  # prints nothing: grep's output goes to the file and its errors to /dev/null. The file is empty
-  # when the line or the source is missing.
+  # of Hermes's secrets file, and nothing else, under the name ANTHROPIC_API_KEY, to a file that
+  # only the openrig user reads. The unit takes it as its EnvironmentFile. The step prints nothing
+  # and never runs with `set -x`: grep, tail and sed write to the file, and grep's errors go to
+  # /dev/null. The file is empty when the line or the source is missing.
   claudeToken = pkgs.writeShellScript "openrig-claude-token" ''
-    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep ]}
+    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.gnused ]}
     umask 077
-    grep '^CLAUDE_CODE_OAUTH_TOKEN=' /var/lib/hermes-secrets/hermes.env 2>/dev/null | tail -n 1 > ${tokenFile}.new
+    grep '^CLAUDE_CODE_OAUTH_TOKEN=' /var/lib/hermes-secrets/hermes.env 2>/dev/null | tail -n 1 | sed 's/^CLAUDE_CODE_OAUTH_TOKEN=/ANTHROPIC_API_KEY=/' > ${tokenFile}.new
     chown openrig:openrig ${tokenFile}.new
     chmod 600 ${tokenFile}.new
     mv ${tokenFile}.new ${tokenFile}
@@ -86,8 +71,8 @@ in
       type = types.str;
       default = "2G";
       description = ''
-        systemd MemoryMax of the unit: the budget of the daemon, tmux and every seat. An omp seat
-        takes about 340 MiB when it works. MemoryHigh is 1536M, below it.
+        systemd MemoryMax of the unit: the budget of the daemon, tmux and every seat. MemoryHigh is
+        1536M, below it. Two seats fit (docs/OPENRIG.md, "Limits").
       '';
     };
   };
@@ -129,8 +114,10 @@ in
         # Loopback by name, so a Tailscale interface (none here) would not add a listener.
         OPENRIG_BIND_HOST = "127.0.0.1";
         OPENRIG_URL = url;
-        # The built-in "kernel" rig needs a logged-in Claude Code or Codex. Neither is here: the
-        # daemon would report `auth_blocked` at every start.
+        # Seats run without approval prompts and without a kernel rig: the owner's decision (PR 124)
+        # and the reasons are in hermes/skills/hermes-omp/references/openrig-seats.md. The deny
+        # rules of hermes/omp.yml stay the guard.
+        OPENRIG_YOLO = "1";
         OPENRIG_NO_KERNEL = "1";
         # tmux's socket goes here (a private 0700 directory of the unit), not in /tmp.
         TMUX_TMPDIR = "/run/openrig";
@@ -144,8 +131,11 @@ in
       path = [ pkgs.tmux pkgs.bash pkgs.git pkgs.procps pkgs.lsof pkg pkg.nodejs seatOmp ];
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
-        # `-` lets the daemon start if this step fails: the token is for the seats, not the daemon.
+        # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
+        # reads the EnvironmentFile after this step. The daemon holds the key in its environment;
+        # the runner passes it on to each seat.
         ExecStartPre = [ "-+${claudeToken}" ];
+        EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
         StateDirectory = [ "openrig" "openrig/work" ];
