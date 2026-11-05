@@ -50,10 +50,11 @@ status is that of the first request: no redirect is followed.
 | [`www.piabrota.art/`](https://www.piabrota.art/) | The site, design A. 200 | KVM 1 | public | `site.nix`, `site/` |
 | [`www.piabrota.art/index/`](https://www.piabrota.art/index/) | Design B. 200 | KVM 1 | public | `site/` |
 | [`www.piabrota.art/paths/`](https://www.piabrota.art/paths/) | Design C. 200 | KVM 1 | public | `site/` |
-| `www.piabrota.art/pt-BR/`, `/zh-CN/`, `/ja-JP/` | Design A in Portuguese, Chinese and Japanese. Status not checked ⚠ | KVM 1 | public | `site/default.nix`, [`docs/SITE.md`](docs/SITE.md) |
+| `www.piabrota.art/pt-BR/`, `/zh-CN/`, `/ja-JP/` | Design A in Portuguese, Chinese and Japanese. 200 each | KVM 1 | public | `site/default.nix`, [`docs/SITE.md`](docs/SITE.md) |
 | [`www.piabrota.art/hosts/`](https://www.piabrota.art/hosts/) | Who does what on each VPS. 200; `/hosts` gives 301 to the slash form | KVM 1 | public | `site/default.nix` |
 | [`www.piabrota.art/hermes/`](https://www.piabrota.art/hermes/) | Hermes's configuration as plain YAML, no secret. 200; `/hermes` gives 301 | KVM 1 | public | `site.nix`, `site/hermes.nix` |
 | [`www.piabrota.art/skills/`](https://www.piabrota.art/skills/) | The skills website. 200 | KVM 1 | public | `skills-site/` |
+| [`www.piabrota.art/figures/`](https://www.piabrota.art/figures/) | The figures as interactive pages, English and pt-BR. New: it goes live with the deploy of the pull request that adds it, so its status is not checked yet ⚠ | KVM 1 | public | `figures-site/` |
 | [`www.piabrota.art/notes`](https://www.piabrota.art/notes) | The Loco app `notes`. 303 to `/notes/login` | KVM 1 | one password | `apps.nix`, `apps/notes/` |
 | [`www.piabrota.art/nixos`](https://www.piabrota.art/nixos) | 302 to [this repository](https://github.com/piabrota/nix-os) | KVM 1 | public | `site.nix` |
 | [`hermes.piabrota.art`](https://hermes.piabrota.art/) | The Hermes dashboard. 401 without the login | KVM 4 | basic auth | `hermes-web.nix` |
@@ -66,6 +67,8 @@ They are not addresses of piabrota.
 ## How it works
 
 ![Two hosts: Porkbun DNS sends www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /hosts and the /notes Loco app, and hermes.piabrota.art and rig.piabrota.art to VPS 2 (KVM 4); there the dashboard behind basic auth shares its state with the hermes-agent gateway, and the OpenRig UI behind basic auth fronts the openrig unit with its two omp seats, which the gateway drives with the rig CLI; the owner's Telegram and Discord chats reach the gateway by polling, and it opens pull requests on hermes/* branches as piabrota-hermes[bot]; deploy.yml builds both systems and deploys each on a merge.](docs/img/two-hosts.png)
+
+Interactive page: <https://www.piabrota.art/figures/two-hosts/>
 
 <details open>
 <summary>How to read this figure</summary>
@@ -93,6 +96,8 @@ is behind basic auth and TLS.
 
 ![The software factory: the owner sends a task to Hermes on VPS 2; Hermes sends it to the builder seat of the OpenRig rig piabrota-dev, which delegates its diff to the reviewer seat, and the verdict goes back to Hermes; Hermes commits, pushes a hermes/* branch and opens a pull request on GitHub; a human merges it, always; deploy.yml then deploys the two VPSs with deploy-rs and magic rollback.](docs/img/software-factory.png)
 
+Interactive page: <https://www.piabrota.art/figures/software-factory/>
+
 <details open>
 <summary>How to read this figure</summary>
 
@@ -108,6 +113,8 @@ is behind basic auth and TLS.
 
 ![How nix-os works: a pull request runs ci.yml on every push; a merge to main runs deploy.yml, which builds the system on the GitHub runner; deploy-rs copies the closure to the VPS over SSH and switches it, the VPS fetching store paths from cache.nixos.org; if SSH falls silent for 60 s, magic rollback restores the old system; after the switch, freeze.yml lists the VPS's packages, and cves.yml reports vulnix on the same push.](docs/img/how-nix-os-works.png)
 
+Interactive page: <https://www.piabrota.art/figures/how-nix-os-works/>
+
 <details open>
 <summary>How to read this figure</summary>
 
@@ -122,6 +129,8 @@ is behind basic auth and TLS.
 </details>
 
 ![piabrota.art: a browser resolves the two A records on Porkbun, which point at the VPS; nginx answers piabrota.art with a 301 to https://www and serves www.piabrota.art over HTTP and HTTPS, with /nixos a 302 to the repository and a Let's Encrypt certificate per name; the page was built before the deploy, site/ in Gleam prerendered by Nix into /nix/store as three pages and style.css, which is nginx's root.](docs/img/piabrota-art.png)
+
+Interactive page: <https://www.piabrota.art/figures/piabrota-art/>
 
 <details open>
 <summary>How to read this figure</summary>

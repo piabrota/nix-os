@@ -46,6 +46,7 @@ um, está na [seção "Every piabrota.art address" do README](https://github.com
 | Adicionar um app Loco | [`docs/LOCO.md`](https://github.com/piabrota/nix-os/blob/main/docs/LOCO.md) |
 | Rodar a sua própria VPS a partir de um fork | [`docs/FORK.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/FORK.ptBR.md) |
 | Hermes Agent nesta máquina | [`docs/HERMES.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/HERMES.ptBR.md), e a configuração dele em YAML em [www.piabrota.art/hermes](https://www.piabrota.art/hermes) |
+| As figuras como páginas interativas | [www.piabrota.art/figures](https://www.piabrota.art/figures/) |
 
 As páginas vêm da pasta [`wiki/`](https://github.com/piabrota/nix-os/tree/main/wiki) do repositório
 e são copiadas para cá a cada merge. Não edite o wiki direto: a próxima cópia apaga a edição.

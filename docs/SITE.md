@@ -81,6 +81,8 @@ failed.
 | `http://www.piabrota.art/` | the site |
 | `https://www.piabrota.art/` | the site: design A; B at `/index/`, C at `/paths/`, Hermes's configuration at `/hermes/` |
 | `https://www.piabrota.art/skills/` | the skills website, from `skills-site/` |
+| `https://www.piabrota.art/figures/` | the figures as interactive pages, from `figures-site/`; `<slug>/` in English, `pt-BR/<slug>/` in pt-BR |
+| `…/figures` | 301 to `…/figures/` |
 | `…/skills` | 301 to `…/skills/` |
 | `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
@@ -111,6 +113,39 @@ Gleam and Erlang run on the CI builder only. The VPS gets the HTML, which is sma
 they work under `/skills/`. `piabrota.site.skills = null` removes the page.
 
 To preview, run `just skills-site`. It builds into `./result-skills-site`.
+
+## The figures
+
+`https://www.piabrota.art/figures/` serves each figure of `docs/archify/` as one self-contained
+[archify](https://github.com/tt-a1i/archify) page: it zooms, follows the visitor's light or dark
+setting, and calls no third party. `/figures/<slug>/` is the English page, `/figures/pt-BR/<slug>/`
+the pt-BR mirror, and `/figures/` lists them, with a link to each source in this repository. The
+README and the wiki link each figure to its page.
+
+`figures-site/default.nix` builds the pages on the builder from the committed JSON
+(`docs/archify/*.json`, `docs/archify/pt/*.json`) and `docs/archify/piabrota.css`. For each source it
+runs `archify finalize`, as `just figure` does, and fails the build if `validate`, `deliver` or
+`check` do not pass. The builder has no Chrome, so archify skips the browser check; `just figure`
+runs it. Then it puts the content of `piabrota.css` into the page as a `<style>`. It does not add the
+Google Fonts link that the PNGs use, so a visit calls no third party and the system fonts stand in.
+**No HTML is committed.** A new figure needs only its two JSON files: the build loops over the
+sources, and a missing pt-BR mirror stops it. `allowedReferences = [ ]` keeps node, jq and archify
+out of the VPS closure. `piabrota.site.figures = null` removes the page.
+
+**The pin.** `rev` and `hash` in `figures-site/default.nix` name the commit of the submodule
+`vendor/archify` (`git ls-files -s vendor/archify`). Move them with the submodule, in the same PR as
+`just figure`:
+
+1. Change `rev` to the new commit.
+2. Get the hash with `nix-prefetch-url --unpack https://github.com/tt-a1i/archify/archive/<rev>.tar.gz`.
+3. Convert it with `nix hash convert --hash-algo sha256 --to sri <hash>`, and put it in `hash`.
+
+**Licences.** archify is MIT (`vendor/archify/LICENSE`). Its pages embed JetBrains Mono, under the SIL
+Open Font License 1.1 (`THIRD_PARTY_NOTICES.md` of archify). The index page credits both.
+
+**Size.** The eight pages are about 820 KB each, and `/figures/` is about 6.3 MiB in the VPS
+closure (`nix path-info -S`). nginx sends them compressed (`recommendedGzipSettings`). The site sets
+no `Content-Security-Policy`, so the pages' inline script and style run as built.
 
 
 ## The structure figure

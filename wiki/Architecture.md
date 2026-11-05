@@ -37,6 +37,8 @@ new generation, and GRUB keeps the last five.
 
 ![Two hosts: Porkbun DNS sends www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /hosts and the /notes Loco app, and hermes.piabrota.art and rig.piabrota.art to VPS 2 (KVM 4); there the dashboard behind basic auth shares its state with the hermes-agent gateway, and the OpenRig UI behind basic auth fronts the openrig unit with its two omp seats, which the gateway drives with the rig CLI; the owner's Telegram and Discord chats reach the gateway by polling, and it opens pull requests on hermes/* branches as piabrota-hermes[bot]; deploy.yml builds both systems and deploys each on a merge.](img/two-hosts.png)
 
+Interactive page: <https://www.piabrota.art/figures/two-hosts/>
+
 <details open>
 <summary>How to read this figure</summary>
 
@@ -51,6 +53,8 @@ new generation, and GRUB keeps the last five.
 </details>
 
 ![The software factory: the owner sends a task to Hermes on VPS 2; Hermes sends it to the builder seat of the OpenRig rig piabrota-dev, which delegates its diff to the reviewer seat, and the verdict goes back to Hermes; Hermes commits, pushes a hermes/* branch and opens a pull request on GitHub; a human merges it, always; deploy.yml then deploys the two VPSs with deploy-rs and magic rollback.](img/software-factory.png)
+
+Interactive page: <https://www.piabrota.art/figures/software-factory/>
 
 <details open>
 <summary>How to read this figure</summary>
@@ -67,6 +71,8 @@ new generation, and GRUB keeps the last five.
 
 ![How nix-os works: a pull request runs ci.yml on every push; a merge to main runs deploy.yml, which builds the system on the GitHub runner; deploy-rs copies the closure to the VPS over SSH and switches it, the VPS fetching store paths from cache.nixos.org; if SSH falls silent for 60 s, magic rollback restores the old system; after the switch, freeze.yml lists the VPS's packages, and cves.yml reports vulnix on the same push.](img/how-nix-os-works.png)
 
+Interactive page: <https://www.piabrota.art/figures/how-nix-os-works/>
+
 <details open>
 <summary>How to read this figure</summary>
 
@@ -81,6 +87,8 @@ new generation, and GRUB keeps the last five.
 </details>
 
 ![piabrota.art: a browser resolves the two A records on Porkbun, which point at the VPS; nginx answers piabrota.art with a 301 to https://www and serves www.piabrota.art over HTTP and HTTPS, with /nixos a 302 to the repository and a Let's Encrypt certificate per name; the page was built before the deploy, site/ in Gleam prerendered by Nix into /nix/store as three pages and style.css, which is nginx's root.](img/piabrota-art.png)
+
+Interactive page: <https://www.piabrota.art/figures/piabrota-art/>
 
 <details open>
 <summary>How to read this figure</summary>

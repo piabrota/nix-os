@@ -41,6 +41,13 @@ in
       defaultText = lib.literalExpression "pkgs.callPackage ./skills-site { }, the prerendered skills website";
       description = "The skills website, served at /skills/. Read-only: the store. null: no /skills page.";
     };
+    figures = mkOption {
+      type = types.nullOr types.path;
+      # Archify, node and jq run on the builder; the box gets only the pages (figures-site/default.nix).
+      default = pkgs.callPackage ./figures-site { };
+      defaultText = lib.literalExpression "pkgs.callPackage ./figures-site { }, the figures as interactive pages";
+      description = "The figures as interactive pages, served at /figures/. Read-only: the store. null: no /figures page.";
+    };
     hermes = mkOption {
       type = types.nullOr types.attrs;
       internal = true;
@@ -91,6 +98,11 @@ in
               # The pages use relative links, so the slash matters.
               "= /skills".return = "301 /skills/";
               "/skills/".alias = "${cfg.skills}/";
+            }
+            // lib.optionalAttrs (cfg.figures != null) {
+              # The pages use relative links, so the slash matters.
+              "= /figures".return = "301 /figures/";
+              "/figures/".alias = "${cfg.figures}/";
             };
           };
         }
