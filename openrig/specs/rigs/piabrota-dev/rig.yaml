@@ -1,5 +1,5 @@
-# The first rig of piabrota: one pod with a builder and a reviewer, both on omp (claude is unfree
-# and Codex is not installed here). Start it with
+# The first rig of piabrota: one pod with a builder and a reviewer, both on omp (the box runs Claude
+# Code only in the port rig, and Codex is not installed here). Start it with
 #   rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
 # Nothing starts it: Hermes or a human does. docs/OPENRIG.md, "Specs".
 version: "0.2"

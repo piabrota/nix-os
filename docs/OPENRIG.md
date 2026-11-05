@@ -97,7 +97,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 |Path|`tmux`, `bash`, `git`, `ps`, `lsof`, `node`, `rig` and the seat `omp`. NixOS adds `coreutils`, `findutils`, `grep`, `sed`.|
 |Seat `omp`|`omp/wrapper.nix` with `ceiling = null` and `hermes/omp-seat-append-system.md`: the one wrapper of the repository, as PR 124 decided. Its rules (`hermes/omp.yml`) are the guard of a seat.|
 |Permissions|The rig sets `permission_policy: builtin:yolo`: the seats run without approval prompts. This is the owner's decision in PR 124. `OPENRIG_YOLO=1` in the unit does not do it: a rig with no policy gets the floor, and a policy wins over the variable. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
-|Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`: the name only. The value stays in the root-only `EnvironmentFile`. A seat whose model is `anthropic/<id>` gets the key. No other variable reaches a seat.|
+|Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`: the name only. The value stays in the root-only `EnvironmentFile`. A seat whose model is `anthropic/<id>` gets the key. A Claude Code seat gets it too, as every seat does, and its `claude` (`seatClaude`) turns it into `CLAUDE_CODE_OAUTH_TOKEN`, because Claude Code ranks `ANTHROPIC_API_KEY` above that token. No other variable reaches a seat.|
 |Hermes|A `rig` command in the packages of `hermes-agent`. It sets `OPENRIG_URL=http://127.0.0.1:7433` and runs the real `rig`.|
 |Sandbox|`NoNewPrivileges`, `CapabilityBoundingSet=""`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ProtectKernel*`, `ProtectProc=invisible`, `RestrictNamespaces`, `LockPersonality`, `SystemCallFilter=@system-service ~@privileged` with `EPERM`, and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`.|
 |Restart|`Restart=on-failure`, `RestartSec=10s`, at most 5 starts in 600 s. After that the unit stays down.|
@@ -299,14 +299,29 @@ rig up openrig/specs/rigs/piabrota-dev/rig.yaml --plan         # Status: planned
 spec and its agent references, not the files. Check by hand that each path in an `agent.yaml`
 exists.
 
+## Runtimes
+
+A runtime is what a seat runs. OpenRig 0.7.7 has six (`claude-code`, `codex`, `pi`, `omp`,
+`terminal`, `stub`) and community harnesses. [`RUNTIMES.md`](RUNTIMES.md) compares them: features,
+pros, cons, a spec line, credentials, permission mapping, state and the status on this box.
+
+|Rig|Runtime|
+|---|---|
+|`piabrota-dev`|`omp`|
+|`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (off)|
+|`wave-forecaster-dev-integrate`|`omp`|
+
 ## wave-forecaster-dev
 
 The block wave-forecaster-dev runs the port of WAVEWATCH III (WW3) from Fortran to Rust in
 [h0ffmann/chaceon](https://github.com/h0ffmann/chaceon) (private) on this box. chaceon defined the
 same loop for Claude Code seats on the owner's machine (its `rigs/` folder, PR 20 of
-h0ffmann/chaceon). This block follows the protocol of piabrota-dev instead: `omp` seats on
-`anthropic/claude-sonnet-5-5`, `builtin:yolo`, the box norms first, two seats per rig, and Hermes
-as the operator who commits, pushes and opens the pull request.
+h0ffmann/chaceon). The port rig `wave-forecaster-dev` now runs its two seats on Claude Code
+(`runtime: claude-code`, `claude-sonnet-5-5`, a pure Claude Code harness). The integrate rig stays on
+`omp`, on `anthropic/claude-sonnet-5-5`. Both follow the protocol of piabrota-dev otherwise:
+`builtin:yolo`, the box norms first, two seats per rig, and Hermes as the operator who commits,
+pushes and opens the pull request. `wf-auditor` serves both rigs: the port rig's member entry sets its runtime, and
+the shared agent keeps omp as its default.
 
 |Rig|Seats|Does|
 |---|---|---|
@@ -327,21 +342,33 @@ other gates on the owner's machine and moves the status. The norms say this, and
 chaceon's rule that a missing tool must be installed.
 
 **Off at the start.** `piabrota.openrig.waveForecaster.enable` is off at piabrota2. The specs are
-in `/etc/openrig/specs` as a definition only: no tools, folders, outbox or token, and no one starts
-the rigs. The owner turns the option on in `hosts/piabrota2/default.nix` to use them.
+in `/etc/openrig/specs` as a definition only: no tools, folders, outbox or token, no `claude` and no
+managed settings, and no one starts the rigs. The owner turns the option on in
+`hosts/piabrota2/default.nix` to use them. A rig keeps the spec that made it, so after the deploy
+run `rig archive wave-forecaster-dev` and
+`rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only` (it makes the
+rig and its seats and starts nothing), then `rig up`. Claude Code asks once to accept its
+bypass-permissions warning: `rig seat continue` answers it (docs/RUNTIMES.md, "Claude Code on this box").
 
 **What `piabrota.openrig.waveForecaster.enable` adds** (when on):
 
 |Part|Setting|
 |---|---|
-|Tools|`rustup`, `gcc` (the linker of build scripts), `just`, `shellcheck` and `chaceon-clone` in the profile of the user `openrig`, not in the unit's `path`. Each seat installs Rust 1.99.1 with rustup into its own home under `/var/lib/openrig`.|
-|Folders|`/var/lib/openrig/work/wave-forecaster-dev/{porter,auditor,integrator}` (`StateDirectory`). Each seat has its own folder: the norms go in its `AGENTS.md`, and the chaceon clone in a subfolder, so the two `AGENTS.md` files never mix.|
+|Tools|`rustup`, `gcc` (the linker of build scripts), `just`, `shellcheck`, `chaceon-clone` and `claude` (`seatClaude`: `pkgs.claude-code` behind a small wrapper) in the profile of the user `openrig` and in the unit's `path`. A Claude seat that OpenRig starts with a clean environment finds its tools only through the path. Each seat installs Rust 1.99.1 with rustup into its own home under `/var/lib/openrig`.|
+|Claude Code|`unfree.nix` allows `claude-code` by name (`allowUnfree` stays off). `seatClaude` moves the subscription token from `ANTHROPIC_API_KEY` to `CLAUDE_CODE_OAUTH_TOKEN` and drops what Claude Code ranks above it, for Claude's process only. `/etc/claude-code/managed-settings.json` holds the deny rules of a Claude seat (below). Closure: about +280 MiB, built on the CI runner.|
+|Folders|`/var/lib/openrig/work/wave-forecaster-dev/{porter,auditor,integrator}` (`StateDirectory`). Each seat has its own folder: the norms go in its `CLAUDE.md` (port rig) or `AGENTS.md` (omp seats), and the chaceon clone in a subfolder, so the files never mix.|
 |Read token|`piabrota.openrig.githubRead = [ "h0ffmann/chaceon" ]`. `hermes-github.nix` mints, every 45 minutes, a token of Hermes's App with `contents: read` on that repository only, into `/run/openrig-github/h0ffmann--chaceon` (root, group `openrig`, 0640). `chaceon-clone` clones with a credential helper that reads it. The App must be installed on h0ffmann/chaceon.|
 |Outbox|`/var/lib/rig-outbox/wave-forecaster-dev` (owner `openrig`, group `hermes`, 0750, a default ACL that gives the group read access, files older than 14 days removed). A seat writes a `git bundle` there; Hermes fetches it, reads it, and pushes a `hermes/*` branch. The unit has it in `ReadWritePaths`. It is not under `/var/lib/openrig`, which Hermes's deny list blocks.|
 
 **The risk.** A seat runs without approval prompts and can read the read token. The token can
-only read one repository, and it ends after one hour. The deny rules of `hermes/omp.yml` still
-refuse `git push`, `gh`, installs and secrets.
+only read one repository, and it ends after one hour. The deny rules still refuse `git push`, `gh`,
+installs and secrets: `hermes/omp.yml` for an omp seat, `managed-settings.json` for a Claude seat.
+The Claude rules are `Bash(...)` and `Read(...)` rules, translated from `omp.yml`. Claude Code checks
+deny rules before its permission mode, so they hold in bypass mode, but they are no sandbox: a
+program that a seat starts can read what a rule names. The unit's sandbox is the hard layer. Rules
+of `omp.yml` that a Claude seat cannot have: regex rules of `hermes/dangerous-patterns.yaml` (a push
+to a branch other than `hermes/*`, `rig` with `--host` or `--policy`), the path of the daemon's state
+(a seat's folder is under it), and any limit on `WebFetch` (omp's own fetch is not limited either).
 
 **chaceon's own rules that this box changes.** chaceon names an agent's branch
 `goal/<id>-<slug>`. Hermes can push only `hermes/*`, so the seats use `hermes/wf-<slug>`. chaceon
@@ -367,7 +394,9 @@ git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:
 - **No public web page without auth.** The daemon runs on loopback only. The public vhost (`rig.piabrota.art`) has TLS and basic auth (see "The web UI").
 - **No `rig setup`.** It installs tools and edits `~/.tmux.conf`. The deny list blocks it.
 - **No herdr, no remote hosts.** `rig host`, `rig up --host` and pairing are blocked.
-- **No Claude Code or Codex seat.** `claude` is unfree and not installed. Seats use `omp`.
+- **No Codex seat.** Codex is not installed. A Claude Code seat exists only in the port rig, and only
+  with `piabrota.openrig.waveForecaster.enable` on (off today): `claude` is unfree, allowed by name
+  in `unfree.nix`. See [`RUNTIMES.md`](RUNTIMES.md).
 - **No `PrivateDevices`.** In a test with a user unit, tmux could not start a pane with a private
   `/dev`. A pane needs a pseudo terminal. The test used a user manager, not the system manager, so
   the cause may be the test. The unit leaves `PrivateDevices` off.
@@ -376,10 +405,13 @@ git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:
 
 ## Not tested
 
-For wave-forecaster-dev, none of this ran: a deploy, a seat, `rig spec validate` on the new specs,
-rustup's toolchain on NixOS (nixpkgs patches it for NixOS: not checked here), the read token (the
-App's installation may not include h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and
-Hermes's read of the outbox under the `hermes-agent` sandbox.
+For wave-forecaster-dev, none of this ran: a deploy, a seat, `rig spec validate` on the new specs
+(OpenRig's own schema check of the three rig specs passed in a script, and nothing more), a Claude
+Code seat (its start, login, the bypass dialog, the model id with Claude Code 2.1.223, memory, and
+that OpenRig finds the process behind `seatClaude`), rustup's toolchain on NixOS (nixpkgs patches
+it for NixOS: not checked here), the read token (the App's installation may not include
+h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and Hermes's read of the outbox under the
+`hermes-agent` sandbox.
 
 For the rest:
 
@@ -392,7 +424,7 @@ that were not checked on the box.
 - The root step that copies the token, and the read of the file by `EnvironmentFile=-` after it.
   The test read no secret.
 - A real seat: its start, its first turn, the messages between builder and reviewer, the delivery
-  of the startup files, the merge of the norms into `AGENTS.md`, and the `model` of the AgentSpec.
+  of the startup files, the merge of the norms into `AGENTS.md` (`CLAUDE.md` for a Claude seat), and the `model` of the AgentSpec.
 - `rig daemon status` and `rig daemon logs` from the `hermes` user. They may read files in the
   state folder. Use `journalctl -u openrig` (with the `observer` account) for the daemon log.
 - A full system build and the deploy. A build of the unit file and an evaluation ran.

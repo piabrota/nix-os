@@ -21,6 +21,7 @@ para eles.
 - [Operação](Operacao): o dia a dia (buildar, conferir, voltar atrás, ligar o site, adicionar um app).
 - [Hermes](Hermes): como o Hermes Agent roda aqui (a unidade, os modelos, os limites, o reinício num deploy) e onde fica a configuração dele.
 - [Fábrica](Fabrica): a fábrica de software aberta, com o OpenRig como motor (as etapas, quem faz cada uma, o estado de hoje e as regras que ficam).
+- [Runtimes](Runtimes): os runtimes do OpenRig (Claude Code, Codex, Pi, omp, terminal, stub e os harnesses da comunidade): prós, contras e quais a máquina roda.
 - [Maquetes](Maquetes): três direções para a home de piabrota.art, geradas em Nix.
 
 ## Endereços

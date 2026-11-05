@@ -21,6 +21,7 @@ here points to them.
 - [Operations](Operations): day to day (build, check, roll back, turn the site on, add an app).
 - [Hermes](Hermes-EN): how Hermes Agent runs here (the unit, the models, the limits, the restart on a deploy) and where its configuration is.
 - [Factory](Factory): the open software factory, with OpenRig as its engine (the stages, who does each, the status today and the guardrails).
+- [Runtimes](Runtimes-EN): the OpenRig runtimes (Claude Code, Codex, Pi, omp, terminal, stub and the community harnesses): pros, cons, and which ones the box runs.
 - [Mockups](Mockups): three directions for the piabrota.art homepage, generated in Nix.
 
 ## Addresses

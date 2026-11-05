@@ -5,6 +5,7 @@
 - [Operação](Operacao)
 - [Hermes](Hermes)
 - [Fábrica](Fabrica)
+- [Runtimes](Runtimes)
 - [Maquetes](Maquetes)
 
 **English**
@@ -14,4 +15,5 @@
 - [Operations](Operations)
 - [Hermes](Hermes-EN)
 - [Factory](Factory)
+- [Runtimes](Runtimes-EN)
 - [Mockups](Mockups)

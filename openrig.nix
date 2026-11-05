@@ -7,8 +7,9 @@
 # `piabrota.openrig.web` adds an nginx vhost with TLS and basic auth in front of it; the option is off by
 # default. Its tmux server and every seat run inside this unit's cgroup, so
 # MemoryMax is one budget for all of them, and a restart of the unit ends them all. The seats run
-# `omp` from omp/wrapper.nix; `claude` is unfree and Codex is not installed. The specs of the first rig
-# are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
+# `omp` from omp/wrapper.nix. With piabrota.openrig.waveForecaster.enable the seats of the port rig
+# run Claude Code (`claude`, unfree: unfree.nix) and Codex is not installed. The specs of the first
+# rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
 # runs `rig up`.
 { config, lib, pkgs, ... }:
 let
@@ -103,11 +104,126 @@ let
     '';
   };
 
+  # The `claude` of a Claude seat (the port rig, docs/RUNTIMES.md). The unit gives every seat
+  # ANTHROPIC_API_KEY for the omp seats, and OpenRig lists that name among those that Claude Code
+  # ranks above CLAUDE_CODE_OAUTH_TOKEN (claude-credential-precedence.ts, v0.7.7): Claude would send
+  # the subscription token as an API key and fail. OpenRig's own way out, `claude_token` in the spec,
+  # reads the token with /bin/cat (claude-seat-token.ts), which NixOS does not have. So this wrapper
+  # does what omp's does: the sk-ant-oat token moves from ANTHROPIC_API_KEY to CLAUDE_CODE_OAUTH_TOKEN,
+  # and what outranks it goes, for Claude's process only. Anything else in that variable (an API key)
+  # is dropped and never passed on, so Claude cannot bill an API key by accident. choom: as omp's.
+  seatClaude = pkgs.writeShellApplication {
+    name = "claude";
+    text = ''
+      unset ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY
+      case "''${ANTHROPIC_API_KEY:-}" in
+        sk-ant-oat*) export CLAUDE_CODE_OAUTH_TOKEN="''${CLAUDE_CODE_OAUTH_TOKEN:-$ANTHROPIC_API_KEY}" ;;
+      esac
+      unset ANTHROPIC_API_KEY
+      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${lib.getExe pkgs.claude-code} "$@"
+    '';
+  };
+
+  # The deny rules of a Claude seat, from the rules of an omp seat. Every `match` of `bash.patterns` in
+  # hermes/omp.yml becomes a `Bash(...)` rule as written (both are globs over the whole command), and
+  # its `restrictedFolders` become `Read(...)` rules. Keep the two in step. A bypass seat still honours
+  # deny rules, but they are no sandbox: a program that the seat starts can read what a rule names. The
+  # hard layer is the unit's sandbox (ProtectSystem, the user `openrig`, no access to Hermes's files).
+  ompBashDeny = [
+    "git push*"
+    "git remote*"
+    "git config --global*"
+    "gh"
+    "gh *"
+    "*hermes-secrets*"
+    "*.hermes/*"
+    "*/.env*"
+    "*auth.json*"
+    "*/proc/*/environ*"
+    "*/proc/self/*"
+    "*.ssh/*"
+    "env"
+    "printenv*"
+    "export -p"
+    "set"
+    "sudo *"
+    "doas *"
+    "su *"
+    "systemctl *"
+    "nixos-rebuild*"
+    "nix-env*"
+    "nix profile*"
+    "curl *"
+    "wget *"
+    "npm *"
+    "npx *"
+    "pnpm *"
+    "yarn *"
+    "bun add*"
+    "bun install*"
+    "bunx *"
+    "pip *"
+    "pip3 *"
+    "uv *"
+    "uvx *"
+    "cargo install*"
+    "go install*"
+    "gem *"
+    "omp *"
+    "hermes *"
+    "rig setup*"
+    "rig daemon *"
+    "rig start*"
+    "rig host *"
+    "rig auth *"
+    "rig provider switch*"
+    "rig mcp *"
+    "rig slack *"
+    "rig gateway *"
+    "rig destroy*"
+  ];
+  # What only a Claude seat needs. A seat runs `git -C chaceon ...`, which `git push*` does not match.
+  # Its own token is in its environment, and `claude` would start another agent. A seat may not change
+  # its own permission policy (hermes/dangerous-patterns.yaml, OPENRIG).
+  claudeBashDeny = [
+    "git -C * push"
+    "git -C * push *"
+    "*CLAUDE_CODE_OAUTH_TOKEN*"
+    "*openrig-secrets*"
+    "claude *"
+    "rig seat set-permissions*"
+    "rig policy apply*"
+  ];
+  # Absolute paths in a Read rule start with `//`; one `/` is the root of the project. The first form is
+  # the documented one, and the second covers a Claude Code that reads a single `/` as absolute.
+  secretFolders = [
+    "/var/lib/hermes-secrets"
+    secretsDir
+    "/var/lib/hermes/.hermes"
+    "/var/lib/hermes/.ssh"
+    "/var/lib/hermes/.config/gh"
+    "/proc/self"
+  ];
+  claudeManagedSettings = {
+    # Only these rules apply: a rule of a cloned repository (chaceon/.claude/settings.json) cannot
+    # loosen them. disableBypassPermissionsMode stays unset: the rig's builtin:yolo needs bypass mode.
+    allowManagedPermissionRulesOnly = true;
+    permissions.deny =
+      map (m: "Bash(${m})") (ompBashDeny ++ claudeBashDeny)
+      ++ lib.concatMap (d: [ "Read(/${d}/**)" "Read(${d}/**)" ]) secretFolders
+      ++ [ "Read(//proc/*/environ)" "Read(**/.env*)" "Read(**/auth.json)" "Read(~/.ssh/**)" ];
+  };
+
   # What a chaceon seat runs: `just check` (rustup's toolchain, gcc as the linker of build
-  # scripts) and `just lint-sh`. No Docker, no Vulkan, no CUDA: those gates stay with the owner.
-  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone ];
+  # scripts) and `just lint-sh`, and Claude Code for the port rig. No Docker, no Vulkan, no CUDA:
+  # those gates stay with the owner.
+  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone seatClaude ];
 in
 {
+  # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
+  # not in the host, so that a host which turns waveForecaster on can evaluate it.
+  imports = [ ./unfree.nix ];
+
   options.piabrota.openrig = {
     enable = mkEnableOption "OpenRig, run by Hermes (docs/OPENRIG.md)";
     package = mkOption {
@@ -200,6 +316,12 @@ in
     # The specs of openrig/specs, read-only: rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
     environment.etc."openrig/specs".source = ./openrig/specs;
 
+    # The rules of a Claude seat (the port rig's, with waveForecaster on): Claude Code reads this file
+    # first, and no setting of a cloned repository can override it.
+    environment.etc."claude-code/managed-settings.json" = mkIf wf.enable {
+      text = builtins.toJSON claudeManagedSettings;
+    };
+
     # The web vhost. Same gate as hermes-web.nix: TLS from Let's Encrypt and HTTP basic auth against
     # a bcrypt file on the box, outside the store. The UI can type into the seats, which run without
     # approval prompts, so without the file every request gets a 500 and the UI stays closed. The
@@ -282,12 +404,15 @@ in
         # `permission_policy: builtin:yolo` (openrig/specs/rigs/piabrota-dev/rig.yaml) does that. This
         # variable alone does not: a rig with no policy gets the floor, and a policy wins over it. The
         # reasons are in hermes/skills/hermes-omp/references/openrig-seats.md. The deny rules of
-        # hermes/omp.yml stay the guard. No kernel rig: this box has no Claude Code or Codex.
+        # hermes/omp.yml stay the guard of the omp seats, and /etc/claude-code/managed-settings.json
+        # the guard of the Claude seats. No kernel rig: OpenRig's own agent seats are not wanted here.
         OPENRIG_YOLO = "1";
         OPENRIG_NO_KERNEL = "1";
         # The daemon setting recovery.provider_auth_env_allowlist. It names the variable only, never a
         # value. The value stays in the unit's root-only EnvironmentFile. A seat whose model is
         # `anthropic/<id>` then gets the key (the double opt-in of OpenRig). Other variables stay out.
+        # A Claude seat gets it too, as every seat does: its `claude` (seatClaude) moves it to
+        # CLAUDE_CODE_OAUTH_TOKEN and drops it from Claude's own environment.
         OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST = "ANTHROPIC_API_KEY";
         # tmux's socket goes here (a private 0700 directory of the unit), not in /tmp.
         TMUX_TMPDIR = "/run/openrig";
@@ -309,7 +434,9 @@ in
       # users.users.openrig.packages). tmux holds the seats. node starts the seats' runner (the
       # daemon types `node ...` in a pane). ps and lsof: the daemon reads the process table. git:
       # the seats work on clones. The NixOS default adds coreutils, findutils, grep, sed and systemd.
-      path = seatTools;
+      # The tools of the chaceon rigs are in this path too, so that a Claude seat that OpenRig starts
+      # with a clean environment (a permission mode set by `rig seat set-permissions`) finds `claude`.
+      path = seatTools ++ lib.optionals wf.enable wfTools;
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
