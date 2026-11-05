@@ -33,6 +33,11 @@ paperclip-test:
     bash paperclip/pi-to-omp.test.sh
     sh paperclip/hermes-key.test.sh
 
+# tests of the hermes-omp commands (hermes/skills/hermes-omp/scripts): omp-stream and omp-run; needs bash, jq and setsid
+omp-test:
+    sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh
+    bash hermes/skills/hermes-omp/scripts/test-omp-run.sh
+
 # build the personal feed from the real sources into a temporary folder; writes no state (needs network)
 feeds-build:
     python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out "$(mktemp -d)" --dry-run
