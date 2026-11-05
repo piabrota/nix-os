@@ -42,7 +42,7 @@ stdenvNoCC.mkDerivation {
         --out-dir "$work/receipts" --quality "$(jq -r '.meta.quality_profile // "showcase"' "$src")" 2>&1)
       status=$?
       set -e
-      echo "$log"
+      echo "$log" >&2
       # Exit 2 means the browser check was skipped: there is no Chrome on the builder (just figure
       # ran it). The three other gates must pass.
       if [ "$status" != 0 ] && [ "$status" != 2 ]; then echo "archify failed on $src" >&2; exit 1; fi
@@ -80,6 +80,10 @@ stdenvNoCC.mkDerivation {
       echo '<p class="meta">The pages are drawn by <a href="https://github.com/tt-a1i/archify">archify</a> (MIT) and embed JetBrains Mono (SIL Open Font License 1.1).</p>'
       echo '</main></body></html>'
     } > dist/index.html
+    # render's stdout is inside the block above: a log line there lands in the index as page text.
+    if grep -qE 'finalize|gates validate|/build/' dist/index.html; then
+      echo "dist/index.html holds archify log text" >&2; exit 1
+    fi
     runHook postBuild
   '';
 
