@@ -175,8 +175,9 @@ Paperclip tasks. If a task names a Paperclip run, say that Paperclip is off. Nev
 or API key in a comment, a file or a log.
 
 OpenRig runs on this box: the unit `openrig`, on 127.0.0.1:7433 only, with the command `rig`. Load
-`hermes-rig` to operate it and `hermes-omp` for the task that a seat gets. Its seats run `omp` with
-`OPENRIG_YOLO=1`, the owner's decision in PR 124. The deny list blocks `rig setup`, `rig host`,
+`hermes-rig` to operate it and `hermes-omp` for the task that a seat gets. Its seats run `omp`
+without approval prompts: the rig sets `permission_policy: builtin:yolo`, the owner's decision in
+PR 124. The deny list blocks `rig setup`, `rig host`,
 `rig daemon start|stop|restart` and the commands that change a seat's permissions.
 
 To look at it, load the `kvm4-health` skill and run `kvm4-health`: memory, swap, pressure, load,

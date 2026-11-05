@@ -111,7 +111,7 @@ the pane shows a question or a menu.
 
 1. `rig capture <seat> --lines 40`. Read the question. Quote it to the owner.
 2. For an `omp` seat, a usual cause is a cancelled extension dialog (a cancelled approval request
-   only if the unit runs without `OPENRIG_YOLO`; see the
+   only if the rig has no `builtin:yolo` policy; see the
    [reference](../../hermes-omp/references/openrig-seats.md)). The seat then waits until the next
    agent run. Send an instruction that needs no answer: "Do not use that tool. Do this instead:
    ...". From the docs, not run.

@@ -109,8 +109,11 @@ pkgs.callPackage ./omp/wrapper.nix {
 The wrapper loads `hermes/omp.yml` itself, so a seat has the same deny rules as a Hermes run.
 OpenRig's runner passes only `ANTHROPIC_API_KEY` to omp, and only for a model `anthropic/<id>`.
 The wrapper moves a subscription token (`sk-ant-oat...`) from that variable to
-`ANTHROPIC_OAUTH_TOKEN`. The other settings of the openrig unit (`OPENRIG_NO_KERNEL=1`,
-`OPENRIG_YOLO=1`, the tmux socket, `lsof`) and the reasons for them are in the skill's
+`ANTHROPIC_OAUTH_TOKEN`. A seat gets the key only after two opt-ins: the unit names the variable in
+`OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST`, and the seat's model is `anthropic/<id>`. The seats
+run without approval prompts because the rig sets `permission_policy: builtin:yolo`; the unit's
+`OPENRIG_YOLO=1` does not do it. The other settings of the openrig unit (`OPENRIG_NO_KERNEL=1`, the
+tmux socket, `lsof`) and the reasons for them are in the skill's
 [`references/openrig-seats.md`](../hermes/skills/hermes-omp/references/openrig-seats.md).
 
 `hermes/omp.yml` lets a seat use `rig send`, `rig queue` and `rig whoami`. It refuses `rig setup`,

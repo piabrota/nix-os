@@ -6,6 +6,13 @@ version: "0.2"
 name: piabrota-dev
 summary: A builder and a reviewer that work on one task at a time
 
+# The seats run without approval prompts: the owner's decision (PR 124). The deny rules of
+# hermes/omp.yml stay the guard. The policy is needed because a rig with no policy gets the floor,
+# and the floor wins over OPENRIG_YOLO=1 in the unit: omp would start with
+# `--approval-mode always-ask`, and in RPC mode nobody can answer. builtin:yolo gives
+# `--approval-mode yolo`. Hermes does not change it (docs/OPENRIG.md, "Design").
+permission_policy: builtin:yolo
+
 # OpenRig starts each pane with a clean environment: no USER. NixOS builds the pane's PATH from the
 # per-user profile of $USER (users.users.openrig.packages in openrig.nix), so the seat needs these.
 env:
@@ -22,12 +29,18 @@ pods:
         agent_ref: "local:../../agents/builder"
         profile: default
         runtime: omp
+        # The member names the model too. With only the AgentSpec default, `rig ps` showed
+        # not-declared. anthropic/<id> is the form for which the runner passes the key.
+        model: anthropic/claude-sonnet-5-5
         # Made by the unit (StateDirectory in openrig.nix). A seat makes its clone here.
         cwd: /var/lib/openrig/work
       - id: reviewer
         agent_ref: "local:../../agents/reviewer"
         profile: default
         runtime: omp
+        # The member names the model too. With only the AgentSpec default, `rig ps` showed
+        # not-declared. anthropic/<id> is the form for which the runner passes the key.
+        model: anthropic/claude-sonnet-5-5
         cwd: /var/lib/openrig/work
     edges:
       # The builder asks the reviewer to check its diff. The builder starts first.

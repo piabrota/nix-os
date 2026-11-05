@@ -60,10 +60,14 @@ Symptom: STARTUP `pending`, `failed` or `attention_required`; the pane shows a s
    in the per-user profile of `openrig` (`users.users.openrig.packages`), and `USER` comes from
    the RigSpec `env:`. A relaunch does not fix it. This is a nix-os fix. Tell the owner.
    `/bin/rm: No such file or directory` in the pane is harmless on NixOS.
-4. `failed` with a good pane: wait 30 seconds, the monitor re-reads it. Then check again.
-5. A seat with no session file after a restore: `rig seat launch <seat> --fresh --plan`, then
+4. "No default model selected" in the pane means the key did not reach the seat. Check that the
+   unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`. Check that the model
+   of the seat is `anthropic/...`: `not-declared` in `rig ps --nodes --rig piabrota-dev` is wrong.
+   A relaunch does not fix it. This is a nix-os fix. Tell the owner.
+5. `failed` with a good pane: wait 30 seconds, the monitor re-reads it. Then check again.
+6. A seat with no session file after a restore: `rig seat launch <seat> --fresh --plan`, then
    without `--plan` and with `--reason "<why>"`.
-6. Fix: relaunch is yours. A broken wrapper, token or spec is the owner's pull request.
+7. Fix: relaunch is yours. A broken wrapper, token or spec is the owner's pull request.
 
 ## A seat is at a prompt
 

@@ -32,7 +32,8 @@ with a skill `hermes-rig`."
 |Network|The daemon listens on `127.0.0.1:7433` (`OPENRIG_BIND_HOST`). No nginx, no firewall port, no ACME. The web page of OpenRig is not shown.|
 |Path|`tmux`, `bash`, `git`, `ps`, `lsof`, `node`, `rig` and the seat `omp`. NixOS adds `coreutils`, `findutils`, `grep`, `sed`.|
 |Seat `omp`|`omp/wrapper.nix` with `ceiling = null` and `hermes/omp-seat-append-system.md`: the one wrapper of the repository, as PR 124 decided. Its rules (`hermes/omp.yml`) are the guard of a seat.|
-|Permissions|The unit sets `OPENRIG_YOLO=1`. This is the owner's decision in PR 124. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
+|Permissions|The rig sets `permission_policy: builtin:yolo`: the seats run without approval prompts. This is the owner's decision in PR 124. `OPENRIG_YOLO=1` in the unit does not do it: a rig with no policy gets the floor, and a policy wins over the variable. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
+|Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`: the name only. The value stays in the root-only `EnvironmentFile`. A seat whose model is `anthropic/<id>` gets the key. No other variable reaches a seat.|
 |Hermes|A `rig` command in the packages of `hermes-agent`. It sets `OPENRIG_URL=http://127.0.0.1:7433` and runs the real `rig`.|
 |Sandbox|`NoNewPrivileges`, `CapabilityBoundingSet=""`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ProtectKernel*`, `ProtectProc=invisible`, `RestrictNamespaces`, `LockPersonality`, `SystemCallFilter=@system-service ~@privileged` with `EPERM`, and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`.|
 |Restart|`Restart=on-failure`, `RestartSec=10s`, at most 5 starts in 600 s. After that the unit stays down.|
@@ -134,14 +135,16 @@ openrig/specs/
 ```
 
 - `rig.yaml` has one pod, `dev`, with the members `builder` and `reviewer`. Both use the runtime
-  `omp` and the folder `/var/lib/openrig/work`. An edge `delegates_to` goes from `builder` to
-  `reviewer`. The spec sets no `permission_policy`: the unit decides (see "Design").
+  `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`. An edge
+  `delegates_to` goes from `builder` to `reviewer`. The rig sets `permission_policy: builtin:yolo`
+  (see "Design").
 - Each `agent.yaml` imports `shared`, selects `shared:norms` as guidance, and sends `role.md` and
   `startup/context.md` to the seat as text. The norms land in the `AGENTS.md` of the working folder.
 - `shared` holds only the norms. An `omp` seat projects no plugin and no runtime resource, and the
   shared pool of OpenRig's own specs is for Claude Code and Codex seats.
-- Each `agent.yaml` sets `model: anthropic/claude-sonnet-5-5` in `defaults`. The roles of
-  `hermes/omp.yml` (Haiku for side tasks) still apply inside the seat.
+- Each `agent.yaml` sets `model: anthropic/claude-sonnet-5-5` in `defaults`, and each member of
+  `rig.yaml` sets the same `model`: with only the default, `rig ps` showed `not-declared`. The
+  roles of `hermes/omp.yml` (Haiku for side tasks) still apply inside the seat.
 - The seats cannot push: `omp.yml` denies `git push`, `gh` and `sudo`. The norms say so.
 
 **To add an agent.** Make a folder `openrig/specs/agents/<name>/` with an `agent.yaml` that imports
