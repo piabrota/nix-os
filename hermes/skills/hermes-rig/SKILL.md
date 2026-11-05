@@ -146,7 +146,7 @@ own clone of chaceon, read the diff, then push `hermes/wf-<slug>` and open the p
 the owner asks:
 
 ```console
-git bundle verify /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle
+git -C <clone> bundle verify /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle
 git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:hermes/wf-<slug>
 ```
 

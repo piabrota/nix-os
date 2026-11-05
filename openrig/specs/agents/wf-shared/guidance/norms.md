@@ -44,7 +44,7 @@ This box has no Docker, no GPU, no Vulkan and no Fortran compiler. So:
 
   ```console
   git -C chaceon bundle create /var/lib/rig-outbox/wave-forecaster-dev/<branch-slug>.bundle origin/main..HEAD
-  git bundle verify /var/lib/rig-outbox/wave-forecaster-dev/<branch-slug>.bundle
+  git -C chaceon bundle verify /var/lib/rig-outbox/wave-forecaster-dev/<branch-slug>.bundle
   ```
 
   The operator fetches the bundle, reads it and pushes it. You never push.

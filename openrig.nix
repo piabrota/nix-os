@@ -73,8 +73,9 @@ let
 
   # git credential helper of the seats: the read-only token of the repository, from the path git
   # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
-  # password, which is enough for a public one.
-  seatCredential = pkgs.writeShellScript "openrig-git-credential" ''
+  # password, which is enough for a public one. A clone names it by its profile path, not its store
+  # path: nix.gc deletes an old store path 14 days after a deploy that changes the helper.
+  seatCredential = pkgs.writeShellScriptBin "openrig-git-credential" ''
     [ "''${1:-}" = get ] || exit 0
     path=
     while IFS='=' read -r key value; do
@@ -89,14 +90,14 @@ let
   '';
 
   # A seat's clone of chaceon: the credential helper stays in the clone's own config, so a later
-  # fetch works. WW3/ is public (metocean/WW3) and pinned by the superproject.
+  # fetch works, also after a deploy. WW3/ is public (metocean/WW3) and pinned by the superproject.
   chaceonClone = pkgs.writeShellApplication {
     name = "chaceon-clone";
     runtimeInputs = [ pkgs.git ];
     text = ''
       dir=''${1:-chaceon}
       git clone --filter=blob:none \
-        --config credential.helper=${seatCredential} --config credential.useHttpPath=true \
+        --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
         https://github.com/h0ffmann/chaceon.git "$dir"
       git -C "$dir" submodule update --init --depth 1 WW3 || git -C "$dir" submodule update --init WW3
     '';
@@ -104,7 +105,7 @@ let
 
   # What a chaceon seat runs: `just check` (rustup's toolchain, gcc as the linker of build
   # scripts) and `just lint-sh`. No Docker, no Vulkan, no CUDA: those gates stay with the owner.
-  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck chaceonClone ];
+  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone ];
 in
 {
   options.piabrota.openrig = {
