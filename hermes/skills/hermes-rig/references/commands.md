@@ -135,7 +135,7 @@ Seat names have the form `pod-member@rig`. In `piabrota-dev`: `dev-builder@piabr
 |`rig agent-image` (`list show preview create delete pin unpin prune sync`), `rig fork <session>`|Saved images and forks of seats.|owner|
 |`rig policy` (`permissions`, `list`, `show`, `current`)|Read permission policy.|allowed|
 |`rig policy apply`|Apply a permission policy.|denied|
-|`rig compact`, `rig compact-plan`|Claude-only compaction. No Claude seat here.|owner (no use)|
+|`rig compact`, `rig compact-plan`|Claude-only compaction. A Claude seat exists only in the port rig, when `waveForecaster` is on (off today).|owner (no use)|
 |`rig restore-packet` (`write`, `read`, `validate`)|Cross-runtime restore packets.|owner|
 
 ## Contact and network surfaces

@@ -1,19 +1,39 @@
 # Runtimes
 
-A runtime is what a seat runs. The member's `runtime` field in a rig spec names it.
+A runtime is what a seat runs. The member's `runtime` field in a rig spec names it. The full
+comparison (features, pros, cons, auth, permission mapping, state) is in
+[`docs/RUNTIMES.md`](../../../../docs/RUNTIMES.md). This file is what you need to operate the rigs.
 
 |Runtime|What it is|On this box|
 |---|---|---|
-|`omp`|Oh My Pi, the coding agent that Hermes already uses (`hermes-omp`), run by OpenRig's RPC runner.|**Works.** The only agent runtime.|
+|`omp`|Oh My Pi, the coding agent that Hermes already uses (`hermes-omp`), run by OpenRig's RPC runner.|**Works.** The runtime of `piabrota-dev` and `wave-forecaster-dev-integrate`.|
+|`claude-code`|Claude Code (`claude`, unfree: `unfree.nix`).|**Only the port rig `wave-forecaster-dev`**, and only when `piabrota.openrig.waveForecaster.enable` is on (off today). Not run: no live Claude seat.|
 |`terminal`|A shell for a server, a log tail or a build watcher. No agent, no profile (`agent_ref: "builtin:terminal"`, `profile: none`).|**Works.** Tested in a scratch daemon. `rig send` types the exact text, with no From and To lines.|
 |`stub`|A scripted test harness. It calls no model.|Present; from the docs, not run.|
-|`claude-code`|Claude Code.|**Not here.** The `claude` program is unfree and not installed.|
-|`codex`|OpenAI Codex.|**Not here.** Not installed.|
-|`pi`|The Pi coding agent.|No `pi` program is set up for the unit. No spec uses it.|
+|`codex`|OpenAI Codex.|**Not here.** Not installed. It would need an OpenAI login.|
+|`pi`|The Pi coding agent.|No `pi` program is set up for the unit, and the unit has none of the keys that Pi takes (OpenRouter, Z.ai, Kimi, MiniMax). No spec uses it.|
 |Community harness|An outside tool, installed as a preset file `$OPENRIG_HOME/community-harnesses/<name>.yaml`. The preset's name is the runtime. OpenRig does not test it.|None installed. Do not add one.|
 
 `rig grow` and `rig create` default to `claude-code`. On this box, give `--runtime omp`, and ask
 the owner first (see `commands.md`).
+
+**A changed spec does not reach a rig.** A rig keeps the spec that made it. After a change to a
+spec in `/etc/openrig/specs`, run `rig archive <rig>`, then import the spec again. `rig import <spec>
+--materialize-only` makes the rig and its seats and starts nothing. Then `rig up <rig>` starts it.
+Ask the owner before `rig archive`.
+
+## How a `claude-code` seat works
+
+- **Guidance.** The spec's guidance lands in the `CLAUDE.md` of the seat's working folder, not in
+  `AGENTS.md`. The seat's `claude` is `seatClaude` in `openrig.nix`.
+- **Rules.** `/etc/claude-code/managed-settings.json` has the deny rules. They hold in bypass mode,
+  and they are no sandbox. If a seat cannot run a command, tell the owner and name the command.
+- **Bypass warning.** Claude Code asks once to accept its bypass-permissions warning. OpenRig then
+  reports the seat as `attention_required`. This is a consent prompt: show the pane to the owner
+  and let the owner answer it (`rig seat continue` or the web UI). Never answer it yourself. Do
+  not add `--non-interruptive`: the deny list blocks it.
+- **Login errors.** If `rig capture` shows a login or authentication error, tell the owner. Do not
+  look for another token. This skill never reads the token file.
 
 ## How an `omp` seat works
 

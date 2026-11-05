@@ -3,7 +3,7 @@
 Read these before you change anything:
 
 1. The task that the operator or the other seat sends you.
-2. The norms in the `AGENTS.md` of your working folder: the box's, then wave-forecaster-dev's.
+2. The norms in the `CLAUDE.md` of your working folder: the box's, then wave-forecaster-dev's.
 3. `chaceon/AGENTS.md` and `chaceon/.claude/skills/ww3-port/SKILL.md`, after you clone.
 
 ## Limits of this box

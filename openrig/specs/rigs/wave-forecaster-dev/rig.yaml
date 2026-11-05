@@ -1,19 +1,27 @@
 # The port rig of wave-forecaster-dev: a porter translates one routine of WAVEWATCH III from Fortran
 # to Rust in h0ffmann/chaceon, and an auditor checks it against the Fortran. Two seats, the same
-# shape as piabrota-dev. Start it with
+# shape as piabrota-dev, but both run Claude Code (`runtime: claude-code`, a pure Claude Code
+# harness) and not omp. The other rig of the block, wave-forecaster-dev-integrate, stays on omp.
+# Start it with
 #   rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml
 # Nothing starts it: Hermes or a human does. Do not run it at the same time as piabrota-dev or
 # wave-forecaster-dev-integrate: the unit has one memory budget (docs/OPENRIG.md, "wave-forecaster-dev").
+# A rig keeps the spec it was made from: after a change here, `rig archive` it and import it again.
 version: "0.2"
 name: wave-forecaster-dev
 summary: A porter and an auditor that bring one WW3 routine to Rust at a time
 
-# The same policy as piabrota-dev, for the same reason: without it an omp seat asks for approval,
-# and in RPC mode nobody can answer. The deny rules of hermes/omp.yml stay the guard.
+# `builtin:yolo` gives a Claude seat `--dangerously-skip-permissions`: without a policy a seat gets
+# the floor (`--permission-mode acceptEdits`), and in a pane nobody answers its prompts. The guard
+# is /etc/claude-code/managed-settings.json (openrig.nix): its deny rules hold in bypass mode and
+# nothing in the repository can loosen them. They are no sandbox; the unit's sandbox is the hard
+# layer. The first run of Claude Code in bypass mode asks once to accept its warning: `rig seat
+# continue` or the web UI answers it (docs/RUNTIMES.md).
 permission_policy: builtin:yolo
 
 # OpenRig starts each pane with a clean environment. NixOS builds the pane's PATH from the profile
-# of $USER (users.users.openrig.packages in openrig.nix), which has the Rust tools of this rig.
+# of $USER (users.users.openrig.packages in openrig.nix), which has the Rust tools of this rig and
+# the `claude` of the box.
 env:
   USER: openrig
   LOGNAME: openrig
@@ -27,16 +35,19 @@ pods:
       - id: porter
         agent_ref: "local:../../agents/wf-porter"
         profile: default
-        runtime: omp
-        model: anthropic/claude-sonnet-5-5
-        # Its own folder (StateDirectory in openrig.nix): the norms land in its AGENTS.md, and the
-        # chaceon clone goes in a subfolder, so the two AGENTS.md files never mix.
+        runtime: claude-code
+        # A full Claude model id, as OpenRig's own examples (docs/reference/rig-spec.md). The form
+        # anthropic/<id> belongs to omp. The member names the model too: it wins over the AgentSpec
+        # default, which for wf-auditor is still omp's (the integrate rig uses that one).
+        model: claude-sonnet-5-5
+        # Its own folder (StateDirectory in openrig.nix): the norms land in its CLAUDE.md, and the
+        # chaceon clone goes in a subfolder, so the two CLAUDE.md files never mix.
         cwd: /var/lib/openrig/work/wave-forecaster-dev/porter
       - id: auditor
         agent_ref: "local:../../agents/wf-auditor"
         profile: default
-        runtime: omp
-        model: anthropic/claude-sonnet-5-5
+        runtime: claude-code
+        model: claude-sonnet-5-5
         cwd: /var/lib/openrig/work/wave-forecaster-dev/auditor
     edges:
       # The porter asks the auditor to check its port. The porter starts first.
