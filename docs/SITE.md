@@ -96,8 +96,14 @@ failed.
 `https://www.piabrota.art/skills/` is the website that GitHub Pages served for
 [piabrota/skills](https://github.com/piabrota/skills). It moved here.
 
-`skills-site/` holds the Gleam program, unchanged. Do not edit it here: a code change there is not
-tested on the VPS, and no one compiles Gleam on it.
+`skills-site/` holds the Gleam program. It was copied from piabrota/skills, and it is edited here on purpose, for the look.
+The look is the one of the site: [`site/DESIGN.md`](../site/DESIGN.md) has its rules.
+The program keeps its CSS in `skills-site/src/www.gleam`. It writes the CSS into each page.
+Each page has the brand of piabrota, a link back to `www.piabrota.art`, the three sections (skills, agents, awesome-skills) and a foot.
+The home page has the install commands as terminal cards, a search box, tags and a card for each skill.
+The page loads the same Google Fonts as the site, and its script asks `api.github.com` for the star count.
+Change only the look and the page frame. The content, the search, the tags and the copy buttons stay as they were.
+No one compiles Gleam on the VPS, and a code change here is not tested there. The build on the builder is the test.
 
 The build reads a pinned commit of piabrota/skills (`rev` and `hash` in `skills-site/default.nix`).
 A new commit of that repository shows on the site only after a PR here moves the pin. To move it:
