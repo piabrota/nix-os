@@ -409,6 +409,9 @@ in
     # tmpfiles rule below gives feeds/ to hermes.
     hermesHomeFiles."scripts/feed-build.py" = ./hermes/feeds/build_feed.py;
     hermesHomeFiles."feeds/feeds.toml" = ./hermes/feeds/feeds.toml;
+    # The skills-export no_agent cron job (daily 01:45) runs this: it copies Hermes's skills into a
+    # pull request on piabrota/skills. Cron gives it the unit's PATH, so the script adds the system profile.
+    hermesHomeFiles."scripts/export-skills.sh" = ./hermes/scripts/export-skills.sh;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";

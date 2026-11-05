@@ -1,0 +1,36 @@
+# The porter seat of wave-forecaster-dev: translates one WW3 routine of h0ffmann/chaceon. It runs on
+# omp, like the seats of piabrota-dev (agents/builder/agent.yaml says why the model has this form).
+name: wf-porter
+version: "1.0"
+description: Translates one WW3 routine from Fortran to Rust in h0ffmann/chaceon
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../wf-shared
+
+profiles:
+  default:
+    summary: Ports one routine to the status translated and hands it to the auditor
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, wf-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

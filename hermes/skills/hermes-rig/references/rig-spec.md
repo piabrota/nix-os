@@ -18,6 +18,10 @@ deploy replaces it. Ask the owner for a change that is not yours to make.
   agents/builder/guidance/role.md   the builder's role (sent to the seat as text)
   agents/builder/startup/context.md limits of the box (sent as text)
   agents/reviewer/...               the same three files for the reviewer
+  rigs/wave-forecaster-dev/rig.yaml            pod "port": porter and auditor
+  rigs/wave-forecaster-dev-integrate/rig.yaml  pod "wire": integrator and auditor
+  agents/wf-shared/...              the norms for h0ffmann/chaceon, imported after shared
+  agents/wf-porter/, wf-auditor/, wf-integrator/   the three files of each seat
 ```
 
 |File|Its job|

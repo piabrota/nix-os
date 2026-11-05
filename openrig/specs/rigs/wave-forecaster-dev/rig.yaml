@@ -1,0 +1,47 @@
+# The port rig of wave-forecaster-dev: a porter translates one routine of WAVEWATCH III from Fortran
+# to Rust in h0ffmann/chaceon, and an auditor checks it against the Fortran. Two seats, the same
+# shape as piabrota-dev. Start it with
+#   rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml
+# Nothing starts it: Hermes or a human does. Do not run it at the same time as piabrota-dev or
+# wave-forecaster-dev-integrate: the unit has one memory budget (docs/OPENRIG.md, "wave-forecaster-dev").
+version: "0.2"
+name: wave-forecaster-dev
+summary: A porter and an auditor that bring one WW3 routine to Rust at a time
+
+# The same policy as piabrota-dev, for the same reason: without it an omp seat asks for approval,
+# and in RPC mode nobody can answer. The deny rules of hermes/omp.yml stay the guard.
+permission_policy: builtin:yolo
+
+# OpenRig starts each pane with a clean environment. NixOS builds the pane's PATH from the profile
+# of $USER (users.users.openrig.packages in openrig.nix), which has the Rust tools of this rig.
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+
+pods:
+  - id: port
+    label: Port
+    summary: The porter translates one routine and runs the gates of this box. The auditor reads it against the Fortran.
+    members:
+      - id: porter
+        agent_ref: "local:../../agents/wf-porter"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        # Its own folder (StateDirectory in openrig.nix): the norms land in its AGENTS.md, and the
+        # chaceon clone goes in a subfolder, so the two AGENTS.md files never mix.
+        cwd: /var/lib/openrig/work/wave-forecaster-dev/porter
+      - id: auditor
+        agent_ref: "local:../../agents/wf-auditor"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-dev/auditor
+    edges:
+      # The porter asks the auditor to check its port. The porter starts first.
+      - kind: delegates_to
+        from: porter
+        to: auditor
+
+edges: []
