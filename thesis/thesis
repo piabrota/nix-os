@@ -1,0 +1,97 @@
+#!/bin/sh
+# thesis: the toolkit of the wave-forecaster-thesis rig (docs/THESIS.md). POSIX sh, jq, awk, pandoc
+# and pdfLaTeX; nothing else, no network, no model. A project is a folder of JSON, markdown and BibTeX
+# (projects/<slug>/), the sections are written one by one by writer seats and checked by four gates
+# (readability, slop, UFRJ patterns, citation); the PDF is built with a pinned LaTeX template.
+set -eu
+
+SHARE=${THESIS_SHARE:-}
+if [ -z "$SHARE" ]; then
+  SHARE=$(CDPATH='' cd -- "$(dirname -- "$0")/../share/thesis" 2>/dev/null && pwd) || SHARE=
+fi
+if [ ! -f "$SHARE/profile.json" ]; then
+  printf 'thesis: cannot find the toolkit data (THESIS_SHARE=%s)\n' "$SHARE" >&2
+  exit 1
+fi
+# The path of this script, to run a gate in its own process (a die in a gate is a refusal, not an exit).
+SELF=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)/$(basename -- "$0")
+
+# shellcheck source=lib/core.sh
+. "$SHARE/lib/core.sh"
+# shellcheck source=lib/gates.sh
+. "$SHARE/lib/gates.sh"
+# shellcheck source=lib/cite.sh
+. "$SHARE/lib/cite.sh"
+# shellcheck source=lib/project.sh
+. "$SHARE/lib/project.sh"
+# shellcheck source=lib/build.sh
+. "$SHARE/lib/build.sh"
+# shellcheck source=lib/ufrj.sh
+. "$SHARE/lib/ufrj.sh"
+
+usage() {
+  cat <<'EOF'
+thesis: a final project for the Escola Politécnica of UFRJ, written in independent sections.
+
+Editor:
+  thesis new <slug> [--template forecast-energy-demand]   a project folder and a thesis.json to fill
+  thesis sections [<slug>]                                the sections and their status (no slug: the projects)
+  thesis status <slug>                                    one screen: status, rounds, sources, what blocks assemble
+
+Writer (one section at a time):
+  thesis fetch <slug> [<id>] [--as <seat>]                claim the next todo section, print the work order
+  thesis release <slug> <id> [--as <seat>]                free a claim
+  thesis build-section <slug> <id>                        the LaTeX fragment and a one-section preview PDF
+  thesis submit <slug> <id> [--as <seat>]                 build, lint, cite-check, slop, readability; then drafted
+
+Reviewer (no model, no network):
+  thesis lint <slug> <id>                                 the rules of the markdown, characters, labels, length
+  thesis readability <slug> <id>                          gate 1: human readable pt-BR
+  thesis slop <slug> <id>                                 gate 2: surface patterns of model-written text
+  thesis ufrj-check <slug>                                gate 3: the UFRJ patterns, PASS, FAIL or CANNOT-CHECK
+  thesis cite-check <slug> [<id>]                         gate 4: sources fetched, verified, recorded
+  thesis cite-score <slug> <id>                           the share of sentences with a citation mark
+  thesis review-report <slug> <id|final>                  every gate on one section, or on the whole work, to review/
+  thesis verdict <slug> <id> accept|revise --by <seat> [--note <file>]
+
+Build and hand-over:
+  thesis assemble <slug>                                  every section accepted, then the PDF and pdf-qa
+  thesis pdf-qa <slug>                                    A4, fonts, ??, margins, titles in order: build/qa.json
+  thesis publish <slug> [--replace]                       thesis.pdf, qa.json, REFERENCES.md, review/ to the outbox
+
+Folders: THESIS_HOME (projects/<slug>/, out/<slug>/), THESIS_OUTBOX. A seat name comes from --as, THESIS_SEAT,
+or the member folder you stand in. See docs/THESIS.md.
+EOF
+}
+
+[ $# -ge 1 ] || {
+  usage
+  exit 2
+}
+cmd=$1
+shift
+case "$cmd" in
+  new) cmd_new "$@" ;;
+  sections) cmd_sections "$@" ;;
+  status) cmd_status "$@" ;;
+  fetch) cmd_fetch "$@" ;;
+  release) cmd_release "$@" ;;
+  build-section) cmd_build_section "$@" ;;
+  submit) cmd_submit "$@" ;;
+  lint) cmd_lint "$@" ;;
+  readability) cmd_readability "$@" ;;
+  slop) cmd_slop "$@" ;;
+  ufrj-check) cmd_ufrj_check "$@" ;;
+  cite-check) cmd_cite_check "$@" ;;
+  cite-score) cmd_cite_score "$@" ;;
+  review-report) cmd_review_report "$@" ;;
+  verdict) cmd_verdict "$@" ;;
+  assemble) cmd_assemble "$@" ;;
+  pdf-qa) cmd_pdf_qa "$@" ;;
+  publish) cmd_publish "$@" ;;
+  help | -h | --help) usage ;;
+  *)
+    usage >&2
+    die "unknown command: $cmd"
+    ;;
+esac

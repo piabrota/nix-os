@@ -111,6 +111,28 @@ Interactive page: <https://www.piabrota.art/figures/software-factory/>
 
 </details>
 
+The rig `wave-forecaster-thesis` is a second rig on the same engine. Six Claude Code seats write a
+final-year project of the Escola Politécnica of UFRJ in Portuguese, one independent section at a
+time, and the command `thesis` (no model, no network) claims the sections, runs four gates and builds
+the PDF. It is off at piabrota2, and no seat has run it ([`docs/THESIS.md`](docs/THESIS.md)).
+
+![The thesis rig: the owner gives the brief to the editor, which writes thesis.json; the librarian keeps the sources and refs.bib; three writers each take one section with thesis fetch and hand it in with thesis submit; the thesis toolkit, with pandoc, the Lua filter, the template and pdfLaTeX, runs the gates; the reviewer records the verdict with a hash; assemble builds the PDF and runs pdf-qa and ufrj-check; publish puts the PDF in the outbox, where Hermes and the owner read it; the six seats run on Claude Code in the openrig unit of 2G.](docs/img/thesis-rig.png)
+
+Interactive page: <https://www.piabrota.art/figures/thesis-rig/>
+
+<details open>
+<summary>How to read this figure</summary>
+
+**Takeaway.** Six Claude Code seats write independent sections, a toolkit with no model checks and builds them, and one PDF leaves in an outbox that the owner reads.
+
+**How to read.** Top to bottom and left to right, one lane for each role. The top strip marks the five phases. The red border marks where a person comes in. Each arrow carries the command or the file that passes from one part to the next.
+
+**Not shown.** The three writers are one box. Also the four gates, the project files and the consent prompt of Claude Code.
+
+**Evidence.** [`docs/archify/thesis-rig.json`](docs/archify/thesis-rig.json), the source of the figure; `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, [`docs/THESIS.md`](docs/THESIS.md). ⚠ No seat has run this rig: the arrows are the design, not a run.
+
+</details>
+
 ![How nix-os works: a pull request runs ci.yml on every push; a merge to main runs deploy.yml, which builds the system on the GitHub runner; deploy-rs copies the closure to the VPS over SSH and switches it, the VPS fetching store paths from cache.nixos.org; if SSH falls silent for 60 s, magic rollback restores the old system; after the switch, freeze.yml lists the VPS's packages, and cves.yml reports vulnix on the same push.](docs/img/how-nix-os-works.png)
 
 Interactive page: <https://www.piabrota.art/figures/how-nix-os-works/>
@@ -240,6 +262,7 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
 ├── openrig.nix, openrig/    OpenRig, the engine of the software factory: its package, its rig specs and its UI (docs/OPENRIG.md)
+├── thesis/                  the `thesis` toolkit of the thesis rig: POSIX sh, pandoc, TeX; its tests (docs/THESIS.md)
 ├── kubesolo-purge.nix       a oneshot that clears an old install from the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
@@ -264,6 +287,8 @@ edited by hand: change it with the pin. Update with `nix flake update` in a pull
 ├── docs/PGX.md            the same, in English
 ├── docs/PAPERCLIP.md      Paperclip and Hermes here: setup, cost, updating
 ├── docs/OPENRIG.md        OpenRig and the software factory here: setup, UI, status, guardrails
+├── docs/THESIS.ptBR.md    the thesis rig: parts, gates, UFRJ rules, deployment notes, in Portuguese
+├── docs/THESIS.md         the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
 ├── .github/workflows/       ci.yml (every PR beyond Markdown: lints and the justfile parse; the full flake check by hand), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use

@@ -1,0 +1,11 @@
+# What every seat of wave-forecaster-thesis shares, on top of agents/shared: the rules for writing
+# one UFRJ final-year thesis with the `thesis` toolkit. A spec that imports this one selects the file
+# with `guidance: [thesis-shared:norms]`. The box norms (`shared:norms`) come first and win.
+name: thesis-shared
+version: "1.0"
+description: The rules of every wave-forecaster-thesis seat for work on one thesis
+
+resources:
+  guidance:
+    - id: norms
+      path: guidance/norms.md
