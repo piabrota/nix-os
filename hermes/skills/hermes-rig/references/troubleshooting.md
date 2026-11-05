@@ -140,7 +140,7 @@ device" for `openrig`; `rig` commands time out or fail on write.
 |`/bin/rm: No such file or directory` printed in a terminal seat (tested)|A harmless line from the daemon's paste step on NixOS. It shows in a shell seat only.|
 |`rig up <spec>` refuses|A rig of that name has live seats. Read `rig ps --nodes --rig <name>`. Do not force it.|
 |"lsof isn't installed" warning at start|Ownership of the database file is unknown. The unit has `lsof` in its path, so you should not see it.|
-|`fetch openrig-core returned 404` in the journal at start, or `rig doctor` FAIL on `claude_install`, `codex_install`, `ui_dist`|Known here, not an error: the [reference](../../hermes-omp/references/openrig-seats.md).|
+|`fetch openrig-core returned 404` in the journal at start, or `rig doctor` FAIL on `claude_install`, `codex_install`|Known here, not an error: the [reference](../../hermes-omp/references/openrig-seats.md).|
 
 Source: `rig` help of the built OpenRig `v0.7.7`; `docs/reference/agent-startup-guide.md` and
 `checked-seat-stop.md`; `openrig.nix` of piabrota/nix-os for the limits and the restart rules;

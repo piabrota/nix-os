@@ -42,8 +42,9 @@ tested on 2026-11-04). `rig daemon start` forks a detached daemon: under systemd
 mistake as Hermes's own detached gateway (`hermes.nix`, `--external-supervisor`). Do not use it in
 a unit. Hermes's deny list refuses `rig daemon start|stop|restart` and `rig start`.
 
-`rig doctor` shows `[FAIL] ui_dist` when the package is built without the web UI. That is
-expected here: the UI is not built and not served. Report it as known, not as a failure.
+The package carries the web UI, and the unit serves it on loopback (`OPENRIG_UI_ENABLED=true`), so
+`rig doctor` has no `ui_dist` FAIL. A FAIL there means a broken build: tell the owner. You do not
+need the UI to operate the rig.
 
 At start the daemon tries to fetch `openrig-core` and falls back to its built-in copy on a 404.
 That is not an error.

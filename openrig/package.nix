@@ -1,10 +1,12 @@
 # OpenRig (github.com/mvschwarz/openrig, Apache-2.0), built from source at a release tag. The
 # source is an npm workspace (daemon, UI, TUI, CLI). This file repeats the steps of
-# scripts/build-package.sh, which needs git and the network: it builds the daemon, the TUI and the
-# CLI with tsc, writes the build stamp, makes the context packs, and puts the daemon and the TUI in
-# the CLI package. The result has the layout of the npm package @openrig/cli, so `rig` finds its
-# daemon in its own `daemon/` folder. The UI is not built: it is in maintenance mode, the daemon
-# serves no web page without it, and a build needs vite and its prebuilt esbuild. better-sqlite3
+# scripts/build-package.sh, which needs git and the network: it builds the daemon, the UI, the TUI
+# and the CLI with tsc and vite, writes the build stamp, makes the context packs, and puts the
+# daemon, the UI build and the TUI in the CLI package. The result has the layout of the npm package
+# @openrig/cli, so `rig` finds its daemon in its own `daemon/` folder, and the daemon finds the UI
+# in `ui/dist`. It serves the UI only when `ui.enabled` is true (openrig.nix). Upstream keeps the UI
+# in maintenance mode. The install runs with --ignore-scripts, so vite uses the esbuild binary of the
+# lock's optional package @esbuild/linux-x64; nothing is downloaded. better-sqlite3
 # 13 ships prebuilt .node files in its tarball: they are removed here and the addon is compiled
 # from the bundled SQLite source. Bump `version`, `commit` and both hashes together.
 { lib, buildNpmPackage, fetchFromGitHub, makeWrapper, nodejs_24 }:
@@ -27,8 +29,8 @@ in
 
   nativeBuildInputs = [ makeWrapper ];
 
-  # No install script runs: esbuild (UI build only) downloads or checks a binary, and the CLI's
-  # postinstall opens a database before the addon is built.
+  # No install script runs: esbuild checks its binary (vite finds it in @esbuild/linux-x64 without
+  # the script), and the CLI's postinstall opens a database before the addon is built.
   npmRebuildFlags = [ "--ignore-scripts" ];
 
   # The context packs ship scripts: `rig context get` serves them as they are, so no shebang changes.
@@ -38,6 +40,7 @@ in
     runHook preBuild
     export NODE_OPTIONS=--max-old-space-size=2048
     tsc=$PWD/node_modules/.bin/tsc
+    vite=$PWD/node_modules/.bin/vite
 
     # The addon: the prebuilt files go away, so the loader finds build/Release.
     (
@@ -51,6 +54,8 @@ in
     (cd packages/daemon && $tsc && node scripts/copy-workflow-specs.mjs)
     (cd packages/tui && $tsc && node ../../scripts/prepare-workspace-build.mjs tui)
     (cd packages/cli && $tsc && node ../../scripts/prepare-workspace-build.mjs cli)
+    # The UI: `npm run build` is `tsc && vite build`.
+    (cd packages/ui && $tsc && $vite build)
 
     # The build stamp of scripts/build-package.sh. SOURCE_DATE_EPOCH keeps the time fixed.
     for dist in packages/daemon/dist packages/cli/dist; do
@@ -76,6 +81,8 @@ in
     cp -r packages/daemon/dist packages/daemon/assets packages/daemon/specs \
       packages/daemon/context-packs packages/daemon/policies $cli/daemon/
     cp -r docs/reference $cli/daemon/docs/reference
+    mkdir -p $cli/ui
+    cp -r packages/ui/dist $cli/ui/dist
     cp -r packages/tui/dist $cli/tui/dist
     node scripts/rewrite-daemon-imports.mjs
     runHook postBuild
@@ -129,8 +136,8 @@ in
       $sqlite/build/Release/better_sqlite3.node
     strip $sqlite/build/Release/better_sqlite3.node
     mkdir -p $cli
-    cp -r packages/cli/dist packages/cli/daemon packages/cli/tui packages/cli/package.json \
-      packages/cli/LICENSE $cli/
+    cp -r packages/cli/dist packages/cli/daemon packages/cli/tui packages/cli/ui \
+      packages/cli/package.json packages/cli/LICENSE $cli/
 
     makeWrapper ${lib.getExe nodejs_24} $out/bin/rig --add-flags $cli/dist/bin-wrapper.js
     makeWrapper ${lib.getExe nodejs_24} $out/bin/openrig-tui --add-flags $cli/tui/dist/main.js

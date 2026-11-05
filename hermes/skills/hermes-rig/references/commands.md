@@ -33,7 +33,7 @@ Seat names have the form `pod-member@rig`. In `piabrota-dev`: `dev-builder@piabr
 |`rig crash-cart`|Read-only JSON verdict for a daemon that is down.|allowed|
 |`rig host` (`add`, `select`, `rename`, `pair`, `list`, `doctor`), any `--host <id>`|Other machines over SSH or pairing.|denied|
 |`rig file copy`|Copy files across hosts.|owner|
-|`rig ui open`, `rig tui`, `rig terminal` (`open`, `views`, `status`)|Browser, dashboard and desktop tiles. There is no UI build or desktop here.|owner (no use)|
+|`rig ui open`, `rig tui`, `rig terminal` (`open`, `views`, `status`)|Browser, dashboard and desktop tiles. The web UI is served on `127.0.0.1:7433` for the owner (SSH tunnel). There is no desktop here.|owner (no use)|
 
 ## Rigs and seats
 
