@@ -38,10 +38,11 @@ and `cli-reference.md`). Not tried on this box.
 
 ## Seeing omp work
 
-Hermes runs omp in the background and pipes its output through `omp-stream`:
+Hermes runs omp in the background with `omp-run`, which pipes its output through `omp-stream`:
 
 ```
-omp -p --mode json --no-title --max-time 15m < task.md 2>&1 | omp-stream
+omp-run <name> --max-time 15m      # omp -p --mode json --no-title --max-time 15m < omp-tasks/<name>.md 2>&1 | omp-stream
+omp-run --stop <name>              # stop that run and wait until it has ended
 ```
 
 `--mode json` makes omp print one JSON event per line. `omp-stream`
@@ -67,6 +68,31 @@ costs up to 8 turns. The filter calls no model.
 
 Test: `sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh` (needs `jq`). It runs a recorded
 run (`scripts/fixtures/`) and three more cases: a line that is not JSON, a tool error and a secret.
+
+### How a run ends
+
+`omp-run` ([`hermes/skills/hermes-omp/scripts/omp-run.sh`](../hermes/skills/hermes-omp/scripts/omp-run.sh),
+a command on Hermes's PATH, in `hermes.nix`) prints one last line when omp did not finish, and then
+the progress file `omp-tasks/<name>.progress`:
+
+|Last line|Exit|Cause|
+|---|---|---|
+|`omp-run: stopped on request (omp-run --stop <name>)`|0|Hermes stopped the run, for example to restart it with a new task|
+|`omp-run: stopped by SIGTERM, not by omp-run --stop: ...`|143|A restart of `hermes-agent`, a deploy, or a kill of the background task|
+|`omp-run: stopped by the time limit ...`|124|`--max-time`, or the wrapper's ceiling of 35 minutes|
+|`omp-run: omp was killed (SIGKILL ...)`|137|Out of memory, or 30 seconds after the time limit|
+|`omp-run: omp was stopped by signal <n>`|128 + n|A signal sent to omp only|
+
+Hermes starts a background command as `bash -lic` with no terminal. Before `omp-run`, Hermes wrote
+the pipeline itself and stopped a run with `pkill -f <task file>` or `kill <pid>`. The signal
+killed the pipeline, bash then printed `tcsetattr: Inappropriate ioctl for device`, and the task
+ended as a failure with exit 143, also when Hermes had stopped it on purpose (2026-11-05, the
+Beszel run). `omp-run` catches SIGTERM, SIGINT and SIGHUP, passes SIGTERM to omp, lets
+`omp-stream` print the last lines and exits with a code, so bash prints no `tcsetattr` line.
+
+Test: `bash hermes/skills/hermes-omp/scripts/test-omp-run.sh` (needs `jq` and `setsid`). It runs
+`omp-run` with a fake omp in `bash -lic` with no terminal: a normal run, `--stop`, a SIGTERM to
+the process group, a SIGTERM to omp only, and a missing task file. `just omp-test` runs both tests.
 
 ## The layers: what you can edit
 
