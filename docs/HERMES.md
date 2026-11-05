@@ -82,12 +82,27 @@ old configuration.
 
 A reload is a graceful restart. `ExecReload` sends `SIGUSR1`; the gateway takes no new work, lets
 the turns, cron jobs and subagents in flight finish (at most `agent.restart_after_turn_timeout`,
-600 s here), and exits with code 75. systemd (`Restart=always`) then starts it with the new
-configuration. Before this, a deploy stopped the unit with `SIGTERM` and cut the turn in flight,
-also when the merge was Hermes's own PR. A new Hermes package changes the unit's `ExecStart`, and
-that still restarts it at once. While it drains, a new message waits until the gateway is back.
-The gateway runs with `--external-supervisor`. This tells it that systemd owns it, so a reload
-exits with code 75 and does not start a detached gateway.
+600 s here), and exits with code 75. Then the new configuration starts. Before this, a deploy
+stopped the unit with `SIGTERM` and cut the turn in flight, also when the merge was Hermes's own
+PR. A new Hermes package changes the unit's `ExecStart`, and that still restarts it at once. While
+it drains, a new message waits until the gateway is back.
+
+The main process of the unit is `hermes/scripts/gateway-wrapper.sh`, not the gateway. It passes
+`SIGUSR1` and `SIGTERM` on to the gateway. The gateway runs with `--external-supervisor`. This
+tells it that systemd owns it, so a reload exits with code 75 and does not start a detached
+gateway.
+
+On code 75 the wrapper starts the gateway again itself, at once, with no pause. The unit stays
+active, and `RestartSec` is not part of a reload. Before, systemd waited 5 s (`Restart=always`).
+In that gap the Chat tab of the dashboard (`hermes-backend`) found no gateway and started a second
+one. That gateway is outside `hermes-agent`. The new gateway of the unit then said "already serves"
+and exited 0, and systemd restarted it every 6 s (2026-11-05). A gateway that exits 75 more than
+5 times in 60 s makes the wrapper exit 1, and systemd restarts the unit and counts it.
+
+If the gateway exits 0 within 20 s and `gateway.pid` names another live process, the wrapper does
+not exit. It logs `another gateway (pid N) serves this host: waiting for it to exit` and checks
+every 5 s. When that process ends, the wrapper starts its own gateway. `SIGTERM` ends the wait at
+once. The test is `hermes/scripts/gateway-wrapper.test.sh`.
 
 ## Who it is
 

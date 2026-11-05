@@ -5,7 +5,7 @@
 # Every host gets this file. It sets what does not depend on the machine and leaves the rest at
 # upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
-{ config, lib, pkgs, hermes-agent, ... }:
+{ config, lib, pkgs, utils, hermes-agent, ... }:
 let
   # The release tag of the pinned hermes-agent input (flake.lock): v0.22.7 is b200f5b.
   hermesVersion = "0.22.7";
@@ -457,9 +457,13 @@ in
   # The gateway's exit 75 after a reload failed the first deploy that reloaded it (#76,
   # 2026-11-03): switch-to-configuration counts a service in auto-restart whose ExecMainStatus is
   # not 0 as failed, so deploy-rs rolled the box back. SuccessExitStatus does not change
-  # ExecMainStatus. This wrapper is the main process instead: it passes SIGUSR1 and SIGTERM on to
-  # the gateway and turns its 75 into 0, so a reload restarts it without a failed unit. The
-  # package is the module's own (moduleCommon.nix, effectivePackage).
+  # ExecMainStatus. hermes/scripts/gateway-wrapper.sh is the main process instead: it passes
+  # SIGUSR1 and SIGTERM on to the gateway, and on a 75 it starts the gateway again itself, with no
+  # pause, so a reload never leaves "active" and never fails the unit. The package is the module's
+  # own (moduleCommon.nix, effectivePackage).
+  # The gap of Restart=always (RestartSec 5 s) let the dashboard's Chat tab start a second,
+  # unmanaged gateway, and the unit then looped on "already serves" (2026-11-05). The wrapper
+  # also waits for such a gateway to exit and does not loop. See docs/HERMES.md.
   # The wrapper also hides systemd from the gateway: the gateway is a child of a shell, not of
   # systemd. Without --external-supervisor, Hermes v0.22.7 treats a reload as a graceful restart
   # and starts a detached gateway, and the unit then loops (2026-11-04). The flag makes the
@@ -476,19 +480,11 @@ in
               extraPythonPackages = (prev.extraPythonPackages or [ ]) ++ cfg.extraPythonPackages;
               extraDependencyGroups = (prev.extraDependencyGroups or [ ]) ++ cfg.extraDependencyGroups;
             });
+        wrapper = pkgs.writeShellScript "hermes-gateway" (builtins.readFile ./hermes/scripts/gateway-wrapper.sh);
       in
-      pkgs.writeShellScript "hermes-gateway" ''
-        ${package}/bin/hermes gateway run --external-supervisor ${lib.escapeShellArgs cfg.extraArgs} &
-        child=$!
-        trap 'kill -USR1 "$child" 2>/dev/null' USR1
-        trap 'kill -TERM "$child" 2>/dev/null' TERM INT
-        # A trapped signal ends `wait` early; wait again until the gateway has exited.
-        while kill -0 "$child" 2>/dev/null; do wait "$child"; done
-        wait "$child"
-        status=$?
-        if [ "$status" -eq 75 ]; then exit 0; fi
-        exit "$status"
-      ''
+      utils.escapeSystemdExecArgs (
+        [ wrapper "${package}/bin/hermes" "gateway" "run" "--external-supervisor" ] ++ cfg.extraArgs
+      )
     );
     ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
   };
