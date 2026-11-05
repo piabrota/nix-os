@@ -43,4 +43,7 @@
   # The web UI at rig.piabrota.art, behind the dashboard's login (docs/OPENRIG.md, "The web UI").
   piabrota.openrig.web.enable = true;
   piabrota.openrig.web.domain = "rig.piabrota.art";
+  # The rigs wave-forecaster-dev and wave-forecaster-dev-integrate: the seats' Rust tools, their
+  # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md).
+  piabrota.openrig.waveForecaster.enable = true;
 }
