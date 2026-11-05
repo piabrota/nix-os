@@ -4,7 +4,7 @@
 #
 # The daemon (openrig/package.nix) runs in the foreground on 127.0.0.1 only: no firewall port and no
 # ACME of its own. It serves the web UI of the package on that loopback port (`ui.enabled`).
-# `piabrota.openrig.web` adds an nginx vhost with TLS and basic auth in front of it; it is off by
+# `piabrota.openrig.web` adds an nginx vhost with TLS and basic auth in front of it; the option is off by
 # default. Its tmux server and every seat run inside this unit's cgroup, so
 # MemoryMax is one budget for all of them, and a restart of the unit ends them all. The seats run
 # `omp` from omp/wrapper.nix; `claude` is unfree and Codex is not installed. The specs of the first rig
@@ -18,7 +18,6 @@ let
   home = "/var/lib/openrig";
   work = "${home}/work";
   url = "http://127.0.0.1:${toString cfg.port}";
-  webSecretsDir = "/var/lib/openrig-web-secrets";
   backend = "127.0.0.1:${toString cfg.port}";
   origin = "https://${cfg.web.domain}";
   secretsDir = "/var/lib/openrig-secrets";
@@ -89,6 +88,17 @@ in
         example = "rig.piabrota.art";
         description = "The name nginx serves the UI on. Its DNS A record must point at the box before this is on, or the ACME order fails on the deploy.";
       };
+      htpasswdFile = mkOption {
+        # A string, not a path: a path literal copies the file into the world-readable store.
+        type = types.str;
+        default = config.piabrota.hermesWeb.htpasswdFile;
+        defaultText = lib.literalExpression "config.piabrota.hermesWeb.htpasswdFile";
+        description = ''
+          The basic-auth users, one `name:bcrypt-hash` line each (`htpasswd -B`). The default is the
+          dashboard's file, so the same login opens both. Set a file of its own to give the UI its
+          own users: mode 0640, owner root, group nginx, in a directory that exists.
+        '';
+      };
     };
   };
 
@@ -110,8 +120,7 @@ in
     users.groups.openrig = { };
 
     # Only the openrig user reads this directory. The token file in it is made by the unit.
-    systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ]
-      ++ lib.optional cfg.web.enable "d ${webSecretsDir} 0750 root nginx -";
+    systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ];
 
     # Hermes runs `rig` through this wrapper.
     services.hermes-agent.extraPackages = [ rigCli ];
@@ -122,7 +131,7 @@ in
     # The web vhost. Same gate as hermes-web.nix: TLS from Let's Encrypt and HTTP basic auth against
     # a bcrypt file on the box, outside the store. The UI can type into the seats, which run without
     # approval prompts, so without the file every request gets a 500 and the UI stays closed. The
-    # file is written by hand on the box: mode 0640, owner root, group nginx (`htpasswd -B`).
+    # file is the dashboard's by default (hermes-web.nix makes its directory).
 
     services.nginx = mkIf cfg.web.enable {
       enable = true;
@@ -140,7 +149,7 @@ in
       virtualHosts.${cfg.web.domain} = {
         forceSSL = true;
         enableACME = true;
-        basicAuthFile = "${webSecretsDir}/htpasswd";
+        basicAuthFile = cfg.web.htpasswdFile;
         extraConfig = ''
           limit_req zone=openrig_web burst=100 nodelay;
           limit_req_status 429;
