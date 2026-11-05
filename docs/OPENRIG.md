@@ -326,7 +326,11 @@ of them, and adds none: Docker would give the seats root. So a seat runs `just c
 other gates on the owner's machine and moves the status. The norms say this, and they win over
 chaceon's rule that a missing tool must be installed.
 
-**What `piabrota.openrig.waveForecaster.enable` adds** (on at piabrota2):
+**Off at the start.** `piabrota.openrig.waveForecaster.enable` is off at piabrota2. The specs are
+in `/etc/openrig/specs` as a definition only: no tools, folders, outbox or token, and no one starts
+the rigs. The owner turns the option on in `hosts/piabrota2/default.nix` to use them.
+
+**What `piabrota.openrig.waveForecaster.enable` adds** (when on):
 
 |Part|Setting|
 |---|---|

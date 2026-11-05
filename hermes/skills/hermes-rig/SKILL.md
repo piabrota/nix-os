@@ -134,7 +134,9 @@ piabrota/nix-os, "wave-forecaster-dev"):
 |`wave-forecaster-dev`|`port-porter@wave-forecaster-dev`, `port-auditor@wave-forecaster-dev`|
 |`wave-forecaster-dev-integrate`|`wire-integrator@wave-forecaster-dev-integrate`, `wire-auditor@wave-forecaster-dev-integrate`|
 
-Start them as in the fast path, with their spec path in `/etc/openrig/specs/rigs/`. A task names
+These rigs are a definition only. Do not start them while `piabrota.openrig.waveForecaster.enable`
+is off (`/var/lib/rig-outbox` then does not exist), and never without the owner's request. When the
+owner turns it on, start them as in the fast path, with their spec path in `/etc/openrig/specs/rigs/`. A task names
 the routine (or the package), its switch file and a template commit, and says that done means
 `just check` passes and the auditor found nothing that blocks. The seats cannot run chaceon's
 Docker, Vulkan or CUDA gates: their work leaves the box at the status `translated`. Tell the owner
