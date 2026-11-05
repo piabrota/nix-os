@@ -19,6 +19,8 @@
     ../../paperclip.nix
     # OpenRig (openrig.nix): loopback only, no DNS, no port.
     ../../openrig.nix
+    # The room (piabrota/room) on room.piabrota.art, which must point at this box.
+    ../../room.nix
   ];
 
   # piabrota2 is the VPS name in hPanel; Hostinger first named it srv2125808 (srv2125808.hstgr.cloud
@@ -47,4 +49,6 @@
   # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md). Off: the
   # specs are in /etc/openrig/specs as a definition only. The owner turns this on to use them.
   piabrota.openrig.waveForecaster.enable = false;
+  # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
+  piabrota.room.enable = true;
 }
