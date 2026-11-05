@@ -16,6 +16,7 @@
 | `pgx.nix` | O [PGX](https://pgx.dev), um banco compatível com Postgres em um processo, no lugar de um servidor PostgreSQL ou do Docker, para a próxima carga que precisar de Postgres (hoje nada o usa). Só para dado que dá para refazer; o dado dos apps fica no SQLite. Veja [`docs/PGX.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/PGX.ptBR.md). |
 | `paperclip.nix` | O [Paperclip](https://github.com/paperclipai/paperclip), um painel de controle para um time de agentes de IA, em paperclip.piabrota.art na KVM 4, com o PostgreSQL 17 só num socket. Desligado por enquanto (`enable = false`). Ligado, o Hermes é o agente dele: o Paperclip manda cada tarefa ao servidor de API do Hermes no loopback. Veja [`docs/PAPERCLIP.md`](https://github.com/piabrota/nix-os/blob/main/docs/PAPERCLIP.md) (em inglês). |
 | `hermes.nix` | O [Hermes Agent](https://github.com/NousResearch/hermes-agent), o agente da Nous Research, pelo módulo NixOS do flake dele: um serviço isolado que responde em plataformas de chat, com o Claude pela assinatura do dono; os segredos ficam na máquina. Veja [Hermes](Hermes). |
+| `openrig.nix` | O [OpenRig](https://github.com/mvschwarz/openrig), um painel de controle para um time de agentes de código, na KVM 4, com a interface em rig.piabrota.art atrás de basic auth. É o motor da [fábrica de software](Fabrica): um seat builder e um seat reviewer, ambos no `omp`, que o Hermes opera. Veja [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md) (em inglês). |
 | `kubesolo-purge.nix` | Um oneshot que limpa uma instalação antiga da máquina, uma vez. Uma pessoa o apaga depois. |
 
 ## Do pull request à VPS
@@ -34,18 +35,33 @@ geração nova, e o GRUB guarda as cinco últimas.
 
 ## As figuras
 
-![Duas máquinas: o DNS da Porkbun manda o www.piabrota.art para a VPS 1 (KVM 1), que serve o site, /hermes, /hosts e o app Loco /notes, e o hermes.piabrota.art para a VPS 2 (KVM 4), onde o painel com basic auth divide o estado com o gateway hermes-agent; as conversas do dono no Telegram e no Discord chegam ao gateway por polling, e ele abre pull requests em branches hermes/* como piabrota-hermes[bot]; o deploy.yml compila os dois sistemas e implanta cada um num merge.](img/pt/two-hosts.png)
+![Duas máquinas: o DNS da Porkbun manda o www.piabrota.art para a VPS 1 (KVM 1), que serve o site, /hermes, /hosts e o app Loco /notes, e o hermes.piabrota.art e o rig.piabrota.art para a VPS 2 (KVM 4); lá, o painel com basic auth divide o estado com o gateway hermes-agent, e a interface do OpenRig, também com basic auth, fica na frente da unidade openrig com os dois seats omp, que o gateway comanda com a CLI rig; as conversas do dono no Telegram e no Discord chegam ao gateway por polling, e ele abre pull requests em branches hermes/* como piabrota-hermes[bot]; o deploy.yml compila os dois sistemas e implanta cada um num merge.](img/pt/two-hosts.png)
 
 <details open>
 <summary>Como ler esta figura</summary>
 
-**Em uma frase.** A KVM 1 serve a web pública e nada mais; tudo do Hermes fica na KVM 4.
+**Em uma frase.** A KVM 1 serve a web pública e nada mais; tudo do Hermes e do OpenRig fica na KVM 4.
 
 **Como ler.** De cima para baixo, uma faixa por lugar: pessoas, DNS, cada VPS, GitHub. As setas dizem para onde vai uma requisição ou um deploy; a borda vermelha marca o que fica fora das duas máquinas.
 
-**Fora da figura.** O PGX na KVM 4 (o Paperclip está desligado por enquanto), os certificados ACME, os segredos em cada máquina e o deploy à mão.
+**Fora da figura.** O PGX na KVM 4 (o Paperclip está desligado por enquanto), os certificados ACME, os segredos em cada máquina, os clones em que os seats trabalham e o deploy à mão.
 
-**Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
+**Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, `openrig.nix`, [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md), [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
+
+</details>
+
+![A fábrica de software: o dono manda uma tarefa ao Hermes, na VPS 2; o Hermes a manda ao seat builder do rig piabrota-dev do OpenRig, que passa o diff ao seat reviewer, e o parecer volta ao Hermes; o Hermes faz o commit, o push de um branch hermes/* e abre um pull request no GitHub; uma pessoa faz o merge, sempre; o deploy.yml então implanta as duas VPSs com o deploy-rs e o magic rollback.](img/pt/software-factory.png)
+
+<details open>
+<summary>Como ler esta figura</summary>
+
+**Em uma frase.** O rig vai fazer a construção e a revisão, o Hermes encaminha e confere, e só uma pessoa faz o merge.
+
+**Como ler.** De cima para baixo, uma faixa por etapa: pessoas, Hermes, o rig, GitHub, deploy. As setas dizem o que vem depois; a borda vermelha marca onde uma pessoa entra.
+
+**Fora da figura.** As skills `/triage` e `/mip`, que vêm antes da tarefa, os vigias depois do deploy (`kvm4-health`), a lista de bloqueio e o token dos seats.
+
+**Fonte.** [`docs/archify/pt/software-factory.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/software-factory.json), a fonte da figura; `openrig/specs/rigs/piabrota-dev/rig.yaml`, [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md), `.github/workflows/deploy.yml`, as skills `hermes-rig` e `hermes-omp`. ⚠ Nenhuma tarefa passou pelo rig ainda: os seats, a seta do parecer e o pull request a partir do diff de um seat são o plano, não uma execução.
 
 </details>
 
