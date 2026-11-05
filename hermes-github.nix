@@ -6,7 +6,8 @@
 # hermes/* branches and opens pull requests; hermes/dangerous-patterns.yaml blocks merges and every
 # other push, and a ruleset on each default branch stops a push to it at GitHub. Humans merge.
 # Without the key file the unit does nothing, and Hermes stays read-only. See docs/HERMES.md.
-{ pkgs, ... }:
+# It also mints the OpenRig seats' read-only tokens, one repository each (openrig.nix, githubRead).
+{ config, lib, pkgs, ... }:
 let
   # The accounts whose installations get a token, in order: gh uses the first one that has one.
   owners = [ "piabrota" "marola-dev" "h0ffmann" ];
@@ -14,6 +15,9 @@ let
   # workflows (GitHub then refuses a push that changes .github/workflows), not administration.
   permissions = ''{"contents":"write","pull_requests":"write","issues":"write"}'';
   tokens = "/run/hermes-github";
+  # The repositories the OpenRig seats may read (openrig.nix), and where their tokens go.
+  seatRepos = lib.attrByPath [ "piabrota" "openrig" "githubRead" ] [ ] config;
+  seatTokens = "/run/openrig-github";
   home = "/var/lib/hermes";
 
   # git credential helper: the token of the repository's owner, from the path git hands over
@@ -80,6 +84,28 @@ in
           echo "$owner: GitHub refused a token"
         fi
       done
+      ${lib.optionalString (seatRepos != [ ]) ''
+        # Read-only tokens for the OpenRig seats: contents read, on one repository each. The seats
+        # run without approval prompts, so their token can do nothing but clone and fetch.
+        for full in ${toString seatRepos}; do
+          owner=''${full%%/*}
+          repo=''${full#*/}
+          file="${seatTokens}/$owner--$repo"
+          id=$(jq -r --arg o "$owner" '.[] | select(.account.login == $o) | .id' <<<"$installations")
+          body=$(jq -cn --arg r "$repo" '{repositories: [$r], permissions: {contents: "read"}}')
+          if [ -n "$id" ] && token=$(api -X POST -H "Authorization: Bearer $jwt" -d "$body" \
+            "https://api.github.com/app/installations/$id/access_tokens" | jq -er .token); then
+            printf '%s' "$token" >"$file.new"
+            chown root:openrig "$file.new"
+            chmod 0640 "$file.new"
+            mv "$file.new" "$file"
+            echo "$full: read-only token for the seats, for one hour"
+          else
+            rm -f "$file"
+            echo "$full: no read-only token for the seats (is the App installed on it?)"
+          fi
+        done
+      ''}
       [ -n "$first" ] || exit 0
 
       # Who Hermes commits as: the App's bot user, as GitHub shows it.
@@ -111,7 +137,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       LoadCredential = [ "app:/var/lib/hermes-secrets/github-app.env" ];
-      ReadWritePaths = [ tokens home ];
+      ReadWritePaths = [ tokens home ] ++ lib.optional (seatRepos != [ ]) seatTokens;
       CapabilityBoundingSet = [ "CAP_CHOWN" "CAP_DAC_OVERRIDE" "CAP_FOWNER" ];
       NoNewPrivileges = true;
       PrivateTmp = true;

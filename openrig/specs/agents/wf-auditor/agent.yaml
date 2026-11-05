@@ -1,0 +1,36 @@
+# The auditor seat of wave-forecaster-dev: checks a port or an integration against the Fortran and
+# edits nothing. It serves both rigs of the block, never at the same time.
+name: wf-auditor
+version: "1.0"
+description: Checks one port or integration of h0ffmann/chaceon against the Fortran, and edits nothing
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../wf-shared
+
+profiles:
+  default:
+    summary: Reads one port or integration against the Fortran and says how sure it is
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, wf-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

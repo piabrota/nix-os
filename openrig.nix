@@ -58,6 +58,53 @@ let
   '';
 
   seatTools = [ pkgs.tmux pkgs.bash pkgs.git pkgs.procps pkgs.lsof pkg pkg.nodejs seatOmp ];
+
+  # The rigs of wave-forecaster-dev (openrig/specs/rigs/wave-forecaster-dev*): seats that port
+  # WAVEWATCH III to Rust in h0ffmann/chaceon, a private repository. docs/OPENRIG.md,
+  # "wave-forecaster-dev".
+  wf = cfg.waveForecaster;
+  # One read-only token per repository of cfg.githubRead, written by hermes-github.nix.
+  seatTokens = "/run/openrig-github";
+  # Where a seat leaves a git bundle for Hermes. Not under /var/lib/openrig: Hermes may not read
+  # the daemon's state, and its deny list blocks that path.
+  outbox = "/var/lib/rig-outbox";
+  wfFolders = [ "openrig/work/wave-forecaster-dev" ]
+    ++ map (seat: "openrig/work/wave-forecaster-dev/${seat}") [ "porter" "auditor" "integrator" ];
+
+  # git credential helper of the seats: the read-only token of the repository, from the path git
+  # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
+  # password, which is enough for a public one.
+  seatCredential = pkgs.writeShellScript "openrig-git-credential" ''
+    [ "''${1:-}" = get ] || exit 0
+    path=
+    while IFS='=' read -r key value; do
+      [ -z "$key" ] && break
+      [ "$key" = path ] && path=$value
+    done
+    path=''${path%.git}
+    file=${seatTokens}/''${path%%/*}--''${path#*/}
+    [ -n "$path" ] && [ -r "$file" ] || exit 0
+    echo username=x-access-token
+    echo "password=$(cat "$file")"
+  '';
+
+  # A seat's clone of chaceon: the credential helper stays in the clone's own config, so a later
+  # fetch works. WW3/ is public (metocean/WW3) and pinned by the superproject.
+  chaceonClone = pkgs.writeShellApplication {
+    name = "chaceon-clone";
+    runtimeInputs = [ pkgs.git ];
+    text = ''
+      dir=''${1:-chaceon}
+      git clone --filter=blob:none \
+        --config credential.helper=${seatCredential} --config credential.useHttpPath=true \
+        https://github.com/h0ffmann/chaceon.git "$dir"
+      git -C "$dir" submodule update --init --depth 1 WW3 || git -C "$dir" submodule update --init WW3
+    '';
+  };
+
+  # What a chaceon seat runs: `just check` (rustup's toolchain, gcc as the linker of build
+  # scripts) and `just lint-sh`. No Docker, no Vulkan, no CUDA: those gates stay with the owner.
+  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck chaceonClone ];
 in
 {
   options.piabrota.openrig = {
@@ -81,6 +128,20 @@ in
         1536M, below it. Two seats fit (docs/OPENRIG.md, "Limits").
       '';
     };
+    githubRead = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "h0ffmann/chaceon" ];
+      description = ''
+        Repositories (`owner/name`) that the seats may read. hermes-github.nix mints a token for
+        each, with `contents: read` on that repository only, from Hermes's GitHub App, and writes
+        it to ${seatTokens}, readable by the openrig user. The App must be installed on the
+        repository.
+      '';
+    };
+    waveForecaster.enable = mkEnableOption ''
+      the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
+      outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
     web = {
       enable = mkEnableOption "the web UI of OpenRig behind nginx, TLS and basic auth (docs/OPENRIG.md, \"The web UI\")";
       domain = mkOption {
@@ -115,12 +176,22 @@ in
       # OpenRig starts a pane shell with a clean environment, so the unit's `path` does not reach
       # it. NixOS builds the pane's PATH from the per-user profile of $USER (the RigSpec `env:` sets
       # USER, see openrig/specs/rigs/piabrota-dev/rig.yaml).
-      packages = seatTools;
+      packages = seatTools ++ lib.optionals wf.enable wfTools;
     };
     users.groups.openrig = { };
 
     # Only the openrig user reads this directory. The token file in it is made by the unit.
-    systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ];
+    systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ]
+      ++ lib.optionals (cfg.githubRead != [ ]) [ "d ${seatTokens} 0750 root openrig -" ]
+      # The outbox: the seats write, Hermes (group hermes) reads. The default ACL gives the group
+      # read access to new files in spite of the unit's UMask. Bundles older than 14 days go.
+      ++ lib.optionals wf.enable [
+      "d ${outbox} 0750 openrig hermes -"
+      "d ${outbox}/wave-forecaster-dev 0750 openrig hermes 14d"
+      "a+ ${outbox}/wave-forecaster-dev - - - - default:group::r-X"
+    ];
+
+    piabrota.openrig.githubRead = lib.optionals wf.enable [ "h0ffmann/chaceon" ];
 
     # Hermes runs `rig` through this wrapper.
     services.hermes-agent.extraPackages = [ rigCli ];
@@ -247,11 +318,12 @@ in
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
-        StateDirectory = [ "openrig" "openrig/work" ];
+        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders;
         StateDirectoryMode = "0700";
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = work;
+        ReadWritePaths = lib.optionals wf.enable [ outbox ];
         UMask = "0077";
         Restart = "on-failure";
         RestartSec = "10s";

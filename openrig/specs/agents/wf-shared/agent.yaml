@@ -1,0 +1,11 @@
+# What every seat of wave-forecaster-dev shares, on top of agents/shared: the rules for work on
+# h0ffmann/chaceon (a Rust port of WAVEWATCH III) on this box. A spec that imports this one selects
+# the file with `guidance: [wf-shared:norms]`. The box norms (`shared:norms`) come first and win.
+name: wf-shared
+version: "1.0"
+description: The rules of every wave-forecaster-dev seat for work on h0ffmann/chaceon
+
+resources:
+  guidance:
+    - id: norms
+      path: guidance/norms.md

@@ -187,6 +187,21 @@ openrig/specs/
   rigs/piabrota-dev/rig.yaml           # pod "dev": builder and reviewer, runtime omp
 ```
 
+The block wave-forecaster-dev adds two rigs and four agents to the same folders (see
+"wave-forecaster-dev" below):
+
+```text
+openrig/specs/
+  agents/
+    wf-shared/agent.yaml               # one guidance resource: the norms for h0ffmann/chaceon
+    wf-shared/guidance/norms.md
+    wf-porter/...                      # agent.yaml, guidance/role.md, startup/context.md
+    wf-auditor/...
+    wf-integrator/...
+  rigs/wave-forecaster-dev/rig.yaml            # pod "port": porter and auditor
+  rigs/wave-forecaster-dev-integrate/rig.yaml  # pod "wire": integrator and auditor
+```
+
 - `rig.yaml` has one pod, `dev`, with the members `builder` and `reviewer`. Both use the runtime
   `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`. An edge
   `delegates_to` goes from `builder` to `reviewer`. The rig sets `permission_policy: builtin:yolo`
@@ -220,6 +235,65 @@ rig up openrig/specs/rigs/piabrota-dev/rig.yaml --plan         # Status: planned
 spec and its agent references, not the files. Check by hand that each path in an `agent.yaml`
 exists.
 
+## wave-forecaster-dev
+
+The block wave-forecaster-dev runs the port of WAVEWATCH III (WW3) from Fortran to Rust in
+[h0ffmann/chaceon](https://github.com/h0ffmann/chaceon) (private) on this box. chaceon defined the
+same loop for Claude Code seats on the owner's machine (its `rigs/` folder, PR 20 of
+h0ffmann/chaceon). This block follows the protocol of piabrota-dev instead: `omp` seats on
+`anthropic/claude-sonnet-5-5`, `builtin:yolo`, the box norms first, two seats per rig, and Hermes
+as the operator who commits, pushes and opens the pull request.
+
+|Rig|Seats|Does|
+|---|---|---|
+|`wave-forecaster-dev`|`port-porter`, `port-auditor`|Translates one WW3 routine to a Rust kernel, with its ledger row and report, to the status `translated`. The auditor reads it against the Fortran.|
+|`wave-forecaster-dev-integrate`|`wire-integrator`, `wire-auditor`|Wires one ported package into `W3SRCE` and `mod_def.ww3`. The auditor reads the wiring.|
+
+**One rig at a time.** Each rig has two seats, so it fits the plan of "Limits", and never at the
+same time as piabrota-dev or the other rig. A cold `cargo check --workspace` of chaceon peaks at
+about 850 MiB with one job (measured on an arm64 Mac, `/usr/bin/time -l`, not on the box). With the
+daemon and two seats that is about 1.75 GiB: above `MemoryHigh`, so the kernel slows the unit, and
+below `MemoryMax`. The norms make every build `CARGO_BUILD_JOBS=1 nice -n 10`, one at a time.
+
+**What the seats cannot check.** chaceon's evidence needs Docker (the Fortran reference, gdb
+captures, the comparison replays), Vulkan (the SPIR-V replays) and CUDA (PTX). This box has none
+of them, and adds none: Docker would give the seats root. So a seat runs `just check` and
+`just lint-sh` only, and its work leaves the box at the status `translated`. The owner runs the
+other gates on the owner's machine and moves the status. The norms say this, and they win over
+chaceon's rule that a missing tool must be installed.
+
+**What `piabrota.openrig.waveForecaster.enable` adds** (on at piabrota2):
+
+|Part|Setting|
+|---|---|
+|Tools|`rustup`, `gcc` (the linker of build scripts), `just`, `shellcheck` and `chaceon-clone` in the profile of the user `openrig`, not in the unit's `path`. Each seat installs Rust 1.99.1 with rustup into its own home under `/var/lib/openrig`.|
+|Folders|`/var/lib/openrig/work/wave-forecaster-dev/{porter,auditor,integrator}` (`StateDirectory`). Each seat has its own folder: the norms go in its `AGENTS.md`, and the chaceon clone in a subfolder, so the two `AGENTS.md` files never mix.|
+|Read token|`piabrota.openrig.githubRead = [ "h0ffmann/chaceon" ]`. `hermes-github.nix` mints, every 45 minutes, a token of Hermes's App with `contents: read` on that repository only, into `/run/openrig-github/h0ffmann--chaceon` (root, group `openrig`, 0640). `chaceon-clone` clones with a credential helper that reads it. The App must be installed on h0ffmann/chaceon.|
+|Outbox|`/var/lib/rig-outbox/wave-forecaster-dev` (owner `openrig`, group `hermes`, 0750, a default ACL that gives the group read access, files older than 14 days removed). A seat writes a `git bundle` there; Hermes fetches it, reads it, and pushes a `hermes/*` branch. The unit has it in `ReadWritePaths`. It is not under `/var/lib/openrig`, which Hermes's deny list blocks.|
+
+**The risk.** A seat runs without approval prompts and can read the read token. The token can
+only read one repository, and it ends after one hour. The deny rules of `hermes/omp.yml` still
+refuse `git push`, `gh`, installs and secrets.
+
+**chaceon's own rules that this box changes.** chaceon names an agent's branch
+`goal/<id>-<slug>`. Hermes can push only `hermes/*`, so the seats use `hermes/wf-<slug>`. chaceon
+asks for an agent `Co-Authored-By` trailer; Hermes's commits carry none. The owner decides whether
+chaceon's `AGENTS.md` accepts both.
+
+To start the port rig, after `rig status` says "Daemon running" and `kvm4-health` shows room:
+
+```console
+rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --plan
+rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml
+rig send port-porter@wave-forecaster-dev "<routine, switch file, template commit; done means; checks; no push>" --verify
+```
+
+When the porter reports a bundle, Hermes fetches it into its own clone of chaceon:
+
+```console
+git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:hermes/wf-<slug>
+```
+
 ## What is not done
 
 - **No public web page without auth.** The daemon runs on loopback only. The public vhost (`rig.piabrota.art`) has TLS and basic auth (see "The web UI").
@@ -233,6 +307,13 @@ exists.
   to ask the owner first. The deny list has no rule for them.
 
 ## Not tested
+
+For wave-forecaster-dev, none of this ran: a deploy, a seat, `rig spec validate` on the new specs,
+rustup's toolchain on NixOS (nixpkgs patches it for NixOS: not checked here), the read token (the
+App's installation may not include h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and
+Hermes's read of the outbox under the `hermes-agent` sandbox.
+
+For the rest:
 
 I could not test these. Check them after the first deploy. The reference lists the seat settings
 that were not checked on the box.

@@ -1,0 +1,42 @@
+# The integration rig of wave-forecaster-dev: an integrator wires one source-term package of
+# h0ffmann/chaceon (its routines already ported) into W3SRCE and mod_def.ww3, and an auditor checks
+# the wiring against the Fortran. Two seats. Start it with
+#   rig up /etc/openrig/specs/rigs/wave-forecaster-dev-integrate/rig.yaml
+# Nothing starts it: Hermes or a human does. Do not run it at the same time as piabrota-dev or
+# wave-forecaster-dev: the unit has one memory budget (docs/OPENRIG.md, "wave-forecaster-dev").
+version: "0.2"
+name: wave-forecaster-dev-integrate
+summary: An integrator and an auditor that wire one ported package into the source-term loop
+
+# See rigs/wave-forecaster-dev/rig.yaml.
+permission_policy: builtin:yolo
+
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+
+pods:
+  - id: wire
+    label: Integration
+    summary: The integrator wires one package, one at a time, because every package edits srce.rs. The auditor reads the wiring.
+    members:
+      - id: integrator
+        agent_ref: "local:../../agents/wf-integrator"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/wave-forecaster-dev/integrator
+      - id: auditor
+        agent_ref: "local:../../agents/wf-auditor"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        # The same folder as the port rig's auditor: the two rigs never run together.
+        cwd: /var/lib/openrig/work/wave-forecaster-dev/auditor
+    edges:
+      - kind: delegates_to
+        from: integrator
+        to: auditor
+
+edges: []
