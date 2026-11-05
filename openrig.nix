@@ -52,6 +52,8 @@ let
     chmod 600 ${tokenFile}.new
     mv ${tokenFile}.new ${tokenFile}
   '';
+
+  seatTools = [ pkgs.tmux pkgs.bash pkgs.git pkgs.procps pkgs.lsof pkg pkg.nodejs seatOmp ];
 in
 {
   options.piabrota.openrig = {
@@ -87,6 +89,10 @@ in
       isSystemUser = true;
       group = "openrig";
       inherit home;
+      # OpenRig starts a pane shell with a clean environment, so the unit's `path` does not reach
+      # it. NixOS builds the pane's PATH from the per-user profile of $USER (the RigSpec `env:` sets
+      # USER, see openrig/specs/rigs/piabrota-dev/rig.yaml).
+      packages = seatTools;
     };
     users.groups.openrig = { };
 
@@ -123,15 +129,13 @@ in
         TMUX_TMPDIR = "/run/openrig";
         # The system user has no login shell; tmux and the seats need a real one.
         SHELL = "/run/current-system/sw/bin/bash";
-        # NixOS resets PATH in a bash pane (/etc/set-environment). This guard keeps the unit's
-        # PATH, so the pane still finds node and omp.
-        __NIXOS_SET_ENVIRONMENT_DONE = "1";
         LANG = "C.UTF-8";
       };
-      # tmux holds the seats. node starts the seats' runner (the daemon types `node ...` in a pane).
-      # ps and lsof: the daemon reads the process table. git: the seats work on clones. The
-      # NixOS default adds coreutils, findutils, grep, sed and systemd.
-      path = [ pkgs.tmux pkgs.bash pkgs.git pkgs.procps pkgs.lsof pkg pkg.nodejs seatOmp ];
+      # What the unit and the seat panes need (the same list serves both, see
+      # users.users.openrig.packages). tmux holds the seats. node starts the seats' runner (the
+      # daemon types `node ...` in a pane). ps and lsof: the daemon reads the process table. git:
+      # the seats work on clones. The NixOS default adds coreutils, findutils, grep, sed and systemd.
+      path = seatTools;
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
