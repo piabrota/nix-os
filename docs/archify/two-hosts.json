@@ -13,7 +13,7 @@
   "lanes": [
     {
       "id": "people",
-      "label": "People"
+      "label": "Visitor"
     },
     {
       "id": "dns",
@@ -28,114 +28,95 @@
       "label": "VPS 2 · KVM 4 (piabrota2)"
     },
     {
-      "id": "gh",
-      "label": "GitHub"
+      "id": "owner",
+      "label": "Owner"
     }
   ],
   "mainPath": [
     "browser",
-    "records",
-    "www"
+    "records"
   ],
   "nodes": [
     {
       "id": "browser",
       "lane": "people",
-      "col": 0,
+      "col": 2,
       "type": "external",
       "label": "a browser",
-      "sublabel": "https on hermes and rig",
-      "width": 170
-    },
-    {
-      "id": "chats",
-      "lane": "people",
-      "col": 4,
-      "type": "external",
-      "label": "Telegram, Discord",
-      "sublabel": "the owner's chats",
-      "width": 170
+      "sublabel": "https",
+      "width": 140
     },
     {
       "id": "records",
       "lane": "dns",
-      "col": 1,
+      "col": 2,
       "type": "backend",
       "label": "A records",
       "sublabel": "one name, one host",
-      "width": 170
+      "width": 140
     },
     {
       "id": "www",
       "lane": "kvm1",
-      "col": 3,
+      "col": 0,
       "type": "frontend",
       "label": "www.piabrota.art",
-      "sublabel": "the site, /hermes, /hosts",
-      "width": 170
+      "sublabel": "site, /hermes, /figures",
+      "width": 140
     },
     {
       "id": "apps",
       "lane": "kvm1",
-      "col": 4,
+      "col": 1,
       "type": "backend",
       "label": "/notes",
       "sublabel": "Loco app, SQLite",
-      "width": 170
+      "width": 140
     },
     {
       "id": "dash",
       "lane": "kvm4",
-      "col": 1,
+      "col": 2,
       "type": "frontend",
       "label": "hermes.piabrota.art",
       "sublabel": "dashboard, basic auth",
-      "width": 170
+      "width": 140
     },
     {
       "id": "gateway",
       "lane": "kvm4",
-      "col": 2,
+      "col": 3,
       "type": "backend",
       "label": "hermes-agent",
       "sublabel": "gateway, cron, omp",
-      "width": 170
-    },
-    {
-      "id": "deploy",
-      "lane": "gh",
-      "col": 1,
-      "type": "backend",
-      "label": "deploy.yml",
-      "sublabel": "builds both, deploys each",
-      "width": 170
-    },
-    {
-      "id": "github",
-      "lane": "gh",
-      "col": 2,
-      "type": "external",
-      "label": "piabrota-hermes[bot]",
-      "sublabel": "pull requests only",
-      "width": 170
-    },
-    {
-      "id": "rigui",
-      "lane": "kvm4",
-      "col": 4,
-      "type": "frontend",
-      "label": "rig.piabrota.art",
-      "sublabel": "OpenRig UI, basic auth",
-      "width": 170
+      "width": 140
     },
     {
       "id": "openrig",
       "lane": "kvm4",
-      "col": 3,
+      "col": 4,
       "type": "backend",
       "label": "openrig",
       "sublabel": "2 omp seats",
-      "width": 170
+      "width": 140
+    },
+    {
+      "id": "rigui",
+      "lane": "kvm4",
+      "col": 5,
+      "type": "frontend",
+      "label": "rig.piabrota.art",
+      "sublabel": "OpenRig UI, basic auth",
+      "width": 140
+    },
+    {
+      "id": "chats",
+      "lane": "owner",
+      "col": 3,
+      "type": "external",
+      "label": "Telegram, Discord",
+      "sublabel": "the owner's chats",
+      "width": 140
     }
   ],
   "edges": [
@@ -143,77 +124,66 @@
       "id": "e1",
       "from": "browser",
       "to": "records",
-      "label": "resolve"
+      "label": "resolves",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "id": "e2",
       "from": "records",
       "to": "www",
-      "label": "KVM 1"
+      "label": "www",
+      "toSide": "top",
+      "fromSide": "left"
     },
     {
       "id": "e3",
       "from": "records",
       "to": "dash",
-      "label": "KVM 4",
-      "role": "branch"
+      "label": "hermes",
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "id": "e4",
-      "from": "www",
-      "to": "apps",
-      "label": "a path"
+      "from": "records",
+      "to": "rigui",
+      "label": "rig",
+      "role": "branch",
+      "fromSide": "right",
+      "toSide": "top"
     },
     {
       "id": "e5",
-      "from": "chats",
-      "to": "gateway",
-      "label": "polling"
+      "from": "www",
+      "to": "apps",
+      "label": "serves"
     },
     {
       "id": "e6",
       "from": "dash",
       "to": "gateway",
-      "label": "same state"
+      "label": "shares state"
     },
     {
       "id": "e7",
       "from": "gateway",
-      "to": "github",
-      "label": "hermes/*"
+      "to": "openrig",
+      "label": "drives"
     },
     {
       "id": "e8",
-      "from": "deploy",
-      "to": "www",
-      "label": "merge",
-      "role": "branch"
+      "from": "rigui",
+      "to": "openrig",
+      "label": "proxies"
     },
     {
       "id": "e9",
-      "from": "deploy",
-      "to": "dash",
-      "label": "merge",
-      "role": "branch"
-    },
-    {
-      "id": "e10",
-      "from": "records",
-      "to": "rigui",
-      "label": "KVM 4",
-      "role": "branch"
-    },
-    {
-      "id": "e11",
-      "from": "rigui",
-      "to": "openrig",
-      "label": "proxy"
-    },
-    {
-      "id": "e12",
       "from": "gateway",
-      "to": "openrig",
-      "label": "rig CLI"
+      "to": "chats",
+      "label": "polls"
     }
   ]
 }

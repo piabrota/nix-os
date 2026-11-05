@@ -35,7 +35,7 @@ geração nova, e o GRUB guarda as cinco últimas.
 
 ## As figuras
 
-![Duas máquinas: o DNS da Porkbun manda o www.piabrota.art para a VPS 1 (KVM 1), que serve o site, /hermes, /hosts e o app Loco /notes, e o hermes.piabrota.art e o rig.piabrota.art para a VPS 2 (KVM 4); lá, o painel com basic auth divide o estado com o gateway hermes-agent, e a interface do OpenRig, também com basic auth, fica na frente da unidade openrig com os dois seats omp, que o gateway comanda com a CLI rig; as conversas do dono no Telegram e no Discord chegam ao gateway por polling, e ele abre pull requests em branches hermes/* como piabrota-hermes[bot]; o deploy.yml compila os dois sistemas e implanta cada um num merge.](img/pt/two-hosts.png)
+![Duas máquinas: o navegador de um visitante consulta o DNS da Porkbun, cujos registros A mandam o www.piabrota.art para a VPS 1 (KVM 1), que serve o site, /hermes, /figures e o app Loco /notes, e o hermes.piabrota.art e o rig.piabrota.art para a VPS 2 (KVM 4); lá, o painel com basic auth divide o estado com o gateway hermes-agent, que comanda a unidade openrig com os dois seats omp; a interface do OpenRig, também com basic auth, faz proxy para o openrig; o gateway faz polling nas conversas do dono no Telegram e no Discord.](img/pt/two-hosts.png)
 
 Página interativa: <https://www.piabrota.art/figures/pt-BR/two-hosts/>
 
@@ -44,9 +44,9 @@ Página interativa: <https://www.piabrota.art/figures/pt-BR/two-hosts/>
 
 **Em uma frase.** A KVM 1 serve a web pública e nada mais; tudo do Hermes e do OpenRig fica na KVM 4.
 
-**Como ler.** De cima para baixo, uma faixa por lugar: pessoas, DNS, cada VPS, GitHub. As setas dizem para onde vai uma requisição ou um deploy; a borda vermelha marca o que fica fora das duas máquinas.
+**Como ler.** De cima para baixo, uma faixa por lugar: visitante, DNS, cada VPS, dono. O DNS transforma cada nome numa máquina. Na KVM 4, leia a linha da esquerda para a direita: o painel divide o estado com o gateway, o gateway comanda o openrig, e a interface do OpenRig faz proxy para ele. O gateway vai até as conversas; elas não o chamam. A borda vermelha marca o que fica fora das duas máquinas.
 
-**Fora da figura.** O PGX na KVM 4 (o Paperclip está desligado por enquanto), os certificados ACME, os segredos em cada máquina, os clones em que os seats trabalham e o deploy à mão.
+**Fora da figura.** O deploy e os pull requests (as figuras "Como o nix-os funciona" e "A fábrica de software" mostram os dois), o PGX na KVM 4 (o Paperclip está desligado por enquanto), os certificados ACME, os segredos em cada máquina e os clones em que os seats trabalham.
 
 **Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, `openrig.nix`, [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md), [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
 
