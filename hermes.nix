@@ -147,6 +147,14 @@ let
     runtimeInputs = [ pkgs.jq ];
     text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/hermes-omp/scripts/omp-stream.sh} "$@"'';
   };
+  # The hermes-omp skill's runner (hermes/skills/hermes-omp/scripts/omp-run.sh): one background omp
+  # run through omp-stream, and `omp-run --stop <name>`. It ends with a code, never by a signal, so
+  # the `bash -lic` of a background task prints no tcsetattr error and a stop is not a failure.
+  ompRun = pkgs.writeShellApplication {
+    name = "omp-run";
+    runtimeInputs = [ pkgs.coreutils ompWrapped ompStream ];
+    text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/hermes-omp/scripts/omp-run.sh} "$@"'';
+  };
   # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
   subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
   # The owner's own plugins, in this repository (hermes/plugins/, docs/HERMES-PLUGINS.md): smart
@@ -380,9 +388,10 @@ in
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
     # omp is the wrapper above, for the hermes-omp skill.
     # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
-    # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts).
+    # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts),
+    # and omp-run runs and stops a background omp through it.
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix, as Paperclip's jq is.
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ompStream ];
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ompStream ompRun ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
