@@ -1,0 +1,60 @@
+# The piabrota skin for Hermes: one file that colours the CLI, the TUI and the dashboard's Chat tab
+# (the Chat tab embeds `hermes --tui`, which reads the skin, not the dashboard theme).
+# The values are the dark tokens of site/DESIGN.md. hermes.nix installs the file into
+# HERMES_HOME/skins/ and sets display.skin. Keep every key: a key that is missing falls back to the
+# gold of Hermes's default skin.
+
+name: piabrota
+description: A dark sheet, one red. The look of piabrota.art.
+
+colors:
+  # The page of the site (--bg).
+  background: "#0B0D12"
+
+  # The one accent: the logo's red, lightened to read on the background (--accent-text, 6.96:1).
+  ui_accent: "#FF6B5E"
+  banner_accent: "#FF6B5E"
+
+  # Text (--text) and what is secondary (--muted).
+  banner_title: "#EDEFF3"
+  banner_text: "#EDEFF3"
+  ui_text: "#EDEFF3"
+  ui_label: "#9AA3B2"
+  banner_dim: "#9AA3B2"
+  banner_border: "#2A303C"
+  ui_border: "#2A303C"
+
+  # State in colour: green, amber, red (--ok, --warn).
+  ui_ok: "#3FB950"
+  ui_warn: "#D29922"
+  ui_error: "#EF5350"
+
+  # CLI and TUI chrome. Surfaces are --surface and --raised.
+  prompt: "#EDEFF3"
+  input_rule: "#BC2318"
+  response_border: "#2A303C"
+  status_bar_bg: "#14171F"
+  status_bar_text: "#EDEFF3"
+  status_bar_strong: "#EDEFF3"
+  status_bar_dim: "#9AA3B2"
+  status_bar_good: "#3FB950"
+  status_bar_warn: "#D29922"
+  status_bar_bad: "#D29922"
+  status_bar_critical: "#EF5350"
+  session_label: "#FF6B5E"
+  session_border: "#2A303C"
+  completion_menu_bg: "#14171F"
+  completion_menu_current_bg: "#1A1E28"
+  selection_bg: "#2A303C"
+  shell_dollar: "#FF6B5E"
+  voice_status_bg: "#14171F"
+
+branding:
+  agent_name: piabrota hermes
+  welcome: "Welcome to piabrota hermes. Type your message or /help for commands."
+  goodbye: "Goodbye."
+  response_label: " ☤ piabrota hermes "
+  prompt_symbol: "❯"
+  help_header: "(^_^)? Commands"
+
+tool_prefix: "┊"

@@ -391,6 +391,13 @@ in
     # and a brief of the owner's projects, sources and jobs (hermes/AGENTS.md, which Hermes reads
     # from its working directory). Installed on every activation, so edit them here, not on the box.
     hermesHomeFiles."SOUL.md" = ./hermes/SOUL.md;
+    # The look of the dashboard and of the TUI (the Chat tab embeds it): the theme is read from
+    # HERMES_HOME/dashboard-themes/<file>.yaml by its `name`, the skin from skins/<name>.yaml.
+    # Both are the dark tokens of site/DESIGN.md; see docs/HERMES.md, "The web dashboard".
+    hermesHomeFiles."dashboard-themes/piabrota.yaml" = ./hermes/dashboard-themes/piabrota.yaml;
+    hermesHomeFiles."skins/piabrota.yaml" = ./hermes/skins/piabrota.yaml;
+    settings.dashboard.theme = "piabrota";
+    settings.display.skin = "piabrota";
     # The script of the kvm4-health watchdog, a no_agent cron job: a cron script must be a file in
     # HERMES_HOME/scripts. It prints nothing while the box is healthy, so a tick posts nothing.
     hermesHomeFiles."scripts/kvm4-health-alert.sh" = ''

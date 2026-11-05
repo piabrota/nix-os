@@ -69,6 +69,7 @@ font file is stored here.
   blurb, the licence and the address. The name's link covers the tile. Hover scales it 1.5%.
 - **The numbers** in the hero are `<dl>` pairs, counted from the facts, never typed.
 - **The bar of anchors** stays at the top while the page scrolls, and scrolls sideways on a phone.
+- **/skills/** (`skills-site/`) wears the same look: these tokens, type and shapes, its own CSS in `skills-site/src/www.gleam`, the 技 drawing in `--accent-text` as its hero drawing, and a card for each skill.
 
 ## What every design shares
 
@@ -104,6 +105,18 @@ sister sites load their icons; none is stored here. The names and logos are thei
 One entrance, and only when the reader allows motion: the hero rises 8 px. Hover lifts a card
 2 px. No page loads JavaScript, except Google's analytics tag when
 `piabrota.site.analytics.measurementId` is set (`page.analytics`).
+
+## Where else the look is used
+
+The same tokens and type dress three things that are not the site's Gleam pages:
+
+- **The figures** at `/figures/`: the index is a page frame like `/hosts/` in this `style.css`
+  (`.figures-grid`, `.figure-card`), written by `figures-site/default.nix`; each figure page has a bar
+  of 44 px with the dark tokens, from the same file.
+- **The docs page of the Hermes dashboard**, `hermes-web/docs/index.html`: one file with its CSS
+  inside, because the dashboard shows it in an iframe.
+- **The dashboard theme and the TUI skin of Hermes**: `hermes/dashboard-themes/piabrota.yaml` and
+  `hermes/skins/piabrota.yaml`, the dark tokens only. The skin colours the Chat tab.
 
 ## Facts
 
