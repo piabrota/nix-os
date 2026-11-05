@@ -1,0 +1,82 @@
+#!/bin/sh
+# reel: the toolkit of the Reels Fabric (docs/REELS.md). POSIX sh, jq, ffmpeg and resvg; nothing
+# else, and no network. The screenplay.json of a project is the one source: every command that
+# makes a picture or a sound refuses to run when the screenplay is not approved, or changed after
+# its approval.
+set -eu
+
+SHARE=${REELS_SHARE:-}
+if [ -z "$SHARE" ]; then
+  SHARE=$(CDPATH='' cd -- "$(dirname -- "$0")/../share/reels" 2>/dev/null && pwd) || SHARE=
+fi
+if [ ! -f "$SHARE/profile.json" ]; then
+  printf 'reel: cannot find the toolkit data (REELS_SHARE=%s)\n' "$SHARE" >&2
+  exit 1
+fi
+
+# shellcheck source=lib/core.sh
+. "$SHARE/lib/core.sh"
+# shellcheck source=lib/screenplay.sh
+. "$SHARE/lib/screenplay.sh"
+# shellcheck source=lib/scene.sh
+. "$SHARE/lib/scene.sh"
+# shellcheck source=lib/audio.sh
+. "$SHARE/lib/audio.sh"
+# shellcheck source=lib/render.sh
+. "$SHARE/lib/render.sh"
+# shellcheck source=lib/qa.sh
+. "$SHARE/lib/qa.sh"
+
+usage() {
+  cat <<'EOF'
+reel: the Reels Fabric toolkit. One screenplay.json a reel, 15 or 30 seconds, 1080x1920.
+
+Writer and editor (no approval needed):
+  reel new <slug> <15|30> [--example]   a project folder and an empty screenplay
+  reel lint <slug|file.json>            the rules of the screenplay (and of the shotlist, if there is one)
+  reel screenplay-view <slug|file>      the screenplay as an A/V script
+  reel timing-report <slug|file>        the table read: reading speed and hold time of each beat
+  reel approve <slug> [--by <name>]     write screenplay.approved (SHA-256) when the lint passes
+
+Director, maker, QA (refuse when the screenplay is not approved, or changed after approval):
+  reel shotlist <slug> [--force]        the default direction/shotlist.json, to refine
+  reel still <slug> <beat> [--at <s>] [-o <file>]   one frame of a beat (default: direction/storyboard/<beat>.png)
+  reel scene <slug> <beat>              render the clip of one beat to build/scenes/
+  reel music <slug>                     the procedural music bed to build/audio/music.wav
+  reel mix <slug>                       music and sfx, loudness normalised, to build/audio/mix.wav
+  reel render <slug>                    scenes, audio, assembly: out/<slug>/reel.mp4
+  reel qa <slug>                        facts, loudness, frames, safe area: out/<slug>/qa.json and qa/
+  reel contact-sheet <slug>             out/<slug>/qa/contact-sheet.png
+  reel publish <slug> [--replace]       copy reel.mp4 and review/ to the outbox (needs a passing QA)
+
+Folders: REELS_HOME (projects/<slug>/, out/<slug>/), REELS_OUTBOX. See docs/REELS.md.
+EOF
+}
+
+[ $# -ge 1 ] || {
+  usage
+  exit 2
+}
+cmd=$1
+shift
+case "$cmd" in
+  new) need_tools jq && cmd_new "$@" ;;
+  lint) cmd_lint "$@" ;;
+  screenplay-view) need_tools jq && cmd_screenplay_view "$@" ;;
+  timing-report) need_tools jq && cmd_timing_report "$@" ;;
+  approve) need_tools jq sha256sum && cmd_approve "$@" ;;
+  shotlist) need_tools jq sha256sum && cmd_shotlist "$@" ;;
+  still) need_tools jq ffmpeg resvg && cmd_still "$@" ;;
+  scene) need_tools jq ffmpeg resvg && cmd_scene "$@" ;;
+  music) need_tools jq ffmpeg && cmd_music "$@" ;;
+  mix) need_tools jq ffmpeg && cmd_mix "$@" ;;
+  render) need_tools jq ffmpeg ffprobe resvg && cmd_render "$@" ;;
+  qa) need_tools jq ffmpeg ffprobe && cmd_qa "$@" ;;
+  contact-sheet) need_tools jq ffmpeg && cmd_contact_sheet "$@" ;;
+  publish) need_tools jq sha256sum && cmd_publish "$@" ;;
+  help | -h | --help) usage ;;
+  *)
+    usage >&2
+    die "unknown command: $cmd"
+    ;;
+esac

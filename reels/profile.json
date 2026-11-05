@@ -1,0 +1,151 @@
+{
+  "schema": "reels.profile/1",
+  "_note": "The one place for the numbers of the reel toolkit. A key listed in `unverified` is a guess, not a fact checked against Instagram. docs/REELS.md says so too.",
+  "unverified": [
+    "safe.top",
+    "safe.bottom",
+    "safe.side",
+    "text.max_cps",
+    "text.max_lines",
+    "text.max_chars_per_line",
+    "audio.target_lufs",
+    "audio.true_peak",
+    "audio.lufs_tolerance",
+    "video.crf",
+    "qa.min_text_range",
+    "qa.edge_min",
+    "qa.safe_slack_px",
+    "qa.probe_frac",
+    "audio.true_peak_slack",
+    "audio.premix_peak",
+    "limits.ffmpeg_timeout_s",
+    "limits.resvg_timeout_s",
+    "sfx_per_beat",
+    "qa.audio_tolerance_s"
+  ],
+  "formats": [
+    15,
+    30
+  ],
+  "voice": false,
+  "hook": {
+    "max_t_out": 3
+  },
+  "beat": {
+    "min_s": 0.8
+  },
+  "text": {
+    "max_cps": 15,
+    "max_lines": 5,
+    "max_chars_per_line": 28
+  },
+  "safe": {
+    "top": 0.14,
+    "bottom": 0.35,
+    "side": 0.06
+  },
+  "video": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "codec": "h264",
+    "pix_fmt": "yuv420p",
+    "crf": 20,
+    "preset": "medium",
+    "scene_crf": 12,
+    "x264_params": "rc-lookahead=20:ref=2:bframes=2",
+    "threads": 1,
+    "max_inputs": 4
+  },
+  "audio": {
+    "codec": "aac",
+    "rate": 48000,
+    "channels": 2,
+    "bitrate": "128k",
+    "target_lufs": -14,
+    "true_peak": -1.0,
+    "premix_peak": -2.0,
+    "true_peak_slack": 0.5,
+    "lufs_tolerance": 2.0
+  },
+  "qa": {
+    "duration_tolerance_s": 0.05,
+    "min_text_range": 60,
+    "hook_probe_s": 0.5,
+    "probe_frac": 0.7,
+    "edge_min": 40,
+    "safe_slack_px": 8,
+    "audio_tolerance_s": 0.1
+  },
+  "transition": {
+    "default_s": 0.4,
+    "max_s": 1.0
+  },
+  "roles": [
+    "hook",
+    "setup",
+    "turn",
+    "proof",
+    "payoff",
+    "cta",
+    "loop"
+  ],
+  "claim_status": [
+    "own",
+    "sourced",
+    "needs-check"
+  ],
+  "transitions": [
+    "cut",
+    "fade",
+    "fadeblack",
+    "fadewhite",
+    "slideleft",
+    "slideright",
+    "slideup",
+    "slidedown",
+    "wipeleft",
+    "wiperight",
+    "wipeup",
+    "wipedown",
+    "circleopen",
+    "circleclose",
+    "dissolve",
+    "zoomin"
+  ],
+  "scenes": [
+    "title_card",
+    "big_number",
+    "bullet_reveal",
+    "quote",
+    "split_compare",
+    "timeline",
+    "diagram_reveal",
+    "kinetic_text",
+    "outro_loop"
+  ],
+  "music_presets": [
+    "pulse",
+    "ambient",
+    "tension",
+    "upbeat",
+    "none"
+  ],
+  "music_levels": [
+    "on",
+    "low",
+    "off"
+  ],
+  "sfx": [
+    "whoosh",
+    "tick",
+    "hit",
+    "riser",
+    "pop"
+  ],
+  "limits": {
+    "ffmpeg_timeout_s": 300,
+    "resvg_timeout_s": 60
+  },
+  "sfx_per_beat": 6
+}
