@@ -23,8 +23,7 @@ um comando: `/hermes-omp` no Telegram e `/skill` no Discord.
 Antes da execução, o Hermes diz o repositório, o branch, o modo (escrita ou só revisão), o arquivo
 de tarefa, os modelos e o nível de raciocínio.
 
-Durante a execução, o Hermes diz o estado do processo e o tempo que falta. A saída do omp fica
-vazia até o fim da execução.
+Durante a execução, o Hermes mostra o que o omp faz, na hora ("Ver o omp trabalhar", abaixo).
 
 Depois da execução, o Hermes diz estes fatos:
 
@@ -37,6 +36,39 @@ Depois da execução, o Hermes diz estes fatos:
 O omp guarda cada sessão em `~/.omp/agent/sessions/<encoded-cwd>/<timestamp>_<sessionId>.jsonl`, na
 home do Hermes. O comando `omp --export <session>` escreve uma sessão em HTML (docs do omp,
 `session.md` e `cli-reference.md`). Não testado nesta máquina.
+
+## Ver o omp trabalhar
+
+O Hermes roda o omp em segundo plano e passa a saída dele pelo `omp-stream`:
+
+```
+omp -p --mode json --no-title --max-time 15m < task.md 2>&1 | omp-stream
+```
+
+O `--mode json` faz o omp escrever um evento JSON por linha. O `omp-stream`
+([`hermes/skills/hermes-omp/scripts/omp-stream.sh`](../hermes/skills/hermes-omp/scripts/omp-stream.sh),
+um comando no PATH do Hermes, em `hermes.nix`) escreve uma linha de texto por evento, na hora:
+
+```
+omp: start in <cwd>
+> bash: <intent, ou o comando ou o caminho>
+< bash ok (34 ms)
+    <as 5 primeiras linhas do resultado>
+    ... <N> more lines
+omp says: <um texto pronto do omp>
+omp: done, <N> turns, cost $<soma>
+```
+
+Uma linha que não é JSON sai como `omp stderr: <linha>`. Chaves e tokens saem como `[redacted]`. Uma
+execução sem a linha `omp: done` terminou de forma anormal.
+
+O Hermes inicia a execução com `terminal(background=true, notify=true, heartbeat=120)`. Cada
+heartbeat entrega as linhas novas ao chat. Cada heartbeat custa um turno do Hermes: uma execução de
+15 minutos custa até 8 turnos. O filtro não chama nenhum modelo.
+
+Teste: `sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh` (precisa de `jq`). Ele roda uma
+execução gravada (`scripts/fixtures/`) e mais três casos: uma linha que não é JSON, um erro de
+ferramenta e um segredo.
 
 ## As camadas: o que você pode editar
 

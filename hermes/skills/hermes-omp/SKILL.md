@@ -1,7 +1,7 @@
 ---
 name: hermes-omp
 description: "Hand every code implementation or review to omp (oh-my-pi), then check its diff and open the PR yourself."
-version: 1.2.0
+version: 1.3.0
 author: piabrota
 license: MPL-2.0
 platforms: [linux]
@@ -83,14 +83,24 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
      files and the checks you ran, with their result."
 
    Never put a secret or a token in the task file.
-3. **Run.** From the working tree:
+3. **Run.** From the working tree, in the background, with the output of omp filtered by
+   `omp-stream`:
 
    ```
-   terminal(command="omp -p --no-title --max-time 15m < /var/lib/hermes/workspace/omp-tasks/<a-few-words>.md; rc=$?; cat /var/lib/hermes/workspace/omp-tasks/<a-few-words>.progress 2>/dev/null; exit $rc", workdir="/var/lib/hermes/workspace/<repo>", timeout=960)
+   terminal(command="omp -p --mode json --no-title --max-time 15m < /var/lib/hermes/workspace/omp-tasks/<a-few-words>.md 2>&1 | omp-stream; cat /var/lib/hermes/workspace/omp-tasks/<a-few-words>.progress 2>/dev/null", workdir="/var/lib/hermes/workspace/<repo>", background=true, notify=true, heartbeat=120)
    ```
 
-   The command shows the progress file when the run ends. For a task that needs more than 10
-   minutes, follow "Long tasks". The wrapper stops every run at 35 minutes.
+   `--mode json` makes omp print one event per line as it works. `omp-stream` turns each event
+   into one plain line: `omp: start`, `> <tool>: <what>`, `< <tool> ok (<ms> ms)` with the first
+   lines of the result, `omp says: <text>`, and at the end `omp: done, <N> turns, cost $<sum>`. A
+   line that is not JSON prints as `omp stderr: <line>`. Keys and tokens print as `[redacted]`.
+
+   Each heartbeat (every 120 seconds) delivers the new lines to the conversation. Show them to the
+   owner as they arrive: short, in a code block. Do not rewrite them. Each heartbeat costs one turn
+   of yours, so keep your own words to a line or none. A run with no `omp: done` line ended in an
+   abnormal way: it was stopped or killed, or an `omp stderr` line says why. The command shows the
+   progress file when the stream ends. For a task that needs more than 10 minutes, follow "Long
+   tasks". The wrapper stops every run at 35 minutes.
 
    For a review only, say so in the task file and add `--approval-mode write`, so omp can read and
    write files but cannot run commands.
@@ -113,8 +123,9 @@ The owner must see what omp does. Say each of these in chat, in plain words:
   review only); the path of the task file; the models and the thinking level that
   `hermes/omp.yml` sets. Read those values from `hermes/omp.yml` on nix-os `main`. Do not quote
   them from memory.
-- **While it runs**, facts only: `pgrep -af bin/omp`, `ps -o etime=,rss= -p <pid>`, and the time left
-  under `--max-time`. Its output stays empty until it ends.
+- **While it runs**, the stream of step 3 is the main source: show the new lines at each
+  heartbeat. As a fallback, when no line arrives, give facts only: `pgrep -af bin/omp`,
+  `ps -o etime=,rss= -p <pid>`, and the time left under `--max-time`.
 - **After the run**: the files omp changed, the checks omp says it ran and their results, the checks
   you ran yourself, what you could not verify, any "unsure" label omp wrote, how long it took,
   and the link to the pull request. Say "omp made the edits". Never say that you wrote them.
@@ -165,7 +176,8 @@ A deploy or a restart of the gateway stops omp, and the wrapper stops every run 
   or `NRestarts` is above 5, do not start. Tell the owner.
 - During the run, tell the owner not to merge a pull request of nix-os. A merge deploys, and a
   deploy can restart the gateway.
-- Start the run with `terminal(background=true, notify=true)` and end the turn. Do not poll.
+- Start the run as in step 3 (`terminal(background=true, notify=true, heartbeat=120)`) and end the
+  turn. Do not poll: the heartbeat delivers the output.
 - If the output says `[Stopped by SIGTERM]`, read the progress file and `git status`. Then start a
   new run with a task file that says: continue after the last finished step. Tell the owner that
   the run stopped, and why.
@@ -181,9 +193,10 @@ installed, has the `rig` commands.
 
 ## When it fails
 
-- Exit 137, or the run stops with no output: the box ran out of memory and the kernel stopped omp
-  first. Tell the owner. Do not run it again until he says so.
-- Any other exit code: report the last lines of its output.
+- Exit 137, or the run stops with no `omp: done` line and no output: the box ran out of memory and
+  the kernel stopped omp first. Tell the owner. Do not run it again until he says so.
+- No `omp: done` line and no memory kill: report the last lines of the stream, with the
+  `omp stderr` lines.
 - An authentication error: the token in the env file does not work for omp. Tell the owner; do
   not look for another token.
 - A command that omp needed was refused by its rules: do that step yourself only if your own rules
