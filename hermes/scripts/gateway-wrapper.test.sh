@@ -1,6 +1,6 @@
 #!/bin/sh
 # Tests of gateway-wrapper.sh with a stub gateway. Needs no Nix and no hermes: `sh
-# hermes/scripts/gateway-wrapper.test.sh`. It runs for about 50 seconds and prints PASS or FAIL
+# hermes/scripts/gateway-wrapper.test.sh`. It runs for about 80 seconds and prints PASS or FAIL
 # for each check. The stub is a shell script. Its plan, in STUB_PLAN, says what each start does:
 #   exit:N      exit with status N at once
 #   sleep:S:N   sleep S seconds, then exit with status N
@@ -8,7 +8,7 @@
 # The last word of the plan repeats for every later start.
 
 here=$(cd "$(dirname "$0")" && pwd)
-wrapper=$here/gateway-wrapper.sh
+wrapper=${GATEWAY_WRAPPER_UNDER_TEST:-$here/gateway-wrapper.sh}
 T=$(mktemp -d)
 trap 'kill $(jobs -p) 2>/dev/null; rm -rf "$T"' EXIT
 
@@ -92,6 +92,7 @@ wait_for() {
 }
 
 starts() { grep -c ' start ' "$STUB_LOG"; }
+not() { ! "$@"; }
 has_log() { grep -q "$1" "$STUB_LOG"; }
 has_err() { grep -q "$1" "$T/err"; }
 alive() { kill -0 "$1" 2>/dev/null; }
@@ -173,26 +174,79 @@ for body in none '{"pid": 999999999}' 'not json' '{"pid": "x"}'; do
     check "d2: pid file '$body': no restart" starts_is 1
 done
 
-echo "== e: fast exit 0 while another gateway lives (15 s without a restart storm)"
-new_case "exit:0 run"
+# The real gateway exits 75 when another gateway serves the host (the box, 2026-11-05). Older
+# versions may exit 0. The wrapper must treat both the same way.
+for code in 75 0; do
+    echo "== e$code: fast exit $code while another gateway lives (15 s without a restart storm)"
+    new_case "exit:$code run"
+    start_foreign
+    GATEWAY_WRAPPER_POLL_SECS=5
+    start_wrapper
+    GATEWAY_WRAPPER_POLL_SECS=1
+    check "e$code: the waiting line is logged" wait_for 3 has_err "another gateway (pid $foreign) serves this host (the gateway exited $code): waiting for it to exit"
+    sleep 15
+    check "e$code: the wrapper is alive after 15 s" alive "$wp"
+    check "e$code: the gateway started exactly once" starts_is 1
+    check "e$code: no 'starting it again' line" not has_err 'starting it again'
+    kill "$foreign"
+    wait "$foreign" 2>/dev/null
+    t0=$(now)
+    wait_for 8 starts_is 2
+    t1=$(now)
+    echo "   the stub started again $(awk -v a="$t0" -v b="$t1" 'BEGIN { printf "%.1f", b - a }') s after the other gateway ended"
+    check "e$code: the gateway starts again within 6 s of the other's exit" lt "$(awk -v a="$t0" -v b="$t1" 'BEGIN { print b - a }')" 6.5
+    check "e$code: the takeover is logged" has_err 'has exited: starting our own'
+    check "e$code: the wrapper is alive" alive "$wp"
+    stop_wrapper
+done
+
+echo "== e-storm: the gateway exits 75 at once on every start, another gateway lives (the loop of 2026-11-05)"
+new_case "exit:75"
 start_foreign
-GATEWAY_WRAPPER_POLL_SECS=5
 start_wrapper
-GATEWAY_WRAPPER_POLL_SECS=1
-check "e: the waiting line is logged" wait_for 3 has_err "another gateway (pid $foreign) serves this host: waiting for it to exit"
-sleep 15
-check "e: the wrapper is alive after 15 s" alive "$wp"
-check "e: the gateway started exactly once" starts_is 1
-kill "$foreign"
-wait "$foreign" 2>/dev/null
-t0=$(now)
-wait_for 8 starts_is 2
-t1=$(now)
-echo "   the stub started again $(awk -v a="$t0" -v b="$t1" 'BEGIN { printf "%.1f", b - a }') s after the other gateway ended"
-check "e: the gateway starts again within 6 s of the other's exit" lt "$(awk -v a="$t0" -v b="$t1" 'BEGIN { print b - a }')" 6.5
-check "e: the takeover is logged" has_err 'has exited: starting our own'
-check "e: the wrapper is alive" alive "$wp"
+sleep 8
+check "e-storm: the wrapper is alive after 8 s" alive "$wp"
+check "e-storm: the gateway started exactly once" starts_is 1
+if alive "$wp"; then
+    stop_wrapper
+else
+    wait "$wp"
+    echo "   the wrapper exited with $? and the gateway started $(starts) times"
+fi
+end_foreign
+
+echo "== e2: the start after the wait is not a reload (limit 1 reload)"
+new_case "exit:75 exit:75 run"
+start_foreign
+export GATEWAY_WRAPPER_MAX_RELOADS=1
+start_wrapper
+wait_for 3 has_err 'waiting for it to exit'
+end_foreign
+check "e2: the second start happens after the wait" wait_for 8 starts_ge 2
+sleep 1
+check "e2: the wrapper is alive (one reload is within the limit)" alive "$wp"
+check "e2: the gateway ran 3 times" starts_is 3
+unset GATEWAY_WRAPPER_MAX_RELOADS
 stop_wrapper
+
+echo "== e3: a real reload: the gateway ran 3 s, exits 75, and another live process is in gateway.pid"
+new_case "sleep:3:75 run"
+start_foreign
+GATEWAY_WRAPPER_FAST_EXIT_SECS=1
+start_wrapper
+GATEWAY_WRAPPER_FAST_EXIT_SECS=2
+check "e3: the gateway starts again" wait_for 8 starts_ge 2
+g=$(gap exit start)
+echo "   stub log (epoch seconds):"
+sed -n 1,4p "$STUB_LOG" | sed 's/^/   /'
+echo "   gap between the exit of the first gateway and the second start: $g s"
+check "e3: the gateway ran 3 s or more" lt 2.5 "$(gap start exit)"
+check "e3: the restart follows the exit within 1 s" lt "$g" 1
+check "e3: the reload line is logged" has_err 'gateway exited 75 (reload): starting it again'
+check "e3: no waiting line" not has_err 'serves this host'
+check "e3: the wrapper is alive" alive "$wp"
+stop_wrapper
+end_foreign
 
 echo "== f: TERM while it waits for the other gateway"
 new_case "exit:0 run"
