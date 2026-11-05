@@ -51,4 +51,10 @@
   piabrota.openrig.waveForecaster.enable = false;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
+  # Live metrics (metrics.nix, docs/METRICS.md): the hub at metrics.piabrota.art, which must point at
+  # this box, and this host's own agent, which reaches the hub on loopback.
+  piabrota.metrics.hub.enable = true;
+  piabrota.metrics.hub.domain = "metrics.piabrota.art";
+  piabrota.metrics.agent.enable = true;
+  piabrota.metrics.agent.hubUrl = "http://127.0.0.1:8090";
 }

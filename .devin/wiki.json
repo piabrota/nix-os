@@ -89,6 +89,10 @@
       "purpose": "pgx.nix and pgx/: the release packaged with autoPatchelfHook, the pgx unit (on piabrota2) and its sandbox, pg_hba.conf for loopback only, the pgx CLI wrapper, the VM test, and docs/PGX.md's cost and limits."
     },
     {
+      "title": "Metrics with Beszel",
+      "purpose": "metrics.nix, beszel/ and docs/METRICS.md: Beszel (hub and agent) pinned in beszel/package.nix (a copy of nixpkgs' derivation at a newer release; version and three hashes move together), the hub on piabrota2 at metrics.piabrota.art behind nginx and ACME with no basic auth (the agent on piabrota dials in; login rate limit), the agent on both hosts (outgoing WebSocket, no port, KEY and TOKEN in /var/lib/beszel-secrets/agent.env, skipped without it), what per-unit data the agent collects, the measured cost, the VM test, and how to update the pin."
+    },
+    {
       "title": "Paperclip",
       "purpose": "paperclip.nix, paperclip/ and docs/PAPERCLIP.md (Paperclip is off for now: piabrota.paperclip.enable = false on piabrota2): Paperclip's npm release packaged with buildNpmPackage (the lock without other platforms' binaries), the paperclip unit on piabrota2 with PostgreSQL 17 on a socket only, its read-only config.json, the signing secrets made on the box, nginx and ACME for paperclip.piabrota.art, and the integration with Hermes: the hermes_gateway adapter on Hermes's loopback API server, the two keys in hermes.env, Paperclip's skill in Hermes, the one-time setup and the cost."
     },

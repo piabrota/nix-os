@@ -151,12 +151,17 @@
         # pgx.nix in a VM: the unit starts in its sandbox, takes a password and keeps its data
         # across a restart (pgx/test.nix).
         pgx = pkgs.testers.runNixOSTest ./pgx/test.nix;
+        # metrics.nix in a VM: the hub behind nginx, the agent over the WebSocket, the login limit,
+        # the one-time first user (beszel/test.nix). Needs KVM to run in reasonable time.
+        metrics = pkgs.testers.runNixOSTest ./beszel/test.nix;
       };
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
         # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
         pgx = pkgs.callPackage ./pgx/package.nix { };
+        # Beszel, hub and agent, pinned to a release newer than nixpkgs' (beszel/package.nix).
+        beszel = pkgs.callPackage ./beszel/package.nix { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })
