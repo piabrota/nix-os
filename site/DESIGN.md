@@ -105,6 +105,18 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 2 px. No page loads JavaScript, except Google's analytics tag when
 `piabrota.site.analytics.measurementId` is set (`page.analytics`).
 
+## Where else the look is used
+
+The same tokens and type dress three things that are not the site's Gleam pages:
+
+- **The figures** at `/figures/`: the index is a page frame like `/hosts/` in this `style.css`
+  (`.figures-grid`, `.figure-card`), written by `figures-site/default.nix`; each figure page has a bar
+  of 44 px with the dark tokens, from the same file.
+- **The docs page of the Hermes dashboard**, `hermes-web/docs/index.html`: one file with its CSS
+  inside, because the dashboard shows it in an iframe.
+- **The dashboard theme and the TUI skin of Hermes**: `hermes/dashboard-themes/piabrota.yaml` and
+  `hermes/skins/piabrota.yaml`, the dark tokens only. The skin colours the Chat tab.
+
 ## Facts
 
 Every fact comes from `mockups/data.nix` (the org profile, piabrota/mu's dogma, dojo's repos, GitHub

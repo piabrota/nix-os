@@ -387,10 +387,16 @@ do módulo do upstream:
   (`sub_filter`) e serve esse diretório do store, atrás da mesma basic auth; só essa location manda
   `X-Frame-Options: SAMEORIGIN`, para a aba poder abrir a página, e o resto do dashboard fica com
   `DENY`. O `checks.hermes-docs-url` falha quando uma
-  atualização do Hermes muda o endereço. Para mostrar outra página, edite o arquivo ou aponte
+  atualização do Hermes muda o endereço. A página tem a cara do www.piabrota.art: um arquivo só, com o CSS dentro, que carrega as fontes do site no Google Fonts. Para mostrar outra página, edite o arquivo ou aponte
   `piabrota.hermesWeb.docs` para outro diretório com um `index.html`. Os assets do bundle ficam em
   cache como imutáveis: depois do primeiro deploy, recarregue o dashboard uma vez sem cache
   (Ctrl+Shift+R).
+- **O painel usa a cara do piabrota.** O `hermes/dashboard-themes/piabrota.yaml` é o tema do painel,
+  e o `hermes/skins/piabrota.yaml` é a skin da TUI. A aba Chat embute a TUI, e a TUI pega as cores
+  da skin, não do tema. Os dois arquivos usam os tokens escuros do `site/DESIGN.md`. O `hermes.nix`
+  os instala com `hermesHomeFiles` e põe `dashboard.theme` e `display.skin` em `piabrota`. O tema
+  carrega Fjalla One, Inter e JetBrains Mono do Google Fonts (`fontUrl`). Um tema escolhido no
+  painel dura só até o próximo deploy escrever o `config.yaml`.
 - **A aba Chat exige o grupo `hermes` privado.** O upstream recusa o socket de controle do gateway
   quando o grupo do diretório com escrita para o grupo tem um membro além do dono. Se a aba Chat
   mostrar "retrying", rode `sudo -u hermes hermes gateway status` e confira que mais ninguém está

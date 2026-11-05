@@ -374,10 +374,17 @@ web app is part of the Hermes package that `hermes.nix` installs, so it adds no 
   Research's docs. Upstream frames `https://hermes-agent.nousresearch.com/docs/`, a literal in the
   built JS bundle. nginx replaces it with `/piabrota-docs/` on the way (`sub_filter`) and serves
   that directory from the store, behind the same basic auth; that location alone sends `X-Frame-Options: SAMEORIGIN`
-  so the tab can frame it, and the rest of the dashboard keeps `DENY`. `checks.hermes-docs-url` fails when a Hermes bump renames the address. To
+  so the tab can frame it, and the rest of the dashboard keeps `DENY`. `checks.hermes-docs-url` fails when a Hermes bump renames the address. The page has the look of www.piabrota.art: one file with its CSS inside, which loads the site's fonts from Google Fonts. To
   show another page, edit the file or set `piabrota.hermesWeb.docs` to another directory with an
   `index.html`. The bundle's assets are cached as immutable: after the first deploy, reload the
   dashboard once with the cache off (Ctrl+Shift+R).
+- **The dashboard wears piabrota's look.** `hermes/dashboard-themes/piabrota.yaml` is the dashboard
+  theme, and `hermes/skins/piabrota.yaml` is the skin of the TUI. The Chat tab embeds the TUI, and
+  the TUI takes its colours from the skin, not from the theme. Both files use the dark tokens of
+  `site/DESIGN.md`. `hermes.nix` installs them with `hermesHomeFiles` and sets `dashboard.theme` and
+  `display.skin` to `piabrota`. The theme loads Fjalla One, Inter and JetBrains Mono from Google
+  Fonts (`fontUrl`). A theme picked in the dashboard lasts only until the next deploy writes
+  `config.yaml`.
 - **The Chat tab needs a private `hermes` group.** Upstream refuses the gateway control socket when
   the group of the group-writable home has a member besides the owner. If the Chat tab shows
   "retrying", run `sudo -u hermes hermes gateway status` and check that nobody else is in the

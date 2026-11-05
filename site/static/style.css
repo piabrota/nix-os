@@ -196,6 +196,20 @@ span.where { color: var(--muted); }
 .hosts-grid ul { margin: 8px 0 0; padding-left: 18px; }
 .caduceus { display: block; font: 400 160px/1 var(--display); color: var(--accent-text); text-align: center; }
 
+/* /figures: one card a figure, its PNG on top (figures-site/default.nix writes the page). */
+.figures-grid { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 16px; }
+.figure-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .15s ease, transform .15s ease; }
+.figure-card:hover, .figure-card:focus-within { border-color: var(--accent-text); }
+.figure-card:hover { transform: translateY(-2px); }
+.figure-preview { display: block; border-bottom: 1px solid var(--border); }
+.figure-preview img { display: block; width: 100%; height: auto; }
+.figure-body { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: 18px 20px 20px; }
+.figure-body h3 { font-size: 1.5rem; line-height: 1.15; overflow-wrap: anywhere; }
+.figure-body h3 a { color: var(--text); }
+.figure-body .blurb { flex: 1; overflow-wrap: anywhere; }
+.figure-body .actions { margin-top: 6px; }
+.figures h1 { text-wrap: balance; }
+
 /* The foot. */
 .foot { margin-top: 64px; border-top: 1px solid var(--border); padding: 28px 0 48px; font-size: 13px; color: var(--muted); }
 .foot .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -224,7 +238,7 @@ span.where { color: var(--muted); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .btn, .card { transition: none; }
+  .btn, .card, .figure-card { transition: none; }
 }
 
 /* The hero's numbers, closed-source's. */
