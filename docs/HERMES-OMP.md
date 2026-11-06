@@ -87,7 +87,7 @@ Hermes starts a background command as `bash -lic` with no terminal. Before `omp-
 the pipeline itself and stopped a run with `pkill -f <task file>` or `kill <pid>`. The signal
 killed the pipeline, bash then printed `tcsetattr: Inappropriate ioctl for device`, and the task
 ended as a failure with exit 143, also when Hermes had stopped it on purpose (2026-11-05, the
-Beszel run). `omp-run` catches SIGTERM, SIGINT and SIGHUP, passes SIGTERM to omp, lets
+metrics run). `omp-run` catches SIGTERM, SIGINT and SIGHUP, passes SIGTERM to omp, lets
 `omp-stream` print the last lines and exits with a code, so bash prints no `tcsetattr` line.
 
 Test: `bash hermes/skills/hermes-omp/scripts/test-omp-run.sh` (needs `jq` and `setsid`). It runs

@@ -17,7 +17,7 @@ check:
     nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
-    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh
+    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
@@ -163,3 +163,12 @@ remote-health user="h0ffmann":
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:
     sh video-lab/dummy/run.sh
+
+# tests of the metrics collector (fixture /proc) and page; needs jq, and python3 and curl for the page's HTTP check
+metrics-test:
+    sh metrics/test/run.sh
+    sh metrics/test/page.sh
+
+# open the metrics page on fixtures (healthy, stale, missing or hostile) at http://127.0.0.1:<port>/; needs python3 and jq
+metrics-preview case="healthy" port="8080":
+    sh metrics/test/preview.sh {{case}} {{port}}

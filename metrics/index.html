@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>piabrota metrics</title>
+<style>
+:root{--bg:#0B0D12;--surface:#14171F;--border:#2A303C;--text:#EDEFF3;--muted:#9AA3B2;--accent:#BC2318;--accent-text:#FF6B5E;--ok:#3FB950;--warn:#E3A008;--none:#6B7385;
+--display:"Fjalla One","Arial Narrow",Impact,sans-serif;--sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:light){:root{--bg:#FFFFFF;--surface:#F4F5F7;--border:#D8DCE3;--text:#0B0D12;--muted:#4F5868;--accent-text:#A51D14;--ok:#1E7F34;--warn:#8F5F00;--none:#5A6272}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--sans);background-image:radial-gradient(600px 300px at 0 0,rgba(188,35,24,.18),transparent)}
+a{color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px}
+main{max-width:1040px;margin:0 auto;padding:0 20px 40px}
+header{padding:28px 0 20px}
+.eyebrow{font:12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-text)}
+h1{font:400 clamp(30px,6vw,44px)/1.1 var(--display);margin:6px 0 4px}
+h1 span{color:var(--muted)}
+.lede{color:var(--muted);margin:0;max-width:60ch}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--none);border-radius:12px;padding:16px;min-width:0}
+.card.live{border-left-color:var(--ok)}
+.card.offline{border-left-color:var(--none);border-left-style:dashed}
+.card.offline .body{opacity:.55}
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;justify-content:space-between}
+h2{font:400 22px/1.2 var(--display);margin:0}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:2px 10px;font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--none)}
+.live .pill{color:var(--ok);border-color:var(--ok)}
+.live .pill::before{background:var(--ok);box-shadow:0 0 0 3px rgba(63,185,80,.25)}
+.age{font:12px var(--mono);color:var(--muted);margin:4px 0 0}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px 12px;margin:14px 0}
+.facts div{min-width:0}
+.facts dt{font:11px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.facts dd{margin:0;font:15px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+dl{margin:0}
+.meter{margin:12px 0}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px}
+.row b{font:600 13px var(--sans)}
+.row span{font:12px var(--mono);color:var(--muted);text-align:right}
+.bar{height:8px;border-radius:999px;background:var(--border);overflow:hidden;margin:4px 0}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px}
+.bar i.high{background:var(--warn)}
+svg.spark{display:block;width:100%;height:36px}
+svg.spark polyline{fill:none;stroke:var(--accent-text);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.cores{display:flex;gap:3px;align-items:flex-end;height:28px;margin:6px 0 0}
+.cores i{flex:1;max-width:24px;min-width:3px;background:var(--border);border-radius:2px;position:relative;height:100%}
+.cores i b{position:absolute;left:0;right:0;bottom:0;background:var(--accent);border-radius:2px}
+h3{font:400 15px var(--display);letter-spacing:.04em;margin:20px 0 6px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+th{font:11px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:4px 6px 4px 0;border-bottom:1px solid var(--border)}
+td{padding:4px 6px 4px 0;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}
+th.n,td.n{text-align:right;width:76px}
+th.u,td.u{width:84px}
+td.pid{color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td .bar{margin:0}
+.note{color:var(--muted);font-size:13px;margin:6px 0 0}
+.none{color:var(--muted);font-size:13px;margin:4px 0}
+footer{margin-top:24px;color:var(--muted);font-size:13px}
+@media (max-width:420px){th.u,td.u{display:none}th.n,td.n{width:64px}main{padding:0 14px 32px}}
+@media (prefers-reduced-motion:no-preference){.card{animation:rise .4s ease-out}@keyframes rise{from{transform:translateY(8px);opacity:0}}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="eyebrow">piabrota / metrics</div>
+<h1>Processes, memory, <span>vCPU</span></h1>
+<p class="lede">One card for each NixOS host. The numbers come from /proc, every 10 seconds. A host is offline when its data is older than 30 seconds.</p>
+</header>
+<noscript><p class="none">This page needs JavaScript to draw the numbers.</p></noscript>
+<div class="grid" id="grid"></div>
+<footer id="foot">CPU % of a process is a share of one vCPU, averaged over the last interval. The lists show 10 processes. A limit shows only for units that have a MemoryMax.</footer>
+</main>
+<script>
+"use strict";
+var HOSTS = ["piabrota", "piabrota2"], POLL_MS = 5000, STALE_S = 30, KEEP = 60;
+var $ = function (id) { return document.getElementById(id); };
+var state = {};
+
+function el(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function num(x) { return typeof x === "number" && isFinite(x) ? x : null; }
+function str(x) { return typeof x === "string" ? x : (num(x) !== null ? String(x) : ""); }
+function arr(x) { return Array.isArray(x) ? x : []; }
+function obj(x) { return x && typeof x === "object" && !Array.isArray(x) ? x : {}; }
+function bytes(b) {
+  b = num(b);
+  if (b === null) return "–";
+  var u = ["B", "KiB", "MiB", "GiB", "TiB"], i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return b.toFixed(i === 0 || b >= 100 ? 0 : 1) + " " + u[i];
+}
+function pct(x, d) { x = num(x); return x === null ? "–" : x.toFixed(d === undefined ? 0 : d) + "%"; }
+function ratio(a, b) { a = num(a); b = num(b); return a !== null && b ? Math.max(0, Math.min(100, 100 * a / b)) : null; }
+function dur(s) {
+  s = num(s);
+  if (s === null) return "–";
+  s = Math.floor(s);
+  if (s < 90) return s + " s";
+  if (s < 5400) return Math.round(s / 60) + " min";
+  if (s < 172800) return Math.round(s / 3600) + " h";
+  return Math.floor(s / 86400) + " d " + Math.floor(s % 86400 / 3600) + " h";
+}
+
+function meter(title) {
+  var m = el("div", "meter"), r = el("div", "row"), v = el("span"), b = el("div", "bar"), f = el("i");
+  r.appendChild(el("b", "", title)); r.appendChild(v); b.appendChild(f); m.appendChild(r); m.appendChild(b);
+  var s = document.createElementNS("http://www.w3.org/2000/svg", "svg"), p = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  s.setAttribute("class", "spark"); s.setAttribute("viewBox", "0 0 100 36"); s.setAttribute("preserveAspectRatio", "none");
+  s.setAttribute("role", "img"); s.appendChild(p); m.appendChild(s);
+  return { root: m, val: v, fill: f, line: p, svg: s };
+}
+function fact(label) {
+  var d = el("div"), dd = el("dd");
+  d.appendChild(el("dt", "", label)); d.appendChild(dd);
+  return { root: d, dd: dd };
+}
+function build(host) {
+  var card = el("section", "card offline"), head = el("div", "head"), h = el("h2", "", host), pill = el("span", "pill", "offline");
+  head.appendChild(h); head.appendChild(pill); card.appendChild(head);
+  var age = el("p", "age", "no data yet"); card.appendChild(age);
+  var body = el("div", "body"); card.appendChild(body);
+  var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"), disk: fact("Disk /") };
+  for (var k in f) facts.appendChild(f[k].root);
+  body.appendChild(facts);
+  var cpu = meter("CPU"), mem = meter("Memory"), cores = el("div", "cores"), swap = el("p", "note");
+  body.appendChild(cpu.root); body.appendChild(cores); body.appendChild(mem.root); body.appendChild(swap);
+  body.appendChild(el("h3", "", "Top by memory")); var tm = el("div"); body.appendChild(tm);
+  body.appendChild(el("h3", "", "Top by CPU")); var tc = el("div"); body.appendChild(tc);
+  body.appendChild(el("h3", "", "Units against their limit")); var tu = el("div"); body.appendChild(tu);
+  return { card: card, h: h, pill: pill, age: age, f: f, cpu: cpu, mem: mem, cores: cores, swap: swap, tm: tm, tc: tc, tu: tu,
+           hist: { cpu: [], mem: [] }, data: null, offset: 0, lastTs: null, error: "no data yet" };
+}
+
+function spark(m, list, label) {
+  var n = list.length, pts = [];
+  for (var i = 0; i < n; i++) pts.push((n === 1 ? 100 : 100 * i / (n - 1)).toFixed(1) + "," + (34 - 32 * list[i] / 100).toFixed(1));
+  m.line.setAttribute("points", pts.join(" "));
+  m.svg.setAttribute("aria-label", label + ", last " + n + " samples");
+}
+function table(into, cols, rows, empty) {
+  into.replaceChildren();
+  if (!rows.length) { into.appendChild(el("p", "none", empty)); return; }
+  var t = el("table"), tr = el("tr");
+  cols.forEach(function (c) { tr.appendChild(el("th", c.cls, c.title)); });
+  var th = el("thead"); th.appendChild(tr); t.appendChild(th);
+  var tb = el("tbody");
+  rows.forEach(function (r) {
+    var row = el("tr");
+    r.forEach(function (cell, i) {
+      var td = el("td", cols[i].cls);
+      if (cell && cell.bar !== undefined) {
+        var b = el("div", "bar"), f = el("i", cell.bar >= 90 ? "high" : ""); f.style.width = cell.bar.toFixed(0) + "%"; b.appendChild(f);
+        td.appendChild(b);
+      } else { td.textContent = cell.text !== undefined ? cell.text : cell; td.title = td.textContent; }
+      row.appendChild(td);
+    });
+    tb.appendChild(row);
+  });
+  t.appendChild(tb); into.appendChild(t);
+}
+function procs(list) {
+  return arr(list).slice(0, 10).map(function (p) {
+    p = obj(p);
+    return [str(p.name) + " " + str(p.pid), str(p.user), bytes(p.rss), pct(p.cpu_pct, 1)];
+  });
+}
+var PROC_COLS = [{ title: "Process", cls: "" }, { title: "User", cls: "u" }, { title: "RSS", cls: "n" }, { title: "CPU", cls: "n" }];
+var UNIT_COLS = [{ title: "Unit", cls: "" }, { title: "Mem", cls: "n" }, { title: "Limit", cls: "n" }, { title: "Use", cls: "u" }];
+
+function draw(v) {
+  var d = obj(v.data), mem = obj(d.mem), cpu = obj(d.cpu), disk = obj(d.disk), load = arr(d.load);
+  v.h.textContent = str(d.label) || str(d.host) || v.name;
+  v.f.vcpus.dd.textContent = num(d.vcpus) !== null ? String(d.vcpus) : "–";
+  v.f.up.dd.textContent = dur(d.uptime_s);
+  v.f.load.dd.textContent = [0, 1, 2].map(function (i) { return num(load[i]) !== null ? load[i].toFixed(2) : "–"; }).join(" ");
+  v.f.procs.dd.textContent = num(d.procs_total) !== null ? String(d.procs_total) : "–";
+  v.f.disk.dd.textContent = bytes(disk.root_used) + " / " + bytes(disk.root_total);
+
+  var cp = num(cpu.total_pct), mp = ratio(mem.used, mem.total);
+  v.cpu.val.textContent = (cpu.warming ? "warming up" : pct(cp, 1)) + (num(d.vcpus) !== null ? " of " + d.vcpus + " vCPU" : "");
+  v.cpu.fill.style.width = (cp || 0) + "%"; v.cpu.fill.className = cp >= 90 ? "high" : "";
+  v.mem.val.textContent = bytes(mem.used) + " of " + bytes(mem.total) + " (" + pct(mp) + ")";
+  v.mem.fill.style.width = (mp || 0) + "%"; v.mem.fill.className = mp >= 90 ? "high" : "";
+  spark(v.cpu, v.hist.cpu, "CPU percent"); spark(v.mem, v.hist.mem, "Memory percent");
+
+  v.cores.replaceChildren();
+  arr(cpu.cores).forEach(function (c, i) {
+    var s = el("i"), b = el("b"); b.style.height = Math.max(0, Math.min(100, num(c) || 0)) + "%";
+    s.title = "vCPU " + i + ": " + pct(c, 1); s.appendChild(b); v.cores.appendChild(s);
+  });
+  var st = num(mem.swap_total);
+  v.swap.textContent = st ? "Swap " + bytes(mem.swap_used) + " of " + bytes(st) : "No swap.";
+
+  table(v.tm, PROC_COLS, procs(d.top_mem), "No process list in the data.");
+  table(v.tc, PROC_COLS, procs(d.top_cpu), "No process list in the data.");
+  table(v.tu, UNIT_COLS, arr(d.units).slice(0, 12).map(function (u) {
+    u = obj(u);
+    var p = ratio(u.mem, u.max), peak = num(u.peak) !== null ? ", peak " + bytes(u.peak) : "";
+    return [{ text: str(u.unit).replace(/\.service$/, "") + peak }, bytes(u.mem), bytes(u.max), p === null ? "–" : { bar: p }];
+  }), "No unit with a MemoryMax.");
+}
+
+function status(v) {
+  var live = false, text;
+  if (v.data && num(v.data.ts) !== null) {
+    var age = Math.max(0, (Date.now() - v.offset) / 1000 - v.data.ts);
+    live = !v.error && age <= STALE_S;
+    text = "data " + dur(age) + " old" + (v.error ? "; last fetch failed: " + v.error : "");
+    if (!live && age > STALE_S) text = "last data " + dur(age) + " ago" + (v.error ? "; " + v.error : "");
+  } else text = v.error || "no data yet";
+  v.card.className = "card " + (live ? "live" : "offline");
+  v.pill.textContent = live ? "live" : "offline";
+  v.age.textContent = text;
+}
+
+function poll(host) {
+  var v = state[host], t0 = Date.now();
+  fetch("data/" + host + ".json", { cache: "no-store", credentials: "same-origin" }).then(function (r) {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var hd = Date.parse(r.headers.get("Date") || "");
+    // Age is the server's clock minus the file's stamp, so a wrong clock here changes nothing.
+    v.offset = Date.now() - (isNaN(hd) ? t0 : hd + (Date.now() - t0));
+    return r.json();
+  }).then(function (j) {
+    if (!j || typeof j !== "object" || Array.isArray(j)) throw new Error("not a JSON object");
+    v.error = "";
+    if (num(j.ts) !== null && j.ts !== v.lastTs) {
+      v.lastTs = j.ts;
+      var c = obj(j.cpu), m = obj(j.mem), mp = ratio(m.used, m.total);
+      v.hist.cpu.push(num(c.total_pct) || 0); v.hist.mem.push(mp || 0);
+      if (v.hist.cpu.length > KEEP) { v.hist.cpu.shift(); v.hist.mem.shift(); }
+    }
+    v.data = j; draw(v);
+  }).catch(function (e) { v.error = e && e.message ? e.message : "fetch failed"; }).then(function () { status(v); });
+}
+
+HOSTS.forEach(function (h) {
+  var v = build(h); v.name = h; state[h] = v; $("grid").appendChild(v.card); status(v); poll(h);
+});
+setInterval(function () { HOSTS.forEach(poll); }, POLL_MS);
+setInterval(function () { HOSTS.forEach(function (h) { status(state[h]); }); }, 1000);
+</script>
+</body>
+</html>

@@ -17,8 +17,15 @@
   # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
   piabrota.site.enable = true;
 
-  # Live metrics (metrics.nix, docs/METRICS.md): the agent only. It dials out to the hub on
-  # piabrota2 and opens no port. Its limit is 64M (measured: 17 MiB idle); this host has 4 GB.
-  piabrota.metrics.agent.enable = true;
-  piabrota.metrics.agent.hubUrl = "https://metrics.piabrota.art";
+  # Live metrics (metrics.nix, docs/METRICS.md): the collector, and the one location that lets
+  # piabrota2's address fetch its file. No port, no package of its own.
+  piabrota.metrics = {
+    name = "piabrota";
+    label = "piabrota (KVM 1)";
+    collector.enable = true;
+    publish = {
+      enable = true;
+      allowFrom = [ "187.41.117.18" ];
+    };
+  };
 }

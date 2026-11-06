@@ -89,7 +89,7 @@ O Hermes inicia um comando em segundo plano como `bash -lic`, sem terminal. Ante
 Hermes escrevia o pipeline ele mesmo e parava uma execução com `pkill -f <arquivo da tarefa>` ou
 `kill <pid>`. O sinal matava o pipeline, o bash escrevia `tcsetattr: Inappropriate ioctl for
 device`, e a tarefa terminava como falha com saída 143, mesmo quando o Hermes tinha parado de
-propósito (2026-11-05, a execução do Beszel). O `omp-run` pega SIGTERM, SIGINT e SIGHUP, manda
+propósito (2026-11-05, a execução das métricas). O `omp-run` pega SIGTERM, SIGINT e SIGHUP, manda
 SIGTERM ao omp, deixa o `omp-stream` escrever as últimas linhas e sai com um código, então o bash
 não escreve a linha `tcsetattr`.
 

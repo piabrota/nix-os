@@ -1,128 +1,270 @@
-# Live metrics with Beszel (github.com/henrygd/beszel): a hub with a web UI and one agent on each
-# host. The hub runs on piabrota2 at metrics.piabrota.art; the agent runs on both hosts and dials
-# out to the hub over a WebSocket, so piabrota opens no port. docs/METRICS.md says what it is,
-# shows and costs, and how to set it up.
-#
-# Everything is off by default. The hub's name must point at its host before `hub.enable` is on,
-# or the ACME order fails on the deploy and deploy-rs rolls the switch back (docs/SITE.md, "DNS on
-# Porkbun"). The agent's KEY and TOKEN come from the hub's UI and live only in an environment file
-# on the box (`agent.environmentFile`), never here and never in the store.
+# Live metrics, home-made (docs/METRICS.md): processes, memory and vCPU of each host on one page at
+# metrics.piabrota.art. No daemon stays resident:
+#   collector  a timer runs metrics/collect.sh every 10 s; it writes /run/metrics-web/<name>.json
+#   web        nginx serves metrics/index.html and /data/ from that folder, behind the basic-auth
+#              file of the Hermes dashboard
+#   publish    (KVM 1) one location on the www vhost serves the host's file to one address
+#   pull       (KVM 4) a timer fetches that file and keeps it beside its own
+# Everything is off by default. The web name must point at its host before `web.enable` is on, or the
+# ACME order fails on the deploy and deploy-rs rolls the switch back (docs/SITE.md).
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkMerge mkOption types;
   cfg = config.piabrota.metrics;
-  hubPort = config.services.beszel.hub.port;
-  hubAddress = "http://127.0.0.1:${toString hubPort}";
-  # PocketBase's password login. nginx lets one address try it ten times a minute.
-  loginPath = "~ ^/api/collections/[^/]+/(auth-with-password|request-otp|auth-with-otp)$";
+  anyOn = cfg.collector.enable || cfg.web.enable || cfg.publish.enable || cfg.pull.enable;
+  outDir = "/run/metrics-web";
+  stateDir = "/run/metrics-state";
+
+  # The scripts get their shebang patched to a store shell; the tools they call are on the unit's PATH.
+  script = name: file: pkgs.runCommand name { } ''
+    install -D -m 0755 ${file} $out/bin/${name}
+    patchShebangs $out/bin/${name}
+  '';
+  collect = script "metrics-collect" ./metrics/collect.sh;
+  pull = script "metrics-pull" ./metrics/pull.sh;
+  page = pkgs.runCommand "metrics-page" { } ''
+    install -D -m 0644 ${./metrics/index.html} $out/index.html
+  '';
+
   headers = ''
     add_header X-Frame-Options DENY always;
     add_header Referrer-Policy no-referrer always;
     add_header X-Content-Type-Options nosniff always;
     add_header Strict-Transport-Security "max-age=31536000" always;
   '';
-  # No basic auth: the agent on the other host dials this name too. The hub has its own login,
-  # and an agent has its token. The agent's path is /api/beszel/agent-connect (a WebSocket); the
-  # UI's live updates are server-sent events on /api/realtime, which need no buffering.
-  proxy = {
-    proxyPass = hubAddress;
-    proxyWebsockets = true;
-    extraConfig = ''
-      proxy_buffering off;
-      proxy_read_timeout 1h;
-      proxy_send_timeout 1h;
-    '';
-    recommendedProxySettings = true;
+
+  # What both units share: one fixed user, nothing written but the two folders in /run, no way to
+  # gain a right. Not here: ProcSubset=pid, ProtectProc=invisible and PrivateUsers, which hide
+  # /proc/stat, other users' processes and their names (docs/METRICS.md, "Hardening").
+  sandbox = {
+    User = "metrics";
+    Group = "metrics";
+    UMask = "0022";
+    NoNewPrivileges = true;
+    CapabilityBoundingSet = "";
+    AmbientCapabilities = "";
+    ProtectSystem = "strict";
+    ProtectHome = true;
+    PrivateTmp = true;
+    PrivateDevices = true;
+    ProtectKernelTunables = true;
+    ProtectKernelModules = true;
+    ProtectKernelLogs = true;
+    ProtectControlGroups = true;
+    ProtectClock = true;
+    ProtectHostname = true;
+    LockPersonality = true;
+    MemoryDenyWriteExecute = true;
+    RestrictRealtime = true;
+    RestrictSUIDSGID = true;
+    RestrictNamespaces = true;
+    SystemCallArchitectures = "native";
+    SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
+    ReadWritePaths = [ outDir stateDir ];
+    MemoryMax = "64M";
+    TasksMax = 64;
+    CPUWeight = 20;
+    Nice = 10;
+    Type = "oneshot";
+    # One start and one finish a run would be 17,000 journal lines a day.
+    LogLevelMax = "warning";
+  };
+
+  timer = what: {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnActiveSec = "2s";
+      OnUnitActiveSec = "${toString cfg.collector.interval}s";
+      AccuracySec = "1s";
+      Unit = "${what}.service";
+    };
   };
 in
 {
   options.piabrota.metrics = {
-    package = mkOption {
-      type = types.package;
-      # One source for the hub and the agent, so the two always have the same version.
-      default = pkgs.callPackage ./beszel/package.nix { };
-      defaultText = lib.literalExpression "pkgs.callPackage ./beszel/package.nix { }";
-      description = "Beszel, pinned in beszel/package.nix. Both units use it.";
+    name = mkOption {
+      type = types.strMatching "[a-z0-9-]*";
+      default = "";
+      example = "piabrota2";
+      description = ''
+        The host's name on the page and in its file: `/run/metrics-web/<name>.json`. Never the
+        hostname: piabrota2's is still `nixos` until a reboot. The page reads piabrota and piabrota2.
+      '';
+    };
+    label = mkOption {
+      type = types.str;
+      default = "";
+      example = "piabrota2 (KVM 4)";
+      description = "What the page calls the host. Empty: the name.";
     };
 
-    hub = {
-      enable = mkEnableOption "the Beszel hub behind nginx and TLS";
+    collector = {
+      enable = mkEnableOption "the collector timer: metrics/collect.sh writes this host's file";
+      interval = mkOption {
+        type = types.ints.between 2 300;
+        default = 10;
+        description = "Seconds between two runs. The page marks a host offline after 30 s without a new file.";
+      };
+    };
+
+    web = {
+      enable = mkEnableOption "the page and its data behind nginx, TLS and basic auth";
       domain = mkOption {
         type = types.str;
-        example = "metrics.piabrota.art";
-        description = "The name nginx serves the hub on. Its DNS A record must point at the box.";
+        default = "metrics.piabrota.art";
+        description = "The name nginx serves the page on. Its DNS A record must point at the box.";
+      };
+      htpasswdFile = mkOption {
+        # A string, not a path: a path literal copies the file into the world-readable store.
+        type = types.str;
+        default = config.piabrota.hermesWeb.htpasswdFile;
+        defaultText = lib.literalExpression "config.piabrota.hermesWeb.htpasswdFile";
+        description = ''
+          The basic-auth users, one `name:bcrypt-hash` line each. The default is the Hermes
+          dashboard's file, so the same login opens both. Without the file every request gets a 500.
+        '';
       };
     };
 
-    agent = {
-      enable = mkEnableOption "the Beszel agent, which dials out to the hub";
-      hubUrl = mkOption {
-        type = types.str;
-        example = "https://metrics.piabrota.art";
-        description = "The hub's address, with no path.";
+    publish = {
+      enable = mkEnableOption "one location on the site's vhost that serves this host's file to the addresses in allowFrom";
+      allowFrom = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "187.41.117.18" ];
+        description = "IPv4 addresses that may fetch `/_metrics/<name>.json`. Everyone else gets a 403. Not a secret: the file holds no command line.";
       };
-      environmentFile = mkOption {
-        type = types.path;
-        default = "/var/lib/beszel-secrets/agent.env";
-        description = ''
-          Holds `KEY` (the hub's public key) and `TOKEN`, from the hub's UI. Written by hand on the
-          box. systemd reads it as root, so root-only mode 0600 is enough. Without it the unit does
-          not start and does not fail.
-        '';
+    };
+
+    pull = {
+      enable = mkEnableOption "the pull timer: metrics/pull.sh fetches another host's published file";
+      url = mkOption {
+        type = types.str;
+        default = "";
+        example = "https://www.piabrota.art/_metrics/piabrota.json";
+        description = "The address of the other host's file.";
+      };
+      name = mkOption {
+        type = types.strMatching "[a-z0-9-]+";
+        default = "piabrota";
+        description = "The other host's name: its file is kept as `<name>.json`, and must say `host: <name>`.";
       };
     };
   };
 
   config = mkMerge [
-    (mkIf (cfg.hub.enable || cfg.agent.enable) {
-      systemd.tmpfiles.rules = [ "d /var/lib/beszel-secrets 0750 root root -" ];
+    (mkIf anyOn {
+      users.users.metrics = {
+        isSystemUser = true;
+        group = "metrics";
+      };
+      users.groups.metrics = { };
+      # In /run: nothing survives a reboot, nothing fills the disk. nginx reads the first folder.
+      systemd.tmpfiles.rules = [
+        "d ${outDir} 0755 metrics metrics -"
+        "d ${stateDir} 0700 metrics metrics -"
+      ];
     })
 
-    (mkIf cfg.hub.enable {
-      services.beszel.hub = {
-        enable = true;
-        inherit (cfg) package;
-        # Loopback only: nginx is the way in.
-        host = "127.0.0.1";
+    (mkIf cfg.collector.enable {
+      assertions = [{
+        assertion = cfg.name != "";
+        message = "piabrota.metrics.collector needs piabrota.metrics.name.";
+      }];
+
+      systemd.services.metrics-collect = {
+        description = "Write this host's metrics file";
+        path = [ pkgs.coreutils pkgs.gawk pkgs.glibc.bin ];
         environment = {
-          APP_URL = "https://${cfg.hub.domain}";
+          METRICS_NAME = cfg.name;
+          METRICS_LABEL = if cfg.label == "" then cfg.name else cfg.label;
+          METRICS_INTERVAL = toString cfg.collector.interval;
+          OUT_DIR = outDir;
+          STATE_DIR = stateDir;
+        };
+        serviceConfig = sandbox // {
+          ExecStart = "${collect}/bin/metrics-collect";
+          # Reads /proc and /sys/fs/cgroup only.
+          PrivateNetwork = true;
+          RestrictAddressFamilies = "AF_UNIX";
         };
       };
+      systemd.timers.metrics-collect = timer "metrics-collect";
+    })
 
-      systemd.services.beszel-hub.serviceConfig = {
-        MemoryMax = "256M";
-        CPUWeight = 20;
-        # Optional: USER_EMAIL and USER_PASSWORD make the first admin when the data is new, so
-        # nobody can take that account first (docs/METRICS.md). The `-` lets the unit start without it.
-        EnvironmentFile = "-/var/lib/beszel-secrets/hub.env";
-        # The module of this nixpkgs runs `beszel-hub history-sync`, a command 0.21 no longer has
-        # ("unknown command"): the hub would never start. It is `migrate history-sync` now (as in
-        # newer nixpkgs). mkForce, or the list would add to the module's own.
-        ExecStartPre = lib.mkForce [
-          "${cfg.package}/bin/beszel-hub migrate up"
-          "${cfg.package}/bin/beszel-hub migrate history-sync"
-        ];
+    (mkIf cfg.pull.enable {
+      assertions = [{
+        assertion = cfg.pull.url != "";
+        message = "piabrota.metrics.pull needs piabrota.metrics.pull.url.";
+      }];
+
+      systemd.services.metrics-pull = {
+        description = "Fetch ${cfg.pull.name}'s metrics file";
+        path = [ pkgs.coreutils pkgs.curl pkgs.gnugrep ];
+        environment = {
+          METRICS_PULL_URL = cfg.pull.url;
+          METRICS_PULL_NAME = cfg.pull.name;
+          OUT_DIR = outDir;
+        };
+        serviceConfig = sandbox // {
+          ExecStart = "${pull}/bin/metrics-pull";
+          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+        };
       };
+      systemd.timers.metrics-pull = timer "metrics-pull";
+    })
 
+    (mkIf cfg.publish.enable {
+      assertions = [
+        {
+          assertion = cfg.name != "" && cfg.publish.allowFrom != [ ];
+          message = "piabrota.metrics.publish needs piabrota.metrics.name and at least one address in allowFrom.";
+        }
+        {
+          assertion = config.piabrota.site.enable;
+          message = "piabrota.metrics.publish adds a location to the site's vhost: turn piabrota.site on.";
+        }
+      ];
+
+      # The vhost is declared in site.nix; this adds one location and changes nothing else.
+      services.nginx.virtualHosts.${config.piabrota.site.domain}.locations."= /_metrics/${cfg.name}.json" = {
+        alias = "${outDir}/${cfg.name}.json";
+        extraConfig = ''
+          ${lib.concatMapStrings (ip: "allow ${ip};\n") cfg.publish.allowFrom}
+          deny all;
+          default_type application/json;
+          add_header Cache-Control "no-store" always;
+          add_header X-Content-Type-Options nosniff always;
+        '';
+      };
+    })
+
+    (mkIf cfg.web.enable {
       services.nginx = {
         enable = true;
         recommendedTlsSettings = true;
         serverTokens = false;
+        # Slows a password guesser; a tab polling two files every 5 s stays far below it.
         appendHttpConfig = ''
-          limit_req_zone $binary_remote_addr zone=beszel_login:1m rate=10r/m;
+          limit_req_zone $binary_remote_addr zone=metrics_web:1m rate=10r/s;
         '';
-        virtualHosts.${cfg.hub.domain} = {
+        virtualHosts.${cfg.web.domain} = {
           forceSSL = true;
           enableACME = true;
-          extraConfig = headers;
-          locations = {
-            "/" = proxy;
-            ${loginPath} = proxy // {
-              extraConfig = proxy.extraConfig + ''
-                limit_req zone=beszel_login burst=5 nodelay;
-                limit_req_status 429;
-              '';
-            };
+          basicAuthFile = cfg.web.htpasswdFile;
+          root = page;
+          extraConfig = ''
+            limit_req zone=metrics_web burst=30 nodelay;
+            limit_req_status 429;
+            ${headers}
+          '';
+          locations."/data/" = {
+            alias = "${outDir}/";
+            # add_header in a location drops the server's, so the headers are repeated.
+            extraConfig = ''
+              add_header Cache-Control "no-store" always;
+              ${headers}
+            '';
           };
         };
       };
@@ -133,32 +275,6 @@ in
       };
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
-    })
-
-    (mkIf cfg.agent.enable {
-      services.beszel.agent = {
-        enable = true;
-        inherit (cfg) package;
-        inherit (cfg.agent) environmentFile;
-        environment = {
-          HUB_URL = cfg.agent.hubUrl;
-          # The agent only dials out: no SSH listener, so no port is bound (agent/server.go).
-          DISABLE_SSH = "true";
-          # No GPU here, and the agent has no right to read the journal.
-          SKIP_GPU = "true";
-          SKIP_SYSTEMD_LOGS = "true";
-        };
-      };
-
-      systemd.services.beszel-agent = {
-        # Without the file the unit is skipped, not failed, so a deploy before the first setup
-        # does not roll back. After writing the file: `sudo systemctl restart beszel-agent`.
-        unitConfig.ConditionPathExists = cfg.agent.environmentFile;
-        serviceConfig = {
-          MemoryMax = lib.mkDefault "64M";
-          CPUWeight = 20;
-        };
-      };
     })
   ];
 }

@@ -89,8 +89,8 @@
       "purpose": "pgx.nix and pgx/: the release packaged with autoPatchelfHook, the pgx unit (on piabrota2) and its sandbox, pg_hba.conf for loopback only, the pgx CLI wrapper, the VM test, and docs/PGX.md's cost and limits."
     },
     {
-      "title": "Metrics with Beszel",
-      "purpose": "metrics.nix, beszel/ and docs/METRICS.md: Beszel (hub and agent) pinned in beszel/package.nix (a copy of nixpkgs' derivation at a newer release; version and three hashes move together), the hub on piabrota2 at metrics.piabrota.art behind nginx and ACME with no basic auth (the agent on piabrota dials in; login rate limit), the agent on both hosts (outgoing WebSocket, no port, KEY and TOKEN in /var/lib/beszel-secrets/agent.env, skipped without it), what per-unit data the agent collects, the measured cost, the VM test, and how to update the pin."
+      "title": "Metrics page",
+      "purpose": "metrics.nix, metrics/collect.sh, metrics/pull.sh, metrics/index.html, metrics/SCHEMA.md, metrics/test/, metrics/test.nix and docs/METRICS.md: the home-made metrics page at metrics.piabrota.art on piabrota2 (static page, nginx with ACME and the Hermes dashboard's basic auth), the POSIX sh collector run by a 10 s timer on both hosts (reads /proc and cgroups only), the KVM 1 data path (an allow-listed /_metrics/piabrota.json location pulled by metrics-pull), the offline rules, the measured cost, the hardening, the piabrota.metrics options, the tests and the preview."
     },
     {
       "title": "Paperclip",
