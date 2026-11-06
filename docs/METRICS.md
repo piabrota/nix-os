@@ -1,213 +1,171 @@
-# Live metrics with Beszel
+# Metrics page
 
 [Português](METRICS.ptBR.md)
 
-[Beszel](https://github.com/henrygd/beszel) (MIT) shows the metrics of the two machines live on a
-web page: CPU, memory, disk, network and the systemd services. It has a hub (the page, with its
-own login) and an agent on each machine. The module is `metrics.nix`. Everything is off by
-default; each host turns on what is its own.
+A small home-made page shows the metrics of the two machines almost live. It is at
+https://metrics.piabrota.art, on piabrota2. The module is `metrics.nix`. Everything is off by
+default; each host turns on what is its own. The data file format is in
+[metrics/SCHEMA.md](../metrics/SCHEMA.md).
 
-## Why Beszel and not Grafana
+## What it shows and what it does not
 
-The owner wants to watch the metrics as in Grafana, but lighter. Grafana, with Prometheus and
-exporters, is too much for two machines. Beszel is a 37 MB hub and an 11 MB agent, with no
-separate database (the hub keeps SQLite, through PocketBase). In the measures below: **34 MiB** of
-RAM for the hub, **17 MiB** for the agent.
+The page is a static `metrics/index.html` (under 20 KB, no external request, vanilla JS). Every 5 s
+it reads `/data/piabrota.json` and `/data/piabrota2.json` and keeps the last 60 samples in the
+memory of the tab only.
 
-## Who runs what
+It shows, for each host:
 
-| | piabrota2 (KVM 4) | piabrota (KVM 1) |
-|---|---|---|
-| Hub | yes, at `metrics.piabrota.art` (nginx, ACME, ports 80 and 443 that are already open) | no |
-| Agent | yes, talks to the hub at `http://127.0.0.1:8090` | yes, talks to `https://metrics.piabrota.art` |
-| New port | none | none |
-| nginx change | the hub's vhost | none |
+- CPU, used memory (MemTotal minus MemAvailable) and the disk of `/`.
+- The 10 processes that use the most memory (RSS) and the 10 that use the most CPU.
+- The systemd units under `system.slice` that have a numeric `MemoryMax` (hermes-agent 8G,
+  hermes-backend 2G, openrig 2G, pgx 256M...), at most 12, sorted by memory over max. `memory.peak`
+  is shown when the kernel has it.
+- The total of processes (it counts kernel threads).
 
-The agent **only dials out** (one WebSocket). It binds no port (`DISABLE_SSH=true`:
-`agent/server.go`, `agent/connection_manager.go`). So piabrota needs no new firewall rule.
+How to read the numbers:
 
-Options (`metrics.nix`): `piabrota.metrics.hub.{enable,domain}` and
-`piabrota.metrics.agent.{enable,hubUrl,environmentFile}`. The hub and the agent use the same
-package (`piabrota.metrics.package`), so the two versions are always equal.
+- The CPU of a process is the average over the last interval (about 10 s), in percent of ONE vCPU.
+  So it can pass 100.
+- The process name is `comm` only (up to 15 characters, printable ASCII; the rest becomes `?`).
+- On the first run after boot the page says `warming` and CPU is 0.
 
-## Before the merge: DNS
+It does not show: history beyond the samples in the tab (samples come per new file, every 10 s, so
+about 10 minutes), disks other than `/`, network, disk or IO per process, alerts, command lines.
 
-On Porkbun, add an **A** record, `metrics`, with the address of `rig.piabrota.art` (the same as
-piabrota2). Do it **before the merge**. Without the record the ACME order fails on the deploy and
-deploy-rs rolls the switch back. The steps are in [`SITE.md`](SITE.md), "DNS on Porkbun".
+## The two hosts and who runs what
 
-## The first setup, in order
+| Host | Collector | Page (nginx) | Pull | Publish |
+|---|---|---|---|---|
+| piabrota2 (KVM 4) | yes | yes | yes | no |
+| piabrota (KVM 1) | yes | no | no | yes |
 
-1. (Optional, avoids a race.) On piabrota2, before the merge, create
-   `/var/lib/beszel-secrets/hub.env` (root, mode 0600, in a folder you make with
-   `sudo install -d -m 0750 /var/lib/beszel-secrets`) with `USER_EMAIL=` and `USER_PASSWORD=`.
-   On the first start with new data the hub makes that account the admin
-   (`internal/migrations/initial-settings.go`). Measured: it works.
-2. Merge. The deploy starts the hub and both agents. The agents have no `KEY` and `TOKEN` yet: the
-   unit is **skipped**, not failed (`ConditionPathExists`), so the deploy does not roll back.
-3. Open `https://metrics.piabrota.art`. **Without step 1, create the admin account at once**: while
-   no user exists, `POST /api/beszel/create-user` accepts whoever comes first
-   (`internal/hub/api.go:171`). After the first user it refuses
-   (`internal/users/users.go:108`) and nobody else can register: the hub does not turn on
-   `USER_CREATION`.
-4. On the page, **Add System**, twice: "piabrota2" and "piabrota". The page shows each one's `KEY`
-   (the hub's public key) and `TOKEN`.
-5. On each machine, write `/var/lib/beszel-secrets/agent.env` by hand, **root, mode 0600**:
+- The collector is `metrics/collect.sh` (POSIX sh and awk). The timer `metrics-collect.timer` runs
+  it every 10 s (oneshot unit `metrics-collect.service`).
+- It writes `/run/metrics-web/<name>.json` atomically. The previous sample is in
+  `/run/metrics-state/<name>.state` (not served).
+- The names are `piabrota` and `piabrota2` (option `piabrota.metrics.name`). Never the hostname:
+  piabrota2's hostname is still `nixos`.
+- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd` and `df`. Never a command line.
+- The JSON file is under 8 KB (schema v1).
 
-   ```console
-   sudo install -m 0600 /dev/null /var/lib/beszel-secrets/agent.env
-   sudoedit /var/lib/beszel-secrets/agent.env     # two lines: KEY=... and TOKEN=...
-   sudo systemctl restart beszel-agent
-   ```
+## The data path of KVM 1
 
-   systemd reads the file as root, before it drops to the `DynamicUser`. So root 0600 is enough,
-   and the agent does not need to read the file. None of this goes into the repository or the
-   store.
-6. In seconds the system shows as "up".
+piabrota has the collector and ONE extra location on the `www.piabrota.art` vhost:
+`= /_metrics/piabrota.json`, with `allow 187.41.117.18; deny all;`. That is the public IPv4 of
+piabrota2 (option `piabrota.metrics.publish.allowFrom`).
 
-Without the file the unit stays inactive (`systemctl status beszel-agent` says the condition
-failed). After you create the file, the unit starts only with `restart` (or on the next boot).
+On piabrota2, the timer `metrics-pull.timer` (every 10 s) runs `metrics-pull.service`. It does
+`curl -4 -sf --max-time 5 --max-filesize 65536` of
+`https://www.piabrota.art/_metrics/piabrota.json`. It checks that the file starts with `{` and says
+`"host":"piabrota"`. Then it writes `/run/metrics-web/piabrota.json` atomically.
 
-## What it shows, what it does not show
+If the fetch fails, the old file stays (the unit exits 0). The page then goes stale and then
+offline.
 
-It shows, per machine: CPU, memory, swap, disk, network, temperature when there is a sensor, and
-the list of systemd services with their state.
+The allow list is not a secret and is enough, because the file holds no command line, no secret and
+no user data beyond process names, user names, and memory and CPU numbers. Its limit: anyone who can
+send from piabrota2's address (a process on piabrota2, or a network position that can spoof) can
+read the file. IPv4 only. If piabrota2's address changes, change `allowFrom` in
+`hosts/piabrota/default.nix`.
 
-**Per service (checked in the v0.21.1 source and in a real run):** the agent collects the state,
-the **CPU** (`CPUUsageNSec`), the **current memory** (`MemoryCurrent`) and the **peak**
-(`MemoryPeak`) of every `*.service` (`agent/systemd.go:252-286`). So you can see the memory of
-`hermes-agent`. But:
+## DNS and login
 
-- The list is read **every 10 minutes** (`agent/systemd.go:142-146`), not live. Memory per service
-  is a snapshot, up to 10 minutes old.
-- The hub keeps **only the latest snapshot** of each service (`INSERT ... ON CONFLICT DO UPDATE` in
-  `internal/hub/systems/system.go:433`). **There is no history chart per service.**
-- The hub shows the memory and the peak, but **does not compare them with the `MemoryMax`** of 8G.
-  The limit only shows in the service details. You do the comparison by eye.
-- Service logs are off (`SKIP_SYSTEMD_LOGS`): the agent does not read the journal.
-- Measured on piabrota2 (a test agent, not a unit): 58 services, and `hermes-agent` with 641 MB
-  now and a peak of 942 MB.
+- The DNS of `metrics.piabrota.art` already points at piabrota2: nothing to do.
+- nginx on piabrota2 serves the domain with `forceSSL` and ACME.
+- The login is HTTP basic auth against the SAME file as the Hermes dashboard
+  (`piabrota.hermesWeb.htpasswdFile`, `/var/lib/hermes-web-secrets/htpasswd`). So the login is the
+  one of hermes.piabrota.art. There is no new secret.
+- `/data/` is served from `/run/metrics-web/` with `Cache-Control: no-store`.
+- Rate limit of 10 requests a second for each address.
 
-For the memory of `hermes-agent` against `MemoryMax=8G` over time, the cheapest way is
-`kvm4-health` (every 30 minutes, no model cost), which already reads `MemoryCurrent` and
-`MemoryPeak`. The heavier alternative would be Netdata (a 1.1 GiB closure in nixpkgs), which keeps
-history per cgroup. It is not planned.
+## When a host shows offline
 
-D-Bus: nixpkgs' module lets the `beszel-agent` user call `ListUnits`, and the unit has
-`PrivateUsers=true`. I ran the agent as a normal user and it listed the services. **The VM test
-`checks.metrics` ran the real unit under `PrivateUsers` and it saw `beszel-hub` through D-Bus.**
+The page shows a host as offline when its file is older than 30 s or the fetch fails. It says how
+old the data is. To investigate, run:
 
-## nginx in front of the hub
+```console
+systemctl status metrics-collect.timer metrics-pull.timer
+journalctl -u metrics-collect -u metrics-pull --since -10min
+cat /run/metrics-web/piabrota.json | head -c 300      # compare "ts" with: date +%s
+```
 
-No basic auth: piabrota's agent dials in through the same name, and an nginx password would stop
-it. The hub has its own login (PocketBase) and the agent has its token. The paths (read in the
-source):
+On piabrota2 look at both timers. On piabrota there is only `metrics-collect.timer`.
 
-- `/api/beszel/agent-connect`: the agent's WebSocket (`internal/hub/api.go:195`,
-  `agent/client.go:221`). Headers `X-Token` and `X-Beszel`.
-- `/api/realtime`: the page's live updates, as SSE events (PocketBase's `apis/realtime.go`, which
-  already sends `X-Accel-Buffering: no`).
-- Login: `/api/collections/<collection>/auth-with-password`, `request-otp`, `auth-with-otp`
-  (`apis/record_auth.go:31,39,42`).
+For the KVM 1 bridge, run this on piabrota2:
 
-The vhost proxies everything to `127.0.0.1:8090` with the WebSocket upgrade headers,
-`proxy_buffering off` and a `proxy_read_timeout` of 1 hour. The three login paths have a limit of
-**10 attempts a minute for each address** (`limit_req_zone`, burst of 5, answer 429). Security
-headers as in `hermes-web.nix`.
+```console
+curl -sI https://www.piabrota.art/_metrics/piabrota.json
+```
 
-## The hub variables I confirmed
+It should say 200. From anywhere else it should say 403.
 
-Read in `internal/hub` and `internal/migrations` (v0.21.1). Each also takes the `BESZEL_HUB_`
-prefix.
+## Cost (measured)
 
-| Variable | Effect | Used here |
-|---|---|---|
-| `USER_EMAIL`, `USER_PASSWORD` | Make the admin on the first start with new data (`initial-settings.go:28-30`) | optional, through `hub.env` |
-| `USER_CREATION` | Only with `true` does it allow OAuth user creation (`collections.go:32`). Without it nobody registers | **no**, stays off |
-| `DISABLE_PASSWORD_AUTH` | Turns off password login (`collections.go:28`). With no OAuth set up you lock yourself out | no |
-| `APP_URL` | The public address, used in alert links (`hub.go:131`) | yes, `https://metrics.piabrota.art` |
-| `CHECK_UPDATES` | Checks for versions on GitHub; only with `true` | no |
+Measured on piabrota2, with 127 processes:
 
-From the agent: `HUB_URL`, `KEY`, `TOKEN` (by file), `DISABLE_SSH`, `SKIP_GPU`,
-`SKIP_SYSTEMD_LOGS`.
+- One run: 0.03 s wall, about 0.02 s CPU, 5 MB peak RSS.
+- Nothing stays resident between runs.
+- At a 10 s cadence that is about 0.2 % of one vCPU (about 3 minutes of CPU a day: 8,640 runs).
+- On KVM 1 (1 vCPU) there are fewer processes, so it costs less.
+- The unit has `MemoryMax=64M` and a fixed system user, `metrics`.
 
-## Cost
+## Hardening
 
-Measured on this machine on 2026-11-05, with the real binaries of the pinned version, run as a
-normal user in a scratch folder:
+Both units run as `metrics` with:
 
-| | |
+- `ProtectSystem=strict`, with `ReadWritePaths` of the two `/run` folders only.
+- `MemoryMax=64M`, `NoNewPrivileges`, an empty capability set and a syscall filter.
+- `PrivateNetwork` on the collector.
+- `LogLevelMax=warning`, so a run does not write journal lines.
+
+NOT used: `ProcSubset=pid`, `ProtectProc=invisible` and `PrivateUsers`, because they hide what the
+collector must read (with `PrivateUsers` user names would become numbers).
+
+## Options
+
+All are off by default. All live under `piabrota.metrics`:
+
+| Option | What it does |
 |---|---|
-| Hub RAM, idle | **34 MiB** (VmRSS 34208 kB after 20 s; 35516 kB after 60 s) |
-| Agent RAM, connected to the hub | **16.5 MiB** (VmRSS 16832 kB, the same after 60 s) |
-| Hub data | 0.9 MiB with one system, after 80 s (grows with the history) |
-| Limits | hub `MemoryMax=256M` and `CPUWeight=20`; agent `MemoryMax=64M` and `CPUWeight=20` |
-| Closure | the package closure is 91.1 MiB, of which 52.3 MiB are its own; glibc, tzdata and the rest are usually in the system already (not measured on the whole system). Against the nixpkgs beszel 0.18.7 of this lock: **+3.11 MiB** (`dix`) |
-| Disk per host | the same 52 MiB, once, in the store |
-| CPU | almost nothing idle; each agent sends one packet a minute |
+| `name`, `label` | name of the data file and label on the page |
+| `collector.enable` | turns on the collector and the timer |
+| `collector.interval` | seconds between runs (2 to 300, default 10) |
+| `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the login file |
+| `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
+| `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
 
-piabrota (4 GB) grows only by the agent and the package. The `dix` of the two whole systems against
-`main` **did not run** here: piabrota's system is 360 derivations to build on this machine
-(`max-jobs = 1`). Run `just build` and the `dix` in CI before the merge.
+Today: piabrota2 turns on collector, web and pull. piabrota turns on collector and publish.
 
-## The pinned package
+## Change the cadence
 
-`beszel/package.nix` pins version **0.21.1** (upstream's latest on 2026-11-05; the nixpkgs of this
-lock has 0.18.7). It is a copy of nixpkgs' derivation (MIT), with `version`, `hash`, `vendorHash`
-and `npmDepsHash` at the top. It is a copy and not an `overrideAttrs` because `webui` is a second
-derivation that reads `finalAttrs.src`, and the skipped tests and the build tags change between
-versions: an override would repeat most of the file.
+Change `piabrota.metrics.collector.interval` (in seconds) in the host file. The offline limit of
+the page is 30 s, the constant `STALE_S` in `metrics/index.html`. So keep the interval at 10 or
+lower, or change that constant too.
 
-⚠ This package is **not in `cache.nixos.org`** (checked with `nix path-info --store`). It compiles
-on the GitHub runner of `deploy.yml`; the VPS never compiles, it only receives the result from
-deploy-rs. On this machine the build took **3 min 22 s** (with the Go tests; the npm and Go
-dependencies, fetched from the network, add about 4 minutes the first time) and used up to about
-**1.1 GiB** of system memory (the difference in used memory, measured from outside, with noise).
+## Remove the Beszel data
 
-⚠ The module of the nixpkgs in this lock calls `beszel-hub history-sync`, a command 0.21 does not
-have ("unknown command"): the hub would never start. `metrics.nix` replaces the `ExecStartPre` with
-`migrate up` and `migrate history-sync`, as newer nixpkgs does. Check it when the lock moves.
-
-## Updating the pin
-
-The hub and the agent move **together**: one package, one version. Never change one without the
-other.
+Beszel is gone. The new deploy stops and removes the units `beszel-hub` and `beszel-agent`. Their
+data stays on piabrota2's disk. The owner runs:
 
 ```console
-# 1. the source (hash)
-nix flake prefetch github:henrygd/beszel/vX.Y.Z --json | jq -r .hash
-# 2. the UI's npm modules (npmDepsHash)
-nix run nixpkgs#prefetch-npm-deps -- <source path>/internal/site/package-lock.json
-# 3. the Go modules (vendorHash): put lib.fakeHash, build, copy the "got:" value
-nix build .#beszel
+sudo rm -rf /var/lib/beszel-hub /var/lib/beszel-secrets
 ```
 
-Change `version`, `hash`, `npmDepsHash` and `vendorHash` at the top of `beszel/package.nix`.
-Compare `checkFlags` with nixpkgs' `package.nix` of the same version. Check:
+On piabrota, also run `sudo rm -rf /var/lib/beszel-secrets`, if the folder exists. Nothing else is
+needed. The Beszel hub account and the agents' `KEY` and `TOKEN` are void.
 
-```console
-nix build .#beszel && ./result/bin/beszel-agent --version
-```
+## Tests and preview
 
-The method was proved on 0.21.0: the three computed hashes equal nixpkgs'. When the lock's nixpkgs
-catches up with the version, delete `beszel/` and use `pkgs.beszel`. There is no daily update job.
+- `sh metrics/test/run.sh`: the collector, with a fixture `/proc` and cgroup tree. It prints
+  "N checks, M failed".
+- `sh metrics/test/page.sh`: the static rules of the page and an HTTP fetch with python3.
+- `checks.metrics`: three VMs (hub, edge, client), plain HTTP, needs KVM:
+  `nix build .#checks.x86_64-linux.metrics`.
+- Preview of the page with fixtures (healthy, stale, missing, hostile):
 
-## Turning it off
+  ```console
+  sh metrics/test/preview.sh healthy 8080     # open http://127.0.0.1:8080/
+  just metrics-preview healthy
+  ```
 
-Remove `piabrota.metrics.*` from the files in `hosts/`. piabrota2 loses the vhost; the data stays
-in `/var/lib/beszel-hub`. To erase: `sudo rm -r /var/lib/beszel-hub /var/lib/beszel-secrets`.
-
-## Backing up the data
-
-The hub keeps everything in `/var/lib/beszel-hub` (SQLite). For a consistent copy:
-`sudo systemctl stop beszel-hub`, copy the folder, `sudo systemctl start beszel-hub`. PocketBase's
-superuser account (`/_/`) is of no use to the owner: Beszel makes it with a random password. The
-data is metrics: losing it costs only the history.
-
-## What I could not prove
-
-- A real agent on piabrota (KVM 1), the deploy, ACME and the browser.
-- `checks.metrics` (`beszel/test.nix`) passed on this machine on 2026-11-05 (107 s): the agent is
-  skipped without its file, the first user is made once, nobody else can register, nginx limits
-  logins (429), the agent reaches the hub over the WebSocket through nginx, binds no port and
-  sees the systemd units. It ran with plain HTTP and a fake name, so TLS and ACME stay unproved.
+  Needs python3 and jq.
