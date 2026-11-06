@@ -217,6 +217,15 @@ rec {
     }
   ];
 
+  # The services piabrota2 serves on their own names (README.md, "Addresses", 2026-11-06). The site
+  # links them from design A; the mockups do not draw them. `access` is public or login (the Hermes
+  # dashboard's basic-auth file). Their marks are drawn in site/src/piabrota_site/marks.gleam.
+  services = [
+    { name = "openrig"; label = "OpenRig"; host = "rig.piabrota.art"; access = "login"; blurb = "The web UI of OpenRig, the software factory's engine: the builder and reviewer seats, and their terminals."; }
+    { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "login"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
+    { name = "room"; label = "room"; host = "room.piabrota.art"; access = "public"; blurb = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; }
+  ];
+
   # The company's shape, as mu and dojo say it (2026-11-01).
   structure = [
     { name = "dojo"; role = "the common layer"; text = "The umbrella: every repository as a submodule at a pinned commit, and one routing table. It inherits the rules from mu, and it holds no product code."; href = "https://github.com/piabrota/dojo"; }

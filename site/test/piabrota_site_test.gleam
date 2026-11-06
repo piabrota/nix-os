@@ -183,3 +183,17 @@ pub fn hermes_no_secret_test() {
     assert !string.contains(text, word)
   })
 }
+
+// Design A links each service on its own name, with its drawn mark, and the hermes tile and
+// /hermes show the hermes mark, not the ☤ glyph.
+pub fn services_test() {
+  assert list.length(data.services) == 3
+  let html = page.fabric()
+  list.each(data.services, fn(s) {
+    assert string.contains(html, "href=\"https://" <> s.host <> "/\"")
+    assert string.contains(html, "logo-mark logo-mark-" <> s.name)
+  })
+  assert string.contains(html, "logo-mark logo-mark-hermes")
+  assert string.contains(page.hermes(), "logo-mark logo-mark-hermes")
+  assert !string.contains(page.hermes(), "☤")
+}

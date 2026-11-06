@@ -25,6 +25,10 @@
   "head.projects": "プロジェクト",
   "note.projects": "piabrota/.github から",
   "sub.projects": "1つの 列が 1つの 仕事です。カードを 押すと サイトが 開きます。サイトが ないときは リポジトリが 開きます。",
+  "head.services": "それぞれの アドレス",
+  "note.services": "piabrota2 が 配信",
+  "access.public": "公開",
+  "access.login": "ログイン",
   "head.structure": "しくみ",
   "note.structure": "piabrota/mu と piabrota/dojo から",
   "head.why": "オープンな 理由",
@@ -124,5 +128,8 @@
   "closed.tag": "クローズドソース",
   "project.chaceon": "WW3 を Rust で 書き直した ものです。WW3 は 波の 物理モデルです。ondaseventos.ufsc.br と NOAA が WW3 を 使っています。",
   "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/fabric.png",
-  "structure.alt": "piabrota の 図です。dojo は 共通の 層です。mu から ルールを 受け取り、下の すべての リポジトリを まとめます。"
+  "structure.alt": "piabrota の 図です。dojo は 共通の 層です。mu から ルールを 受け取り、下の すべての リポジトリを まとめます。",
+  "service.openrig": "OpenRig の Web 画面です。ソフトウェア工場の エンジンです。作る 席と レビューする 席、その ターミナルが あります。",
+  "service.metrics": "2台の ホストの プロセス、メモリ、vCPU です。10秒ごとに 読みます。",
+  "service.room": "piabrota/room です。3D の 部屋です。カメラの 切り替え、ビデオデッキ、リオが 見える 窓、piabrota RADIO が あります。"
 }
