@@ -10,8 +10,8 @@ buildNpmPackage {
   src = fetchFromGitHub {
     owner = "piabrota";
     repo = "room";
-    rev = "aeef436e19618ee301de29c29c32e7ca3859f6ae";
-    hash = "sha256-dJSJw+Ctl3rr9xZOUIYl2VFCOHFYQO/t6b+8FFQ2d0g=";
+    rev = "0da08f17e4d9d34b75e8667df608eecb4cb63f70";
+    hash = "sha256-zB7wegWi3IpfPDmFUyx6TnaRYcGq55nOi1UqYm0utbg=";
   };
   # The hash of package-lock.json's packages: `nix run nixpkgs#prefetch-npm-deps -- package-lock.json`.
   npmDepsHash = "sha256-mj7bt+iuqhlv5XPN+GdaptrPhMw7OwkHi1ri4qXoDBE=";
