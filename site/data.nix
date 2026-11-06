@@ -21,6 +21,7 @@ let
     "pushed: ${str p.pushed}"
     "state: ${state.${p.state}})"
   ];
+  service = s: "Service(name: ${str s.name}, label: ${str s.label}, host: ${str s.host}, access: ${str s.access}, blurb: ${str s.blurb})";
   closed = p: "Closed(name: ${str p.name}, glyph: ${str p.glyph}, lang: ${str p.lang}, blurb: ${str p.blurb})";
   person = p: "Person(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, place: ${str p.place}, site: ${str p.site})";
   partner = p: "Partner(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, site: ${str p.site})";
@@ -80,6 +81,10 @@ assert checked;
     )
   }
 
+  pub type Service {
+    Service(name: String, label: String, host: String, access: String, blurb: String)
+  }
+
   pub type Closed {
     Closed(name: String, glyph: String, lang: String, blurb: String)
   }
@@ -137,6 +142,8 @@ assert checked;
   pub const lanes = ${list lane data.lanes}
 
   pub const projects = ${list project data.projects}
+
+  pub const services = ${list service data.services}
 
   pub const closed = ${list closed data.closed}
 

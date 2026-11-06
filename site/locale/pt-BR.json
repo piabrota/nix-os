@@ -25,6 +25,10 @@
   "head.projects": "Projetos",
   "note.projects": "de piabrota/.github",
   "sub.projects": "Cada faixa é um tipo de trabalho. Clique em um cartão para abrir o site do projeto ou, sem site, o repositório.",
+  "head.services": "Nos próprios endereços",
+  "note.services": "servidos pela piabrota2",
+  "access.public": "público",
+  "access.login": "login",
   "head.structure": "Estrutura",
   "note.structure": "de piabrota/mu e piabrota/dojo",
   "head.why": "Por que é aberto",
@@ -124,5 +128,8 @@
   "closed.tag": "código fechado",
   "project.chaceon": "Port em Rust do WW3, o modelo de física de ondas usado pelo ondaseventos.ufsc.br e pela NOAA.",
   "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/pt/fabric.png",
-  "structure.alt": "A fábrica piabrota: o dojo é a camada comum, recebe as regras do mu e fixa cada repositório abaixo dele."
+  "structure.alt": "A fábrica piabrota: o dojo é a camada comum, recebe as regras do mu e fixa cada repositório abaixo dele.",
+  "service.openrig": "A interface web do OpenRig, o motor da fábrica de software: os assentos de quem constrói e de quem revisa, e os terminais deles.",
+  "service.metrics": "Processos, memória e vCPU dos dois hosts, lidos a cada 10 segundos.",
+  "service.room": "piabrota/room: um quarto em 3D com planos de câmera, um videocassete, uma janela para o Rio e a piabrota RADIO."
 }

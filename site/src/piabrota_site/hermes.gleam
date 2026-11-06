@@ -6,6 +6,7 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import piabrota_site/data
+import piabrota_site/marks
 import piabrota_site/parts
 
 pub const module = "https://github.com/piabrota/nix-os/blob/main/hermes.nix"
@@ -35,10 +36,8 @@ pub fn view() -> Element(msg) {
         ]),
       ]),
       html.figure([attribute.class("drawing")], [
-        html.span([attribute.class("caduceus"), attribute.aria_hidden(True)], [
-          html.text("☤"),
-        ]),
-        html.figcaption([], [html.text("☤ · the messenger")]),
+        marks.hermes(176),
+        html.figcaption([], [html.text("the hermes mark · the messenger")]),
       ]),
     ]),
     html.main([], case data.hermes_config {

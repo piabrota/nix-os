@@ -10,6 +10,7 @@ import lustre/element/html
 import lustre/element/svg
 import piabrota_site/data.{type Project, type State, Coming, Live, NoSite}
 import piabrota_site/i18n
+import piabrota_site/marks
 
 /// The three designs, each at its own path: A at the root, B and C below it.
 pub const designs = [
@@ -243,15 +244,17 @@ pub fn foot(current: String, lang: String) -> Element(msg) {
   ])
 }
 
-/// A project's mark: its repository's logo, or the text mark of a repository that has none yet.
+/// A project's mark: its repository's logo, the mark drawn here (marks.gleam), or the text mark
+/// of a repository that has none yet.
 pub fn logo(p: Project) -> Element(msg) {
-  case p.logo {
-    "" ->
+  case p.logo, marks.for(p.name, 44) {
+    "", Ok(mark) -> mark
+    "", Error(Nil) ->
       html.span(
         [attribute.class("project-logo glyph"), attribute.aria_hidden(True)],
         [html.text(p.glyph)],
       )
-    src ->
+    src, _ ->
       html.img([
         attribute.src(src),
         attribute.alt(p.name <> " logo"),
