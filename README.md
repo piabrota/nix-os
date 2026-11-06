@@ -41,17 +41,13 @@
 
 ## Every piabrota.art address
 
-Every name under piabrota.art that this repository serves, with its status on 2026-11-05. The
-status is that of the first request: no redirect is followed.
+Every name under piabrota.art that this repository serves, with its status on 2026-11-05
+(`metrics` and `room` on 2026-11-06). The status is that of the first request: no redirect is
+followed.
 
 | Address | What it is | Host | Access | Source |
 |---|---|---|---|---|
 | [`piabrota.art`](https://piabrota.art) | 301 to `https://www.piabrota.art/`, same path | KVM 1 | public | `site.nix` |
-| [`www.piabrota.art/`](https://www.piabrota.art/) | The site, design A. 200 | KVM 1 | public | `site.nix`, `site/` |
-| [`www.piabrota.art/index/`](https://www.piabrota.art/index/) | Design B. 200 | KVM 1 | public | `site/` |
-| [`www.piabrota.art/paths/`](https://www.piabrota.art/paths/) | Design C. 200 | KVM 1 | public | `site/` |
-| `www.piabrota.art/pt-BR/`, `/zh-CN/`, `/ja-JP/` | Design A in Portuguese, Chinese and Japanese. 200 each | KVM 1 | public | `site/default.nix`, [`docs/SITE.md`](docs/SITE.md) |
-| [`www.piabrota.art/hosts/`](https://www.piabrota.art/hosts/) | Who does what on each VPS. 200; `/hosts` gives 301 to the slash form | KVM 1 | public | `site/default.nix` |
 | [`www.piabrota.art/hermes/`](https://www.piabrota.art/hermes/) | Hermes's configuration as plain YAML, no secret. 200; `/hermes` gives 301 | KVM 1 | public | `site.nix`, `site/hermes.nix` |
 | [`www.piabrota.art/skills/`](https://www.piabrota.art/skills/) | The skills website. 200 | KVM 1 | public | `skills-site/` |
 | [`www.piabrota.art/figures/`](https://www.piabrota.art/figures/) | The figures as interactive pages, English and pt-BR. New: it goes live with the deploy of the pull request that adds it, so its status is not checked yet ⚠ | KVM 1 | public | `figures-site/` |
@@ -59,6 +55,8 @@ status is that of the first request: no redirect is followed.
 | [`www.piabrota.art/nixos`](https://www.piabrota.art/nixos) | 302 to [this repository](https://github.com/piabrota/nix-os) | KVM 1 | public | `site.nix` |
 | [`hermes.piabrota.art`](https://hermes.piabrota.art/) | The Hermes dashboard. 401 without the login | KVM 4 | basic auth | `hermes-web.nix` |
 | [`rig.piabrota.art`](https://rig.piabrota.art/) | The OpenRig web UI. 401 without the login. Its terminal can type into the seats | KVM 4 | basic auth, the dashboard's login file | `openrig.nix`, `hosts/piabrota2/default.nix`, [`docs/OPENRIG.md`](docs/OPENRIG.md) |
+| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | The metrics page: CPU, memory, disk and the top processes of both hosts. 401 without the login | KVM 4 | basic auth, the dashboard's login file | `metrics.nix`, `metrics/`, [`docs/METRICS.md`](docs/METRICS.md) |
+| [`room.piabrota.art`](https://room.piabrota.art/) | The 3D room, piabrota/room at a pinned commit, with its radio. 200; `/live/radio` is the live listeners count (server-sent events) | KVM 4 | public | `room.nix`, `room-site/` |
 | `paperclip.piabrota.art` | Paperclip. Off since 2026-11-04: no answer | KVM 4 | none while off | `paperclip.nix`, [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md) |
 
 `app.piabrota.art` and `example.piabrota.art` appear only as examples (`loco.nix`, `flake.nix`).
