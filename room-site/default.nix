@@ -10,11 +10,11 @@ buildNpmPackage {
   src = fetchFromGitHub {
     owner = "piabrota";
     repo = "room";
-    rev = "53b1fb2669d25b6f742db2236bd383adeb65f6b9";
-    hash = "sha256-OGpHsFWu84q/J5d9N6lHyYsUqA2bTljbPQ24HRmhFMM=";
+    rev = "aeef436e19618ee301de29c29c32e7ca3859f6ae";
+    hash = "sha256-dJSJw+Ctl3rr9xZOUIYl2VFCOHFYQO/t6b+8FFQ2d0g=";
   };
   # The hash of package-lock.json's packages: `nix run nixpkgs#prefetch-npm-deps -- package-lock.json`.
-  npmDepsHash = "sha256-hCEoI2jttnN6cUcunEvqVDtFQcIR11LLfzsrpZG82dg=";
+  npmDepsHash = "sha256-mj7bt+iuqhlv5XPN+GdaptrPhMw7OwkHi1ri4qXoDBE=";
   # The room's flake gives Node 22 to its developers; build with the same.
   nodejs = nodejs_22;
 
