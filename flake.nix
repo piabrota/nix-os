@@ -8,11 +8,12 @@
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Hermes Agent's package and NixOS module (hermes.nix). Its main branch is what it publishes;
-    # the lock pins a commit, and the weekly flake update moves it in a PR that CI builds. It keeps
-    # its own nixpkgs (unstable): its build patches tools, patchelf among them, for that version, and
+    # Hermes Agent's package and NixOS module (hermes.nix). The input is pinned to a release tag,
+    # so `nix flake update` never moves it to unreleased code. A bump changes the tag here, runs
+    # `nix flake update hermes-agent` and changes hermesVersion in hermes.nix. It keeps its own
+    # nixpkgs (unstable): its build patches tools, patchelf among them, for that version, and
     # the patches fail on nixos-26.05's (2026-11-02).
-    hermes-agent.url = "github:NousResearch/hermes-agent";
+    hermes-agent.url = "github:NousResearch/hermes-agent/v0.23.0";
   };
 
   outputs = { self, nixpkgs, deploy-rs, hermes-agent }:
@@ -101,7 +102,8 @@
           touch $out
         '';
         # The dashboard bundle still holds the docs address that hermes-web.nix swaps for
-        # piabrota's page. If an upstream bump renames it, the swap does nothing and this fails.
+        # piabrota's page, and the backend still has the two routes that nginx refuses. If an
+        # upstream bump renames one of them, the swap or the refusal does nothing and this fails.
         hermes-docs-url =
           let pkg = self.nixosConfigurations.piabrota2.config.services.hermes-agent.package;
           in pkgs.runCommand "hermes-docs-url-check" { nativeBuildInputs = [ pkgs.jq ]; } ''
@@ -112,6 +114,12 @@
               grep -RoE '.{0,60}hermes-agent\.nousresearch\.com/docs/?.{0,20}' "$web" >&2
               exit 1
             }
+            py=$(jq -r '.env.HERMES_PYTHON' ${pkg}/command-map.json)
+            routes=$(find -L "$(dirname "$(dirname "$py")")/lib" -type d -path '*/hermes_cli/web_routers' | head -n 1)
+            test -n "$routes" || { echo "hermes_cli/web_routers is not in the package: fix this check" >&2; exit 1; }
+            for p in /api/env/reveal /api/audio/voice-config; do
+              grep -RqF "\"$p\"" "$routes" || { echo "the route $p is not in $routes: fix hermes-web.nix" >&2; exit 1; }
+            done
             touch $out
           '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).

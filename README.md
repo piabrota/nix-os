@@ -11,7 +11,7 @@
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1682D4?style=flat-square)](https://deepwiki.com/piabrota/nix-os)
-[![Hermes Agent v0.22.7](https://img.shields.io/badge/Hermes_Agent-v0.22.7-1682D4?style=flat-square)](docs/HERMES.md)
+[![Hermes Agent v0.23.0](https://img.shields.io/badge/Hermes_Agent-v0.23.0-1682D4?style=flat-square)](docs/HERMES.md)
 [![hosts: piabrota + piabrota2](https://img.shields.io/badge/hosts-piabrota_%2B_piabrota2-1682D4?style=flat-square)](https://www.piabrota.art/hosts)
 
 </div>
@@ -232,10 +232,11 @@ with that version.
 |---|---|---|
 | [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-26.05) `nixos-26.05` | [`9bb5222`](https://github.com/NixOS/nixpkgs/commit/9bb52223f4f6a0cc606fd0852d8784f896c137d5) (2026-11-01) | the system; `system.stateVersion` is 26.05 |
 | [deploy-rs](https://github.com/serokell/deploy-rs) | [`1cec052`](https://github.com/serokell/deploy-rs/commit/1cec0527bd09074bbee6d4461900ce5d58267217) (2026-10-19) | the activation and its rollback; the `deploy` binary comes from nixpkgs, so CI does not compile it |
-| [hermes-agent](https://github.com/NousResearch/hermes-agent) [`v0.22.7`](https://github.com/NousResearch/hermes-agent/releases/tag/v0.22.7) | [`b200f5b`](https://github.com/NousResearch/hermes-agent/commit/b200f5bc60e31588ba2cb60e288029c4a54ba5fa) (2026-11-03) | Hermes Agent's package and NixOS module (`hermes.nix`); it keeps its own nixpkgs (unstable), for which its build is made |
+| [hermes-agent](https://github.com/NousResearch/hermes-agent) [`v0.23.0`](https://github.com/NousResearch/hermes-agent/releases/tag/v0.23.0) | [`2bd378e`](https://github.com/NousResearch/hermes-agent/commit/2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19) (2026-11-05) | Hermes Agent's package and NixOS module (`hermes.nix`); pinned to a release tag in `flake.nix`; it keeps its own nixpkgs (unstable), for which its build is made |
 
-`flake.lock` is the truth; this table is what it held on 2026-11-04. The Hermes badge at the top is
-edited by hand: change it with the pin. Update with `nix flake update` in a pull request.
+`flake.lock` is the truth; this table is what it held on 2026-11-07. The Hermes badge at the top is
+edited by hand: change it with the pin. Update nixpkgs with `nix flake update` in a pull request; the
+Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 
 </details>
 

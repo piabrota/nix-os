@@ -7,8 +7,8 @@
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
 { config, lib, pkgs, utils, hermes-agent, ... }:
 let
-  # The release tag of the pinned hermes-agent input (flake.lock): v0.22.7 is b200f5b.
-  hermesVersion = "0.22.7";
+  # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.0 is 2bd378e.
+  hermesVersion = "0.23.0";
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
   # Copied, not linked: a link into the input keeps its whole source (234 MiB) in the closure, and
@@ -18,7 +18,6 @@ let
   skills = [
     "devops/watchers" # poll RSS, JSON APIs and GitHub, with dedup: bulletins and alerts
     "research/rss-feeds" # read and discover feeds
-    "research/duckduckgo-search" # web search with no key (the ddgs extra)
     "research/research-paper-writing" # papers, with the bundled arxiv and grounded-citations
     "software-development/ast-grep" # structural code search (pkgs.ast-grep below)
   ];
@@ -268,7 +267,8 @@ in
     });
     # The extras every host uses, added to the package's own: Anthropic's SDK and the chat platforms
     # (Telegram, Discord, Slack), already in `full`; mcp, the MCP client, without which mcpServers
-    # below do nothing; ddgs, DuckDuckGo search.
+    # below do nothing; ddgs, DuckDuckGo search with no key (since v0.23.0 a web search provider
+    # that Hermes picks when no other web key is set, no longer an optional skill).
     extraDependencyGroups = [ "anthropic" "messaging" "mcp" "ddgs" ];
     # Claude through the owner's subscription: CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`) in the
     # env file below, as piabrota/agents does. Never a key here: settings land in the store.
@@ -474,9 +474,10 @@ in
   # unmanaged gateway, and the unit then looped on "already serves" (2026-11-05). The wrapper
   # also waits for such a gateway to exit and does not loop. See docs/HERMES.md.
   # The wrapper also hides systemd from the gateway: the gateway is a child of a shell, not of
-  # systemd. Without --external-supervisor, Hermes v0.22.7 treats a reload as a graceful restart
-  # and starts a detached gateway, and the unit then loops (2026-11-04). The flag makes the
-  # gateway exit back to this wrapper instead.
+  # systemd. Without --external-supervisor, Hermes v0.22.7 treated a reload as a graceful restart
+  # and started a detached gateway, and the unit then looped (2026-11-04). The flag makes the
+  # gateway exit back to this wrapper instead. v0.23.0 still reads it (gateway/restart.py) and
+  # exits 75 on a reload and when another gateway serves the host.
   systemd.services.hermes-agent.serviceConfig = {
     ExecStart = lib.mkForce (
       let

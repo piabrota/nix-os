@@ -55,7 +55,7 @@ e datas são daquele dia; elas mudam.
 - ✅ **Skills que vêm no pacote**: `github`, `arxiv`, `grounded-citations`, `obsidian`,
   `weekly-review-planning`, `document-to-action-items`, `codebase-inspection` e as outras.
 - ✅ **Skills opcionais** (o `optional-skills/` do commit fixado, copiado para a store): `watchers`,
-  `rss-feeds`, `duckduckgo-search`, `research-paper-writing`, `ast-grep`.
+  `rss-feeds`, `research-paper-writing`, `ast-grep`. A busca do DuckDuckGo é um provedor de web desde a v0.23.0.
 - ✅ **Servidores MCP** do catálogo aprovado (`optional-mcps/`), remotos, sem chave:
   [DeepWiki](https://mcp.deepwiki.com) e [Context7](https://context7.com).
 - ✅ **Identidade e resumo**: `hermes/SOUL.md` (regras do dogma do piabrota) e `hermes/AGENTS.md`.
