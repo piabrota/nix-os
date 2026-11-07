@@ -203,7 +203,7 @@ in
             (_: app: nameValuePair app.domain {
               enableACME = true;
               forceSSL = true;
-              locations."/" = proxy app;
+              locations = config.piabrota.favicon.locations // { "/" = proxy app; };
             })
             onDomain)
           # Apps on a path share the site's virtual host and certificate: the exact path and

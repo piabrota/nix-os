@@ -21,6 +21,9 @@ let
   url = "http://127.0.0.1:${toString cfg.port}";
   backend = "127.0.0.1:${toString cfg.port}";
   origin = "https://${cfg.web.domain}";
+  # The empty icon of the UI's index.html, and what nginx puts in its place (favicon.nix).
+  upstreamIcon = ''<link rel="icon" href="data:," />'';
+  eyeLinks = config.piabrota.favicon.links;
   secretsDir = "/var/lib/openrig-secrets";
   tokenFile = "${secretsDir}/.env";
 
@@ -370,27 +373,40 @@ in
           add_header Strict-Transport-Security "max-age=31536000" always;
           if ($openrig_web_foreign_origin) { return 403; }
         '';
-        locations."/" = {
-          proxyPass = "http://${backend}";
-          proxyWebsockets = true;
-          # nginx may turn these on for every location (loco.nix); set only what the daemon needs.
-          recommendedProxySettings = false;
-          # The daemon accepts the public name through OPENRIG_ALLOWED_HOSTS and the page's Origin
-          # through OPENRIG_ALLOWED_ORIGINS (both set below), so Host and Origin pass unchanged. The
-          # basic-auth header stays in nginx: the daemon reads `Authorization` as a bearer token.
-          extraConfig = ''
-            proxy_set_header Host $host;
-            proxy_set_header Authorization "";
-            proxy_set_header X-Forwarded-For "";
-            # The terminal WebSocket and the event streams stay open for hours.
-            proxy_buffering off;
-            proxy_read_timeout 1h;
-            proxy_send_timeout 1h;
-            add_header X-Frame-Options DENY always;
-            add_header Referrer-Policy no-referrer always;
-            add_header X-Content-Type-Options nosniff always;
-            add_header Strict-Transport-Security "max-age=31536000" always;
-          '';
+        # favicon.nix answers the three icon files. The UI's index.html says `<link rel="icon"
+        # href="data:,">`, an empty icon, so the browser never asks for a file: sub_filter below
+        # swaps that link for the eye (checks.openrig-icon fails if a bump changes the literal).
+        locations = config.piabrota.favicon.locations // {
+          "/" = {
+            proxyPass = "http://${backend}";
+            proxyWebsockets = true;
+            # nginx may turn these on for every location (loco.nix); set only what the daemon needs.
+            recommendedProxySettings = false;
+            # The daemon accepts the public name through OPENRIG_ALLOWED_HOSTS and the page's Origin
+            # through OPENRIG_ALLOWED_ORIGINS (both set below), so Host and Origin pass unchanged. The
+            # basic-auth header stays in nginx: the daemon reads `Authorization` as a bearer token.
+            extraConfig = ''
+              proxy_set_header Host $host;
+              proxy_set_header Authorization "";
+              proxy_set_header X-Forwarded-For "";
+              # sub_filter needs the body uncompressed. It rewrites text/html only, once, and drops
+              # the ETag and Last-Modified of what it rewrites. A browser that cached the page
+              # before this change would get a 304 and keep the empty icon: no validators go
+              # upstream, so every load of a file is a full one (the UI is small).
+              proxy_set_header Accept-Encoding "";
+              proxy_set_header If-None-Match "";
+              proxy_set_header If-Modified-Since "";
+              sub_filter '${upstreamIcon}' '${eyeLinks}';
+              # The terminal WebSocket and the event streams stay open for hours.
+              proxy_buffering off;
+              proxy_read_timeout 1h;
+              proxy_send_timeout 1h;
+              add_header X-Frame-Options DENY always;
+              add_header Referrer-Policy no-referrer always;
+              add_header X-Content-Type-Options nosniff always;
+              add_header Strict-Transport-Security "max-age=31536000" always;
+            '';
+          };
         };
       };
     };

@@ -41,7 +41,9 @@ done
 : "${KH_RESTARTS_WARN:=3}"      # restarts of a unit since it started, above it: WARN
 : "${KH_RESTARTS_CRIT:=50}"     # above it: CRIT (a restart loop)
 : "${KH_AGENT_CPU_WARN:=200}"   # % of one core, hermes-agent's average since the last sample
-: "${KH_JOURNAL_MIB:=180}"      # journald keeps at most 200 MiB (tools.nix)
+# journald keeps at most 200 MiB (SystemMaxUse in tools.nix), and a journal that has filled up to its
+# own cap is normal. Only a journal above the cap is a finding, so the limit sits above it.
+: "${KH_JOURNAL_MIB:=220}"      # MiB of journal, above it: WARN
 : "${KH_REPEAT_HOURS:=6}"       # --alert repeats the same findings after this many hours
 
 units="hermes-agent hermes-backend pgx paperclip postgresql openrig"
@@ -116,7 +118,11 @@ section "units"
 agent_mem=0
 agent_cpu=0
 agent_start=0
-for u in $units "user-$(id -u hermes 2>/dev/null || echo 0).slice"; do
+# A unit that is not loaded is skipped: piabrota (KVM 1) has none of them. The slice of the hermes
+# user's cron workers exists only where that user does.
+hermes_slice=""
+if hermes_uid=$(id -u hermes 2>/dev/null); then hermes_slice="user-$hermes_uid.slice"; fi
+for u in $units $hermes_slice; do
   [ "$(prop "$u" LoadState)" = loaded ] || continue
   active=$(prop "$u" ActiveState)
   cur=$(num "$(prop "$u" MemoryCurrent)")

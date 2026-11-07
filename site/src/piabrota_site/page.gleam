@@ -74,8 +74,21 @@ fn document(
       ),
       theme("#0B0D12", "dark"),
       theme("#FFFFFF", "light"),
-      // No favicon: an empty one stops the browser asking for /favicon.ico.
-      html.link([attribute.rel("icon"), attribute.href("data:,")]),
+      // The org's mark is the icon of every site under piabrota.art (favicon/, favicon.nix).
+      html.link([
+        attribute.rel("icon"),
+        attribute.attribute("type", "image/svg+xml"),
+        attribute.href("/favicon.svg"),
+      ]),
+      html.link([
+        attribute.rel("icon"),
+        attribute.href("/favicon.ico"),
+        attribute.attribute("sizes", "48x48"),
+      ]),
+      html.link([
+        attribute.rel("apple-touch-icon"),
+        attribute.href("/apple-touch-icon.png"),
+      ]),
       html.link([
         attribute.rel("preconnect"),
         attribute.href("https://fonts.googleapis.com"),

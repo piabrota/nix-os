@@ -258,13 +258,15 @@ in
             limit_req_status 429;
             ${headers}
           '';
-          locations."/data/" = {
-            alias = "${outDir}/";
-            # add_header in a location drops the server's, so the headers are repeated.
-            extraConfig = ''
-              add_header Cache-Control "no-store" always;
-              ${headers}
-            '';
+          locations = config.piabrota.favicon.locations // {
+            "/data/" = {
+              alias = "${outDir}/";
+              # add_header in a location drops the server's, so the headers are repeated.
+              extraConfig = ''
+                add_header Cache-Control "no-store" always;
+                ${headers}
+              '';
+            };
           };
         };
       };

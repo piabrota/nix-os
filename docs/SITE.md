@@ -91,6 +91,30 @@ failed.
 `piabrota.site.httpsOnly = true` turns plain HTTP into a redirect to HTTPS. Add redirects in
 `piabrota.site.redirects`, more names in `piabrota.site.redirectFrom`.
 
+## The icon
+
+Every name under piabrota.art shows the eye as its tab icon. The source is `favicon/favicon.svg`;
+`favicon/default.nix` builds it with `resvg`, on the builder only, into `favicon.svg`, `favicon.ico`
+(PNGs of 16, 32 and 48 px) and `apple-touch-icon.png` (180 px). The output names no store path.
+
+`favicon.nix` gives each vhost three exact locations for those files, in front of any proxy, with
+`Cache-Control: public, max-age=86400`. Every vhost carries them:
+`locations = config.piabrota.favicon.locations // { ... };`. Add that term to a new vhost. Basic
+auth stays on them.
+
+The pages that we write link the files: the site (`page.gleam`), `skills-site/`, `figures-site/`,
+the notes layout, the Hermes docs page and the metrics page (its CSP has `img-src 'self'`). An app
+that we do not write names its own icon, so nginx answers for that name as well:
+
+| App | Its own icon | What nginx does |
+|---|---|---|
+| Hermes dashboard | `/favicon.ico` | serves the eye there |
+| The room | `/favicon.svg` (the same eye) | serves the shared file there |
+| OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
+
+None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
+equals `parts.eye`.
+
 ## The skills website at /skills
 
 `https://www.piabrota.art/skills/` is the website that GitHub Pages served for

@@ -363,8 +363,11 @@ hermes doctor
 de uma vez, só lendo, os complementos do último deploy: a unit e a hora em que subiu, cada plugin
 ligado e habilitado, a skill `hermes-omp`, `omp --version` e `yt-dlp --version`, e erros de plugin
 no journal. Imprime `FAIL` para cada parte que falta e nunca lê os segredos.
-`just remote-health` mostra a saúde da máquina (`hermes/skills/kvm4-health`): memória, disco, CPU e
-cada unit do Hermes contra o `MemoryMax` dela.
+`just remote-health` mostra a saúde de uma máquina (`hermes/skills/kvm4-health`): memória, disco, CPU e
+cada unit do Hermes contra o `MemoryMax` dela. Ele pergunta à KVM 1 (`piabrota.art`, ou `DEPLOY_HOST`).
+Para a outra máquina, passe o host como segundo argumento: `just remote-health h0ffmann <endereço>`.
+Uma unit que a máquina não roda não é um achado. O journal só avisa acima do teto de 200 MiB dele
+(`KH_JOURNAL_MIB=220`). Saída 1 quer dizer uma linha `WARN` ou `CRIT`; a receita então diz isso.
 
 O log diz quais plataformas conectaram; "No messaging platforms enabled" quer dizer que o `.env`
 não tem token de plataforma. Dois avisos são esperados: o "Opus codec not found" do adaptador do

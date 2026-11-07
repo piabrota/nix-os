@@ -314,7 +314,7 @@ in
             add_header X-Content-Type-Options nosniff always;
             add_header Strict-Transport-Security "max-age=31536000" always;
           '';
-          locations = {
+          locations = config.piabrota.favicon.locations // {
             "/" = {
               proxyPass = local;
               proxyWebsockets = true;

@@ -92,7 +92,8 @@ in
           add_header Strict-Transport-Security "max-age=31536000" always;
           if ($hermes_web_foreign_origin) { return 403; }
         '';
-        locations = {
+        # favicon.nix answers /favicon.ico, the path of the dashboard's own <link rel="icon">.
+        locations = config.piabrota.favicon.locations // {
           "/" = {
             proxyPass = "http://${backend}";
             proxyWebsockets = true;

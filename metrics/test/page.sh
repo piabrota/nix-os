@@ -18,7 +18,11 @@ check "no innerHTML" "$(grep -c 'innerHTML' "$page")" 0
 check "no outerHTML or insertAdjacentHTML" "$(grep -cE 'outerHTML|insertAdjacentHTML' "$page")" 0
 check "no eval" "$(grep -cE '\beval\(|new Function' "$page")" 0
 check "no document.write" "$(grep -c 'document\.write' "$page")" 0
-check "no external script, stylesheet or font" "$(grep -cE '<script[^>]+src=|<link[^>]+href=|@import|@font-face' "$page")" 0
+# The three icon links (favicon.nix) name a file of this host by an absolute path: nothing else may.
+check "no external script, stylesheet or font" "$(grep -cE '<script[^>]+src=|<link[^>]+rel="stylesheet"|@import|@font-face' "$page")" 0
+check "every link is an icon of this host" "$(grep -E '<link[^>]+href=' "$page" | grep -vcE 'href="/(favicon\.svg|favicon\.ico|apple-touch-icon\.png)"')" 0
+check "the three icon links" "$(grep -cE '<link rel="(icon|apple-touch-icon)"' "$page")" 3
+check "the policy lets the page load its own icon only" "$(grep -c "img-src 'self'" "$page")" 1
 check "no storage" "$(grep -cE 'localStorage|sessionStorage|indexedDB|document\.cookie' "$page")" 0
 check "fetches only data/" "$(grep -o 'fetch([^,)]*' "$page" | grep -vc 'fetch("data/"')" 0
 check "a policy forbids other requests" "$(grep -c "connect-src 'self'" "$page")" 1

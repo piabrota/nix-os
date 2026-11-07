@@ -355,8 +355,11 @@ hermes doctor
 the add-ons of the last deploy in one run, read-only: the unit and when it started, each plugin
 linked and enabled, the `hermes-omp` skill, `omp --version` and `yt-dlp --version`, and plugin
 errors in the journal. It prints `FAIL` for each missing part and never reads the secrets.
-`just remote-health` prints the box's health (`hermes/skills/kvm4-health`): memory, disk, CPU, and
-each Hermes unit against its `MemoryMax`.
+`just remote-health` prints the health of a box (`hermes/skills/kvm4-health`): memory, disk, CPU, and
+each Hermes unit against its `MemoryMax`. It asks KVM 1 (`piabrota.art`, or `DEPLOY_HOST`). For
+another box, give the host as the second argument: `just remote-health h0ffmann <address>`. A unit
+that the box does not run is not a finding. The journal warns only above its own 200 MiB cap
+(`KH_JOURNAL_MIB=220`). Exit 1 means a `WARN` or `CRIT` line; the recipe then says so.
 
 The log says which platforms connected; "No messaging platforms enabled" means the `.env` has no
 platform token. Two warnings are expected: the Discord adapter's "Opus codec not found" (voice is

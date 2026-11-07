@@ -91,15 +91,16 @@ in
           ${cfg.domain} = tls // {
             enableACME = true;
             inherit (cfg) root;
-            locations = mapAttrs'
+            # The icon (favicon.nix), the redirects and the sub-sites.
+            locations = config.piabrota.favicon.locations // mapAttrs'
               (path: url: nameValuePair "= ${path}" { return = "302 ${url}"; })
               cfg.redirects
-            // lib.optionalAttrs (cfg.skills != null) {
+              // lib.optionalAttrs (cfg.skills != null) {
               # The pages use relative links, so the slash matters.
               "= /skills".return = "301 /skills/";
               "/skills/".alias = "${cfg.skills}/";
             }
-            // lib.optionalAttrs (cfg.figures != null) {
+              // lib.optionalAttrs (cfg.figures != null) {
               # The pages use relative links, so the slash matters.
               "= /figures".return = "301 /figures/";
               "/figures/".alias = "${cfg.figures}/";
