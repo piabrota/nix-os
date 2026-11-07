@@ -1,7 +1,8 @@
 # marola-front and marola-back on piabrota-dev
 
 MIP-0092 (Draft, marola-dev/marola): `marola-dev/marola-front` (Vite, TypeScript, MapLibre) and
-`marola-dev/marola-back` (Rust, Loco). The rig is `piabrota-dev`: two seats, no new rig. Open this
+`marola-dev/marola-back` (Rust, Loco). The rig is `piabrota-dev`: two seats, no new seat. For setup B
+(Claude Code) use `piabrota-dev-claude`, see "Compare omp and Claude Code" below. Open this
 file only when the owner asks for work on one of these two repositories. The guide for the owner is
 [`docs/OPENRIG.md`](../../../../docs/OPENRIG.md), "marola-front and marola-back".
 
@@ -56,3 +57,35 @@ marola-gh pr create --repo marola-dev/<repo> --base main --head hermes/<issue>-<
 
 Read the diff yourself before the push. Check that the commits show `marola-pr-bot[bot]`
 (`git log --format='%an <%ae>'`). Send the owner the link.
+
+## Compare omp and Claude Code
+
+Setup A is `piabrota-dev` (omp). Setup B is `piabrota-dev-claude` (Claude Code, same agents, tokens and
+outbox). Never run both at once. The bundle name ends with `-omp` or `-claude`; the branch is
+`hermes/<issue>-<slug>-omp` or `-claude`. Guide: `docs/OPENRIG.md`, "Comparing omp and Claude Code".
+
+```console
+# 1. One agent-ready issue, ONE task text (same for both; only the suffix changes)
+# 2. Run A
+date -Is; systemctl show openrig -p MemoryCurrent -p MemoryPeak                 # before
+rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
+rig send dev-builder@piabrota-dev "<task, branch ...-omp>" --verify             # note the time
+stat -c '%y %n' /var/lib/rig-outbox/marola/*-omp.*                              # end of A
+rig transcript dev-builder@piabrota-dev --tail 100                              # the `omp: done` line
+systemctl show openrig -p MemoryCurrent -p MemoryPeak                           # after
+rig snapshot piabrota-dev && rig down piabrota-dev
+kvm4-health
+# 3. Run B, the same text
+rig up /etc/openrig/specs/rigs/piabrota-dev-claude/rig.yaml
+rig send dev-builder@piabrota-dev-claude "<task, branch ...-claude>" --verify
+stat -c '%y %n' /var/lib/rig-outbox/marola/*-claude.*
+rig transcript dev-reviewer@piabrota-dev-claude --tail 100                      # rejections
+systemctl show openrig -p MemoryCurrent -p MemoryPeak
+```
+
+Record, from commands only: wall time (first `rig send` to the outbox file time), reviewer rejections,
+the checks each seat says it ran and the ones you ran again, `git diff --stat` of each bundle, cost or
+turns where printed (Claude Code: "not printed" if it prints none), and the unit's memory before and
+after (`MemoryPeak` is for the whole unit since its start). Judge by the diff and the checks, not by
+the seat's words. The operator posts the table as a comment on the issue, never in a file. Never invent
+a number. Open ONE pull request, from the better branch. The other bundle stays in the outbox (14 days).

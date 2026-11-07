@@ -17,8 +17,9 @@ metadata:
 agents. A daemon keeps the state. Each agent is a **seat**: a program in a tmux pane. The command
 is the systemd unit `openrig` on `127.0.0.1:7433` (the web UI is on at that address, for the
 owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp` or
-Claude Code, with the same Claude subscription as you. Four rigs
-are specified: `piabrota-dev`, with a builder seat and a reviewer seat, the two rigs of the
+Claude Code, with the same Claude subscription as you. Five rigs
+are specified: `piabrota-dev`, with a builder seat and a reviewer seat, `piabrota-dev-claude` (the same
+two seats on Claude Code, `references/marola.md`), the two rigs of the
 block wave-forecaster-dev (see "wave-forecaster-dev" below) and `wave-forecaster-thesis`
 (`references/thesis-rig.md`). This skill and its `references/` are
 enough to run them: you do not need the web.

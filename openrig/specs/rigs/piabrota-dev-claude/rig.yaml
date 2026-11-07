@@ -1,0 +1,56 @@
+# Setup B of marola-front and marola-back: the rig piabrota-dev with the same builder and reviewer
+# (the same agents, guidance, bot tokens and outbox), but both seats run Claude Code
+# (`runtime: claude-code`) and not omp. Only the runtime changes: the owner compares the two on
+# the same issue (docs/OPENRIG.md, "Comparing omp and Claude Code"). Start it with
+#   rig up /etc/openrig/specs/rigs/piabrota-dev-claude/rig.yaml
+# Nothing starts it: Hermes or a human does. Do not run it with piabrota-dev: the unit has one memory
+# budget for two seats. It needs piabrota.openrig.marola.claude.enable (openrig.nix).
+# A rig keeps the spec it was made from: after a change here, `rig archive` it and import it again.
+version: "0.2"
+name: piabrota-dev-claude
+summary: The builder and the reviewer of piabrota-dev, on Claude Code
+
+# `builtin:yolo` gives a Claude seat `--dangerously-skip-permissions`: without a policy a seat gets
+# the floor (`--permission-mode acceptEdits`), and in a pane nobody answers its prompts. The guard
+# is /etc/claude-code/managed-settings.json (openrig.nix): its deny rules hold in bypass mode. The
+# first run in bypass mode asks once to accept its warning: `rig seat continue` or the web UI
+# answers it (docs/RUNTIMES.md).
+permission_policy: builtin:yolo
+
+# OpenRig starts each pane with a clean environment: no USER. NixOS builds the pane's PATH from the
+# per-user profile of $USER (users.users.openrig.packages in openrig.nix), which has the tools of
+# the marola repositories and the `claude` of the box.
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+
+pods:
+  - id: dev
+    label: Development
+    summary: The builder writes and tests the code. The reviewer checks the diff.
+    members:
+      - id: builder
+        agent_ref: "local:../../agents/builder"
+        profile: default
+        runtime: claude-code
+        # A plain Claude id, not anthropic/<id>, which belongs to omp. The member wins over the
+        # AgentSpec default (omp), as wf-auditor shows.
+        model: claude-sonnet-5-5
+        # Its own folder (StateDirectory in openrig.nix): the guidance lands in its CLAUDE.md, and
+        # the clone goes in a subfolder, so the two CLAUDE.md files never mix. The reviewer reads
+        # the clone at /var/lib/openrig/work/piabrota-dev-claude/builder/<repo>.
+        cwd: /var/lib/openrig/work/piabrota-dev-claude/builder
+      - id: reviewer
+        agent_ref: "local:../../agents/reviewer"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/piabrota-dev-claude/reviewer
+    edges:
+      # The builder asks the reviewer to check its diff. The builder starts first.
+      - kind: delegates_to
+        from: builder
+        to: reviewer
+
+edges: []

@@ -69,6 +69,13 @@ install them. Write each one in your report with the words "runs in CI" and the 
 The operator fetches the bundle, reads it, pushes the branch and opens the pull request as
 `marola-pr-bot`. You hold a read-only token only.
 
+## Two runtimes
+
+The same task can run on omp (rig `piabrota-dev`) or on Claude Code (rig `piabrota-dev-claude`).
+The rules do not change. In the Claude Code rig, the reviewer reads the builder's clone at
+`/var/lib/openrig/work/piabrota-dev-claude/builder/<repo>`. The bundle name ends with `-omp` or
+`-claude`. The operator says which one in the task.
+
 ## Never
 
 - Never use, ask for or look for a token or a key.

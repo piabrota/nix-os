@@ -33,12 +33,13 @@ The rig has not yet done a task: see "Status today".
 
 - OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
   is at https://rig.piabrota.art behind basic auth (see "The web UI").
-- Four rigs are specified. `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`) has two seats on
+- Five rigs are specified. `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`) has two seats on
   `omp`, `dev-builder` and `dev-reviewer`. Both run without approval prompts
   (`permission_policy: builtin:yolo`, the owner's decision in PR 124). They use the owner's Claude
   subscription (see "The token of the seats").
-  The other three are the two rigs of wave-forecaster-dev and `wave-forecaster-thesis` (below). The
-  options that turn them on are off.
+  `piabrota-dev-claude` has the same two seats on Claude Code. The other three are the two rigs of
+  wave-forecaster-dev and `wave-forecaster-thesis` (below). The options that turn them on are off,
+  except `piabrota.openrig.marola.claude.enable` (on at piabrota2, for `piabrota-dev-claude`).
 - Hermes operates the rig with the `rig` CLI and the skill `hermes-rig`. Hermes does not start seats
   from cron.
 - **The seats are idle.** No task has gone through the builder to reviewer loop yet.
@@ -252,6 +253,7 @@ openrig/specs/
     reviewer/guidance/role.md
     reviewer/startup/context.md
   rigs/piabrota-dev/rig.yaml           # pod "dev": builder and reviewer, runtime omp
+  rigs/piabrota-dev-claude/rig.yaml    # pod "dev": the same two agents, runtime claude-code
 ```
 
 The block wave-forecaster-dev adds two rigs and four agents to the same folders (see
@@ -324,6 +326,7 @@ pros, cons, a spec line, credentials, permission mapping, state and the status o
 |Rig|Runtime|
 |---|---|
 |`piabrota-dev`|`omp`|
+|`piabrota-dev-claude`|`claude-code`, when `piabrota.openrig.marola.claude.enable` is on (on at piabrota2)|
 |`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (off)|
 |`wave-forecaster-dev-integrate`|`omp`|
 |`wave-forecaster-thesis`|`claude-code`, when `piabrota.openrig.thesis.enable` is on (off)|
@@ -483,6 +486,56 @@ fails.
 `marola-dev`, a token for the two repositories, the bot's identity in a commit, `marola-gh` against
 GitHub, the credential helper on a push, the `includeIf` block (it needs git 2.36 or later), the
 outbox ACL with the unit's `UMask`, and a seat that runs the guidance. Only the Nix evaluation ran.
+
+### Comparing omp and Claude Code
+
+The owner wants two setups for marola-front and marola-back, run on the same issue. Only the runtime
+changes. The agents, the guidance, the bot tokens and the outbox are the same. No seat is added.
+
+|Setup|Rig|Seats|Runtime|
+|---|---|---|---|
+|A|`piabrota-dev` (exists)|builder, reviewer|`omp`, `anthropic/claude-sonnet-5-5`|
+|B|`piabrota-dev-claude` (new)|builder, reviewer|`claude-code`, `claude-sonnet-5-5`|
+
+Setup B needs `piabrota.openrig.marola.claude.enable` (on at piabrota2). It adds `claude`,
+`/etc/claude-code/managed-settings.json` and the folders `/var/lib/openrig/work/piabrota-dev-claude/builder`
+and `.../reviewer`. It costs about 280 MiB of closure (see [`RUNTIMES.md`](RUNTIMES.md)). The member
+of the rig names `runtime: claude-code` and a plain Claude id, and these win over the omp default of
+the agents. A Claude seat reads its guidance in the `CLAUDE.md` of its own folder, so the two folders
+differ. The deny rules of `managed-settings.json` cover the same secret folders as for the other
+Claude rigs, among them `/var/lib/hermes-secrets`, where the key of `marola-pr-bot` is.
+
+Never run A and B at the same time: the unit has one memory budget for two seats. Do not run B when
+A is up.
+
+**The protocol,** in order:
+
+1. Pick one `agent-ready` issue. Write ONE task text: the issue URL, the repository, the branch
+   `hermes/<issue>-<slug>-omp` or `hermes/<issue>-<slug>-claude`, what done means, the checks, and
+   "no push". Use the same text for both runs. Only the branch suffix changes.
+2. Run A to the end. Read its outbox. Then `rig snapshot piabrota-dev` and `rig down piabrota-dev`.
+   Then run `kvm4-health`. Then `rig up` B with the same text.
+3. Record these values for each run, from commands only:
+   - the wall time: from the first `rig send` to the time of the outbox file (`stat -c %y`);
+   - the number of reviewer rejections (the reviewer's verdicts in `rig transcript`);
+   - the checks that each seat says it ran, and the checks that Hermes ran again;
+   - the files and lines changed (`git diff --stat` of the bundle);
+   - the cost or the turns, where the runtime prints them (omp: the `omp: done` line of
+     `rig transcript`; Claude Code: write "not printed" if it prints none);
+   - the memory of the unit: `systemctl show openrig -p MemoryCurrent -p MemoryPeak`, before and
+     after each run. `MemoryPeak` is for the whole unit since its start.
+4. Judge by the diff and the checks, not by what a seat says about its own work. The operator posts
+   the table as a comment on the issue under test, never in this document. Never invent a number.
+5. Hermes opens ONE pull request, from the better branch. The other bundle stays in the outbox
+   (14 days).
+
+Seat names of B are `dev-builder@piabrota-dev-claude` and `dev-reviewer@piabrota-dev-claude`. The
+reviewer of B reads the builder's clone at `/var/lib/openrig/work/piabrota-dev-claude/builder/<repo>`.
+A rig keeps the spec that made it: after a change to its `rig.yaml`, `rig archive` it and import it
+again.
+
+**Not tested.** Neither setup has run a live task on this box. Setup B has not started a seat:
+the first run of Claude Code in bypass mode asks once to accept its warning (see `RUNTIMES.md`).
 
 ## wave-forecaster-thesis
 

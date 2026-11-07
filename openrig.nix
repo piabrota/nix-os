@@ -70,7 +70,7 @@ let
   th = cfg.thesis;
   thesisPkg = pkgs.callPackage ./thesis/default.nix { };
   # `claude` and its deny rules serve every rig that runs Claude Code seats.
-  claudeSeats = wf.enable || th.enable;
+  claudeSeats = wf.enable || th.enable || (marola.enable && marola.claude.enable);
   # marola-front and marola-back on the rig piabrota-dev (docs/OPENRIG.md, "marola-front and marola-back").
   inherit (cfg) marola;
   # One read-only token per repository of cfg.githubRead, written by hermes-github.nix.
@@ -80,6 +80,9 @@ let
   outbox = "/var/lib/rig-outbox";
   wfFolders = [ "openrig/work/wave-forecaster-dev" ]
     ++ map (seat: "openrig/work/wave-forecaster-dev/${seat}") [ "porter" "auditor" "integrator" ];
+  # The rig piabrota-dev-claude (setup B of the comparison, docs/OPENRIG.md): one folder per seat.
+  marolaClaudeFolders = [ "openrig/work/piabrota-dev-claude" ]
+    ++ map (seat: "openrig/work/piabrota-dev-claude/${seat}") [ "builder" "reviewer" ];
   thFolders = [ "openrig/work/wave-forecaster-thesis" "openrig/work/wave-forecaster-thesis/projects" "openrig/work/wave-forecaster-thesis/out" ]
     ++ map (seat: "openrig/work/wave-forecaster-thesis/${seat}") [ "editor" "writer-a" "writer-b" "writer-c" "librarian" "reviewer" ];
 
@@ -308,6 +311,10 @@ in
           push to as marola-pr-bot. marola-bot.nix mints their tokens, so they do not go in `githubRead`.
         '';
       };
+      claude.enable = mkEnableOption ''
+        the Claude Code setup B of marola-front and marola-back, the rig piabrota-dev-claude: adds
+        `claude`, `managed-settings.json` and the two seat folders. It costs about 280 MiB of closure
+        (docs/RUNTIMES.md). Needs marola.enable'';
     };
     thesis.enable = mkEnableOption ''
       the rig wave-forecaster-thesis: the `thesis` toolkit with pandoc and a small TeX set in the seats'
@@ -342,6 +349,10 @@ in
       {
         assertion = !marola.enable || (marola.repos != [ ] && lib.all (lib.hasPrefix "marola-dev/") marola.repos);
         message = "piabrota.openrig.marola.repos needs at least one entry, and every entry must start with marola-dev/: marola-pr-bot has one installation, and one installation belongs to one owner.";
+      }
+      {
+        assertion = !marola.claude.enable || marola.enable;
+        message = "piabrota.openrig.marola.claude.enable needs piabrota.openrig.marola.enable: the rig piabrota-dev-claude uses the same agents, tokens and outbox.";
       }
     ];
 
@@ -383,7 +394,7 @@ in
     # The specs of openrig/specs, read-only: rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
     environment.etc."openrig/specs".source = ./openrig/specs;
 
-    # The rules of a Claude seat (the port rig and the thesis rig: waveForecaster or thesis on): Claude Code reads this file
+    # The rules of a Claude seat (the port rig, the thesis rig and piabrota-dev-claude: waveForecaster, thesis or marola.claude on): Claude Code reads this file
     # first, and no setting of a cloned repository can override it.
     environment.etc."claude-code/managed-settings.json" = mkIf claudeSeats {
       text = builtins.toJSON claudeManagedSettings;
@@ -513,7 +524,7 @@ in
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
-        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals th.enable thFolders;
+        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals (marola.enable && marola.claude.enable) marolaClaudeFolders ++ lib.optionals th.enable thFolders;
         StateDirectoryMode = "0700";
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";

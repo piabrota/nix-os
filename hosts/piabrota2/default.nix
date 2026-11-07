@@ -54,6 +54,8 @@
   # Without the App's key file on the box (marola-bot.nix) it mints nothing and the seats clone no
   # private repository.
   piabrota.openrig.marola.enable = true;
+  # Setup B of the same two repositories on Claude Code (rig piabrota-dev-claude), to compare with omp.
+  piabrota.openrig.marola.claude.enable = true;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
   # Live metrics (metrics.nix, docs/METRICS.md): the page at metrics.piabrota.art, which must point at
