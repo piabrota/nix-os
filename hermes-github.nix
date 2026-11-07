@@ -23,10 +23,11 @@ let
   home = "/var/lib/hermes";
   # The marola repositories of the rig piabrota-dev (openrig.nix, marola-bot.nix); off by default.
   marola = lib.attrByPath [ "piabrota" "openrig" "marola" ] { enable = false; repos = [ ]; } config;
-  # An includeIf block per repository: the bot's identity wins for these repositories only.
+  # Two includeIf blocks per repository, with and without .git: the bot's identity wins for these
+  # repositories only. Not `${r}**`, which also matches marola-frontend or marola-backup.
   marolaGitconfig = lib.concatMapStrings
-    (r: "[includeIf \"hasconfig:remote.*.url:https://github.com/${r}**\"]\n  path = ${home}/.gitconfig-marola-bot\n")
-    marola.repos;
+    (url: "[includeIf \"hasconfig:remote.*.url:${url}\"]\n  path = ${home}/.gitconfig-marola-bot\n")
+    (lib.concatMap (r: [ "https://github.com/${r}" "https://github.com/${r}.git" ]) marola.repos);
 
   # git credential helper: the token of the repository's owner, from the path git hands over
   # (credential.useHttpPath). Nothing for an owner without an installation: git then fails.
@@ -38,9 +39,11 @@ let
       [ "$key" = path ] && path=$value
     done${lib.optionalString marola.enable ''
 
-      path=''${path%.git}
-      case "$path" in
-        ${lib.concatMapStringsSep "|" lib.escapeShellArg marola.repos})
+      # GitHub matches owner and name in any case: so must this, or marola-dev/Marola-Front would
+      # get the owner's token below.
+      lower=''${path,,}
+      case "''${lower%.git}" in
+        ${lib.concatMapStringsSep "|" (r: lib.escapeShellArg (lib.toLower r)) marola.repos})
           # Fail closed: no token of marola-pr-bot, no password, and never the token of the owner.
           if [ -r "${tokens}/marola-pr-bot" ]; then
             echo username=x-access-token

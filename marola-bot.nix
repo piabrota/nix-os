@@ -9,7 +9,8 @@
 # `marola-gh` is the one way Hermes uses that token: it lets through only the commands that propose.
 # The other App of MIP-0086, the one that merges, is not used here: humans merge. No `workflows`
 # permission either: GitHub then refuses a push that changes .github/workflows.
-# Without the key file the unit does nothing, and Hermes acts as piabrota-hermes on these repos.
+# Without the key file the unit does nothing: git gets no password for these repos (the credential
+# helper of hermes-github.nix fails closed), and only `gh` still acts as piabrota-hermes there.
 { config, lib, pkgs, ... }:
 let
   cfg = config.piabrota.openrig;
