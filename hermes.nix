@@ -421,6 +421,9 @@ in
     # The skills-export no_agent cron job (daily 01:45) runs this: it copies Hermes's skills into a
     # pull request on piabrota/skills. Cron gives it the unit's PATH, so the script adds the system profile.
     hermesHomeFiles."scripts/export-skills.sh" = ./hermes/scripts/export-skills.sh;
+    # The delivery of piabrota-dot's result (a no_agent cron job at 14:15): the bot runs as its own user
+    # at 14:00 (piabrota-dot.nix); this script only prints its last-run.txt when it changed.
+    hermesHomeFiles."scripts/piabrota-dot-report.sh" = ./hermes/scripts/piabrota-dot-report.sh;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";

@@ -20,6 +20,8 @@
     ./metrics.nix
     # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
     ./kubesolo-purge.nix
+    # The daily check for new Hermes and OpenRig releases (docs/PIABROTA-DOT.md), off until a host turns it on.
+    ./piabrota-dot.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),

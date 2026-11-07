@@ -42,6 +42,9 @@
   piabrota.paperclip.enable = false;
   # Hermes operates it with `rig` and the skill hermes-rig; docs/OPENRIG.md.
   piabrota.openrig.enable = true;
+  # The bot that opens the Hermes and OpenRig bump pull requests (docs/PIABROTA-DOT.md). Without its
+  # key file on the box it does nothing. Merging stays off: the owner decides, in the docs.
+  piabrota.dot.enable = true;
   # The web UI at rig.piabrota.art, behind the dashboard's login (docs/OPENRIG.md, "The web UI").
   piabrota.openrig.web.enable = true;
   piabrota.openrig.web.domain = "rig.piabrota.art";
