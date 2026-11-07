@@ -14,15 +14,19 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
-    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh
+    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
 hermes-plugins-test:
     cd hermes/plugins/tests && python3 -m unittest -v test_plugins
+
+# tests of hermes/skills/kvm4-health/scripts/kvm4-health.sh with a stub journalctl and systemctl (offline)
+health-test:
+    sh hermes/skills/kvm4-health/scripts/kvm4-health.test.sh
 
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
@@ -156,9 +160,9 @@ remote-specs user="h0ffmann":
 remote-hermes-check user="h0ffmann":
     ssh {{user}}@{{host}} sh -s < scripts/hermes-check.sh
 
-# the health of the VPS and its Hermes units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only)
-remote-health user="h0ffmann":
-    ssh {{user}}@{{host}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh
+# the health of a VPS and its units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only); `just remote-health h0ffmann srv2125808.hstgr.cloud` asks the other box; exit 1 means a WARN or CRIT line
+remote-health user="h0ffmann" target=host:
+    ssh {{user}}@{{target}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh || { s=$?; [ "$s" -ne 1 ] || echo "remote-health: {{target}} has a WARN or CRIT line, see above" >&2; exit "$s"; }
 
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:

@@ -59,7 +59,8 @@ in
         forceSSL = true;
         enableACME = true;
         inherit (cfg) root;
-        locations = {
+        # favicon.nix replaces the room's own /favicon.svg, the same eye, with the shared file.
+        locations = config.piabrota.favicon.locations // {
           # Vite puts a content hash in every file name under assets/, so they never change.
           "/assets/".extraConfig = ''
             add_header Cache-Control "public, max-age=31536000, immutable";

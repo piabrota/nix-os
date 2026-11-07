@@ -27,6 +27,25 @@ pub fn documents_test() {
   })
 }
 
+// Every page of the site, in every language, names the org's icon (favicon/, favicon.nix).
+pub fn icon_test() {
+  let all =
+    list.append(pages(), [
+      #("hermes", page.hermes()),
+      #("hosts", page.hosts()),
+      #("pt-BR", page.fabric_in("pt-BR")),
+      #("zh-CN", page.fabric_in("zh-CN")),
+      #("ja-JP", page.fabric_in("ja-JP")),
+    ])
+  list.each(all, fn(p) {
+    let #(_, html) = p
+    assert string.contains(html, "href=\"/favicon.svg\"")
+    assert string.contains(html, "href=\"/favicon.ico\"")
+    assert string.contains(html, "href=\"/apple-touch-icon.png\"")
+    assert !string.contains(html, "href=\"data:,\"")
+  })
+}
+
 // Every page names every project of the org profile, and says what it is or where it meets the web.
 pub fn every_project_test() {
   assert data.projects != []

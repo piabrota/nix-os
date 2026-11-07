@@ -85,6 +85,78 @@
       checks.${system} = deployPkgs.deploy-rs.lib.deployChecks self.deploy // {
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
         toplevel-piabrota2 = self.nixosConfigurations.piabrota2.config.system.build.toplevel;
+        # The favicon build: the three files exist, the ICO and the PNG are well formed, and the SVG
+        # is the drawing of parts.eye (favicon/test.sh). The output has no store reference.
+        favicon = pkgs.runCommand "favicon-check" { nativeBuildInputs = [ pkgs.libxml2 ]; } ''
+          sh ${./favicon/test.sh} ${self.packages.${system}.favicon} ${pkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = pkgs.lib.fileset.unions [ ./site/src/piabrota_site/parts.gleam ./figures-site/default.nix ./skills-site/src/www.gleam ];
+          }}
+          touch $out
+        '';
+        # OpenRig's index.html still says `<link rel="icon" href="data:," />`, the literal that
+        # openrig.nix swaps for the eye. If an upstream bump changes it, the swap does nothing.
+        openrig-icon =
+          let
+            cfg = self.nixosConfigurations.piabrota2.config;
+            literal = ''<link rel="icon" href="data:," />'';
+          in
+          pkgs.runCommand "openrig-icon-check" { } ''
+            html=$(find -L ${cfg.piabrota.openrig.package} -path '*/ui/dist/index.html' | head -n 1)
+            test -n "$html" || { echo "ui/dist/index.html is not in the OpenRig package: fix this check" >&2; exit 1; }
+            grep -qF '${literal}' "$html" || { echo "the empty icon is not in $html: fix sub_filter in openrig.nix" >&2; grep -n 'icon' "$html" >&2; exit 1; }
+            grep -qF -f ${pkgs.writeText "openrig-sub-filter" "sub_filter '${literal}'"} ${pkgs.writeText "openrig-web-root.conf" cfg.services.nginx.virtualHosts.${cfg.piabrota.openrig.web.domain}.locations."/".extraConfig} \
+              || { echo "openrig.nix has no sub_filter for it" >&2; exit 1; }
+            touch $out
+          '';
+        # The three icon locations of favicon.nix in a real nginx, in front of a proxy and behind
+        # basic auth: right type, cache header and bytes; the proxied path still reaches its backend;
+        # with no credentials the icons are as closed as the rest. No VM: it runs in the sandbox.
+        favicon-nginx =
+          let
+            inherit (pkgs) lib;
+            files = self.nixosConfigurations.piabrota.config.piabrota.favicon;
+            locations = lib.concatStrings (lib.mapAttrsToList
+              (name: l: "location ${name} { alias ${l.alias}; ${l.extraConfig} }\n")
+              files.locations);
+            conf = pkgs.writeText "favicon-nginx.conf" ''
+              daemon off;
+              pid nginx.pid;
+              error_log error.log;
+              events { }
+              http {
+                access_log off;
+                client_body_temp_path tmp/body; proxy_temp_path tmp/proxy; fastcgi_temp_path tmp/fcgi; uwsgi_temp_path tmp/uwsgi; scgi_temp_path tmp/scgi;
+                server {
+                  listen 127.0.0.1:18080;
+                  auth_basic "x";
+                  auth_basic_user_file ${pkgs.writeText "htpasswd" "u:{PLAIN}p"};
+                  ${locations}
+                  location / { proxy_pass http://127.0.0.1:18081; }
+                }
+                server { listen 127.0.0.1:18081; location / { return 200 backend; } }
+              }
+            '';
+          in
+          pkgs.runCommand "favicon-nginx-check" { nativeBuildInputs = [ pkgs.nginx pkgs.curl ]; } ''
+            mkdir tmp
+            nginx -p "$PWD" -c ${conf} &
+            for _ in $(seq 50); do curl -s -o /dev/null http://127.0.0.1:18080/ && break; sleep 0.1; done
+            get() { curl -s -u u:p -D - -o "$2" "http://127.0.0.1:18080$1"; }
+            check() { grep -qi "$2" "$1.h" || { echo "$1: no '$2'" >&2; cat "$1.h" >&2; exit 1; }; }
+            get /favicon.svg svg > svg.h;      check svg 'content-type: image/svg+xml'
+            get /favicon.ico ico > ico.h;      check ico 'content-type: image/x-icon'
+            get /apple-touch-icon.png png > png.h; check png 'content-type: image/png'
+            for f in svg ico png; do check $f 'cache-control: public, max-age=86400'; check $f '^HTTP/1.1 200'; done
+            cmp svg ${files.files}/favicon.svg
+            cmp ico ${files.files}/favicon.ico
+            cmp png ${files.files}/apple-touch-icon.png
+            test "$(curl -s -u u:p http://127.0.0.1:18080/some/page)" = backend
+            test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/favicon.ico)" = 401
+            test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/some/page)" = 401
+            kill "$(cat nginx.pid)"
+            touch $out
+          '';
         # The drawing's tests pass and the committed files are its output (`just drawing`).
         drawing = pkgs.runCommand "mu-art-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") drawing.failures}
@@ -168,6 +240,8 @@
         inherit (pkgs) deploy-rs;
         # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
         pgx = pkgs.callPackage ./pgx/package.nix { };
+        # The eye as favicon.svg, favicon.ico and apple-touch-icon.png (favicon/): served on every vhost.
+        favicon = pkgs.callPackage ./favicon { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })

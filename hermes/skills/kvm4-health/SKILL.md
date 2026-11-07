@@ -46,7 +46,14 @@ Each line starts with `ok`, `WARN` or `CRIT`. Exit 1 means at least one finding.
 environment variables at the top of the script (`KH_DISK_WARN=80` and the like); set one on the
 command line to test (`KH_DISK_WARN=1 kvm4-health`), never in a file. The restart count of each unit
 (`NRestarts`, since the unit started) is WARN above `KH_RESTARTS_WARN=3` and CRIT above
-`KH_RESTARTS_CRIT=50`.
+`KH_RESTARTS_CRIT=50`. The journal is WARN above `KH_JOURNAL_MIB=220`: journald caps it at 200 MiB
+(`tools.nix`), so a journal near the cap is normal and only one above it is a finding. A unit that
+the box does not run (KVM 1 has none of the Hermes units) is skipped, not a finding.
+
+The owner runs it from his computer with `just remote-health`: KVM 1 (`piabrota.art`, or
+`DEPLOY_HOST`), or `just remote-health h0ffmann <address>` for another box. Exit 1 means a `WARN` or
+`CRIT` line. `hermes/skills/kvm4-health/scripts/kvm4-health.test.sh` (`just health-test`) tests the
+journal line and the exit status with a stub `journalctl`.
 
 ## What a finding means
 

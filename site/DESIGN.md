@@ -114,6 +114,13 @@ a caduceus, OpenRig three seats tied to a hub, metrics three rising bars, the ro
 its open side with a window on the sea. They are inline SVG, so no file is stored. They are
 piabrota's drawings, not the upstream projects' logos.
 
+## The icon
+
+The piabrota mark (the open green eye on red, the drawing of `parts.eye`) is the favicon of every
+site under piabrota.art: the site, `/skills/`, `/figures/`, `/notes`, and the dashboards on the
+other names. Its one source is `favicon/favicon.svg`. Change the mark there and in `parts.eye`
+together: `checks.favicon` compares them. No page stores or draws an icon of its own.
+
 ## Motion
 
 One entrance, and only when the reader allows motion: the hero rises 8 px. Hover lifts a card
