@@ -166,6 +166,7 @@ git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:
 |What you never do, and why|`references/safety.md`|
 |A symptom: daemon down, port, tmux, OOM, restart loop, disk, deploy|`references/troubleshooting.md`|
 |The thesis rig `wave-forecaster-thesis`: the phases, what to show the owner, the outbox|`references/thesis-rig.md`|
+|Work on `marola-front` or `marola-back`: `marola-gh`, the outbox, the bundle, the push as marola-pr-bot|`references/marola.md`|
 
 ## What was tested
 

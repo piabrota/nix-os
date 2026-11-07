@@ -49,6 +49,11 @@
   # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md). Off: the
   # specs are in /etc/openrig/specs as a definition only. The owner turns this on to use them.
   piabrota.openrig.waveForecaster.enable = false;
+  # marola-front and marola-back on the rig piabrota-dev: the same two seats, read tokens of
+  # marola-pr-bot, and Hermes pushes and opens these pull requests as marola-pr-bot (docs/OPENRIG.md).
+  # Without the App's key file on the box (marola-bot.nix) it mints nothing and the seats clone no
+  # private repository.
+  piabrota.openrig.marola.enable = true;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
   # Live metrics (metrics.nix, docs/METRICS.md): the page at metrics.piabrota.art, which must point at

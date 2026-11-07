@@ -16,7 +16,7 @@ profiles:
     summary: Reviews one diff and says how sure it is
     uses:
       skills: []
-      guidance: [shared:norms]
+      guidance: [shared:norms, shared:marola]
       subagents: []
       plugins: []
       runtime_resources: []

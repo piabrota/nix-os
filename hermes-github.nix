@@ -7,6 +7,8 @@
 # other push, and a ruleset on each default branch stops a push to it at GitHub. Humans merge.
 # Without the key file the unit does nothing, and Hermes stays read-only. See docs/HERMES.md.
 # It also mints the OpenRig seats' read-only tokens, one repository each (openrig.nix, githubRead).
+# With piabrota.openrig.marola.enable, git on the two marola repositories uses the token and the
+# identity of marola-pr-bot instead (marola-bot.nix); with no such token, git gets no password there.
 { config, lib, pkgs, ... }:
 let
   # The accounts whose installations get a token, in order: gh uses the first one that has one.
@@ -19,6 +21,12 @@ let
   seatRepos = lib.attrByPath [ "piabrota" "openrig" "githubRead" ] [ ] config;
   seatTokens = "/run/openrig-github";
   home = "/var/lib/hermes";
+  # The marola repositories of the rig piabrota-dev (openrig.nix, marola-bot.nix); off by default.
+  marola = lib.attrByPath [ "piabrota" "openrig" "marola" ] { enable = false; repos = [ ]; } config;
+  # An includeIf block per repository: the bot's identity wins for these repositories only.
+  marolaGitconfig = lib.concatMapStrings
+    (r: "[includeIf \"hasconfig:remote.*.url:https://github.com/${r}**\"]\n  path = ${home}/.gitconfig-marola-bot\n")
+    marola.repos;
 
   # git credential helper: the token of the repository's owner, from the path git hands over
   # (credential.useHttpPath). Nothing for an owner without an installation: git then fails.
@@ -28,7 +36,18 @@ let
     while IFS='=' read -r key value; do
       [ -z "$key" ] && break
       [ "$key" = path ] && path=$value
-    done
+    done${lib.optionalString marola.enable ''
+
+      path=''${path%.git}
+      case "$path" in
+        ${lib.concatMapStringsSep "|" lib.escapeShellArg marola.repos})
+          # Fail closed: no token of marola-pr-bot, no password, and never the token of the owner.
+          if [ -r "${tokens}/marola-pr-bot" ]; then
+            echo username=x-access-token
+            echo "password=$(cat "${tokens}/marola-pr-bot")"
+          fi
+          exit 0 ;;
+      esac''}
     owner=''${path%%/*}
     [ -n "$owner" ] && [ -r "${tokens}/$owner" ] || exit 0
     echo username=x-access-token
@@ -121,7 +140,10 @@ in
         useHttpPath = true
       [push]
         default = current
-      EOF
+      EOF${lib.optionalString marola.enable ''
+
+        cat >>${home}/.gitconfig.new <<'EOF'
+        ${marolaGitconfig}EOF''}
       cat >${home}/.config/gh/hosts.yml.new <<EOF
       github.com:
         oauth_token: $first

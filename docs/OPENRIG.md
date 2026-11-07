@@ -100,6 +100,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 |Seat `omp`|`omp/wrapper.nix` with `ceiling = null` and `hermes/omp-seat-append-system.md`: the one wrapper of the repository, as PR 124 decided. Its rules (`hermes/omp.yml`) are the guard of a seat.|
 |Permissions|The rig sets `permission_policy: builtin:yolo`: the seats run without approval prompts. This is the owner's decision in PR 124. `OPENRIG_YOLO=1` in the unit does not do it: a rig with no policy gets the floor, and a policy wins over the variable. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
 |Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`: the name only. The value stays in the root-only `EnvironmentFile`. A seat whose model is `anthropic/<id>` gets the key. A Claude Code seat gets it too, as every seat does, and its `claude` (`seatClaude`) turns it into `CLAUDE_CODE_OAUTH_TOKEN`, because Claude Code ranks `ANTHROPIC_API_KEY` above that token. No other variable reaches a seat.|
+|Marola bots|With `piabrota.openrig.marola.enable` (on at piabrota2), the rig `piabrota-dev` also serves marola-front and marola-back, and Hermes acts as `marola-pr-bot[bot]` on those two repositories only. `marola-bot.nix` mints the tokens. The merge bot of MIP-0086 is not used. See "marola-front and marola-back".|
 |Hermes|A `rig` command in the packages of `hermes-agent`. It sets `OPENRIG_URL=http://127.0.0.1:7433` and runs the real `rig`.|
 |Sandbox|`NoNewPrivileges`, `CapabilityBoundingSet=""`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ProtectKernel*`, `ProtectProc=invisible`, `RestrictNamespaces`, `LockPersonality`, `SystemCallFilter=@system-service ~@privileged` with `EPERM`, and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`.|
 |Restart|`Restart=on-failure`, `RestartSec=10s`, at most 5 starts in 600 s. After that the unit stays down.|
@@ -405,6 +406,84 @@ When the porter reports a bundle, Hermes fetches it into its own clone of chaceo
 git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:hermes/wf-<slug>
 ```
 
+## marola-front and marola-back
+
+MIP-0092 (status Draft, [marola-dev/marola](https://github.com/marola-dev/marola), PR 929) asks for a
+code factory on OpenRig that builds two new repositories: `marola-dev/marola-front` (Vite,
+TypeScript, MapLibre) and `marola-dev/marola-back` (Rust, Loco). The MIP proposes a new rig of four
+seats, `code-factory`. The owner decided otherwise: `piabrota-dev` serves it, with its two seats
+(builder and reviewer). The rig `code-factory` is not built, and no seat is added.
+
+The owner also decided that the rig uses the marola bots of MIP-0086. `marola-pr-bot` proposes: it
+pushes branches, opens pull requests and comments, and never lands on `main`. `marola-merge-bot`
+merges. This change uses only `marola-pr-bot`: nothing here mints, reads or names a token of the
+merge bot. Humans merge.
+
+**What `piabrota.openrig.marola.enable` adds** (on at piabrota2). Everything is off without it, and
+the generated Hermes git config, token unit and `openrig` unit are then as before.
+
+|Part|Setting|
+|---|---|
+|Tools|`rustup`, `gcc`, `just`, `shellcheck`, `openrig-git-credential` and `marola-clone` in the profile of the user `openrig` and in the unit's `path` (`marolaTools`). The Rust part is shared with the chaceon rigs (`rustTools`). A host with both options on has no duplicate. `marola-clone <marola-front\|marola-back\|owner/name> [dir]` clones with the credential helper and refuses a name that is not in `piabrota.openrig.marola.repos`.|
+|Folders|The outbox `/var/lib/rig-outbox/marola` (owner `openrig`, group `hermes`, 0750, a default ACL that gives the group read access, files older than 14 days removed). The unit has it in `ReadWritePaths`. The folder `/run/openrig-github` for the read tokens exists too.|
+|Read tokens|`marola-bot.nix` (unit `marola-bot-token`, every 45 minutes) mints one token per repository with `contents: read` on that repository only, into `/run/openrig-github/marola-dev--<name>` (root, group `openrig`, 0640). The repositories are not in `piabrota.openrig.githubRead`: `hermes-github.nix` would write the same files with the other App.|
+|Operator token and identity|The same unit mints one token for Hermes: `contents`, `pull_requests` and `issues` (write) on the two repositories. It goes to `/run/hermes-github/marola-pr-bot` (root, group `hermes`, 0640). The unit also writes `/var/lib/hermes/.gitconfig-marola-bot` with the name and the noreply email of the bot.|
+|`marola-gh`|A command in the packages of `hermes-agent`. It runs `gh` with the operator token. It allows only `pr create\|view\|list\|diff\|checks\|status\|comment\|edit` and `issue view\|list\|comment`. Everything else, and a global flag before the subcommand, exits 2.|
+|Git credential helper|`hermes-github.nix` makes the helper of Hermes answer for the two repositories with the token of `marola-pr-bot`. If that file is missing, the helper prints nothing: the push fails, and never falls back to the token of piabrota-hermes. An `includeIf` block in `.gitconfig` gives the bot's identity to these two repositories only. Every other repository stays on piabrota-hermes[bot].|
+
+**How the tokens are scoped.** The App `marola-pr-bot` has one installation, on `marola-dev`, so
+`piabrota.openrig.marola.repos` takes only `marola-dev/<name>` (an assertion checks it). The
+operator token has `contents`, `pull_requests` and `issues` (write) on the two repositories. A seat
+token has `contents: read` on one repository. No token has `workflows` (GitHub then refuses a push
+that changes `.github/workflows`) or `administration`. No token is of the merge bot.
+
+**The flow for Hermes.** The seats never push.
+
+1. `rig status` says "Daemon running", and `kvm4-health` shows room. Nothing else runs in the rig.
+2. `rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml` (see "A rig keeps the spec that made it").
+3. `rig send dev-builder@piabrota-dev "<marola-dev/marola-front or marola-back, the issue, done means, checks, no push>" --verify`.
+   The guidance `shared:marola` is in the seat's `AGENTS.md`.
+4. The builder clones with `marola-clone`, works on `hermes/<issue>-<slug>`, asks the reviewer, and
+   leaves `/var/lib/rig-outbox/marola/<repo>-<issue>-<slug>.bundle` and a `.md` report.
+5. Hermes reads the report and the diff. It makes its own clone with
+   `git clone https://github.com/marola-dev/<repo>.git` (the credential helper gives the token),
+   then `git fetch <bundle> HEAD:hermes/<issue>-<slug>`.
+6. Reset the authors, so that the commits show the bot:
+   `git rebase --exec 'git commit --amend --no-edit --reset-author' origin/main`.
+7. `git push origin hermes/<issue>-<slug>`, then `marola-gh pr create --base main --head hermes/<issue>-<slug> --title ... --body-file ...`.
+   The PR is in English and in ASD-STE100, as every PR of Hermes. Humans merge.
+
+**What the seats cannot check.** Playwright with a browser, `oasdiff`, the Cloudflare deploy and
+the live API do not run on this box. The guidance tells a seat to write each one as "runs in CI"
+with `⚠` and not to install it.
+
+**The risk.** The private key of `marola-pr-bot` is on the box, in `/var/lib/hermes-secrets/`, as
+the key of piabrota-hermes is. Make a SECOND private key of the App for the box, so that the owner
+can revoke it alone. The App has no merge permission, so it can push branches and open pull
+requests, and nothing more. Keep a ruleset on `main` of each repository, so that a push to it fails
+at GitHub. A seat holds a
+read token that ends after one hour. The seats run without approval prompts, as in the other rigs,
+and `hermes/omp.yml` still denies `git push`, `gh` and secrets.
+
+**A rig keeps the spec that made it.** `piabrota-dev` exists since an earlier deploy, so the new
+guidance does not reach its seats by itself. After the deploy, ask the owner and run:
+
+```console
+rig archive piabrota-dev
+rig import /etc/openrig/specs/rigs/piabrota-dev/rig.yaml --materialize-only
+rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
+```
+
+**The key file.** Without `/var/lib/hermes-secrets/marola-pr-bot.env` (`GH_APP_ID=` and
+`GH_APP_PRIVATE_KEY_B64=`, the `.pem` in base64 on one line), `marola-bot-token` does not run: no
+token exists, `marola-clone` clones only a public repository, and a push to the two repositories
+fails.
+
+**Not tested.** None of this ran on the box: the deploy with the option on, the App's installation on
+`marola-dev`, a token for the two repositories, the bot's identity in a commit, `marola-gh` against
+GitHub, the credential helper on a push, the `includeIf` block (it needs git 2.36 or later), the
+outbox ACL with the unit's `UMask`, and a seat that runs the guidance. Only the Nix evaluation ran.
+
 ## wave-forecaster-thesis
 
 The rig `wave-forecaster-thesis` has six Claude Code seats (`plan-editor`, `writing-librarian`,
@@ -459,6 +538,9 @@ of the system (`dix`), a Claude Code seat (the memory of one, the bypass dialog,
 rules), `rig spec validate` on the new spec, the outbox ACL with the unit's `UMask`, and Hermes's
 read of the outbox. Tested: the `thesis` command, in [`THESIS.md`](THESIS.md), "What is proved and
 what is not".
+
+For marola-front and marola-back, no seat ran: see the end of that section. Not tested: also
+`rig spec validate` on the changed `shared` agent and the two agents that use it.
 
 For the rest:
 

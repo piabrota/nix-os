@@ -1,7 +1,8 @@
-# What both seats of piabrota-dev share: one guidance file, the rules of every seat. It holds no
-# skill, plugin or runtime resource: an omp seat projects none of the last two, and the shared
-# pool of OpenRig's own specs is for Claude Code and Codex seats. A spec that imports this one
-# selects the file with `guidance: [shared:norms]`.
+# What both seats of piabrota-dev share: two guidance files, the rules of every seat (norms) and the
+# rules for the two marola repositories (marola). They hold no skill, plugin or runtime resource: an
+# omp seat projects none of the last two, and the shared pool of OpenRig's own specs is for Claude
+# Code and Codex seats. A spec that imports this one selects the files with
+# `guidance: [shared:norms, shared:marola]`.
 name: shared
 version: "1.0"
 description: The rules that every piabrota seat follows
@@ -10,3 +11,5 @@ resources:
   guidance:
     - id: norms
       path: guidance/norms.md
+    - id: marola
+      path: guidance/marola.md

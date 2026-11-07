@@ -10,7 +10,8 @@
 # `omp` from omp/wrapper.nix. With piabrota.openrig.waveForecaster.enable the seats of the port rig
 # run Claude Code (`claude`, unfree: unfree.nix) and Codex is not installed. The specs of the first
 # rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
-# runs `rig up`.
+# runs `rig up`. With piabrota.openrig.marola.enable the same two seats of piabrota-dev also work on
+# the two marola repositories, with read tokens of marola-pr-bot (marola-bot.nix, docs/OPENRIG.md).
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkOption types;
@@ -70,6 +71,8 @@ let
   thesisPkg = pkgs.callPackage ./thesis/default.nix { };
   # `claude` and its deny rules serve every rig that runs Claude Code seats.
   claudeSeats = wf.enable || th.enable;
+  # marola-front and marola-back on the rig piabrota-dev (docs/OPENRIG.md, "marola-front and marola-back").
+  inherit (cfg) marola;
   # One read-only token per repository of cfg.githubRead, written by hermes-github.nix.
   seatTokens = "/run/openrig-github";
   # Where a seat leaves a git bundle for Hermes. Not under /var/lib/openrig: Hermes may not read
@@ -109,6 +112,26 @@ let
         --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
         https://github.com/h0ffmann/chaceon.git "$dir"
       git -C "$dir" submodule update --init --depth 1 WW3 || git -C "$dir" submodule update --init WW3
+    '';
+  };
+
+  # A seat's clone of a marola repository (marola.repos): the pattern of chaceonClone. The token
+  # comes from seatCredential, which reads the file of marola-bot.nix; with no file git goes on
+  # with no password, which is enough for a public repository. Any other name is refused.
+  marolaClone = pkgs.writeShellApplication {
+    name = "marola-clone";
+    runtimeInputs = [ pkgs.git ];
+    text = ''
+      [ $# -ge 1 ] || { echo "usage: marola-clone <marola-front|marola-back|owner/name> [dir]" >&2; exit 2; }
+      name=''${1#marola-dev/}
+      case "$name" in
+        ${lib.concatMapStringsSep "|" (r: lib.escapeShellArg (lib.removePrefix "marola-dev/" r)) marola.repos}) ;;
+        *) echo "marola-clone: $1 is not one of: ${toString marola.repos}" >&2; exit 2 ;;
+      esac
+      dir=''${2:-$name}
+      git clone --filter=blob:none \
+        --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
+        "https://github.com/marola-dev/$name.git" "$dir"
     '';
   };
 
@@ -225,14 +248,17 @@ let
   # What a chaceon seat runs: `just check` (rustup's toolchain, gcc as the linker of build
   # scripts) and `just lint-sh`. Claude Code is in claudeTools. No Docker, no Vulkan, no CUDA:
   # those gates stay with the owner.
-  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone ];
+  # Shared by the chaceon rigs and the marola repositories; marolaClone is the marola one.
+  rustTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential ];
+  wfTools = rustTools ++ [ chaceonClone ];
+  marolaTools = rustTools ++ [ marolaClone ];
   claudeTools = [ seatClaude ];
   thTools = [ thesisPkg ];
 in
 {
   # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
   # not in the host, so that a host which turns waveForecaster on can evaluate it.
-  imports = [ ./unfree.nix ];
+  imports = [ ./unfree.nix ./marola-bot.nix ];
 
   options.piabrota.openrig = {
     enable = mkEnableOption "OpenRig, run by Hermes (docs/OPENRIG.md)";
@@ -269,6 +295,20 @@ in
     waveForecaster.enable = mkEnableOption ''
       the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
       outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
+    marola = {
+      enable = mkEnableOption ''
+        marola-front and marola-back on the rig piabrota-dev: the seats' Rust tools and `marola-clone`,
+        the outbox for Hermes and read-only tokens of marola-pr-bot (marola-bot.nix). Hermes pushes
+        and opens the pull requests of these two repositories as marola-pr-bot (docs/OPENRIG.md)'';
+      repos = mkOption {
+        type = types.listOf types.str;
+        default = [ "marola-dev/marola-front" "marola-dev/marola-back" ];
+        description = ''
+          The marola repositories (`marola-dev/<name>`) that the seats may read and that Hermes may
+          push to as marola-pr-bot. marola-bot.nix mints their tokens, so they do not go in `githubRead`.
+        '';
+      };
+    };
     thesis.enable = mkEnableOption ''
       the rig wave-forecaster-thesis: the `thesis` toolkit with pandoc and a small TeX set in the seats'
       profile, a folder per seat, the outbox for Hermes and Claude Code seats (docs/THESIS.md)'';
@@ -294,10 +334,16 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = config.services.hermes-agent.enable;
-      message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
-    }];
+    assertions = [
+      {
+        assertion = config.services.hermes-agent.enable;
+        message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
+      }
+      {
+        assertion = !marola.enable || (marola.repos != [ ] && lib.all (lib.hasPrefix "marola-dev/") marola.repos);
+        message = "piabrota.openrig.marola.repos needs at least one entry, and every entry must start with marola-dev/: marola-pr-bot has one installation, and one installation belongs to one owner.";
+      }
+    ];
 
     users.users.openrig = {
       isSystemUser = true;
@@ -306,16 +352,16 @@ in
       # OpenRig starts a pane shell with a clean environment, so the unit's `path` does not reach
       # it. NixOS builds the pane's PATH from the per-user profile of $USER (the RigSpec `env:` sets
       # USER, see openrig/specs/rigs/piabrota-dev/rig.yaml).
-      packages = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
+      packages = lib.unique (seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals marola.enable marolaTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools);
     };
     users.groups.openrig = { };
 
     # Only the openrig user reads this directory. The token file in it is made by the unit.
     systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ]
-      ++ lib.optionals (cfg.githubRead != [ ]) [ "d ${seatTokens} 0750 root openrig -" ]
+      ++ lib.optionals (cfg.githubRead != [ ] || marola.enable) [ "d ${seatTokens} 0750 root openrig -" ]
       # The outbox: the seats write, Hermes (group hermes) reads. The default ACL gives the group
       # read access to new files in spite of the unit's UMask. Bundles older than 14 days go.
-      ++ lib.optionals claudeSeats [ "d ${outbox} 0750 openrig hermes -" ]
+      ++ lib.optionals (claudeSeats || marola.enable) [ "d ${outbox} 0750 openrig hermes -" ]
       ++ lib.optionals wf.enable [
       "d ${outbox}/wave-forecaster-dev 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-dev - - - - default:group::r-X"
@@ -323,6 +369,10 @@ in
       ++ lib.optionals th.enable [
       "d ${outbox}/wave-forecaster-thesis 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-thesis - - - - default:group::r-X"
+    ]
+      ++ lib.optionals marola.enable [
+      "d ${outbox}/marola 0750 openrig hermes 14d"
+      "a+ ${outbox}/marola - - - - default:group::r-X"
     ];
 
     piabrota.openrig.githubRead = lib.optionals wf.enable [ "h0ffmann/chaceon" ];
@@ -453,7 +503,7 @@ in
       # the seats work on clones. The NixOS default adds coreutils, findutils, grep, sed and systemd.
       # The tools of the chaceon rigs are in this path too, so that a Claude seat that OpenRig starts
       # with a clean environment (a permission mode set by `rig seat set-permissions`) finds `claude`.
-      path = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
+      path = lib.unique (seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals marola.enable marolaTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools);
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
@@ -468,7 +518,7 @@ in
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = work;
-        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ];
+        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ] ++ lib.optionals marola.enable [ "${outbox}/marola" ];
         UMask = "0077";
         Restart = "on-failure";
         RestartSec = "10s";
