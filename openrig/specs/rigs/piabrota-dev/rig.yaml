@@ -1,4 +1,4 @@
-# The first rig of piabrota: one pod with a builder and a reviewer, both on omp (the box runs Claude
+# The first rig of piabrota: one pod with two builders and a reviewer, all on omp (the box runs Claude
 # Code only in the port rig, and Codex is not installed here). Start it with
 #   rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
 # Nothing starts it: Hermes or a human does. docs/OPENRIG.md, "Specs".
@@ -23,8 +23,11 @@ env:
 pods:
   - id: dev
     label: Development
-    summary: The builder writes and tests the code. The reviewer checks the diff.
+    summary: The builders write and test the code. The reviewer checks the diff.
     members:
+      # `builder` takes every task, and marola-back. `front-builder` takes marola-front only, so
+      # that a front task and a back task run at the same time (docs/OPENRIG.md, "marola-front and
+      # marola-back"). Both use the same agent and share the reviewer.
       - id: builder
         agent_ref: "local:../../agents/builder"
         profile: default
@@ -33,6 +36,12 @@ pods:
         # not-declared. anthropic/<id> is the form for which the runner passes the key.
         model: anthropic/claude-sonnet-5-5
         # Made by the unit (StateDirectory in openrig.nix). A seat makes its clone here.
+        cwd: /var/lib/openrig/work
+      - id: front-builder
+        agent_ref: "local:../../agents/builder"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
         cwd: /var/lib/openrig/work
       - id: reviewer
         agent_ref: "local:../../agents/reviewer"
@@ -43,9 +52,12 @@ pods:
         model: anthropic/claude-sonnet-5-5
         cwd: /var/lib/openrig/work
     edges:
-      # The builder asks the reviewer to check its diff. The builder starts first.
+      # Each builder asks the reviewer to check its diff. The builders start first.
       - kind: delegates_to
         from: builder
+        to: reviewer
+      - kind: delegates_to
+        from: front-builder
         to: reviewer
 
 edges: []

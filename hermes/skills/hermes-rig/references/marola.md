@@ -1,7 +1,8 @@
 # marola-front and marola-back on piabrota-dev
 
 MIP-0092 (Draft, marola-dev/marola): `marola-dev/marola-front` (Vite, TypeScript, MapLibre) and
-`marola-dev/marola-back` (Rust, Loco). The rig is `piabrota-dev`: two seats, no new seat. For setup B
+`marola-dev/marola-back` (Rust, Loco). The rig is `piabrota-dev`: `builder` takes marola-back, `front-builder` takes marola-front, at the
+same time, and both delegate to `reviewer`. For setup B
 (Claude Code) use `piabrota-dev-claude`, see "Compare omp and Claude Code" below. Open this
 file only when the owner asks for work on one of these two repositories. The guide for the owner is
 [`docs/OPENRIG.md`](../../../../docs/OPENRIG.md), "marola-front and marola-back".
@@ -34,8 +35,12 @@ another token: the credential helper refuses on purpose.
 
 ```console
 rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
-rig send dev-builder@piabrota-dev "<marola-dev/marola-front or marola-back, issue, done means, checks, no push>" --verify
+rig send dev-builder@piabrota-dev "<marola-dev/marola-back, issue, done means, checks, no push>" --verify
+rig send dev-front-builder@piabrota-dev "<marola-dev/marola-front, issue, done means, checks, no push>" --verify
 ```
+
+Never send a front task to `builder` or a back task to `front-builder`: two builders on one
+repository would race on one clone.
 
 The rig keeps the spec that made it. After a deploy that changes the guidance, ask the owner, then
 `rig archive piabrota-dev`, `rig import /etc/openrig/specs/rigs/piabrota-dev/rig.yaml --materialize-only`
@@ -43,7 +48,7 @@ and `rig up`.
 
 ## Take the result
 
-The builder leaves `/var/lib/rig-outbox/marola/<repo>-<issue>-<slug>.bundle` and a `.md` report.
+Each builder leaves `/var/lib/rig-outbox/marola/<repo>-<issue>-<slug>.bundle` and a `.md` report.
 
 ```console
 cat /var/lib/rig-outbox/marola/<repo>-<issue>-<slug>.md
@@ -61,7 +66,7 @@ Read the diff yourself before the push. Check that the commits show `marola-pr-b
 ## Compare omp and Claude Code
 
 Setup A is `piabrota-dev` (omp). Setup B is `piabrota-dev-claude` (Claude Code, same agents, tokens and
-outbox). Never run both at once. The bundle name ends with `-omp` or `-claude`; the branch is
+outbox). Never run both at once. In each, the front and back tasks may run in parallel. The bundle name ends with `-omp` or `-claude`; the branch is
 `hermes/<issue>-<slug>-omp` or `-claude`. Guide: `docs/OPENRIG.md`, "Comparing omp and Claude Code".
 
 ```console

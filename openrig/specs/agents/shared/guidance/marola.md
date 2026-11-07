@@ -48,9 +48,16 @@ Apply this part when the repository has these files:
 Playwright with a browser, `oasdiff`, the Cloudflare deploy and the live API do not run here. Do not
 install them. Write each one in your report with the words "runs in CI" and the sign ⚠.
 
+## Who builds what
+
+- The seat `front-builder` works on `marola-front` only. The seat `builder` works on `marola-back`.
+  The two work at the same time, each in its own clone. They share one reviewer.
+- The reviewer reviews one diff at a time. A second request waits until the first verdict.
+
 ## Memory
 
-- The two seats and the daemon share 2 GiB. Run one build at a time.
+- The three seats and the daemon share 4 GiB (3 GiB before the kernel slows them). Each builder
+  runs one build at a time.
 - For Rust, run `CARGO_BUILD_JOBS=1 nice -n 10 <command>`. For Node, run `nice -n 10 <command>`.
 
 ## Files you never touch
@@ -72,8 +79,9 @@ The operator fetches the bundle, reads it, pushes the branch and opens the pull 
 ## Two runtimes
 
 The same task can run on omp (rig `piabrota-dev`) or on Claude Code (rig `piabrota-dev-claude`).
-The rules do not change. In the Claude Code rig, the reviewer reads the builder's clone at
-`/var/lib/openrig/work/piabrota-dev-claude/builder/<repo>`. The bundle name ends with `-omp` or
+The rules do not change. In the Claude Code rig, the reviewer reads a builder's clone at
+`/var/lib/openrig/work/piabrota-dev-claude/<builder or front-builder>/<repo>`. In the omp rig, the
+clones are at `/var/lib/openrig/work/<repo>`. The bundle name ends with `-omp` or
 `-claude`. The operator says which one in the task.
 
 ## Never

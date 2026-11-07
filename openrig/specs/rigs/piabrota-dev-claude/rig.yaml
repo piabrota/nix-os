@@ -1,14 +1,14 @@
-# Setup B of marola-front and marola-back: the rig piabrota-dev with the same builder and reviewer
-# (the same agents, guidance, bot tokens and outbox), but both seats run Claude Code
+# Setup B of marola-front and marola-back: the rig piabrota-dev with the same builders and reviewer
+# (the same agents, guidance, bot tokens and outbox), but the three seats run Claude Code
 # (`runtime: claude-code`) and not omp. Only the runtime changes: the owner compares the two on
 # the same issue (docs/OPENRIG.md, "Comparing omp and Claude Code"). Start it with
 #   rig up /etc/openrig/specs/rigs/piabrota-dev-claude/rig.yaml
 # Nothing starts it: Hermes or a human does. Do not run it with piabrota-dev: the unit has one memory
-# budget for two seats. It needs piabrota.openrig.marola.claude.enable (openrig.nix).
+# budget for one rig. It needs piabrota.openrig.marola.claude.enable (openrig.nix).
 # A rig keeps the spec it was made from: after a change here, `rig archive` it and import it again.
 version: "0.2"
 name: piabrota-dev-claude
-summary: The builder and the reviewer of piabrota-dev, on Claude Code
+summary: The builders and the reviewer of piabrota-dev, on Claude Code
 
 # `builtin:yolo` gives a Claude seat `--dangerously-skip-permissions`: without a policy a seat gets
 # the floor (`--permission-mode acceptEdits`), and in a pane nobody answers its prompts. The guard
@@ -28,7 +28,7 @@ env:
 pods:
   - id: dev
     label: Development
-    summary: The builder writes and tests the code. The reviewer checks the diff.
+    summary: The builders write and test the code. The reviewer checks the diff.
     members:
       - id: builder
         agent_ref: "local:../../agents/builder"
@@ -38,9 +38,16 @@ pods:
         # AgentSpec default (omp), as wf-auditor shows.
         model: claude-sonnet-5-5
         # Its own folder (StateDirectory in openrig.nix): the guidance lands in its CLAUDE.md, and
-        # the clone goes in a subfolder, so the two CLAUDE.md files never mix. The reviewer reads
-        # the clone at /var/lib/openrig/work/piabrota-dev-claude/builder/<repo>.
+        # the clone goes in a subfolder, so the CLAUDE.md files never mix. The reviewer reads the
+        # clone at /var/lib/openrig/work/piabrota-dev-claude/<builder>/<repo>.
         cwd: /var/lib/openrig/work/piabrota-dev-claude/builder
+      # marola-front only, at the same time as `builder` on marola-back (as in piabrota-dev).
+      - id: front-builder
+        agent_ref: "local:../../agents/builder"
+        profile: default
+        runtime: claude-code
+        model: claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/piabrota-dev-claude/front-builder
       - id: reviewer
         agent_ref: "local:../../agents/reviewer"
         profile: default
@@ -48,9 +55,12 @@ pods:
         model: claude-sonnet-5-5
         cwd: /var/lib/openrig/work/piabrota-dev-claude/reviewer
     edges:
-      # The builder asks the reviewer to check its diff. The builder starts first.
+      # Each builder asks the reviewer to check its diff. The builders start first.
       - kind: delegates_to
         from: builder
+        to: reviewer
+      - kind: delegates_to
+        from: front-builder
         to: reviewer
 
 edges: []

@@ -10,7 +10,7 @@
 # `omp` from omp/wrapper.nix. With piabrota.openrig.waveForecaster.enable the seats of the port rig
 # run Claude Code (`claude`, unfree: unfree.nix) and Codex is not installed. The specs of the first
 # rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
-# runs `rig up`. With piabrota.openrig.marola.enable the same two seats of piabrota-dev also work on
+# runs `rig up`. With piabrota.openrig.marola.enable the seats of piabrota-dev also work on
 # the two marola repositories, with read tokens of marola-pr-bot (marola-bot.nix, docs/OPENRIG.md).
 { config, lib, pkgs, ... }:
 let
@@ -82,7 +82,7 @@ let
     ++ map (seat: "openrig/work/wave-forecaster-dev/${seat}") [ "porter" "auditor" "integrator" ];
   # The rig piabrota-dev-claude (setup B of the comparison, docs/OPENRIG.md): one folder per seat.
   marolaClaudeFolders = [ "openrig/work/piabrota-dev-claude" ]
-    ++ map (seat: "openrig/work/piabrota-dev-claude/${seat}") [ "builder" "reviewer" ];
+    ++ map (seat: "openrig/work/piabrota-dev-claude/${seat}") [ "builder" "front-builder" "reviewer" ];
   thFolders = [ "openrig/work/wave-forecaster-thesis" "openrig/work/wave-forecaster-thesis/projects" "openrig/work/wave-forecaster-thesis/out" ]
     ++ map (seat: "openrig/work/wave-forecaster-thesis/${seat}") [ "editor" "writer-a" "writer-b" "writer-c" "librarian" "reviewer" ];
 
@@ -280,8 +280,16 @@ in
       type = types.str;
       default = "2G";
       description = ''
-        systemd MemoryMax of the unit: the budget of the daemon, tmux and every seat. MemoryHigh is
-        1536M, below it. Two seats fit (docs/OPENRIG.md, "Limits").
+        systemd MemoryMax of the unit: the budget of the daemon, tmux and every seat. Keep
+        `memoryHigh` below it. Two seats fit in 2G (docs/OPENRIG.md, "Limits").
+      '';
+    };
+    memoryHigh = mkOption {
+      type = types.str;
+      default = "1536M";
+      description = ''
+        systemd MemoryHigh of the unit: above it the kernel slows the unit, so it is the working
+        limit. Keep it below `memoryMax`.
       '';
     };
     githubRead = mkOption {
@@ -539,7 +547,7 @@ in
         # An OOM kill takes one seat (choom aims at it), not the daemon and the other seats.
         OOMPolicy = "continue";
         MemoryMax = cfg.memoryMax;
-        MemoryHigh = "1536M";
+        MemoryHigh = cfg.memoryHigh;
         CPUWeight = 50;
         TasksMax = 2048;
         NoNewPrivileges = true;
