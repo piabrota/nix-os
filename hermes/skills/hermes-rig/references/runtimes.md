@@ -7,7 +7,7 @@ comparison (features, pros, cons, auth, permission mapping, state) is in
 |Runtime|What it is|On this box|
 |---|---|---|
 |`omp`|Oh My Pi, the coding agent that Hermes already uses (`hermes-omp`), run by OpenRig's RPC runner.|**Works.** The runtime of `piabrota-dev` and `wave-forecaster-dev-integrate`.|
-|`claude-code`|Claude Code (`claude`, unfree: `unfree.nix`).|**Only the port rig `wave-forecaster-dev`**, and only when `piabrota.openrig.waveForecaster.enable` is on (off today). Not run: no live Claude seat.|
+|`claude-code`|Claude Code (`claude`, unfree: `unfree.nix`).|**Only the port rig `wave-forecaster-dev`**, and only when `piabrota.openrig.waveForecaster.enable` is on (on today). Not run: no live Claude seat.|
 |`terminal`|A shell for a server, a log tail or a build watcher. No agent, no profile (`agent_ref: "builtin:terminal"`, `profile: none`).|**Works.** Tested in a scratch daemon. `rig send` types the exact text, with no From and To lines.|
 |`stub`|A scripted test harness. It calls no model.|Present; from the docs, not run.|
 |`codex`|OpenAI Codex.|**Not here.** Not installed. It would need an OpenAI login.|

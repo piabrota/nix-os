@@ -27,6 +27,10 @@ Seat names: `plan-editor`, `writing-librarian`, `writing-writer-a`, `writing-wri
 The memory of a Claude Code seat is not measured. Never run more than two seats, and never start a
 seat from a seat. The three writers together need the owner to measure the memory and raise the limit.
 
+The port rig `wave-forecaster-dev` is kept up by a keeper. One rig at a time: before the first launch,
+ask the owner's ok for `rig down wave-forecaster-dev`. Bring it back with
+`rig up wave-forecaster-dev --existing` when the thesis seats stop.
+
 ## Start and send
 
 ```console

@@ -98,9 +98,9 @@ Um nome só chega a um seat se o daemon o tem e o operador o nomeia em
 **Estado.** `~/.claude` e `~/.claude.json` (aqui `HOME` é `/var/lib/openrig`) e
 `<cwd>/.claude/settings.local.json`, onde o OpenRig põe seus hooks e o coletor da status line.
 
-**Nesta máquina.** A rig de port `wave-forecaster-dev` (porter e auditor) o roda depois deste PR, e
-só quando `piabrota.openrig.waveForecaster.enable` está ligado, o que não está. Os detalhes estão em
-"Claude Code nesta máquina", abaixo. **Não rodou:** nenhum seat Claude de verdade.
+**Nesta máquina.** A rig de port `wave-forecaster-dev` (porter e auditor) o roda, quando
+`piabrota.openrig.waveForecaster.enable` está ligado, o que está no piabrota2 desde 2026-11-07. Os
+detalhes estão em "Claude Code nesta máquina", abaixo. **Não rodou:** nenhum seat Claude de verdade.
 
 ## `codex`
 
@@ -318,7 +318,7 @@ Nesta máquina a escolha também é uma escolha de memória: o daemon e todos os
 
 Este PR dá à rig de port `runtime: claude-code` (porter e auditor, `model: claude-sonnet-5-5`).
 `piabrota-dev` e `wave-forecaster-dev-integrate` continuam no omp. Tudo fica atrás de
-`piabrota.openrig.waveForecaster.enable`, que continua desligado.
+`piabrota.openrig.waveForecaster.enable`, que está ligado no piabrota2 desde 2026-11-07.
 
 **O que a opção acrescenta para o Claude.**
 - O `unfree.nix` permite `claude-code` pelo nome e mais nada. `allowUnfree` continua desligado. Um
@@ -358,7 +358,7 @@ o runner do CI o constrói (nada está no `cache.nixos.org`), e o deploy o copia
 
 **O que uma pessoa precisa fazer.**
 1. Definir `piabrota.openrig.waveForecaster.enable = true` em `hosts/piabrota2/default.nix`, fazer o
-   merge e deixar o deploy rodar.
+   merge e deixar o deploy rodar (feito em 2026-11-07, com o keeper de docs/OPENRIG.md).
 2. Uma rig guarda a spec que a criou. As duas rigs wave foram criadas da spec antiga, então rode
    `rig archive wave-forecaster-dev` e depois
    `rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only`. Isso cria a

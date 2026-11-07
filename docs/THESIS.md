@@ -333,7 +333,7 @@ These notes are for the person who deploys: the owner, with Hermes when the owne
    whether the unit `openrig` restarts in this deploy. Before the merge, check that no seat works:
    `rig ps --nodes --active`.
 2. **Turn the option on, in a small PR.** In `hosts/piabrota2/default.nix`, next to
-   `piabrota.openrig.waveForecaster.enable = false;`, set `piabrota.openrig.thesis.enable = true;`. The
+   `piabrota.openrig.waveForecaster.enable = true;`, set `piabrota.openrig.thesis.enable = true;`. The
    unfree exception for `claude-code` is already in `unfree.nix`. The Claude pieces (the `claude` of
    `seatClaude` and `managed-settings.json`) turn on when the port rig **or** the thesis rig is on. In
    the PR, measure the growth with `just build piabrota2` before and after, and
