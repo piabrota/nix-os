@@ -28,6 +28,10 @@ hermes-plugins-test:
 health-test:
     sh hermes/skills/kvm4-health/scripts/kvm4-health.test.sh
 
+# tests of scripts/restart-services.sh with stub systemctl, tmux and a fixture /proc (offline)
+restart-test:
+    sh scripts/restart-services.test.sh
+
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
     cd hermes/feeds/tests && python3 -m unittest -v test_build_feed
@@ -163,6 +167,11 @@ remote-hermes-check user="h0ffmann":
 # the health of a VPS and its units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only); `just remote-health h0ffmann srv2125808.hstgr.cloud` asks the other box; exit 1 means a WARN or CRIT line
 remote-health user="h0ffmann" target=host:
     ssh {{user}}@{{target}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh || { s=$?; [ "$s" -ne 1 ] || echo "remote-health: {{target}} has a WARN or CRIT line, see above" >&2; exit "$s"; }
+
+# restart the services the VPS has, over SSH, through sudo; a human only, never an agent (docs/DEPLOY.md, "Restarting the services by hand"). Groups: metrics web pgx room loco rig hermes, `list` (the plan only), default all. It asks `Proceed? [y/N]` on your terminal; flags go inside the quoted first argument: `just remote-restart "hermes --dry-run"`, `just remote-restart "all --yes"`; KVM 4: `just remote-restart all h0ffmann <address>`
+remote-restart what="all" user="h0ffmann" target=host:
+    case '{{what}}' in *[!a-z\ -]*) echo "remote-restart: the first argument takes letters, spaces and - only" >&2; exit 2 ;; esac
+    b64=$(base64 < scripts/restart-services.sh | tr -d '\n') && ssh -t {{user}}@{{target}} "sudo sh -c \"\$(echo $b64 | base64 -d)\" restart-services {{what}}"
 
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:

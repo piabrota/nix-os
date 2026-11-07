@@ -173,6 +173,62 @@ piabrota.
   `sudo nixos-rebuild switch --rollback`. The next merge to `main` deploys again over it.
 - To update nixpkgs: `nix flake update` in a pull request.
 
+## Restarting the services by hand
+
+`just remote-restart` restarts the services of a box over SSH, as `h0ffmann` through the existing
+passwordless `sudo` (`piabrota.nix`). It changes no Nix option, no unit and no sudo or polkit
+rule. **Only a human runs it. An agent never does**, as an agent never deploys: Hermes's deny list
+blocks `sudo` and `systemctl restart`.
+
+It sends [`scripts/restart-services.sh`](../scripts/restart-services.sh) to the box. A group acts
+only on the units the box has, so the same command works on piabrota and piabrota2: a group the
+box lacks gives one `skip: <group>: not on this box` line. The table is the allow list. No other
+unit is touched: not `sshd`, the network, `systemd-*`, `acme-*`, `nix-daemon`, `deploy*`,
+`qemu-guest-agent` or `cloud-init*`.
+
+|Group|Units|Verb|What the restart costs|
+|---|---|---|---|
+|`metrics`|`metrics-collect.timer`, `metrics-pull.timer`, then `metrics-collect.service`, `metrics-pull.service`|restart the timers, start the oneshots once|Nothing. There is no metrics daemon: the timers fire oneshot services, and the run makes the page fresh.|
+|`web`|`nginx`|`reload`|No connection drops. The NixOS unit's `ExecReload` runs `nginx -t` first, so the script adds no second test; a bad config leaves the old workers.|
+|`pgx`|`pgx`|restart|Drops the open database connections.|
+|`room`|`room-listeners`|restart|The live listeners count starts from zero.|
+|`loco`|every `loco-<app>.service` (not the `loco-<app>-backup.service` oneshot)|restart|The app is down for a few seconds.|
+|`rig`|`openrig`|restart|Ends every live seat. The plan says how many tmux sessions run. Bring a rig back with the skill `hermes-rig`.|
+|`hermes`|`hermes-agent`, then `hermes-backend`|restart|`hermes-agent` ends every running agent task, a coding run included. `hermes-backend` closes the dashboard for a few seconds.|
+
+`all` (the default) runs metrics, web, pgx, room, loco, rig, hermes in that order. The unit that
+holds the agent's own session is last, so a failure on the way shows while your session lives.
+For `hermes`, the script restarts `hermes-agent`, waits until it is `active` (at most 60 s), and
+only then restarts `hermes-backend`: a dashboard that starts with no gateway can start a stray
+one outside the unit (the loop of 2026-11-05). Then the script checks that every `gateway run`
+process is in the cgroup of `hermes-agent.service`, and prints `ok` or
+`WARN stray gateway pid N in <cgroup>`.
+
+```console
+just remote-restart                                  # every service this box has, after the prompt
+just remote-restart hermes                           # one group: metrics web pgx room loco rig hermes
+just remote-restart list                             # the plan; changes nothing
+just remote-restart "hermes --dry-run"               # the plan and the exact systemctl lines; changes nothing
+just remote-restart "all --yes"                      # no prompt
+just remote-restart all h0ffmann <address>           # the other box (piabrota2: its address)
+```
+
+Put the flags inside the quoted first argument. Unquoted, `just` reads `--yes` and `--dry-run` as its own options. The script prints the plan, each unit with its verb
+and its cost, and asks `Proceed? [y/N]`. It asks on the terminal (`ssh -t`), not on stdin: the
+recipe sends the script as the argument of `sh -c`, in base64, so stdin stays free. With no
+terminal and no `--yes` it refuses. Afterwards it prints a table (unit, `is-active`,
+`NRestarts`, `ActiveEnterTimestamp`). It prints no journal line and no environment, because a
+line can hold a secret: read the journal on the box with the `journalctl` command it names. Each
+run puts the script text in the `sudo` line of the box's journal.
+
+|Exit|Meaning|
+|---|---|
+|0|Every unit is as wanted: active, or a finished oneshot. A group that the box lacks is not an error.|
+|1|A unit is not as wanted (the line names it and gives `journalctl -u <unit> -n 50`), or a stray gateway runs.|
+|2|Usage error, no root, the prompt was answered no, or there was no terminal and no `--yes`.|
+
+`just restart-test` runs the offline test of the script (`scripts/restart-services.test.sh`).
+
 ## Disk
 
 Every deploy deletes all system generations but the last five. `deploy.nix` keeps the same five
