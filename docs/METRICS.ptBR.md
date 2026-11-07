@@ -142,18 +142,6 @@ Mude `piabrota.metrics.collector.interval` (em segundos) no arquivo do host. O l
 página é 30 s, a constante `STALE_S` em `metrics/index.html`. Então deixe o intervalo em 10 ou
 menos, ou mude essa constante também.
 
-## Remover os dados do Beszel
-
-O Beszel saiu. O novo deploy para e remove as unidades `beszel-hub` e `beszel-agent`. Os dados
-antigos ficam no disco da piabrota2. O dono roda:
-
-```console
-sudo rm -rf /var/lib/beszel-hub /var/lib/beszel-secrets
-```
-
-Na piabrota, rode também `sudo rm -rf /var/lib/beszel-secrets`, se a pasta existir. Mais nada é
-preciso. A conta do hub do Beszel e a `KEY` e o `TOKEN` dos agentes não valem mais.
-
 ## Testes e prévia
 
 - `sh metrics/test/run.sh`: o coletor, com uma árvore falsa de `/proc` e cgroup. Imprime
