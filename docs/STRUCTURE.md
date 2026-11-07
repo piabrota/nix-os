@@ -12,6 +12,8 @@ just specs          # CPU, RAM, disk, kernel and NixOS generation of this machin
 just remote-specs   # the same, of the VPS, over SSH
 just remote-hermes-check  # Hermes's add-ons are live on KVM 4 (DEPLOY_HOST=<its address>)
 just remote-health  # memory, disk, CPU and units of a VPS: `just remote-health h0ffmann <address>` for KVM 4
+just remote-restart  # restart the services the box has, after a prompt: `just remote-restart hermes`, `list`, `"all --dry-run"` (a human only; docs/DEPLOY.md)
+just restart-test  # the offline test of scripts/restart-services.sh
 just metrics-test   # the tests of the metrics collector and page (docs/METRICS.md)
 just cves           # CVE report of the system closure (vulnix; a report, not a gate)
 just freeze         # every package of the running system with its size, like pip freeze
@@ -63,6 +65,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── scripts/specs.sh         prints the machine's specs (POSIX sh)
 ├── scripts/freeze.sh        every package of the system with its size, like pip freeze
 ├── scripts/hermes-check.sh  checks on the box that Hermes's add-ons of the last deploy are live
+├── scripts/restart-services.sh  restarts the units of a box by group, from an allow list (`just remote-restart`; docs/DEPLOY.md)
 ├── drawings/                the pen and the drawing, in Nix, that draw docs/drawings/mu.svg
 ├── mockups/                 three mockups of the piabrota.art homepage, SVG in pure Nix (docs/MOCKUPS.md)
 ├── docs/archify/, docs/img/ the figures' archify sources and PNGs; vendor/archify is the pinned archify

@@ -107,7 +107,7 @@ You need Nix with flakes, a GitHub account and one or two Hostinger KVM VPSs wit
 3. Point three A records (`hermes`, `rig`, `metrics`) at KVM 4 before the deploy, or the ACME order fails.
 4. On KVM 4, make the login file with the command of [`docs/HERMES.md`](docs/HERMES.md), "The web dashboard", step 2. The Hermes secrets go in a root-only file in `/var/lib/hermes-secrets/` ([`docs/HERMES.md`](docs/HERMES.md), "One-time setup on the box").
 5. Merge to `main`. [`docs/DEPLOY.md`](docs/DEPLOY.md) has the details of the deploy and the rollback.
-6. Check the boxes: `just remote-hermes-check` and `just remote-health` (set `DEPLOY_HOST=<address>`).
+6. Check the boxes: `just remote-hermes-check` and `just remote-health` (set `DEPLOY_HOST=<address>`). `just remote-restart` restarts their services by hand.
 
 ## How it works
 
