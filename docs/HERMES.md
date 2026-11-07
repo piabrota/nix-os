@@ -10,8 +10,9 @@ which answers on the platforms it has tokens for.
 The project publishes a flake with a package and a NixOS module (`nixosModules.default`). This
 repository's `flake.nix` takes it as the input `hermes-agent`, and `hermes.nix` only picks the
 options. For the project, Nix and NixOS are a Tier 2 platform: the flake and the module are kept
-"best effort", and a commit to their `main` can break them. So `flake.lock` pins a commit, and the
-weekly flake update (`flake-update.yml`) moves it only in a PR that CI builds before the merge.
+"best effort", and a commit to their `main` can break them. So `flake.nix` pins the input to a release
+tag, and `flake.lock` holds the commit of that tag. The weekly flake update (`flake-update.yml`)
+cannot move it off the release.
 
 What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](AWESOME-HERMES.md).
 
@@ -127,10 +128,10 @@ All are declared in `hermes.nix`, so they arrive with a deploy and move with the
 
 | Add-on | Kind | What for |
 |---|---|---|
-| `mcp`, `ddgs` | extras | The MCP client (without it the servers below do nothing) and DuckDuckGo search, with no key |
+| `mcp`, `ddgs` | extras | The MCP client (without it the servers below do nothing) and DuckDuckGo search, with no key. Since v0.23.0 `ddgs` is a web search provider, not a skill: Hermes picks it when no other web key is set. |
 | DeepWiki, Context7 | remote MCP servers, no key | Questions about public repositories (piabrota, marola-dev, nixpkgs) and current library docs. Nothing runs on the box for them. |
 | `watchers`, `rss-feeds` | optional skills | Poll RSS, JSON APIs and GitHub with dedup on Hermes's cron: bathing-water bulletins, Defesa Civil and INMET alerts, ocean news |
-| `duckduckgo-search`, `research-paper-writing` | optional skills | Web search; papers, with the bundled `arxiv` and `grounded-citations` |
+| `research-paper-writing` | optional skill | Papers, with the bundled `arxiv` and `grounded-citations` |
 | `ast-grep` | optional skill, plus `pkgs.ast-grep` | Structural code search |
 | `gh` | package | For the bundled `github` skill. Put a fine-grained token with read access only in the env file as `GITHUB_TOKEN`: it reads, and it cannot push or merge. |
 
@@ -386,8 +387,9 @@ web app is part of the Hermes package that `hermes.nix` installs, so it adds no 
   basic-auth login to write.
 - **No secret reaches the browser.** `POST /api/env/reveal` (shows a value of `.env`) is refused,
   and so is every write to `/api/env`: activation writes `.env` from the secrets file on each
-  deploy, so an edit there is lost anyway. The page still lists the names of the variables, with
-  their values redacted.
+  deploy, so an edit there is lost anyway. `GET /api/audio/voice-config` is refused too: it hands
+  a cloud STT or TTS key to the browser when a voice provider is set. The page still lists the
+  names of the variables, with their values redacted.
 - **Nix owns the config.** A change made in the Config page lasts only until the next deploy
   writes `config.yaml` again. Change `hermes.nix` in a PR instead.
 - **The Documentation tab shows piabrota's page**, `hermes-web/docs/index.html`, not Nous
@@ -477,8 +479,10 @@ secret's name gets through. Store paths keep their name and lose their hash.
 
 ## Updating and turning it off
 
-- **Update:** the weekly `flake-update.yml` PR moves the `hermes-agent` input with the rest, with
-  the closure difference (`dix`). CI builds it; the merge deploys it.
+- **Update:** the pin is a release tag. A new release is one PR with three changes: the tag in
+  `flake.nix` (`hermes-agent.url`), `nix flake update hermes-agent`, and `hermesVersion` in
+  `hermes.nix` (and the badge in `README.md`). The weekly `flake-update.yml` PR does not move this
+  input. CI builds the PR with the closure difference (`dix`); the merge deploys it.
 - **Turn off:** take `../../hermes.nix` out of the host's `imports` (`hosts/<name>/default.nix`) in a PR. The deploy stops
   and removes the unit; `/var/lib/hermes` and `/var/lib/hermes-secrets` stay on the box until
   someone deletes them.

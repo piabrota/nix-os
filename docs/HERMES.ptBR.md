@@ -10,8 +10,9 @@ o gateway de mensagens dele, que responde nas plataformas cujos tokens tem.
 O projeto publica um flake com um pacote e um módulo NixOS (`nixosModules.default`). O `flake.nix`
 daqui o traz como o input `hermes-agent`, e o `hermes.nix` só escolhe as opções. Para o projeto, Nix
 e NixOS são plataforma de nível 2: o flake e o módulo são mantidos "no melhor esforço", e um commit
-na `main` deles pode quebrá-los. Por isso o `flake.lock` fixa um commit, e a atualização semanal do
-flake (`flake-update.yml`) só o move num PR que o CI constrói antes do merge.
+na `main` deles pode quebrá-los. Por isso o `flake.nix` fixa o input numa tag de release, e o
+`flake.lock` guarda o commit dessa tag. A atualização semanal do flake (`flake-update.yml`) não
+consegue tirá-lo da release.
 
 O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`](AWESOME-HERMES.ptBR.md).
 
@@ -128,10 +129,10 @@ Todos ficam declarados no `hermes.nix`, então chegam com um deploy e andam junt
 
 | Complemento | Tipo | Para quê |
 |---|---|---|
-| `mcp`, `ddgs` | extras | O cliente MCP (sem ele os servidores abaixo não fazem nada) e a busca do DuckDuckGo, sem chave |
+| `mcp`, `ddgs` | extras | O cliente MCP (sem ele os servidores abaixo não fazem nada) e a busca do DuckDuckGo, sem chave. Desde a v0.23.0 o `ddgs` é um provedor de busca na web, não uma skill: o Hermes o escolhe quando não há outra chave de web. |
 | DeepWiki, Context7 | servidores MCP remotos, sem chave | Perguntas sobre repositórios públicos (piabrota, marola-dev, nixpkgs) e documentação atual de bibliotecas. Nada roda na máquina por causa deles. |
 | `watchers`, `rss-feeds` | skills opcionais | Consultam RSS, APIs JSON e o GitHub sem repetir aviso, no cron do Hermes: boletins de balneabilidade, alertas da Defesa Civil e do INMET, notícias do mar |
-| `duckduckgo-search`, `research-paper-writing` | skills opcionais | Busca na web; artigos científicos, junto com as skills `arxiv` e `grounded-citations`, que já vêm no pacote |
+| `research-paper-writing` | skill opcional | Artigos científicos, junto com as skills `arxiv` e `grounded-citations`, que já vêm no pacote |
 | `ast-grep` | skill opcional, mais o `pkgs.ast-grep` | Busca estrutural em código |
 | `gh` | pacote | Para a skill `github`, que já vem no pacote. Ponha um token fine-grained só com acesso de leitura no arquivo de ambiente como `GITHUB_TOKEN`: ela lê, e não consegue dar push nem fazer merge. |
 
@@ -396,8 +397,9 @@ do módulo do upstream:
   outro site não use o login de basic auth do navegador para escrever.
 - **Nenhum segredo chega ao navegador.** `POST /api/env/reveal` (mostra um valor do `.env`) é
   recusado, e toda escrita em `/api/env` também: a ativação escreve o `.env` a partir do arquivo de
-  segredos em cada deploy, então uma edição ali se perde de todo jeito. A página ainda lista os
-  nomes das variáveis, com os valores ocultos.
+  segredos em cada deploy, então uma edição ali se perde de todo jeito. `GET /api/audio/voice-config`
+  também é recusado: ele entrega ao navegador uma chave de STT ou TTS na nuvem quando há um provedor
+  de voz. A página ainda lista os nomes das variáveis, com os valores ocultos.
 - **O Nix é dono da configuração.** Uma mudança feita na página Config dura só até o próximo
   deploy escrever o `config.yaml` de novo. Mude o `hermes.nix` num PR.
 - **A aba Documentation mostra a página do piabrota**, `hermes-web/docs/index.html`, e não a
@@ -487,8 +489,10 @@ para se o nome de um segredo passar. Os caminhos da store mantêm o nome e perde
 
 ## Atualizar e desligar
 
-- **Atualizar:** o PR semanal do `flake-update.yml` move o input `hermes-agent` junto com o resto,
-  com a diferença do closure (`dix`). O CI constrói; o merge faz o deploy.
+- **Atualizar:** o pin é uma tag de release. Uma release nova é um PR com três mudanças: a tag no
+  `flake.nix` (`hermes-agent.url`), o `nix flake update hermes-agent` e o `hermesVersion` no
+  `hermes.nix` (e o selo no `README.md`). O PR semanal do `flake-update.yml` não move este input. O CI
+  constrói o PR com a diferença do closure (`dix`); o merge faz o deploy.
 - **Desligar:** tire o `../../hermes.nix` dos `imports` do host (`hosts/<nome>/default.nix`) num PR. O deploy para e
   remove a unit; `/var/lib/hermes` e `/var/lib/hermes-secrets` ficam na máquina até alguém apagar.
 
