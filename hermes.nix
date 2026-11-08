@@ -132,6 +132,23 @@ let
     rev = "857d881be77249c192c5fefa8254db186a7abbca";
     hash = "sha256-XQGm8nJanbCQzrfvpfABdwRy8NwzGlH9HvGiPU/V5cE=";
   }}/src $out";
+  # superpowers v7.0.2 (obra/superpowers, MIT): 15 skills, and a `pre_llm_call` hook that adds a
+  # bootstrap text (about 5 KB) to the first turn of a session, not to a subagent. The visual
+  # companion of the brainstorming skill (skills/brainstorming/scripts/server.cjs) needs node.
+  # This box has no node, so it stays inert. The plugin code makes no network call. Read at
+  # v7.0.2, hash pinned; a new commit is a PR. The plugin keeps plugin.yaml and __init__.py in
+  # .hermes-plugin/; the flat layout (both files next to skills/) is one it supports.
+  superpowers = pkgs.runCommand "superpowers" { } ''
+    src=${pkgs.fetchFromGitHub {
+      owner = "obra";
+      repo = "superpowers";
+      rev = "22f0b463e7a5e579904dd6211a520321035526f7";
+      hash = "sha256-rP5YsyGuPd9YSW/Fj3aukrq1bLuV+nwwQMK4JaZQgkI=";
+    }}
+    mkdir -p "$out"
+    cp "$src/.hermes-plugin/plugin.yaml" "$src/.hermes-plugin/__init__.py" "$out/"
+    cp -r "$src/skills" "$out/skills"
+  '';
   # The kvm4-health skill's script as a command (hermes/skills/kvm4-health), with the tools it
   # reads with on its PATH, for chat and for the watchdog cron job below.
   kvm4Health = pkgs.writeShellApplication {
@@ -333,6 +350,7 @@ in
       (subPlugin "memory-rewind" memoryRewind)
       hermesGuide
       pluginGuard
+      superpowers
     ] ++ lib.mapAttrsToList subPlugin (labs // more) ++ map ownPlugin ownPlugins;
     settings.plugins.enabled = [
       "custom-dangerous-patterns"
@@ -341,6 +359,7 @@ in
       "memory-rewind"
       "hermes-guide"
       "hermes-plugin-guard"
+      "superpowers"
     ] ++ builtins.attrNames (labs // more) ++ ownPlugins;
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for a subscription's quota (the fan-out limits
