@@ -288,12 +288,12 @@ openrig/specs/
   agents/
     reels-shared/agent.yaml            # one guidance resource: the norms of every reels seat
     reels-shared/guidance/norms.md
-    reels-writer/...                   # agent.yaml, guidance/role.md, startup/context.md
-    reels-script-editor/...
-    reels-director/...
-    reels-maker/...
+    reels-creative-director/...        # agent.yaml, guidance/role.md, startup/context.md
+    reels-producer-editor/...
+    reels-artist-3d/...
+    reels-music-director/...
     reels-qa/...
-  rigs/reels-fabric/rig.yaml           # pod "story": writer, script-editor; pod "studio": director, maker, qa
+  rigs/reels-fabric/rig.yaml           # pod "crew": creative-director, producer-editor, artist-3d, music-director, qa
 ```
 - `rig.yaml` has one pod, `dev`, with the members `builder` and `reviewer`. Both use the runtime
   `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`. An edge
@@ -453,22 +453,27 @@ screenplay is approved. The guide is [`REELS.md`](REELS.md), and the wiki's `Ree
 
 |Part|Setting|
 |---|---|
-|Rig|`openrig/specs/rigs/reels-fabric/rig.yaml`: pod `story` (`writer`, `script-editor`) and pod `studio` (`director`, `maker`, `qa`), all on `omp`, `anthropic/claude-sonnet-5-5`, `builtin:yolo`. The edges form a chain: writer, script editor, director, maker, QA.|
-|Option|`piabrota.openrig.reels.enable`. Off at piabrota2. The specs are in `/etc/openrig/specs` as a definition only.|
+|Rig|`openrig/specs/rigs/reels-fabric/rig.yaml`: one pod, `crew`, a film crew of five seats (`creative-director`, `producer-editor`, `artist-3d`, `music-director`, `qa`), all on `omp`, `anthropic/claude-sonnet-5-5`, `builtin:yolo`. The edges form a chain with no cycle: creative director to producer-editor and to artist-3d, producer-editor to music director and to QA. The executive producer is the owner, a human, not a seat.|
+|Option|`piabrota.openrig.reels.enable`. Off at piabrota2. The specs are in `/etc/openrig/specs` as a definition only. `piabrota.openrig.reels.blender.enable` (off) adds `pkgs.blender`, headless, for the 3D shots: the owner's exception to "no GUI" (2026-11-08). It needs the first option. Cycles on the CPU only: EEVEE crashes on this box.|
 |Tools|The toolkit `reel` (`reels/`, built by `reels/default.nix`) with `ffmpeg-headless` and `jq`, in the profile of the user `openrig` and in the unit's `path`. Two font files (Inter and Fjalla One) are the owner's exception to "no fonts".|
-|Folders|`/var/lib/openrig/work/reels-fabric/{writer,script-editor,director,maker,qa}` (the seats' own folders), `projects` (shared, one folder for each slug) and `out` (the renders), all `StateDirectory`.|
+|Folders|`/var/lib/openrig/work/reels-fabric/{creative-director,producer-editor,artist-3d,music-director,qa}` (the seats' own folders), `projects` (shared, one folder for each slug) and `out` (the renders), all `StateDirectory`.|
 |Outbox|`/var/lib/rig-outbox/reels-fabric` (owner `openrig`, group `hermes`, 2750 with setgid, a default ACL for the group, files older than 14 days removed). `reel publish` writes `reel.mp4`, `qa.json`, `screenplay.json` and `review/` to `<slug>/` and gives the group read access to them. The unit has it in `ReadWritePaths`. The parent is shared with the wave and thesis rigs.|
 |Env|The rig sets `REELS_HOME=/var/lib/openrig/work/reels-fabric` and `REELS_OUTBOX=/var/lib/rig-outbox/reels-fabric`.|
 
-**Three phases, two seats at a time.** The rig has five seats, and a render adds an `ffmpeg` of up to
-540 MiB. So the operator starts the seats in phases, and never more than two at once: `story` (writer
-and script editor, until `reel approve`), `studio` (director and maker, until `reel.mp4` exists) and
-`qa` (the QA seat with the maker still up, until `reel publish`). The exact commands are in
-[`REELS.md`](REELS.md), "The phases". The owner decides the brief, the start of phase 2 and what to do
-with the published reel. A human approves or the script editor does: Hermes never approves.
+**Five phases, two seats at a time.** The rig has five seats, and a render adds an `ffmpeg` of up to
+540 MiB (a Blender render adds 536 MiB). So the operator starts the seats in phases, and never more
+than two at once: story and look (creative director and producer-editor, until `reel approve`),
+picture (the same two seats, until the shotlist, the storyboard and the flat clips exist), 3D shots
+(`artist-3d` with the producer-editor, skipped without a `3d` shot or without Blender), sound
+(`music-director` with the producer-editor, until the cut has its audio) and check and publish (`qa`
+with the producer-editor still up, until `reel publish`). The exact commands are in
+[`REELS.md`](REELS.md), "The phases". The executive producer, the owner, decides the brief, the start
+of each phase and what to do with the published reel. A human approves or the producer-editor does:
+Hermes never approves.
 
-**Not proved.** A live run of the rig, OpenRig's validation of the specs, and Instagram's acceptance
-of the file. The toolkit ran on this box: the numbers are in [`REELS.md`](REELS.md), "Measured numbers".
+**Not proved.** A live run of the rig, a Blender render inside the unit `openrig`, and Instagram's
+acceptance of the file. `rig spec validate` and `rig agent validate` passed on the specs without a
+daemon. The toolkit ran on this box: the numbers are in [`REELS.md`](REELS.md), "Measured numbers".
 ## What is not done
 
 - **No public web page without auth.** The daemon runs on loopback only. The public vhost (`rig.piabrota.art`) has TLS and basic auth (see "The web UI").

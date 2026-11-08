@@ -1,18 +1,21 @@
 # A Fábrica de Reels
 
 Os arquivos são `openrig/specs/rigs/reels-fabric/`, `openrig/specs/agents/reels-*/`, `reels/` (o kit
-`reel`), a opção `piabrota.openrig.reels.enable` em `openrig.nix` e esta página. As páginas `Reels`
-do wiki resumem tudo. Os fatos aqui foram medidos na `piabrota2` em 2026-11-05 ou lidos no código. O
-que não está provado fica em "O que não está provado".
+`reel`), as opções `piabrota.openrig.reels.enable` e `piabrota.openrig.reels.blender.enable` em
+`openrig.nix` e esta página. As páginas `Reels` do wiki resumem tudo. Os fatos aqui foram medidos na
+`piabrota2` em 2026-11-05 (o kit) e em 2026-11-08 (o Blender) ou lidos no código. O que não está
+provado fica em "O que não está provado".
 
 ## O que é
 
 A Fábrica de Reels é uma rig do [OpenRig](OPENRIG.md) que faz um vídeo vertical, de 15 s ou 30 s,
-1080x1920, para os Reels do Instagram. Cinco seats trabalham em dois pods. O pod `story` escreve e
-aprova um roteiro. O pod `studio` dirige, monta e confere o vídeo a partir desse roteiro. Os seats
-usam um só kit, o `reel`, feito de shell POSIX, `jq`, `ffmpeg` e `resvg`.
+1080x1920, para os Reels do Instagram. Cinco seats trabalham como uma equipe de cinema, num só pod,
+o `crew` (veja "A equipe"). O diretor criativo escreve o roteiro. O produtor-editor o aprova e monta
+o reel. O artista 3D faz os planos 3D, o diretor musical faz o som e o QA confere o arquivo. Os seats
+usam um só kit, o `reel`, feito de shell POSIX, `jq`, `ffmpeg` e `resvg`. Os planos 3D precisam do
+Blender, que é uma segunda opção e está desligada (veja "Cenas 3D com o Blender").
 
-A rig é só uma definição. A opção está desligada, ninguém inicia a rig, e o dono decide quando
+A rig é só uma definição. As opções estão desligadas, ninguém inicia a rig, e o dono decide quando
 testar.
 
 ## As restrições do dono
@@ -109,100 +112,148 @@ roteiro mudou:
 
 ```console
 $ reel render demo
-reel: screenplay.json of demo changed after its approval, or the approval is not in the form of reel approve (now 6ec284fe): the writer fixes it, then lint and approve again
+reel: screenplay.json of demo changed after its approval, or the approval is not in the form of reel approve (now 6ec284fe): the creative director fixes it, then lint and approve again
 ```
 
 Isso rodou em 2026-11-05: um título alterado fez `render` e `publish` pararem com essa linha. Um
 roteiro de 31 s, um gancho que termina em 4 s e uma linha de 46 caracteres falharam no `reel lint`,
 cada um com uma linha `ERROR` para a regra quebrada.
 
-Só o writer edita o `screenplay.json`. O script editor aprova depois de uma revisão. O dono também
-pode aprovar. O Hermes nunca aprova.
+Só o diretor criativo edita o `screenplay.json`. O produtor-editor aprova depois de uma revisão. O
+dono também pode aprovar. O Hermes nunca aprova.
 
-## Os seats
+## A equipe
 
-|Pod|Seat|Lê|Escreve|
-|---|---|---|---|
-|`story`|`story-writer@reels-fabric`|O brief do dono, os exemplos do kit|`brief.md`, `screenplay.json`|
-|`story`|`story-script-editor@reels-fabric`|`brief.md`, `screenplay.json`, `reel lint`, `reel screenplay-view`, `reel timing-report`|`review/screenplay.review.md`, e `screenplay.approved` pelo `reel approve`|
-|`studio`|`studio-director@reels-fabric`|O roteiro aprovado|`direction/shotlist.json`, `direction/svg/`, `direction/storyboard/<beat>.png`|
-|`studio`|`studio-maker@reels-fabric`|O roteiro e a shotlist|`build/`, `out/<slug>/reel.mp4` (pelo `reel render`), `review/build.md`|
-|`studio`|`studio-qa@reels-fabric`|`reel.mp4`, `qa.json`, os quadros, o roteiro|`out/<slug>/qa.json` e `qa/` (pelo `reel qa`), `review/qa.md`, a outbox (pelo `reel publish`)|
+Os seats seguem os créditos de uma equipe de cinema. O dono deu a lista em 2026-11-08: produtor e
+editor, diretor criativo, artista 3D, diretor musical e produtor executivo. A ideia vem de uma demo
+pública do autor do OpenRig: um videoclipe feito por uma rig de agentes, em que um seat é o produtor,
+o editor e o diretor musical, e o humano é o "produtor executivo", que só dá gosto e julgamento. O
+dono deu a descrição; ninguém aqui assistiu à demo. Os nomes dos seats são nossos.
+
+**Produtor executivo: o dono (um humano).** Ele não é um seat. Ele decide o brief, o início de cada
+fase e o que acontece com o reel publicado.
+
+|Id do seat|Papel|O que faz|
+|---|---|---|
+|`creative-director`|Diretor criativo|Recebe o brief do dono. Escreve o `screenplay.json` (gancho, beats, legendas, estilo). Depois da aprovação, faz a shotlist e o storyboard (`reel shotlist`, `reel still`). É dono do visual e das palavras.|
+|`producer-editor`|Produtor e editor|Revisa o roteiro com o lint e o tempo (`reel lint`, `reel timing-report`, `reel screenplay-view`) e aprova o hash (`reel approve`). Depois monta as cenas e o corte (`reel scene`, `reel render`) e publica depois do QA (`reel publish`). É dono do cronograma e do arquivo final.|
+|`artist-3d`|Artista 3D|Faz os planos 3D que a shotlist marca como `3d`: escreve uma cena em Python do Blender para cada um, renderiza sem janela para uma sequência de PNG com o `reel blender` (Cycles, CPU) e entrega a sequência ao produtor-editor. O seat está sempre no spec da rig, e só serve quando a opção do Blender está ligada.|
+|`music-director`|Diretor musical|Faz a música procedural e a mixagem na linha do tempo (`reel music`, `reel mix`) e confere a sonoridade que o perfil pede.|
+|`qa`|Revisor|Confere o arquivo contra o roteiro (`reel qa`, `reel contact-sheet`). Um seat que fez o trabalho nunca o confere, então o QA é um seat à parte.|
+
+Se a memória deixar, a rig pode juntar o `producer-editor` e o `music-director` num só seat (a demo
+pública faz assim): um spec de agente novo com os dois papéis e um só membro no `rig.yaml`. Isso
+poupa um seat, cerca de 340 MiB. Isto não está feito aqui, e nada prova que funciona.
+
+O que cada seat lê e escreve:
+
+|Seat|Lê|Escreve|
+|---|---|---|
+|`crew-creative-director@reels-fabric`|O brief do dono, os exemplos do kit, o roteiro aprovado|`brief.md`, `screenplay.json`, `direction/shotlist.json`, `direction/svg/`, `direction/storyboard/<beat>.png`|
+|`crew-producer-editor@reels-fabric`|`brief.md`, `screenplay.json`, a shotlist, `reel lint`, `reel screenplay-view`, `reel timing-report`|`review/screenplay.review.md`, `screenplay.approved` pelo `reel approve`, `build/` e `out/<slug>/reel.mp4` pelo `reel render`, `review/build.md`, a outbox pelo `reel publish`|
+|`crew-artist-3d@reels-fabric`|O roteiro aprovado, a shotlist, o estilo|`blender/<beat>.py`, `frames/<beat>/` pelo `reel blender`, `review/3d.md`|
+|`crew-music-director@reels-fabric`|O roteiro e as indicações de `sound` dele|`build/audio/` pelo `reel music` e pelo `reel mix`, `review/sound.md`|
+|`crew-qa@reels-fabric`|`reel.mp4`, `qa.json`, os quadros, o roteiro|`out/<slug>/qa.json` e `qa/` pelo `reel qa`, `review/qa.md`|
 
 Os cinco seats rodam `omp` em `anthropic/claude-sonnet-5-5`, sem pedidos de aprovação
 (`permission_policy: builtin:yolo`, como nas outras rigs). Um membro pode rodar `runtime: claude-code`
 com uma linha (veja [`RUNTIMES.ptBR.md`](RUNTIMES.ptBR.md)). As arestas são `delegates_to` e formam
-uma cadeia: writer, script editor, director, maker, QA. Cada seat manda ao próximo o slug e um
-caminho, nunca o conteúdo. Um veredito (approve, revise, pass, fail) vem com evidência e o número da
-rodada. Depois de 3 rodadas o ciclo para e o dono decide.
+uma cadeia sem ciclo: `creative-director` para `producer-editor`, `creative-director` para
+`artist-3d`, `producer-editor` para `music-director`, `producer-editor` para `qa`. Um retorno é um
+`rig send`, não uma aresta. Cada seat manda ao próximo o slug e um caminho, nunca o conteúdo. Um
+veredito (approve, revise, pass, fail) vem com evidência e o número da rodada. Depois de 3 rodadas o
+ciclo para e o dono decide.
 
 O que um seat não faz:
 
-- O writer é o único seat que edita o roteiro. Uma mudança volta para ele.
-- O script editor escreve só o arquivo de revisão. Nunca edita o roteiro, nem um erro de digitação.
-- O director escreve só `direction/`. Uma mudança que o roteiro precisa volta para o writer.
-- O maker não pode criar um template de cena: o kit está no Nix store, só leitura. Ele reporta a
+- O diretor criativo é o único seat que edita o roteiro. Uma mudança volta para ele, e o
+  produtor-editor aprova de novo.
+- O produtor-editor escreve só os arquivos de revisão e o build. Nunca edita o roteiro, nem um erro de
+  digitação. Ele não pode criar um template de cena: o kit está no Nix store, só leitura. Ele reporta a
   lacuna com o id do beat. Não renderiza um clipe à mão com o `ffmpeg`.
-- O QA só lê. Ele não consegue ouvir: escreve a sonoridade como número e o som como "sem dados".
+- O artista 3D escreve só `blender/`, `frames/` e o arquivo de revisão dele. Ele não define o motor:
+  quem define é o `reel blender`.
+- O diretor musical escreve só `build/audio/` e o arquivo de revisão dele.
+- O QA só lê. Ele não consegue ouvir: escreve a sonoridade como número e o som como "sem dados". Ele
+  não publica.
 - Nenhum seat inicia ou para um seat, e nenhum seat tem rede.
 
 ## As fases
 
 A unit `openrig` tem `MemoryMax=2G` e `MemoryHigh=1536M`. Um seat omp usa cerca de 340 MiB e o
 daemon parado cerca de 220 MiB (`hermes/skills/hermes-omp/references/openrig-seats.md`, medido em
-2026-11-04). Um render soma um `ffmpeg` de até 540 MiB (veja "Números medidos"). Então a regra é
-**dois seats ao mesmo tempo, no máximo**, e um comando `reel` por vez. A rig tem cinco seats, por isso
-o operador os inicia em três fases. Os comandos são os do `rig.yaml`:
+2026-11-04). Um render soma um `ffmpeg` de até 540 MiB (veja "Números medidos"), e um render do
+Blender soma 536 MiB. Então a regra é **dois seats ao mesmo tempo, no máximo**, e um comando `reel`
+por vez. A rig tem cinco seats, por isso o operador os inicia em cinco fases. Os comandos são os do
+`rig.yaml`:
 
 ```console
 rig import /etc/openrig/specs/rigs/reels-fabric/rig.yaml --materialize-only   # registra cinco seats, não inicia nenhum
 
-# fase 1, story
-rig launch reels-fabric story.writer
-rig launch reels-fabric story.script-editor
-rig send story-writer@reels-fabric "<slug>, <15|30>, <o brief do dono>" --verify
-# pronto quando o `reel approve` escreveu screenplay.approved (no máximo 3 rodadas)
-rig seat stop story-writer@reels-fabric --reason "phase 1 done"
-rig seat stop story-script-editor@reels-fabric --reason "phase 1 done"
+# fase 1, história e visual
+rig launch reels-fabric crew.creative-director
+rig launch reels-fabric crew.producer-editor
+rig send crew-creative-director@reels-fabric "<slug>, <15|30>, <o brief do dono>" --verify
+# pronto quando o `reel approve` escreveu screenplay.approved (no máximo 3 rodadas); os dois seats ficam de pé
 
-# fase 2, studio
-rig launch reels-fabric studio.director
-rig launch reels-fabric studio.maker
-rig send studio-director@reels-fabric "<slug>, <caminho do projeto>, direct it" --verify
-# pronto quando a shotlist e o storyboard existem e out/<slug>/reel.mp4 existe; então pare o director
+# fase 2, imagem: os mesmos dois seats
+# o diretor criativo faz a shotlist e o storyboard; o produtor-editor monta os clipes das cenas
+# pronto quando a shotlist e o storyboard existem e todo beat plano tem o clipe dele; então:
+rig seat stop crew-creative-director@reels-fabric --reason "phase 2 done"
 
-# fase 3, qa
-rig launch reels-fabric studio.qa          # o maker ainda está de pé: dois seats
-rig send studio-qa@reels-fabric "<slug>, <caminho do out>, check it" --verify
+# fase 3, planos 3D (pule se a shotlist não tem plano 3d, ou se a opção do Blender está desligada)
+rig launch reels-fabric crew.artist-3d
+rig send crew-artist-3d@reels-fabric "<slug>, <caminho do projeto>, the 3d shots" --verify
+# pronto quando cada plano 3d tem a sequência de PNG dele; então:
+rig seat stop crew-artist-3d@reels-fabric --reason "phase 3 done"
+
+# fase 4, som
+rig launch reels-fabric crew.music-director
+rig send crew-music-director@reels-fabric "<slug>, <caminho do projeto>, make the sound" --verify
+# pronto quando a mixagem existe e o `reel render` do produtor-editor fez o corte com o áudio; então:
+rig seat stop crew-music-director@reels-fabric --reason "phase 4 done"
+
+# fase 5, conferir e publicar
+rig launch reels-fabric crew.qa          # o produtor-editor ainda está de pé: dois seats
+rig send crew-qa@reels-fabric "<slug>, <caminho do out>, check it" --verify
 # pronto quando o `reel publish` rodou; então pare os dois
 ```
 
+O produtor-editor não deve rodar `reel render` nem `reel scene` enquanto um render do `reel blender`
+roda: a unit tem 2 GiB. Na fase 2 o produtor-editor faz o clipe de cada beat plano com `reel scene`;
+o clipe de um beat 3d espera os quadros dele. O `reel render` faz o som sozinho, então o corte com o
+áudio e os clipes dos beats 3d vêm na fase 4, depois da mixagem.
+
 O `rig launch` inicia um seat que nunca rodou. O `rig seat launch <seat> --fresh --reason "<motivo>"`
 inicia uma conversa em branco num seat que já rodou. Um seat sem ninguém para quem mandar termina com
-uma resposta final, e o operador inicia o próximo seat. Uma falha do QA vai para um seat que já está
-parado: inicie-o no lugar do director ou do maker, para que rodem dois seats. Rode o `kvm4-health`
-antes de cada fase e o `rig snapshot reels-fabric` antes de parar. Uma rig guarda o spec com que foi
-feita: depois de mudar o spec, rode `rig archive reels-fabric` e importe de novo. Não rode junto com
-outra rig.
+uma resposta final, e o operador inicia o próximo seat. Uma falha do QA volta para o produtor-editor,
+que ainda está de pé e manda cada falha ao seat dela. Uma falha para um seat que já está parado (o
+diretor criativo, o artista 3D ou o diretor musical): inicie-o no lugar de um seat que não é mais
+preciso, para que rodem dois seats. Rode o `kvm4-health` antes de cada fase e o
+`rig snapshot reels-fabric` antes de parar. Uma rig guarda o spec com que foi feita: depois de mudar
+o spec, rode `rig archive reels-fabric` e importe de novo. Não rode junto com outra rig.
 
-O dono decide o brief, o início da fase 2 e o que fazer com o reel publicado. O dono pode ler o
-`reel screenplay-view <slug>` antes da fase 2. Nada aqui publica no Instagram.
+O dono, o produtor executivo, decide o brief, o início de cada fase e o que fazer com o reel
+publicado. Ele pode ler o `reel screenplay-view <slug>` antes da fase 2. Nada aqui publica no
+Instagram.
 
 ## As pastas do projeto
 
 `REELS_HOME` é `/var/lib/openrig/work/reels-fabric`. A opção cria estas pastas (`StateDirectory` da
-unit, modo 0700, dono `openrig`): uma para cada seat (`writer`, `script-editor`, `director`, `maker`,
-`qa`), `projects` e `out`.
+unit, modo 0700, dono `openrig`): uma para cada seat (`creative-director`, `producer-editor`,
+`artist-3d`, `music-director`, `qa`), `projects` e `out`.
 
 ```text
 $REELS_HOME/
   projects/<slug>/
-    brief.md                      writer
-    screenplay.json               writer, a fonte única
+    brief.md                      diretor criativo
+    screenplay.json               diretor criativo, a fonte única
     screenplay.approved           reel approve: SHA-256 do screenplay.json
-    review/                       screenplay.review.md, build.md, qa.md
-    direction/                    shotlist.json, storyboard/<beat>.png, svg/
-    build/                        o reel escreve: scenes/, audio/, layers/, cache/
+    review/                       screenplay.review.md, build.md (produtor-editor), sound.md, 3d.md, qa.md
+    direction/                    shotlist.json, storyboard/<beat>.png, svg/ (diretor criativo)
+    blender/<beat>.py             artist-3d: uma cena do Blender para cada plano 3d
+    frames/<beat>/%04d.png        o reel blender escreve: a sequência de PNG de um plano 3d
+    build/                        o reel escreve: scenes/, audio/, layers/, cache/, blender-home/
   out/<slug>/
     reel.mp4  render.json  qa.json
     qa/                           hook.png, <beat>.png, <beat>-start.png, contact-sheet.png
@@ -228,9 +279,10 @@ Estes se recusam a rodar sem uma aprovação válida:
 
 |Comando|Faz|
 |---|---|
-|`reel shotlist <slug> [--force]`|A `direction/shotlist.json` padrão, um plano para cada beat, para o director refinar|
+|`reel shotlist <slug> [--force]`|A `direction/shotlist.json` padrão, um plano para cada beat, para o diretor criativo refinar|
 |`reel still <slug> <beat> [--at <s>] [-o <arquivo>]`|Um quadro de um beat. O arquivo padrão é `direction/storyboard/<beat>.png`.|
-|`reel scene <slug> <beat>`|O clipe de um beat, em `build/scenes/`|
+|`reel blender <slug> <beat>`|Renderiza um plano do tipo `3d` a partir de `blender/<beat>.py` para `frames/<beat>/%04d.png` (Cycles, CPU). Precisa do binário `blender` no PATH. Veja "Cenas 3D com o Blender".|
+|`reel scene <slug> <beat>`|O clipe de um beat, em `build/scenes/`. Um beat `3d` usa a sequência de PNG como imagem.|
 |`reel music <slug>`|A cama de música procedural, `build/audio/music.wav`|
 |`reel mix <slug>`|Música e efeitos, normalizados, `build/audio/mix.wav`|
 |`reel render <slug>`|O som, os clipes e a montagem: `out/<slug>/reel.mp4` e `render.json`. Precisa da shotlist.|
@@ -247,14 +299,15 @@ cada beat, se a imagem está dentro da área segura e tem contraste. Faz isso co
 O QA lê o arquivo, nunca a shotlist.
 
 Uma sessão de exemplo, com o roteiro de exemplo (rodou em 2026-11-05, do pacote buildado, num
-ambiente vazio):
+ambiente vazio). Uma palavra mudou depois da execução: o nome depois de `--by` era `script-editor`, o
+seat que o produtor-editor substitui.
 
 ```console
 $ reel new demo 30 --example
 $ reel lint demo
 lint: 0 error(s), 0 warning(s)
 lint: PASS
-$ reel approve demo --by script-editor
+$ reel approve demo --by producer-editor
 approved: demo (sha256 d7fee787e42ed72cc2c694a8ca830ae3909675a1c6cb5c73681931e97a0273e3)
 $ reel shotlist demo
 $ reel render demo
@@ -269,11 +322,13 @@ published: $REELS_OUTBOX/demo (5520735 bytes)
 ```
 
 As variáveis que o kit lê: `REELS_HOME`, `REELS_OUTBOX`, `REELS_SHARE` (os dados dele: o perfil, os
-estilos, os exemplos e as fontes) e `REELS_FONTS`. A rig define as duas primeiras no `env:`.
-`REELS_HOME`, `REELS_SHARE`, `REELS_FONTS` e `TMPDIR` só podem ter letras, dígitos e `/ . _ -`: os
-caminhos chegam a filtros do `ffmpeg` e a arquivos de legenda. Cada `ffmpeg` para após 300 s e cada
-`resvg` após 60 s (`limits` no perfil), com uma linha clara, para que um processo travado não prenda
-um seat.
+estilos, os exemplos e as fontes), `REELS_FONTS` e, para o `reel blender`, `REELS_BLENDER` (o caminho
+do binário `blender`; o wrapper do pacote o define a partir do PATH de quem chama, e fica vazio se não
+houver). A rig define as duas primeiras no `env:`. `REELS_HOME`, `REELS_SHARE`, `REELS_FONTS` e
+`TMPDIR` só podem ter letras, dígitos e `/ . _ -`: os caminhos chegam a filtros do `ffmpeg` e a
+arquivos de legenda. Cada `ffmpeg` para após 300 s e cada `resvg` após 60 s, e uma execução do
+`blender` após 3600 s (`limits` no perfil), com uma linha clara, para que um processo travado não
+prenda um seat.
 
 ## O que faz e o que não faz
 
@@ -298,6 +353,89 @@ Não faz:
 O visual e o som são a pergunta em aberto desta rig. O passo depois de um primeiro teste é ler o que o
 dono acha deles.
 
+## Cenas 3D com o Blender
+
+O dono decidiu em 2026-11-08 usar o Blender para o artista 3D. O `AGENTS.md` diz sem GUI e sem
+bibliotecas de desktop; o dono abre uma exceção para isto, como fez para o Node 24 e para dois
+arquivos de fonte. O Blender é software livre (GPL-2.0-or-later, `meta.unfree` é false no nixpkgs),
+então `unfree.nix` e `allowUnfree` não mudam. Ele roda sem janela e sem display.
+
+**A opção.** `piabrota.openrig.reels.blender.enable`, desligada por padrão. Ela adiciona o
+`pkgs.blender` ao perfil do usuário `openrig` e ao `path` da unit, e mais nada. Com a opção desligada,
+a rig de reels funciona como antes (sem planos 3D) e o fecho não cresce. A opção precisa de
+`piabrota.openrig.reels.enable`: com o Blender ligado e a rig de reels desligada, o build para com uma
+assertion. O pacote é o `pkgs.blender` do nixpkgs fixado, sem override.
+
+**Um plano 3D.** O diretor criativo marca um plano em `direction/shotlist.json`:
+`"kind": "3d", "frames": "frames/b03"`. O id do plano é o id do beat. `kind` é `flat` (o padrão) ou
+`3d`. `frames` é obrigatório para `3d`, deve ser `frames/<beat>` e é recusado num plano `flat`. O
+`reel lint` confere os dois e avisa quando o beat tem mais quadros que `blender.max_frames` em
+`blender.fps` (o último quadro é mantido). O roteiro em si não muda: a cena, o texto e o som do beat
+ficam como foram escritos.
+
+**`reel blender <slug> <beat>`.** O artista 3D escreve `blender/<beat>.py`, uma cena em Python do
+Blender (um exemplo é `reels/examples/blender/spin.py`: um cubo que gira, 24 quadros). O comando:
+
+- se recusa a rodar sem o roteiro aprovado e sem um plano do tipo `3d`, como toda etapa.
+- precisa do binário `blender` no PATH. Sem ele, para com uma linha clara e código de saída 1.
+- roda `blender -b --factory-startup --threads 2 --python-exit-code 1`, com `HOME`,
+  `XDG_CONFIG_HOME` e `XDG_CACHE_HOME` em `build/blender-home/` do projeto, nunca na home de verdade.
+  Ele roda primeiro o arquivo da cena e depois um driver do kit, para que o driver tenha a última
+  palavra.
+- o driver define o motor como `CYCLES`, o dispositivo como `CPU`, as amostras (`blender.samples`, 16),
+  o denoiser desligado, o tamanho (1080x1920, do perfil), a taxa de quadros (`blender.fps`, 24) e a
+  saída. Um arquivo de cena que define outro motor é sobrescrito depois do carregamento. O kit nunca
+  escolhe o EEVEE.
+- lê antes o intervalo de quadros da cena, numa execução curta, e recusa uma cena com mais quadros que
+  `blender.max_frames` (240) antes de gastar minutos. Ele avisa e sai com 1.
+- renderiza em `frames/<beat>.part/` e move para `frames/<beat>/` (`0001.png`, `0002.png`, ...) só
+  quando a contagem está certa, então uma execução com falha deixa os quadros antigos como estavam.
+
+O `reel scene` e o `reel render` usam a sequência como imagem do beat, no lugar do fundo plano: os
+quadros passam de `blender.fps` para 30 fps e são ajustados a 1080x1920, o último quadro é mantido se
+o beat for mais longo, e as legendas e as camadas SVG ficam por cima como em qualquer beat. Um beat 3d
+sem quadros não tem clipe (um still volta para o fundo plano, com um aviso). Um clipe só é mantido
+enquanto os quadros dele são os mesmos arquivos.
+
+**Os limites.**
+
+- **O EEVEE não funciona aqui.** O `blender -b` com `BLENDER_EEVEE` morreu com erros de EGL e uma falha
+  de segmentação: a máquina não tem GPU nem display. O Workbench não foi testado. Então o kit usa o
+  Cycles na CPU e nada mais.
+- **O denoiser está desligado.** Com ele ligado, um quadro de 1080x1920 chegou a 2174 MiB de pico, e a
+  unit tem 2 GiB para todos os seats. Desligado, o pico é 536 MiB. Os quadros ficam com ruído a 16
+  amostras: mantenha a cena simples, com materiais lisos e poucas luzes.
+- **Memória.** O produtor-editor não deve rodar `reel render` nem `reel scene` enquanto um render do
+  `reel blender` roda. No máximo dois seats rodam (o artista 3D e o produtor-editor), e um comando
+  `reel` por vez.
+- **Tempo.** Uma cena deve ficar simples, e o número de quadros tem orçamento: `blender.max_frames`
+  (240, ou seja, 10 s a 24 fps) e `blender.fps` em `reels/profile.json`.
+
+**Os números.** *Medidos* na `piabrota2` pelo agente do dono em 2026-11-08, com o Blender 5.2.2 (rev
+do nixpkgs `02c087f3fe673c9e317f206a627cb6b910336dbe`): o fecho do sistema com o Blender tem 4940 MiB
+no total, e cerca de 3,0 GiB (863 MiB para baixar) era novo na máquina. Um quadro de 1080x1920, 16
+amostras, 2 threads, Cycles na CPU, uma cena simples: 7,4 s e 527 MiB de pico de memória. *Medidos*
+aqui em 2026-11-08 com o mesmo Blender 5.2.2, a cena de exemplo, 2 threads: 16 amostras, denoiser
+desligado, 8,3 s e 536 MiB por quadro; 32 amostras, denoiser desligado, 15,5 s e 536 MiB; 32 amostras,
+denoiser ligado, 24,7 s e 2174 MiB. Um quadro PNG tem cerca de 1,2 MB, então 240 quadros ocupam cerca
+de 290 MB. *Medido*, uma execução em seco do build com o Blender 5.1.1 (veja abaixo): 81 caminhos do
+store, 693,5 MiB para baixar, 2,7 GiB descompactados. *Extrapolados*, não medidos: 450 quadros (15 s a
+30 fps) ao mesmo custo levariam cerca de 55 minutos, e 240 quadros a 8,3 s cerca de 33 minutos. Por
+isso uma cena fica simples e o kit tem um orçamento de quadros.
+
+**A versão.** O input `nixpkgs` deste repositório (o que os hosts usam, rev `9bb52223`) tem o Blender
+5.1.1. O Blender 5.2.2 está no nixpkgs que o input `hermes-agent` fixa (rev `02c087f3`), que é o que o
+agente do dono mediu. Os números acima são do 5.2.2. As execuções reais do Blender desta página foram
+com o 5.2.2 do store; o 5.1.1 não rodou. Rode o primeiro plano 3D na máquina e confira os números de
+novo.
+
+**Ligar e desligar.** Ligar: ponha `piabrota.openrig.reels.blender.enable = true;` ao lado de
+`piabrota.openrig.reels.enable = true;` em `hosts/piabrota2/default.nix`, abra um pull request e faça o
+merge. O deploy baixa cerca de 700 MiB e descompacta cerca de 2,7 GiB. Desligar: tire a linha. O
+próximo deploy tira o Blender do perfil, e a coleta de lixo o remove depois. `frames/` e `blender/`
+ficam nos projetos. Com a opção desligada, o `reel blender` para com "blender is not in the PATH", e o
+seat artist-3d não tem o que fazer: pule a fase 3.
+
 ## Números medidos
 
 Medidos nesta máquina (`piabrota2`) em 2026-11-05, com o pacote buildado, um ambiente vazio, os
@@ -321,8 +459,8 @@ entre as execuções). A tabela traz a última de cada uma.
 O arquivo: H.264 High, `yuv420p`, 1080x1920, 30 fps, 900 quadros em 30,000 s, AAC 48000 Hz estéreo,
 cerca de 1,5 Mbit/s, o `qa` passa. A soma: o daemon (cerca de 220 MiB) com dois seats (cerca de
 340 MiB cada) e um render (540 MiB) dá cerca de 1,4 GiB, logo abaixo do `MemoryHigh=1536M` e acima
-dele se um seat crescer. Por isso o maker e o QA rodam um comando `reel` por vez, e nada mais roda
-durante um render.
+dele se um seat crescer. Por isso o produtor-editor e o QA rodam um comando `reel` por vez, e nada mais
+roda durante um render.
 
 O tamanho do kit: o `reel` sozinho tem 332 MiB com o fecho dele (`nix path-info -S`); 199 MiB disso,
 em 64 caminhos do store, não estão no fecho do sistema em execução (comparado com
@@ -379,7 +517,10 @@ O merge faz o deploy. A opção adiciona:
   e as duas opções podem estar ligadas.
 
 Com a opção desligada, os specs ficam em `/etc/openrig/specs` só como definição e mais nada muda. O
-deploy reinicia o `openrig` e encerra os seats (veja [`OPENRIG.md`](OPENRIG.md)).
+deploy reinicia o `openrig` e encerra os seats (veja [`OPENRIG.md`](OPENRIG.md)). O Blender é uma
+segunda opção, `piabrota.openrig.reels.blender.enable`, desligada: veja "Cenas 3D com o Blender". Com
+ela desligada, o fecho dos dois hosts é o mesmo de antes de ela existir (o `nix build --dry-run` lista
+as mesmas derivações).
 
 Para buildar o kit sem a opção:
 
@@ -392,7 +533,7 @@ nix build --impure --expr '(builtins.getFlake "path:'$PWD'").nixosConfigurations
 1. Ligue a opção e faça o deploy. Rode `rig status` e `kvm4-health`.
 2. Como dono, rode o import de "As fases", uma vez.
 3. Rode a fase 1 com um brief curto: um fato, uma fonte, 15 s. Leia `reel screenplay-view <slug>`.
-4. Rode a fase 2 e a fase 3 como escrito.
+4. Rode as fases 2, 4 e 5 como escrito. Rode a fase 3 só se a opção do Blender estiver ligada e a shotlist tiver um plano 3d.
 5. Abra `reel.mp4` e `qa/contact-sheet.png`. Ouça o som. Diga o que está errado.
 
 Para testar o kit sem uma rig, rode `reel new demo 15 --example` e a sessão acima com `REELS_HOME` e
@@ -402,12 +543,13 @@ Para testar o kit sem uma rig, rode `reel new demo 15 --example` e a sessão aci
 
 - **Memória.** Um render passa de 450 MiB por um tempo curto. Com dois seats e o daemon, sobra pouco
   espaço abaixo do `MemoryHigh`. O kernel desacelera a unit, não a mata, mas um render com um terceiro
-  processo pode chegar ao `MemoryMax`. O `OOMPolicy=continue` leva um processo.
+  processo pode chegar ao `MemoryMax`. O `OOMPolicy=continue` leva um processo. Um render do Blender
+  soma 536 MiB (com o denoiser desligado): veja "Cenas 3D com o Blender".
 - **CPU.** Um render de 30 s levou de 105 a 120 s, com `nice -n 10` e uma thread de vídeo na
   codificação final. Ele desacelera um pouco as outras units. Não roda em horário agendado.
 - **Um seat não é um verificador.** O lint mede o que consegue. Uma afirmação é "sourced" porque uma
-  pessoa escreveu uma fonte no brief; o script editor não consegue abrir um link. As fontes precisam de
-  um humano.
+  pessoa escreveu uma fonte no brief; o produtor-editor não consegue abrir um link. As fontes precisam
+  de um humano.
 - **Rodam sem pedidos de aprovação.** Como nas outras rigs: as regras de bloqueio do `hermes/omp.yml`
   são a guarda.
 - **Uma palavra do roteiro pode não caber.** Palavras longas ou outros idiomas podem ficar mais largas
@@ -416,8 +558,12 @@ Para testar o kit sem uma rig, rode `reel new demo 15 --example` e a sessão aci
 ## O que não está provado
 
 - Uma execução real da rig: nenhum seat fez uma tarefa desta rig. A guidance dos seats, as mensagens
-  entre eles e as três fases vêm dos specs, não de uma execução.
-- Que o OpenRig aceita o spec (`rig spec validate` não rodou aqui: não há `rig` nesta worktree).
+  entre eles e as cinco fases vêm dos specs, não de uma execução.
+- Que o OpenRig inicia a rig. O `rig spec validate` (a rig) e o `rig agent validate` (os seis specs de
+  agente) passaram aqui em 2026-11-08, sem daemon. O `rig spec preflight` não resolveu os caminhos
+  `agent_ref` aqui, e falha do mesmo jeito na `wave-forecaster-dev`, então não prova nada.
+- Um render do `reel blender` com o Blender 5.1.1, a versão que o nixpkgs fixado tem, e um render
+  dentro da unit `openrig` (as execuções de teste foram do usuário `hermes`, com o 5.2.2).
 - A aceitação do arquivo pelo Instagram, e como o app o mostra.
 - O visual aos olhos do dono, e o som por inteiro: ninguém o ouviu.
 - A leitura da outbox pelo Hermes sob o sandbox do `hermes-agent`, como na rig das ondas.
@@ -433,5 +579,7 @@ Para testar o kit sem uma rig, rode `reel new demo 15 --example` e a sessão aci
 - [Fjalla One](https://fonts.google.com/specimen/Fjalla+One), de Sorkin Type (SIL OFL 1.1: o arquivo
   está na pasta `ofl/` do [google/fonts](https://github.com/google/fonts) e a tabela de nomes dele cita
   a licença), no commit que o `google-fonts` do nixpkgs fixa.
+- [Blender](https://www.blender.org) (GPL-2.0-or-later), sem janela, atrás de uma opção própria, para
+  as cenas 3D.
 - [OpenRig](https://github.com/mvschwarz/openrig), de mvschwarz (Apache-2.0), e o próprio kit,
   MPL-2.0, como o resto deste repositório.

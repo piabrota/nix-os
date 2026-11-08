@@ -6,7 +6,8 @@
 # Tools: ffmpeg-headless (it has libx264, libass and fontconfig, which the captions need; the full
 # ffmpeg adds a display stack for nothing), resvg (one small Rust binary, no fontconfig of its own;
 # ImageMagick would pull more), jq, GNU coreutils (timeout and nice for every ffmpeg) and `time` (the
-# peak memory in render.json).
+# peak memory in render.json). Blender is not here: it is optional, and the wrapper only passes on the
+# `blender` that the caller has in its PATH (docs/REELS.md, "3D shots with Blender").
 #
 # Fonts: the owner's exception to "no fonts" (AGENTS.md), two files and no collection: Inter
 # (variable, from nixpkgs) for text and Fjalla One for titles, the two faces of site/DESIGN.md. Both
@@ -64,7 +65,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     install -m 0755 reel $out/bin/reel
     install -m 0444 ${inter}/share/fonts/truetype/InterVariable.ttf $share/fonts/InterVariable.ttf
     install -m 0444 ${fjallaOne} $share/fonts/FjallaOne-Regular.ttf
+    # The wrapper replaces PATH with the toolkit's tools. `reel blender` needs the caller's blender
+    # (piabrota.openrig.reels.blender.enable): its path goes in REELS_BLENDER, empty when there is none.
     wrapProgram $out/bin/reel \
+      --run 'REELS_BLENDER=$(command -v blender 2>/dev/null || :); export REELS_BLENDER' \
       --set REELS_SHARE $share \
       --set PATH ${toolPath}
     runHook postInstall
@@ -85,6 +89,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       export REELS_SHARE=$pkg/share/reels
       export REELS_TOOLPATH=${toolPath}
       export REELS_FONTS=$pkg/share/reels/fonts
+      export REELS_SPECS=${../openrig/specs}
+      export REELS_OPENRIG_NIX=${../openrig.nix}
       export TMPDIR=$(mktemp -d)
       sh ${./test/run.sh} | tee $out
     '';

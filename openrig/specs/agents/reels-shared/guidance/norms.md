@@ -1,19 +1,32 @@
 # Rules of every reels-fabric seat
 
 These rules add to the rules of every piabrota seat. They apply to one reel of 15 s or 30 s
-(1080x1920) that five seats make. The words on screen are in the screenplay's `language`. Your
-files and messages are in English.
+(1080x1920) that a film crew of five seats makes. The words on screen are in the screenplay's
+`language`. Your files and messages are in English.
+
+## The crew
+
+Like the credits of a film. The executive producer is the owner (a human, never a seat): he gives
+the brief, starts each phase and decides what happens to the published reel.
+
+- `creative-director`: the look and the words. Writes the screenplay, the shotlist and the stills.
+- `producer-editor`: the schedule and the final file. Approves the screenplay, builds the scenes
+  and the cut, publishes after QA.
+- `artist-3d`: the 3D shots, with Blender (only when `command -v blender` prints a path).
+- `music-director`: the music and the mix.
+- `qa`: checks the file. A seat that made the work never checks it.
 
 ## One source: the screenplay
 
 - `screenplay.json` (schema `reels.screenplay/1`) is the only source. Every other file comes from it
   and cites beat ids (`b01`, `b02`, ...).
-- Only the writer edits it. A change goes back to the writer, through the script editor.
+- Only the creative director edits it. A change goes back to the creative director, through the
+  producer-editor, who approves it again.
 - `reel approve` writes `screenplay.approved`, the SHA-256 of the file. An edit after that voids it,
   and `reel` refuses every stage after the screenplay. Never write that file by hand.
-- Studio seats (director, maker, qa): your first `reel` command checks the approval. If `reel` says
-  "not approved" or "changed after its approval", stop and report that line to the operator. Do not
-  look for a way round it.
+- Every seat but the creative director: your first `reel` command that makes a file checks the
+  approval. If `reel` says "not approved" or "changed after its approval", stop and report that line
+  to the operator. Do not look for a way round it.
 
 ## Files
 
@@ -21,9 +34,10 @@ files and messages are in English.
 Write only your own files. `<project>` is `$REELS_HOME/projects/<slug>`, `<out>` is
 `$REELS_HOME/out/<slug>`.
 
-- `<project>/`: `brief.md`, `screenplay.json` (writer); `review/screenplay.review.md` (script editor),
-  `review/build.md` (maker), `review/qa.md` (qa); `direction/` (director: `shotlist.json`,
-  `storyboard/<beat>.png`, `svg/`); `build/` (`reel` writes it).
+- `<project>/`: `brief.md`, `screenplay.json`, `direction/` (`shotlist.json`, `storyboard/<beat>.png`,
+  `svg/`) (creative director); `review/screenplay.review.md`, `review/build.md` (producer-editor);
+  `review/sound.md` (music director); `review/3d.md`, `blender/<beat>.py` (artist-3d); `review/qa.md`
+  (qa); `build/` and `frames/<beat>/` (`reel` writes them).
 - `<out>/`: `reel.mp4`, `render.json`, `qa.json`, `qa/` (`reel` writes them).
 - `$REELS_OUTBOX/<slug>/`: only `reel publish` writes it.
 
@@ -44,14 +58,14 @@ A slug has lowercase letters, digits and `-`, and at most 41 characters.
 ## Handoff
 
 - Send the next seat the slug and the path, never the content:
-  `rig send studio-director@reels-fabric "<slug>, <project>, <what to do>" --verify`.
-  Seats: story-writer, story-script-editor, studio-director, studio-maker, studio-qa
-  (each `@reels-fabric`).
+  `rig send crew-producer-editor@reels-fabric "<slug>, <project>, <what to do>" --verify`.
+  Seats: crew-creative-director, crew-producer-editor, crew-artist-3d, crew-music-director,
+  crew-qa (each `@reels-fabric`).
 - A seat with no task waits: end your turn and wait for a message. Do not poll.
 - If the next seat is not running, `rig send` fails. End with a final answer that names the slug, the
   path and the next seat. The operator starts it and sends it the task.
 - Never launch, stop or restart a seat. At most two seats run at the same time (the unit has 2 GiB).
-  Run one `reel` command at a time.
+  Run one `reel` command at a time. Run no `reel render` while a `reel blender` render runs.
 
 ## Verdicts and rounds
 
@@ -59,5 +73,5 @@ A slug has lowercase letters, digits and `-`, and at most 41 characters.
   are, and what you did not check.
 - A revise or fail loop runs at most 3 rounds for each stage. Write `Round: n` in the review file.
   After round 3, stop, list what is open and tell the operator. The owner decides.
-- The owner decides, through the operator: the brief, the start of the studio phase after the
-  approval, and what to do with the published reel. Nothing here posts to Instagram.
+- The executive producer (the owner) decides, through the operator: the brief, the start of each
+  phase and what to do with the published reel. Nothing here posts to Instagram.

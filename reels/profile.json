@@ -143,9 +143,16 @@
     "riser",
     "pop"
   ],
+  "blender": {
+    "max_frames": 240,
+    "fps": 24,
+    "samples": 16,
+    "threads": 2
+  },
   "limits": {
     "ffmpeg_timeout_s": 300,
-    "resvg_timeout_s": 60
+    "resvg_timeout_s": 60,
+    "blender_timeout_s": 3600
   },
   "sfx_per_beat": 6
 }

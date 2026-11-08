@@ -1,7 +1,7 @@
-# The script-editor seat of reels-fabric: reviews the screenplay against the brief and the lint, approves its hash, edits nothing.
-name: reels-script-editor
+# The music-director seat of reels-fabric: the sound of the reel, made with reel music and reel mix.
+name: reels-music-director
 version: "1.0"
-description: Reviews one screenplay against its brief and approves its hash
+description: Makes the music and the mix of one reel to its timeline
 
 defaults:
   runtime: omp
@@ -13,7 +13,7 @@ imports:
 
 profiles:
   default:
-    summary: Reads the screenplay, writes the review and approves the hash on a pass
+    summary: Makes the procedural music and the mix, and checks the loudness
     uses:
       skills: []
       # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role

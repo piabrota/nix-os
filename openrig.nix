@@ -83,12 +83,12 @@ let
   thFolders = [ "openrig/work/wave-forecaster-thesis" "openrig/work/wave-forecaster-thesis/projects" "openrig/work/wave-forecaster-thesis/out" ]
     ++ map (seat: "openrig/work/wave-forecaster-thesis/${seat}") [ "editor" "writer-a" "writer-b" "writer-c" "librarian" "reviewer" ];
 
-  # The rig reels-fabric (openrig/specs/rigs/reels-fabric, reels/): five seats that make 15 s and
-  # 30 s reels from code only, with the toolkit `reel`. docs/REELS.md. A folder per seat, the shared
-  # projects, the renders, and an outbox under the same parent as the wave rig's.
+  # The rig reels-fabric (openrig/specs/rigs/reels-fabric, reels/): a film crew of five seats that make
+  # 15 s and 30 s reels from code only, with the toolkit `reel`. docs/REELS.md. A folder per seat, the
+  # shared projects, the renders, and an outbox under the same parent as the wave rig's.
   rf = cfg.reels;
   reelsFolders = [ "openrig/work/reels-fabric" ]
-    ++ map (d: "openrig/work/reels-fabric/${d}") [ "writer" "script-editor" "director" "maker" "qa" "projects" "out" ];
+    ++ map (d: "openrig/work/reels-fabric/${d}") [ "creative-director" "producer-editor" "artist-3d" "music-director" "qa" "projects" "out" ];
 
   # git credential helper of the seats: the read-only token of the repository, from the path git
   # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
@@ -239,8 +239,9 @@ let
   claudeTools = [ seatClaude ];
   thTools = [ thesisPkg ];
   # What a reels seat runs: the toolkit (it carries its own ffmpeg-headless, resvg and two fonts) and
-  # the same ffmpeg and jq for what a seat scripts itself.
-  reelsTools = [ (pkgs.callPackage ./reels { }) pkgs.ffmpeg-headless pkgs.jq ];
+  # the same ffmpeg and jq for what a seat scripts itself. Blender, headless, for the artist-3d seat:
+  # the owner's exception to no GUI (2026-11-08), behind its own option and only that package.
+  reelsTools = [ (pkgs.callPackage ./reels { }) pkgs.ffmpeg-headless pkgs.jq ] ++ lib.optionals rf.blender.enable [ pkgs.blender ];
 in
 {
   # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
@@ -288,6 +289,10 @@ in
     reels.enable = mkEnableOption ''
       the rig reels-fabric: the toolkit `reel` (ffmpeg, jq, two font files) in the seats' profile, a
       folder per seat, the projects and renders, and the outbox for Hermes (docs/REELS.md)'';
+    reels.blender.enable = mkEnableOption ''
+      Blender (pkgs.blender, GPL-2.0-or-later) in the reels seats' profile, for the `reel blender` command
+      and the artist-3d seat: 3D shots rendered headless with Cycles on the CPU. About 3 GiB more
+      closure; a render peaks near 0.5 GiB of memory (docs/REELS.md). Needs reels.enable'';
     web = {
       enable = mkEnableOption "the web UI of OpenRig behind nginx, TLS and basic auth (docs/OPENRIG.md, \"The web UI\")";
       domain = mkOption {
@@ -310,10 +315,16 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = config.services.hermes-agent.enable;
-      message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
-    }];
+    assertions = [
+      {
+        assertion = config.services.hermes-agent.enable;
+        message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
+      }
+      {
+        assertion = rf.blender.enable -> rf.enable;
+        message = "piabrota.openrig.reels.blender.enable needs piabrota.openrig.reels.enable: Blender is for the artist-3d seat of the reels-fabric rig.";
+      }
+    ];
 
     users.users.openrig = {
       isSystemUser = true;

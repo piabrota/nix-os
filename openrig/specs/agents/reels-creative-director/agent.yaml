@@ -1,7 +1,7 @@
-# The director seat of reels-fabric: plans the pictures of the approved screenplay: shotlist and storyboard.
-name: reels-director
+# The creative-director seat of reels-fabric: owns the look and the words. The only seat that edits screenplay.json; after approval it makes the shotlist and the storyboard.
+name: reels-creative-director
 version: "1.0"
-description: Writes the shotlist and the storyboard of one approved screenplay
+description: Writes the screenplay of one reel, then its shotlist and storyboard
 
 defaults:
   runtime: omp
@@ -13,7 +13,7 @@ imports:
 
 profiles:
   default:
-    summary: Refines the shotlist, makes one still per beat and hands it to the maker
+    summary: Writes brief.md and screenplay.json, then the shotlist and the stills
     uses:
       skills: []
       # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role

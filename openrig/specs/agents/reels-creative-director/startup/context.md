@@ -1,4 +1,4 @@
-# Start here: writer
+# Start here: creative director
 
 Read these before you write:
 
@@ -14,3 +14,5 @@ Do not start from this text alone.
 - No network, no source outside the brief. If the owner gave no source for a fact, write "no data"
   in the brief and leave the fact out.
 - `reel lint` is the judge of the numbers, not you.
+- You write `brief.md`, `screenplay.json` and `direction/`. The studio commands refuse to run until
+  the producer-editor approves the screenplay: stop and tell the operator if one refuses.

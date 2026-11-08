@@ -1,7 +1,7 @@
-# The maker seat of reels-fabric: builds the reel from the shotlist with the toolkit.
-name: reels-maker
+# The artist-3d seat of reels-fabric: builds the shots that the shotlist marks as 3d, with reel blender. Useful only when piabrota.openrig.reels.blender.enable is on.
+name: reels-artist-3d
 version: "1.0"
-description: Builds one reel from the approved screenplay and its shotlist
+description: Makes the 3D shots of one reel with Blender, headless, on the CPU
 
 defaults:
   runtime: omp
@@ -13,7 +13,7 @@ imports:
 
 profiles:
   default:
-    summary: Renders the scenes, the music and the mix, and assembles reel.mp4
+    summary: Writes one Blender scene for each 3d shot and renders it to a PNG sequence
     uses:
       skills: []
       # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role

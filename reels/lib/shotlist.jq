@@ -1,5 +1,5 @@
 # The default shotlist of a screenplay: one shot a beat, the look taken from the style.
-# The director starts from it and changes what the picture needs. Input: screenplay.json.
+# The creative director starts from it and changes what the picture needs. Input: screenplay.json.
 # Arguments: $style, $hash (sha256 of screenplay.json).
 {
   schema: "reels.shotlist/1",
@@ -8,6 +8,7 @@
   shots: [.beats[] | {
     beat: .id,
     scene: .visual.scene,
+    kind: "flat",
     params: {},
     camera: {zoom: $style.motion.bg_zoom},
     motion: {ease: ($style.motion.ease), stagger: $style.motion.stagger, enter_s: $style.motion.enter_s, pop: $style.motion.pop, blur: $style.motion.blur},

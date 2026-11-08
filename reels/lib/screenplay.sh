@@ -48,7 +48,7 @@ EOF
   fi
   mv "$stage" "$proj" || die "cannot move the project into place: $proj"
   say "new project: $proj"
-  say "next: the writer fills screenplay.json, then: reel lint $slug"
+  say "next: the creative director fills screenplay.json, then: reel lint $slug"
 }
 
 cmd_lint() {
@@ -130,7 +130,7 @@ cmd_approve() {
   say "approved: $slug (sha256 $h)"
 }
 
-# shotlist <slug> [--force]: the default shotlist, for the director to refine.
+# shotlist <slug> [--force]: the default shotlist, for the creative director to refine.
 cmd_shotlist() {
   [ $# -ge 1 ] && [ $# -le 2 ] || die "usage: reel shotlist <slug> [--force]"
   [ $# -eq 1 ] || [ "$2" = "--force" ] || die "unknown option: $2"

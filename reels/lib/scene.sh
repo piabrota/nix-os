@@ -23,9 +23,9 @@ load_project() {
   setup_fonts
 }
 
-# require_shotlist: the director's file must exist, be valid and be made for this screenplay.
+# require_shotlist: the creative director's file must exist, be valid and be made for this screenplay.
 require_shotlist() {
-  [ -f "$SHOTS" ] || die "no shotlist: the director runs reel shotlist $1, then edits direction/shotlist.json"
+  [ -f "$SHOTS" ] || die "no shotlist: the creative director runs reel shotlist $1, then edits direction/shotlist.json"
   valid_json "$SHOTS"
   _sf=$(shotlist_lint "$SP" "$SHOTS")
   if ! _so=$(print_findings "$_sf"); then
@@ -140,27 +140,61 @@ scene_render() {
     die "beat $_id: the picture leaves the safe area: box $_box, safe $(safe_rect) (x1 y1 x2 y2). Shorten the lines or lower text_layout.scale in the shotlist"
   fi
 
-  ensure_bg
+  # A 3d shot (shotlist kind "3d") takes the PNG sequence of reel blender as its picture, in place of
+  # the background and its slow zoom. The captions and the SVG layers go over it as on any beat.
+  # A still of a 3d beat before its frames exist falls back to the flat background.
+  _fdir=$PROJ/frames/$_id
+  _3d=false
+  _fsha=
+  if [ "$(printf '%s' "$SHOT" | jq -r '.kind // "flat"')" = 3d ]; then
+    _first=
+    for _p in "$_fdir"/*.png; do
+      if [ -f "$_p" ] && [ ! -L "$_p" ]; then
+        _first=$_p
+        break
+      fi
+    done
+    if [ -n "$_first" ]; then
+      _3d=true
+    else
+      case "$_out" in
+        *.png) note "beat $_id: warning: a 3d shot with no frames yet: the picture shows the flat background" ;;
+        *) die "beat $_id is a 3d shot with no frames: the artist-3d runs reel blender $(basename "$PROJ") $_id" ;;
+      esac
+    fi
+  fi
   _nf=$(printf '%s' "$TOTAL" | jq -Rr "tonumber * $FPS | round")
-  _z0=$(printf '%s' "$PLAN" | jq -r '.zoom[0]')
-  _z1=$(printf '%s' "$PLAN" | jq -r '.zoom[1]')
-  _grain=$(printf '%s' "$PLAN" | jq -r '.grain')
+  if [ "$_3d" = true ]; then
+    no_links "$_fdir" || die "beat $_id: frames/$_id has a symbolic link: reel blender writes files, not links"
+    _bfps=$(pnum .blender.fps)
+    _fsha=$(cat "$_fdir"/*.png | sha256sum | cut -d' ' -f1)
+    _bgsha=3d
+    _num=$(basename "$_first" .png)
+    _start=$(printf '%s' "$_num" | jq -Rr 'tonumber')
+    set -- -framerate "$_bfps" -start_number "$_start" -i "$_fdir/%04d.png"
+    _graph="[0:v]fps=$FPS,scale=$W:$H:force_original_aspect_ratio=increase,crop=$W:$H,setsar=1,tpad=stop_mode=clone:stop_duration=$TOTAL[b0]"
+  else
+    ensure_bg
+    _bgsha=$(sha_of "$BG")
+    _z0=$(printf '%s' "$PLAN" | jq -r '.zoom[0]')
+    _z1=$(printf '%s' "$PLAN" | jq -r '.zoom[1]')
+    _grain=$(printf '%s' "$PLAN" | jq -r '.grain')
+    set -- -framerate "$FPS" -loop 1 -t "$TOTAL" -i "$BG"
+    _graph="[0:v]zoompan=z='$_z0+($_z1-$_z0)*on/$_nf':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=$FPS"
+    # The grain is seeded from the approved screenplay, so the same screenplay gives the same pixels.
+    if [ "$_grain" != 0 ]; then _graph="$_graph,noise=alls=$_grain:allf=t:all_seed=$((0x$(printf '%.7s' "$APPROVED_HASH")))"; fi
+    _graph="${_graph}[b0]"
+  fi
   _dy0=$(printf '%s' "$PLAN" | jq -r '.diagram.y0')
   _dh=$(printf '%s' "$PLAN" | jq -r '.diagram.h')
   _dw=$(printf '%s' "$PLAN" | jq -r '.diagram.w')
-
-  set -- -framerate "$FPS" -loop 1 -t "$TOTAL" -i "$BG"
-  _graph="[0:v]zoompan=z='$_z0+($_z1-$_z0)*on/$_nf':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=$FPS"
-  # The grain is seeded from the approved screenplay, so the same screenplay gives the same pixels.
-  if [ "$_grain" != 0 ]; then _graph="$_graph,noise=alls=$_grain:allf=t:all_seed=$((0x$(printf '%.7s' "$APPROVED_HASH")))"; fi
-  _graph="${_graph}[b0]"
   _k=0
   _keyfiles=
   # The layer names were checked by the plan (direction/svg/<name>.svg, no other folder, no space),
   # so the word split below cannot meet a space or a glob character.
   for _svg in $(printf '%s' "$PLAN" | jq -r '.layers[].svg'); do
     _k=$((_k + 1))
-    plain_file "$PROJ/$_svg" || die "beat $_id: the layer $_svg is missing or is a link: the director draws it in direction/svg/"
+    plain_file "$PROJ/$_svg" || die "beat $_id: the layer $_svg is missing or is a link: the creative director draws it in direction/svg/"
     _png=$PROJ/build/layers/$_id-$_k.png
     svg_to_png -w "$_dw" -h "$_dh" "$PROJ/$_svg" "$_png" || die "resvg failed on $_svg"
     _at_k=$(printf '%s' "$PLAN" | jq -r ".layers[$((_k - 1))].at")
@@ -177,7 +211,7 @@ scene_render() {
   # new shotlist therefore renders every beat again; a clip never outlives its approval.
   # shellcheck disable=SC2086
   _key=$({
-    printf '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' "$_graph" "$PLAN" "$_nf" "$(sha_of "$BG")" "$PJ" "$APPROVED_HASH" "$SHOTS_SHA" "$FONTS"
+    printf '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' "$_graph" "$PLAN" "$_nf" "$_bgsha" "$PJ" "$APPROVED_HASH" "$SHOTS_SHA" "$FONTS" "$_fsha"
     cat "$ASS" $_keyfiles
   } | sha256sum | cut -d' ' -f1)
   case "$_out" in

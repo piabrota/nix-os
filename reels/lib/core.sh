@@ -198,7 +198,7 @@ require_approved() {
   APPROVED_HASH=$(sha_of "$SP")
   _want=$(head -n 1 "$_apf")
   if [ "$_want" != "$APPROVED_HASH  screenplay.json" ]; then
-    die "screenplay.json of $1 changed after its approval, or the approval is not in the form of reel approve (now $(printf '%.8s' "$APPROVED_HASH")): the writer fixes it, then lint and approve again"
+    die "screenplay.json of $1 changed after its approval, or the approval is not in the form of reel approve (now $(printf '%.8s' "$APPROVED_HASH")): the creative director fixes it, then lint and approve again"
   fi
   jq -e . "$SP" >/dev/null 2>&1 || die "screenplay.json of $1 is not valid JSON"
   _lf=$(run_lint "$SP")

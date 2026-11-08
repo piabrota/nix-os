@@ -1,18 +1,21 @@
 # The Reels Fabric
 
 The files are `openrig/specs/rigs/reels-fabric/`, `openrig/specs/agents/reels-*/`, `reels/` (the
-toolkit `reel`), the option `piabrota.openrig.reels.enable` in `openrig.nix`, and this page. The
-wiki's `Reels` pages summarise it. Facts here were measured on `piabrota2` on 2026-11-05 or read from
-the code. What is not proved is in "What is not proved".
+toolkit `reel`), the options `piabrota.openrig.reels.enable` and `piabrota.openrig.reels.blender.enable`
+in `openrig.nix`, and this page. The wiki's `Reels` pages summarise it. Facts here were measured on
+`piabrota2` on 2026-11-05 (the toolkit) and 2026-11-08 (Blender) or read from the code. What is not
+proved is in "What is not proved".
 
 ## What it is
 
 The Reels Fabric is an [OpenRig](OPENRIG.md) rig that makes one vertical video, 15 s or 30 s,
-1080x1920, for Instagram Reels. Five seats work in two pods. The `story` pod writes and approves a
-screenplay. The `studio` pod directs, builds and checks the video from that screenplay. The seats
-use one toolkit, `reel`, made of POSIX shell, `jq`, `ffmpeg` and `resvg`.
+1080x1920, for Instagram Reels. Five seats work as one film crew, in the pod `crew` (see "The
+crew"). The creative director writes the screenplay. The producer-editor approves it and builds the
+reel. The artist-3d makes 3D shots, the music director makes the sound, and QA checks the file. The
+seats use one toolkit, `reel`, made of POSIX shell, `jq`, `ffmpeg` and `resvg`. The 3D shots need
+Blender, which is a second option and is off (see "3D shots with Blender").
 
-The rig is a definition only. The option is off, nobody starts the rig, and the owner decides when
+The rig is a definition only. The options are off, nobody starts the rig, and the owner decides when
 to test it.
 
 ## The owner's constraints
@@ -108,100 +111,149 @@ check the hash first. They stop with a clear line if the file is missing or the 
 
 ```console
 $ reel render demo
-reel: screenplay.json of demo changed after its approval, or the approval is not in the form of reel approve (now 6ec284fe): the writer fixes it, then lint and approve again
+reel: screenplay.json of demo changed after its approval, or the approval is not in the form of reel approve (now 6ec284fe): the creative director fixes it, then lint and approve again
 ```
 
 This ran on 2026-11-05: a changed title made `render` and `publish` stop with that line. A 31 s
 screenplay, a hook that ends at 4 s and a line of 46 characters each failed `reel lint` with one
 `ERROR` line for the broken rule.
 
-Only the writer edits `screenplay.json`. The script editor approves after a review. The owner may
-approve too. Hermes never approves.
+Only the creative director edits `screenplay.json`. The producer-editor approves after a review. The
+owner may approve too. Hermes never approves.
 
-## The seats
+## The crew
 
-|Pod|Seat|Reads|Writes|
-|---|---|---|---|
-|`story`|`story-writer@reels-fabric`|The owner's brief, the toolkit's examples|`brief.md`, `screenplay.json`|
-|`story`|`story-script-editor@reels-fabric`|`brief.md`, `screenplay.json`, `reel lint`, `reel screenplay-view`, `reel timing-report`|`review/screenplay.review.md`, and `screenplay.approved` through `reel approve`|
-|`studio`|`studio-director@reels-fabric`|The approved screenplay|`direction/shotlist.json`, `direction/svg/`, `direction/storyboard/<beat>.png`|
-|`studio`|`studio-maker@reels-fabric`|The screenplay and the shotlist|`build/`, `out/<slug>/reel.mp4` (through `reel render`), `review/build.md`|
-|`studio`|`studio-qa@reels-fabric`|`reel.mp4`, `qa.json`, the frames, the screenplay|`out/<slug>/qa.json` and `qa/` (through `reel qa`), `review/qa.md`, the outbox (through `reel publish`)|
+The seats follow the credits of a film crew. The owner gave the list on 2026-11-08: producer and
+editor, creative director, 3D artist, music director, and executive producer. The idea comes from a
+public demo by the author of OpenRig: a music video made by a rig of agents, where one seat is the
+producer, the editor and the music director, and the human is the "executive producer" who only gives
+taste and judgment. The owner gave its description; nobody here watched the demo. The names of the
+seats are our own.
+
+**Executive producer: the owner (a human).** He is not a seat. He decides the brief, the start of each
+phase, and what happens to the published reel.
+
+|Seat id|Role|What it does|
+|---|---|---|
+|`creative-director`|Creative director|Takes the owner's brief. Writes `screenplay.json` (hook, beats, captions, style). After the approval, makes the shotlist and the storyboard (`reel shotlist`, `reel still`). Owns the look and the words.|
+|`producer-editor`|Producer and editor|Reviews the screenplay against the lint and the timing (`reel lint`, `reel timing-report`, `reel screenplay-view`) and approves the hash (`reel approve`). Then builds the scenes and the cut (`reel scene`, `reel render`) and publishes after QA (`reel publish`). Owns the schedule and the final file.|
+|`artist-3d`|3D artist|Builds the 3D shots that the shotlist marks as `3d`: writes a Blender Python scene for each, renders it headless to a PNG sequence with `reel blender` (Cycles, CPU), and hands the sequence to the producer-editor. The seat is in the rig spec always, and it is useful only when the Blender option is on.|
+|`music-director`|Music director|Makes the procedural music and the mix to the timeline (`reel music`, `reel mix`), and checks the loudness that the profile asks for.|
+|`qa`|Reviewer|Checks the file against the screenplay (`reel qa`, `reel contact-sheet`). A seat that made the work never checks it, so QA is a separate seat.|
+
+If memory allows, the rig can merge `producer-editor` and `music-director` into one seat (the public
+demo does so): a new agent spec with both roles, and one member in `rig.yaml`. It saves one seat of
+about 340 MiB. This is not done here, and nothing proves that it works.
+
+What each seat reads and writes:
+
+|Seat|Reads|Writes|
+|---|---|---|
+|`crew-creative-director@reels-fabric`|The owner's brief, the toolkit's examples, the approved screenplay|`brief.md`, `screenplay.json`, `direction/shotlist.json`, `direction/svg/`, `direction/storyboard/<beat>.png`|
+|`crew-producer-editor@reels-fabric`|`brief.md`, `screenplay.json`, the shotlist, `reel lint`, `reel screenplay-view`, `reel timing-report`|`review/screenplay.review.md`, `screenplay.approved` through `reel approve`, `build/` and `out/<slug>/reel.mp4` through `reel render`, `review/build.md`, the outbox through `reel publish`|
+|`crew-artist-3d@reels-fabric`|The approved screenplay, the shotlist, the style|`blender/<beat>.py`, `frames/<beat>/` through `reel blender`, `review/3d.md`|
+|`crew-music-director@reels-fabric`|The screenplay and its `sound` cues|`build/audio/` through `reel music` and `reel mix`, `review/sound.md`|
+|`crew-qa@reels-fabric`|`reel.mp4`, `qa.json`, the frames, the screenplay|`out/<slug>/qa.json` and `qa/` through `reel qa`, `review/qa.md`|
 
 All five seats run `omp` on `anthropic/claude-sonnet-5-5`, without approval prompts
 (`permission_policy: builtin:yolo`, as in the other rigs). A member can run `runtime: claude-code`
-with one line (see [`RUNTIMES.md`](RUNTIMES.md)). The edges are `delegates_to` and form a chain:
-writer, script editor, director, maker, QA. Each seat sends the next one the slug and a path, never
-the content. A verdict (approve, revise, pass, fail) comes with evidence and a round number. After
-3 rounds a loop stops and the owner decides.
+with one line (see [`RUNTIMES.md`](RUNTIMES.md)). The edges are `delegates_to` and form a chain with
+no cycle: `creative-director` to `producer-editor`, `creative-director` to `artist-3d`,
+`producer-editor` to `music-director`, `producer-editor` to `qa`. A return is a `rig send`, not an
+edge. Each seat sends the next one the slug and a path, never the content. A verdict (approve,
+revise, pass, fail) comes with evidence and a round number. After 3 rounds a loop stops and the owner
+decides.
 
 What a seat does not do:
 
-- The writer is the only seat that edits the screenplay. A change goes back to it.
-- The script editor writes only the review file. It never edits the screenplay, not even a typo.
-- The director writes only `direction/`. A change that the screenplay needs goes back to the writer.
-- The maker cannot add a scene template: the toolkit is in the Nix store, read only. It reports the
-  gap with the beat id. It does not render a clip by hand with `ffmpeg`.
-- QA reads only. It cannot listen: it writes the loudness as a number and the sound as "no data".
+- The creative director is the only seat that edits the screenplay. A change goes back to it, and the
+  producer-editor approves it again.
+- The producer-editor writes only the review files and the build. It never edits the screenplay, not
+  even a typo. It cannot add a scene template: the toolkit is in the Nix store, read only. It reports
+  the gap with the beat id. It does not render a clip by hand with `ffmpeg`.
+- The artist-3d writes only `blender/`, `frames/` and its review file. It does not set the engine:
+  `reel blender` does.
+- The music director writes only `build/audio/` and its review file.
+- QA reads only. It cannot listen: it writes the loudness as a number and the sound as "no data". It
+  does not publish.
 - No seat starts or stops a seat, and no seat has a network.
 
 ## The phases
 
 The unit `openrig` has `MemoryMax=2G` and `MemoryHigh=1536M`. One omp seat takes about 340 MiB and
 the idle daemon about 220 MiB (`hermes/skills/hermes-omp/references/openrig-seats.md`, measured on
-2026-11-04). A render adds one `ffmpeg` of up to 540 MiB (see "Measured numbers"). So the rule is
-**two seats at the same time, no more**, and one `reel` command at a time. The rig has five seats, so
-the operator starts them in three phases. The commands are those of `rig.yaml`:
+2026-11-04). A render adds one `ffmpeg` of up to 540 MiB (see "Measured numbers"), and a Blender
+render adds 536 MiB. So the rule is **two seats at the same time, no more**, and one `reel` command
+at a time. The rig has five seats, so the operator starts them in five phases. The commands are those
+of `rig.yaml`:
 
 ```console
 rig import /etc/openrig/specs/rigs/reels-fabric/rig.yaml --materialize-only   # records five seats, starts none
 
-# phase 1, story
-rig launch reels-fabric story.writer
-rig launch reels-fabric story.script-editor
-rig send story-writer@reels-fabric "<slug>, <15|30>, <the owner's brief>" --verify
-# done when `reel approve` has written screenplay.approved (at most 3 rounds)
-rig seat stop story-writer@reels-fabric --reason "phase 1 done"
-rig seat stop story-script-editor@reels-fabric --reason "phase 1 done"
+# phase 1, story and look
+rig launch reels-fabric crew.creative-director
+rig launch reels-fabric crew.producer-editor
+rig send crew-creative-director@reels-fabric "<slug>, <15|30>, <the owner's brief>" --verify
+# done when `reel approve` has written screenplay.approved (at most 3 rounds); both seats stay up
 
-# phase 2, studio
-rig launch reels-fabric studio.director
-rig launch reels-fabric studio.maker
-rig send studio-director@reels-fabric "<slug>, <project path>, direct it" --verify
-# done when the shotlist and the storyboard exist and out/<slug>/reel.mp4 exists; then stop the director
+# phase 2, picture: the same two seats
+# the creative director makes the shotlist and the storyboard; the producer-editor builds the scene clips
+# done when the shotlist and the storyboard exist and every flat beat has its clip; then:
+rig seat stop crew-creative-director@reels-fabric --reason "phase 2 done"
 
-# phase 3, qa
-rig launch reels-fabric studio.qa          # the maker is still up: two seats
-rig send studio-qa@reels-fabric "<slug>, <out path>, check it" --verify
+# phase 3, 3D shots (skip it if the shotlist has no 3d shot, or the Blender option is off)
+rig launch reels-fabric crew.artist-3d
+rig send crew-artist-3d@reels-fabric "<slug>, <project path>, the 3d shots" --verify
+# done when each 3d shot has its PNG sequence; then:
+rig seat stop crew-artist-3d@reels-fabric --reason "phase 3 done"
+
+# phase 4, sound
+rig launch reels-fabric crew.music-director
+rig send crew-music-director@reels-fabric "<slug>, <project path>, make the sound" --verify
+# done when the mix is made and the producer-editor's `reel render` has made the cut with its audio; then:
+rig seat stop crew-music-director@reels-fabric --reason "phase 4 done"
+
+# phase 5, check and publish
+rig launch reels-fabric crew.qa          # the producer-editor is still up: two seats
+rig send crew-qa@reels-fabric "<slug>, <out path>, check it" --verify
 # done when `reel publish` has run; then stop both
 ```
 
+The producer-editor must not run `reel render` or `reel scene` while a `reel blender` render runs: the
+unit has 2 GiB. In phase 2 the producer-editor builds the clip of every flat beat with `reel scene`;
+the clip of a 3d beat waits for its frames. `reel render` makes the sound itself, so the cut with its
+audio, and the clips of the 3d beats, come in phase 4, after the mix.
+
 `rig launch` starts a seat that never ran. `rig seat launch <seat> --fresh --reason "<why>"` starts a
 blank conversation in a seat that ran before. A seat with nobody to send to ends with a final answer,
-and the operator starts the next seat. A QA fail goes to a seat that is stopped by then: start it in
-place of the director or the maker, so that two seats run. Run `kvm4-health` before each phase and
-`rig snapshot reels-fabric` before you stop. A rig keeps the spec it was made from: after a change
-to the spec, `rig archive reels-fabric` and import it again. Do not run it at the same time as another
-rig.
+and the operator starts the next seat. A QA fail goes back to the producer-editor, which is still up
+and sends each fault to its seat. A fault for a seat that is stopped (the creative director, the
+artist-3d or the music director): start it in place of a seat that is not needed, so that two seats
+run. Run `kvm4-health` before each phase and `rig snapshot reels-fabric` before you stop. A rig keeps
+the spec it was made from: after a change to the spec, `rig archive reels-fabric` and import it
+again. Do not run it at the same time as another rig.
 
-The owner decides the brief, the start of phase 2 and what to do with the published reel. The owner
-may read `reel screenplay-view <slug>` before phase 2. Nothing here posts to Instagram.
+The executive producer, the owner, decides the brief, the start of each phase and what to do with the
+published reel. He may read `reel screenplay-view <slug>` before phase 2. Nothing here posts to
+Instagram.
 
 ## The project folders
 
 `REELS_HOME` is `/var/lib/openrig/work/reels-fabric`. The option makes these folders (`StateDirectory`
-of the unit, mode 0700, owner `openrig`): one for each seat (`writer`, `script-editor`, `director`,
-`maker`, `qa`), `projects` and `out`.
+of the unit, mode 0700, owner `openrig`): one for each seat (`creative-director`, `producer-editor`,
+`artist-3d`, `music-director`, `qa`), `projects` and `out`.
 
 ```text
 $REELS_HOME/
   projects/<slug>/
-    brief.md                      writer
-    screenplay.json               writer, the one source
+    brief.md                      creative director
+    screenplay.json               creative director, the one source
     screenplay.approved           reel approve: SHA-256 of screenplay.json
-    review/                       screenplay.review.md, build.md, qa.md
-    direction/                    shotlist.json, storyboard/<beat>.png, svg/
-    build/                        reel writes it: scenes/, audio/, layers/, cache/
+    review/                       screenplay.review.md, build.md (producer-editor), sound.md, 3d.md, qa.md
+    direction/                    shotlist.json, storyboard/<beat>.png, svg/ (creative director)
+    blender/<beat>.py             artist-3d: one Blender scene for each 3d shot
+    frames/<beat>/%04d.png        reel blender writes it: the PNG sequence of a 3d shot
+    build/                        reel writes it: scenes/, audio/, layers/, cache/, blender-home/
   out/<slug>/
     reel.mp4  render.json  qa.json
     qa/                           hook.png, <beat>.png, <beat>-start.png, contact-sheet.png
@@ -227,9 +279,10 @@ These refuse to run without a valid approval:
 
 |Command|Does|
 |---|---|
-|`reel shotlist <slug> [--force]`|The default `direction/shotlist.json`, one shot for each beat, for the director to refine|
+|`reel shotlist <slug> [--force]`|The default `direction/shotlist.json`, one shot for each beat, for the creative director to refine|
 |`reel still <slug> <beat> [--at <s>] [-o <file>]`|One frame of a beat. The default file is `direction/storyboard/<beat>.png`.|
-|`reel scene <slug> <beat>`|The clip of one beat, in `build/scenes/`|
+|`reel blender <slug> <beat>`|Renders a shot of kind `3d` from `blender/<beat>.py` to `frames/<beat>/%04d.png` (Cycles, CPU). It needs the `blender` binary in the PATH. See "3D shots with Blender".|
+|`reel scene <slug> <beat>`|The clip of one beat, in `build/scenes/`. A `3d` beat takes its PNG sequence as the picture.|
 |`reel music <slug>`|The procedural music bed, `build/audio/music.wav`|
 |`reel mix <slug>`|Music and sound effects, normalised, `build/audio/mix.wav`|
 |`reel render <slug>`|The sound, the clips and the assembly: `out/<slug>/reel.mp4` and `render.json`. It needs the shotlist.|
@@ -246,14 +299,15 @@ picture is inside the safe area and has contrast. It does this with measures, wi
 reads the file, never the shotlist.
 
 An example session, with the example screenplay (it ran on 2026-11-05, from the built package, in an
-empty environment):
+empty environment). One word changed after the run: the name after `--by` was `script-editor`, the
+seat that the producer-editor replaces.
 
 ```console
 $ reel new demo 30 --example
 $ reel lint demo
 lint: 0 error(s), 0 warning(s)
 lint: PASS
-$ reel approve demo --by script-editor
+$ reel approve demo --by producer-editor
 approved: demo (sha256 d7fee787e42ed72cc2c694a8ca830ae3909675a1c6cb5c73681931e97a0273e3)
 $ reel shotlist demo
 $ reel render demo
@@ -268,10 +322,13 @@ published: $REELS_OUTBOX/demo (5520735 bytes)
 ```
 
 The variables the toolkit reads: `REELS_HOME`, `REELS_OUTBOX`, `REELS_SHARE` (its data: the profile,
-the styles, the examples and the fonts) and `REELS_FONTS`. The rig sets the first two in its `env:`.
+the styles, the examples and the fonts), `REELS_FONTS` and, for `reel blender`, `REELS_BLENDER` (the
+path of the `blender` binary; the wrapper of the package sets it from the caller's PATH, and it is
+empty when there is none). The rig sets the first two in its `env:`.
 `REELS_HOME`, `REELS_SHARE`, `REELS_FONTS` and `TMPDIR` may hold only letters, digits and `/ . _ -`:
 the paths reach `ffmpeg` filters and caption files. Each `ffmpeg` stops after 300 s and each `resvg`
-after 60 s (`limits` in the profile), with a clear line, so a stuck process does not hold a seat.
+after 60 s, and a `blender` run after 3600 s (`limits` in the profile), with a clear line, so a stuck
+process does not hold a seat.
 
 ## What it makes and what it cannot
 
@@ -294,6 +351,88 @@ It cannot make:
 
 The look and the sound are the open question of this rig. The next step after a first test is to
 read what the owner thinks of them.
+
+## 3D shots with Blender
+
+The owner decided on 2026-11-08 to use Blender for the 3D artist. `AGENTS.md` says no GUI and no
+desktop libraries; the owner makes an exception for this, as he did for Node 24 and for two font
+files. Blender is free software (GPL-2.0-or-later, `meta.unfree` is false in nixpkgs), so
+`unfree.nix` and `allowUnfree` do not change. It runs headless: no window, no display.
+
+**The option.** `piabrota.openrig.reels.blender.enable`, off by default. It adds `pkgs.blender` to the
+profile of the user `openrig` and to the unit's `path`, and nothing else. With the option off, the
+reels rig works as before (no 3D shots) and the closure does not grow. The option needs
+`piabrota.openrig.reels.enable`: with Blender on and the reels rig off, the build stops with an
+assertion. The package is `pkgs.blender` from the pinned nixpkgs, with no override.
+
+**A 3D shot.** The creative director marks a shot in `direction/shotlist.json`:
+`"kind": "3d", "frames": "frames/b03"`. The shot id is the beat id. `kind` is `flat` (the default) or
+`3d`. `frames` is required for `3d`, must be `frames/<beat>`, and is refused on a flat shot.
+`reel lint` checks both, and warns when the beat is longer than `blender.max_frames` frames at
+`blender.fps` (the last frame is held). The screenplay itself does not change: the scene, the text and
+the sound of the beat stay as written.
+
+**`reel blender <slug> <beat>`.** The artist-3d writes `blender/<beat>.py`, a Blender Python scene (an
+example is `reels/examples/blender/spin.py`: a cube that turns, 24 frames). The command:
+
+- refuses to run unless the screenplay is approved and the shot is of kind `3d`, as every stage does.
+- needs the `blender` binary in the PATH. With none it stops with a clear line and exit code 1.
+- runs `blender -b --factory-startup --threads 2 --python-exit-code 1`, with `HOME`,
+  `XDG_CONFIG_HOME` and `XDG_CACHE_HOME` in `build/blender-home/` of the project, never the real home.
+  It runs the scene file first and then a driver of the toolkit, so the driver has the last word.
+- the driver sets the engine to `CYCLES`, the device to `CPU`, the samples (`blender.samples`, 16),
+  the denoiser off, the size (1080x1920 from the profile), the frame rate (`blender.fps`, 24) and the
+  output. A scene file that sets another engine is overridden after the load. The toolkit never
+  selects EEVEE.
+- reads the frame range of the scene first, in a short run, and refuses a scene of more frames than
+  `blender.max_frames` (240) before it costs minutes. It says so and exits 1.
+- renders into `frames/<beat>.part/` and moves it to `frames/<beat>/` (`0001.png`, `0002.png`, ...)
+  only when the count is right, so a failed run leaves the old frames as they were.
+
+`reel scene` and `reel render` take the sequence as the picture of the beat, in place of the flat
+background: the frames are converted from `blender.fps` to 30 fps and fitted to 1080x1920, the last
+frame is held if the beat is longer, and the captions and the SVG layers go over it as on any beat. A
+3d beat with no frames has no clip (a still falls back to the flat background, with a warning). A
+clip is kept only while its frames are the same files.
+
+**The limits.**
+
+- **EEVEE does not work here.** `blender -b` with `BLENDER_EEVEE` died with EGL errors and a
+  segmentation fault: the box has no GPU and no display. Workbench was not tested. So the toolkit uses
+  Cycles on the CPU and nothing else.
+- **The denoiser is off.** With it on, one frame of 1080x1920 peaked at 2174 MiB, and the unit has
+  2 GiB for every seat. Off, the peak is 536 MiB. The frames are noisy at 16 samples: keep a scene
+  simple, with flat materials and few lights.
+- **Memory.** The producer-editor must not run `reel render` or `reel scene` while a `reel blender`
+  render runs. At most two seats run (the artist-3d and the producer-editor), and one `reel` command
+  at a time.
+- **Time.** A scene must stay simple, and its frame count is budgeted: `blender.max_frames` (240, that
+  is 10 s at 24 fps) and `blender.fps` in `reels/profile.json`.
+
+**The numbers.** *Measured* on `piabrota2` by the owner's agent on 2026-11-08, with Blender 5.2.2
+(nixpkgs rev `02c087f3fe673c9e317f206a627cb6b910336dbe`): the closure of the system with Blender is
+4940 MiB in total, and about 3.0 GiB (863 MiB to download) was new to the box. One frame of
+1080x1920, 16 samples, 2 threads, Cycles on the CPU, a simple scene: 7.4 s and 527 MiB of peak memory.
+*Measured* here on 2026-11-08 with the same Blender 5.2.2, the example scene, 2 threads: 16 samples,
+denoiser off, 8.3 s and 536 MiB for one frame; 32 samples, denoiser off, 15.5 s and 536 MiB; 32
+samples, denoiser on, 24.7 s and 2174 MiB. A PNG frame is about 1.2 MB, so 240 frames take about
+290 MB. *Measured*, a dry run of the build with Blender 5.1.1 (see below): 81 store paths, 693.5 MiB to
+download, 2.7 GiB unpacked. *Extrapolated*, not measured: 450 frames (15 s at 30 fps) at the same cost
+would take about 55 minutes, and 240 frames at 8.3 s about 33 minutes. This is why a scene stays
+simple and the toolkit takes a frame budget.
+
+**The version.** The `nixpkgs` input of this repository (the one the hosts use, rev `9bb52223`) has
+Blender 5.1.1. Blender 5.2.2 is in the nixpkgs that the `hermes-agent` input pins (rev `02c087f3`),
+which is the one the owner's agent measured. The numbers above are for 5.2.2. The real Blender runs of
+this page were on 5.2.2 from the store; 5.1.1 was not run. Run the first 3D shot on the box and check
+the numbers again.
+
+**Turn it on and off.** On: set `piabrota.openrig.reels.blender.enable = true;` next to
+`piabrota.openrig.reels.enable = true;` in `hosts/piabrota2/default.nix`, open a pull request and
+merge it. The deploy fetches about 700 MiB and unpacks about 2.7 GiB. Off: remove the line. The next
+deploy takes Blender out of the profile, and the garbage collection removes it later. `frames/` and
+`blender/` stay in the projects. With the option off, `reel blender` stops with "blender is not in the
+PATH", and the artist-3d seat has nothing to do: skip phase 3.
 
 ## Measured numbers
 
@@ -318,7 +457,7 @@ between the runs). The table has the last run of each.
 The file: H.264 High, `yuv420p`, 1080x1920, 30 fps, 900 frames in 30.000 s, AAC 48000 Hz stereo,
 about 1.5 Mbit/s, `qa` passes. The sum: the daemon (about 220 MiB) with two seats (about 340 MiB each)
 and one render (540 MiB) is about 1.4 GiB, just under `MemoryHigh=1536M` and over it if a seat grows.
-So the maker and QA run one `reel` command at a time, and nothing else runs during a render.
+So the producer-editor and QA run one `reel` command at a time, and nothing else runs during a render.
 
 The size of the toolkit: `reel` alone is 332 MiB with its closure (`nix path-info -S`); 199 MiB of
 that, in 64 store paths, is not in the closure of the running system (compared with
@@ -376,7 +515,10 @@ The merge deploys it. The option adds:
   rig, and both options can be on.
 
 With the option off, the specs are in `/etc/openrig/specs` as a definition only and nothing else
-changes. The deploy restarts `openrig` and ends the seats (see [`OPENRIG.md`](OPENRIG.md)).
+changes. The deploy restarts `openrig` and ends the seats (see [`OPENRIG.md`](OPENRIG.md)). Blender is
+a second option, `piabrota.openrig.reels.blender.enable`, off: see "3D shots with Blender". With it
+off, the closure of both hosts is the same as before it existed (`nix build --dry-run` lists the same
+derivations).
 
 To build the toolkit without the option:
 
@@ -389,7 +531,7 @@ nix build --impure --expr '(builtins.getFlake "path:'$PWD'").nixosConfigurations
 1. Turn the option on and deploy. Run `rig status` and `kvm4-health`.
 2. As the owner, run the import of "The phases", once.
 3. Run phase 1 with a short brief: one fact, one source, 15 s. Read `reel screenplay-view <slug>`.
-4. Run phase 2 and phase 3 as written.
+4. Run phases 2, 4 and 5 as written. Run phase 3 only if the Blender option is on and the shotlist has a 3d shot.
 5. Open `reel.mp4` and `qa/contact-sheet.png`. Listen to the sound. Say what is wrong with it.
 
 To test the toolkit without a rig, run `reel new demo 15 --example` and the session above with
@@ -399,11 +541,12 @@ To test the toolkit without a rig, run `reel new demo 15 --example` and the sess
 
 - **Memory.** A render goes above 450 MiB for a short time. With two seats and the daemon it leaves
   little room under `MemoryHigh`. The kernel slows the unit, it does not kill it, but a render with a
-  third process may reach `MemoryMax`. `OOMPolicy=continue` takes one process.
+  third process may reach `MemoryMax`. `OOMPolicy=continue` takes one process. A Blender render adds
+  536 MiB (with the denoiser off): see "3D shots with Blender".
 - **CPU.** A render of 30 s ran for 105 to 120 s, at `nice -n 10`, with one video thread for the final
   encode. It slows the other units a little. It does not run on a schedule.
 - **A seat is not a checker.** The lint measures what it can. A claim is "sourced" because a person
-  wrote a source in the brief; the script editor cannot open a link. The sources need a human.
+  wrote a source in the brief; the producer-editor cannot open a link. The sources need a human.
 - **Run without approval prompts.** As in the other rigs: the deny rules of `hermes/omp.yml` are the
   guard.
 - **A word of the screenplay may not fit.** Long words or other languages may be wider than the
@@ -412,9 +555,12 @@ To test the toolkit without a rig, run `reel new demo 15 --example` and the sess
 ## What is not proved
 
 - A live run of the rig: no seat has done a task of this rig. The guidance of the seats, the
-  messages between them and the three phases are from the specs and not from a run.
-- That OpenRig accepts the spec (`rig spec validate` is not run here: there is no `rig` in this
-  worktree).
+  messages between them and the five phases are from the specs and not from a run.
+- That OpenRig starts the rig. `rig spec validate` (the rig) and `rig agent validate` (the six agent
+  specs) passed here on 2026-11-08, without a daemon. `rig spec preflight` could not resolve the
+  `agent_ref` paths here, and it fails the same way on `wave-forecaster-dev`, so it proves nothing.
+- A render by `reel blender` with Blender 5.1.1, the version that the pinned nixpkgs has, and a render
+  inside the unit `openrig` (the smoke runs were by the user `hermes`, with 5.2.2).
 - Instagram's acceptance of the file, and how the app shows it.
 - The look in the eyes of the owner, and the sound at all: nobody has listened to it.
 - Hermes's read of the outbox under the `hermes-agent` sandbox, as for the wave rig.
@@ -430,5 +576,7 @@ To test the toolkit without a rig, run `reel new demo 15 --example` and the sess
 - [Fjalla One](https://fonts.google.com/specimen/Fjalla+One) by Sorkin Type (SIL OFL 1.1: the file is
   in the `ofl/` folder of [google/fonts](https://github.com/google/fonts) and its name table names the
   license), at the commit that nixpkgs' `google-fonts` pins.
+- [Blender](https://www.blender.org) (GPL-2.0-or-later), headless, behind its own option, for the 3D
+  shots.
 - [OpenRig](https://github.com/mvschwarz/openrig) by mvschwarz (Apache-2.0), and the toolkit itself,
   MPL-2.0, as the rest of this repository.

@@ -1,7 +1,7 @@
-# The writer seat of reels-fabric: writes the brief and the screenplay. The only seat that edits screenplay.json.
-name: reels-writer
+# The producer-editor seat of reels-fabric: owns the schedule and the final file. Approves the screenplay hash, builds the scenes and the cut, publishes after QA. Edits no screenplay.
+name: reels-producer-editor
 version: "1.0"
-description: Writes the brief and the screenplay of one reel
+description: Reviews the screenplay, approves its hash, then builds and publishes the reel
 
 defaults:
   runtime: omp
@@ -13,7 +13,7 @@ imports:
 
 profiles:
   default:
-    summary: Writes brief.md and screenplay.json, lints them and hands them to the script editor
+    summary: Reviews and approves the screenplay, builds the scenes and the cut, publishes after QA
     uses:
       skills: []
       # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
