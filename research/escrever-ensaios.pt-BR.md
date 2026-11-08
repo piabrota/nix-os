@@ -67,8 +67,8 @@ O texto francês está livre na internet. O aviso "Au lecteur" e o capítulo II.
 
 Theodore Dalrymple é o pseudônimo de Anthony Daniels, psiquiatra e escritor britânico nascido em Londres em 11 de outubro de 1949 (v, [Wikipédia](https://pt.wikipedia.org/wiki/Theodore_Dalrymple)). A editora É Realizações publica a obra dele no Brasil:
 
-- *Nossa cultura… ou o que restou dela*, 2015, cerca de 400 páginas, reunião de 26 ensaios (v, [resenha do IFE](http://ife.org.br/resenha-theodore-dalrymple-nossa-cultura-ou-o-que-restou-dela-por-pablo-gonzalez-blasco/)). Leitura minha: é um bom ponto de partida para ver o ensaio curto de um médico que escreve do lugar onde trabalha.
-- *Podres de mimados: as consequências do sentimentalismo tóxico*, 2015, 208 páginas, prefácio de Luiz Felipe Pondé, tradução de Pedro Sette-Câmara (v, [catálogo LexML](https://www.lexml.gov.br/urn/urn:lex:br:rede.virtual.bibliotecas:livro:2015;001048747)).
+- *Nossa cultura… ou o que restou dela*, 2015, cerca de 400 páginas, reunião de 26 ensaios (nv, trecho de busca: [resenha do IFE](http://ife.org.br/resenha-theodore-dalrymple-nossa-cultura-ou-o-que-restou-dela-por-pablo-gonzalez-blasco/); o número de ensaios vem de lojas). Leitura minha: é um bom ponto de partida para ver o ensaio curto de um médico que escreve do lugar onde trabalha.
+- *Podres de mimados: as consequências do sentimentalismo tóxico*, 2015, 208 páginas, prefácio de Luiz Felipe Pondé, tradução de Pedro Sette-Câmara (nv, trecho de busca: [catálogo LexML](https://www.lexml.gov.br/urn/urn:lex:br:rede.virtual.bibliotecas:livro:2015;001048747)).
 - *A vida na sarjeta*, 2014 (nv, citação bibliográfica da [Fundação Republicana](https://fundacaorepublicana.org.br/o-que-e-ser-um-conservador/)).
 
 Leitura minha: o interesse de Dalrymple para quem escreve ensaio está no método, não nas teses. Ele abre com um caso e só depois generaliza. A lição 5 mostra isso com um exemplo.
@@ -76,9 +76,9 @@ Leitura minha: o interesse de Dalrymple para quem escreve ensaio está no métod
 ## Outros ensaístas, em português
 
 - George Orwell, *Por que escrevo*, tradução de Cláudio Marcondes, Penguin-Companhia, 19/02/2021, 128 páginas, ISBN 978-85-8285-129-6 (v, [Companhia das Letras](https://www.companhiadasletras.com.br/9788582851296-por-que-escrevo-8053/p)).
-- Virginia Woolf, *O leitor comum*, nova tradução de Marcelo Pen e Ana Carolina Mesquita, Alta Books (v, só página da editora: [Alta Books](https://altabooks.com.br/produto/o-leitor-comum/)).
-- Susan Sontag, *Questão de ênfase*, Companhia das Letras (v, só existência: [página do livro](https://www.companhiadasletras.com.br/9788535931143-questao-de-enfase-2609/p)). O tradutor e o ano não foram checados.
-- Georg Lukács, "Sobre a essência e a forma do ensaio: uma carta a Leo Popper", em *Revista UFG* (v, só existência: [artigo](https://revistas.ufg.br/revistaufg/article/view/48186)). É teoria do ensaio como forma de arte, não um manual.
+- Virginia Woolf, *O leitor comum*, nova tradução de Marcelo Pen e Ana Carolina Mesquita, Alta Books (nv, trecho de busca: [Alta Books](https://altabooks.com.br/produto/o-leitor-comum/)).
+- Susan Sontag, *Questão de ênfase*, Companhia das Letras (nv, trecho de busca: [página do livro](https://www.companhiadasletras.com.br/9788535931143-questao-de-enfase-2609/p)). O tradutor e o ano não foram checados.
+- Georg Lukács, "Sobre a essência e a forma do ensaio: uma carta a Leo Popper", em *Revista UFG* (nv, trecho de busca: [artigo](https://revistas.ufg.br/revistaufg/article/view/48186)). É teoria do ensaio como forma de arte, não um manual.
 - Theodor Adorno, "O ensaio como forma", em *Notas de literatura I* (nv, só aparece em resultados de busca; a edição brasileira não foi checada).
 - Phillip Lopate organizou *The Art of the Personal Essay*, uma antologia da era clássica até hoje (nv, [registro da Biblioteca do Congresso](http://www.loc.gov/catdir/description/random048/93029708.html)). Nenhuma edição em português foi encontrada: sem dados.
 
@@ -86,7 +86,7 @@ Leitura minha: o interesse de Dalrymple para quem escreve ensaio está no métod
 
 - Antoine Albalat, *A arte de escrever ensinada em vinte lições*, publicado na França em 1899 pela Armand Colin. Existe uma nova edição brasileira da editora Kírion, traduzida por Rodrigo Gurgel (v, [Maria Mortatti, 2025](https://www.mariamortatti.com.br/2025/08/albalat-e-arte-de-escrever-maria.html)). A tradução portuguesa mais antiga é de Cândido de Figueiredo, publicada em 1913 em Lisboa pela Livraria Clássica, e circulou no Brasil na primeira metade do século XX (v, mesma fonte). Este caderno imita o formato do livro: lições curtas, com princípio, comentário, exemplo e exercício.
 - Arthur Schopenhauer, *A arte de escrever*, organização, tradução, prefácio e notas de Pedro Süssekind, L&PM, 152 páginas, edição de setembro de 2013 (v, [L&PM](https://www.lpm.com.br/site/default.asp?Template=../livros/layout_produto.asp&ID=728193)).
-- William Zinsser, *Como escrever bem*, tradução de Bernardo Ajzenberg, Três Estrelas, 2017 (v, só pela [resenha da PUCRS](https://revistaseletronicas.pucrs.br/letronica/article/download/31344/17987/144896)). É um clássico americano da escrita de não ficção.
+- William Zinsser, *Como escrever bem*, tradução de Bernardo Ajzenberg, Três Estrelas, 2017 (v, pela [resenha da PUCRS](https://revistaseletronicas.pucrs.br/letronica/article/download/31344/17987/144896)). É um clássico americano da escrita de não ficção.
 - Steven Pinker, *Guia de escrita: como conceber um texto com clareza, precisão e elegância*, Contexto, com tradução e adaptação do linguista Rodolfo Ilari (v, [blog da editora](https://blog.editoracontexto.com.br/guia-de-escrita-steven-pinker/)).
 - Anne Lamott, *Palavra por palavra: instruções sobre escrever e viver*, tradução de Marcello Lino, Sextante, 2022, 224 páginas (v, [Google Livros](https://books.google.com/books/about/Palavra_por_palavra.html?id=DiBkEAAAQBAJ)).
 - Stephen King, *Sobre a escrita: a arte em memórias*, tradução de Michel Teixeira, Objetiva, 2015 (nv, citação em [revista do CEJUR/TJSC](https://revistadocejur.tjsc.jus.br/cejur/article/view/447)).
@@ -396,7 +396,7 @@ Cada lição indica quem a escreveu: **(Hermes)** ou **(a preencher)**.
 
 **Princípio.** O ensaio para antes de cobrir todo o assunto.
 
-**Comentário.** A skill `essay` põe esta regra entre as de forma: o ensaio termina antes de esgotar o tema. Um ensaio longo precisa de mais cuidado, porque o tamanho tenta o escritor a cobrir tudo. Leitura minha: o ensaio longo é uma sequência de casos, e cada seção abre no seu próprio caso e fecha com uma dúvida. A coletânea *Nossa cultura… ou o que restou dela* reúne 26 ensaios (v, [resenha do IFE](http://ife.org.br/resenha-theodore-dalrymple-nossa-cultura-ou-o-que-restou-dela-por-pablo-gonzalez-blasco/)). Leitura minha: isso sugere que Dalrymple prefere muitos casos curtos a um tratado. A extensão de cada ensaio dele não foi medida.
+**Comentário.** A skill `essay` põe esta regra entre as de forma: o ensaio termina antes de esgotar o tema. Um ensaio longo precisa de mais cuidado, porque o tamanho tenta o escritor a cobrir tudo. Leitura minha: o ensaio longo é uma sequência de casos, e cada seção abre no seu próprio caso e fecha com uma dúvida. A coletânea *Nossa cultura… ou o que restou dela* reúne 26 ensaios (nv, trecho de busca: [resenha do IFE](http://ife.org.br/resenha-theodore-dalrymple-nossa-cultura-ou-o-que-restou-dela-por-pablo-gonzalez-blasco/)). Leitura minha: isso sugere que Dalrymple prefere muitos casos curtos a um tratado. A extensão de cada ensaio dele não foi medida.
 
 **Exemplo.** Um ensaio longo com cinco seções: cada uma abre com um caso de duas ou três frases, avança com uma ideia, admite um limite e passa o bastão para a próxima. A última seção não resume: ela deixa uma pergunta.
 
@@ -456,36 +456,50 @@ O Markdown é um arquivo só. Por isso a instrução e o registro entram como ap
 
 # Apêndice B: registro da execução {-}
 
-Este registro diz o que o assistente fez e o que isso custou. A fonte é o banco de sessão do Hermes, lido às 19:52 de 7 de novembro de 2026 (horário de Brasília). As chamadas feitas depois dessa leitura (a montagem do PDF, o commit e o PR) não entram na contagem.
+Este registro diz o que o assistente fez e o que isso custou. A fonte é o banco de sessão do Hermes, lido em 21:05 de 7 de novembro de 2026 (horário de Brasília) (UTC-3). As chamadas feitas depois dessa leitura (a atualização deste apêndice, a nova montagem do PDF, o commit e o push) não entram na contagem.
 
 ## Modelo e custo {-}
 
 - **Modelo principal:** `claude-sonnet-5-5`, da Anthropic, dentro do Hermes Agent v0.23.0, pela assinatura do autor. Nenhuma chave de API foi usada.
 - **Subagentes (Haiku):** nenhum.
 - **omp (agente de código):** não usado. O trabalho é texto em Markdown e um PDF. O Markdown foi escrito à mão pelo assistente.
-- **Custo da sessão:** o Hermes registra o custo por sessão, não por tarefa. Esta sessão começou em 5 de novembro de 2026 e traz outras tarefas. Na leitura das 19:52, o banco mostrava US$ 36,88 estimados (estado "estimated", preços de tabela da API, não valor cobrado), 796 chamadas à API, 1.906 tokens de entrada, 737.165 de saída e 179.859.877 lidos do cache.
-- **Custo desta tarefa:** não medido. Duas leituras do banco, por volta das 19:15 e às 19:52, deram US$ 35,11 e US$ 36,88: a diferença, US$ 1,77, cobre 26 chamadas. A primeira leitura veio depois da pesquisa, então a diferença subestima a tarefa. Estimativa de ordem de grandeza: entre 58 rodadas (as contadas) e 73 (as contadas mais as previstas até o PR), a cerca de US$ 0,05 a 0,07 cada, ou seja, entre US$ 3 e US$ 5. O número real pode ficar fora dessa faixa.
+- **Custo da sessão:** o Hermes registra o custo por sessão, não por tarefa. Esta sessão começou em 5 de novembro de 2026 e traz outras tarefas. Na leitura das 21:05 de 7 de novembro de 2026 (horário de Brasília), o banco mostrava US$ 38,22 estimados (estado "estimated", preços de tabela da API, não valor cobrado), 815 chamadas à API, 1.950 tokens de entrada, 754.119 de saída e 184.136.095 lidos do cache.
+- **Custo desta tarefa:** não medido. Duas leituras do banco, por volta das 19:15 e 21:05 de 7 de novembro de 2026 (horário de Brasília), deram US$ 35,11 e US$ 38,22: a diferença, US$ 3,10, cobre 45 chamadas. A primeira leitura veio depois da pesquisa, então a diferença subestima a tarefa. Estimativa de ordem de grandeza: entre 75 rodadas (as contadas) e 83 (as contadas mais as previstas até o push), a cerca de US$ 0,05 a 0,07 cada, ou seja, entre US$ 3 e US$ 6. O número real pode ficar fora dessa faixa.
+
+## Tempo {-}
+
+Os carimbos de hora vêm do banco de sessão, em horário de Brasília, em 7 de novembro de 2026.
+
+- **Início:** 19:04:39, com a primeira mensagem do autor.
+- **PR aberto:** 21:01:49. O tempo corrido até o PR foi de **1 h 57 min**.
+- **Tempo ativo do assistente:** cerca de **25 minutos**. São três trechos: 19:04–19:19 (pesquisa e escrita das lições), 19:44–19:53 (montagem do PDF) e 21:01–21:02 (commit, push e PR).
+- **Espera pelo autor:** cerca de 25 minutos, de 19:19 a 19:44. O sistema bloqueou um script por falta de aprovação em cinco minutos, o assistente perguntou, e o autor respondeu às 19:44.
+- **Parada por limite:** 67 minutos, de 19:53 a 21:01. O assistente esgotou o número de iterações de ferramenta e só voltou quando o autor escreveu "eai?".
+- **Primeira montagem do PDF:** a primeira execução do `nix develop` baixou o TeX Live e levou cerca de sete minutos (19:05 a 19:12, em segundo plano). O tempo da montagem do documento, com o ambiente já em cache, não foi medido.
+
+Os trechos ativos vêm dos intervalos entre mensagens do banco. A fronteira entre pesquisa e escrita não aparece nos carimbos, e o trecho de 19:13 a 19:19 inclui a compactação do contexto.
 
 ## Rodadas e mensagens {-}
 
-- **Mensagens do autor:** 5. A primeira pediu o trabalho. As três seguintes corrigiram o pedido (a instrução no PDF, o registro da execução e as skills usadas). A quinta autorizou a continuação, depois que o sistema bloqueou um script por falta de aprovação em cinco minutos. O assistente parou e perguntou, como a regra manda.
-- **Rodadas do modelo nesta tarefa:** cerca de 58 até a leitura do banco, contadas como mensagens do assistente que chamaram ferramenta, sem repetições. O banco repete mensagens depois de uma interrupção do gateway, e a contagem descarta as repetições.
+- **Mensagens do autor:** 7. A primeira pediu o trabalho. As três seguintes corrigiram o pedido (a instrução no PDF, o registro da execução e as skills usadas). A quinta autorizou a continuação, depois que o sistema bloqueou um script por falta de aprovação em cinco minutos. A sexta ("eai?") veio depois que o assistente parou por limite de iterações de ferramenta. A sétima pediu mais métricas: tempo, chamadas e sites consultados.
+- **Rodadas do modelo nesta tarefa:** cerca de 75 até a leitura do banco, contadas como mensagens do assistente que chamaram ferramenta, sem repetições. O banco repete mensagens depois de uma interrupção do gateway, e a contagem descarta as repetições.
 - **Interrupções:** três respostas do assistente foram interrompidas por correções do autor, antes de terminar a pesquisa.
 
 ## Chamadas de ferramenta {-}
 
-Contagem sem repetições, até a leitura do banco (as buscas feitas dentro de scripts, como as consultas ao `web_search` por Python, aparecem só na linha de `execute_code`): **70 chamadas**.
+Contagem sem repetições, até a leitura do banco: **91 chamadas**.
 
 | Ferramenta | Chamadas | Para quê |
 |---|---|---|
-| `execute_code` | 36 | scripts em Python (HTTP direto, consultas ao banco de sessão, buscas) |
-| `terminal` | 13 | comandos de shell (gh, nix, git, cat) |
-| `skill_view` | 8 | leitura de skills |
-| `write_file` | 6 | escrita de arquivos |
+| `execute_code` | 42 | scripts em Python (HTTP direto, banco de sessão, buscas) |
+| `terminal` | 22 | comandos de shell (gh, nix, git, pandoc) |
+| `skill_view` | 9 | leitura de skills |
+| `write_file` | 8 | escrita de arquivos |
+| `vision_analyze` | 3 | leitura de imagem (páginas do PDF) |
 | `web_search` | 2 | busca na web |
-| `web_extract` | 1 | extração de página (falhou, ver abaixo) |
-| `process_manage` | 1 | consulta a processo em segundo plano |
-| `tool_call` | 1 | ferramenta adiada (consulta de processo) |
+| `web_extract` | 1 | extração de página (falhou) |
+| `process_manage` | 1 | processo em segundo plano |
+| `tool_call` | 1 | ferramenta adiada |
 | `patch` | 1 | edição de arquivo |
 | `clarify` | 1 | pergunta ao autor |
 
@@ -495,6 +509,54 @@ Chamadas que falharam, e o que se fez:
 - O `yt-dlp` pediu cookies do YouTube e não leu os metadados. O assistente usou o serviço de incorporação (oEmbed) do YouTube, que só devolve título e canal. Por isso os vídeos têm a marca "só título".
 - O `web_extract` não extrai páginas neste servidor (o backend é de busca apenas). O assistente leu as páginas por requisição HTTP direta, em script, e tirou o texto do HTML.
 - Um script de leitura das próprias notas foi bloqueado por falta de aprovação em cinco minutos. O assistente perguntou, o autor aprovou, e o script rodou na mesma forma.
+
+## Sites consultados {-}
+
+O assistente consultou a web de três modos: busca, abertura direta de página e consulta a API.
+
+- **Buscas:** 52 consultas à busca (DuckDuckGo), a maior parte em scripts. Cada consulta devolveu de 4 a 5 resultados, com título e trecho. Foram vistos cerca de 200 a 250 resultados, mas só se contam como consultados os sites abaixo, cuja página foi aberta.
+- **Páginas abertas:** 39 endereços diferentes, em 33 domínios, por requisição HTTP direta (ver a tabela).
+- **YouTube:** 15 consultas ao serviço de incorporação (oEmbed), uma por vídeo, que devolve título e canal. O `yt-dlp` foi tentado e falhou.
+- **API do GitHub e raw.githubusercontent.com:** repositórios de h0ffmann/closed-source, h0ffmann/proof, h0ffmann/picasso, clyderankin/essay-skills, terrylica/cc-skills e eins78/agent-skills. A API do GitHub não entra na tabela.
+- **Catálogo Open Library:** uma consulta, que achou só a edição de Albalat da Livraria Clássica.
+
+| Domínio | Páginas abertas | Observação |
+|---|---|---|
+| fr.wikisource.org | 4 | uma URL errada devolveu página vazia; as outras abriram |
+| city-journal.org | 2 | um artigo abriu, outro deu 404 |
+| companhiadasletras.com.br | 2 |  |
+| youtube.com | 2 |  |
+| archive.org | 1 |  |
+| blog.editoracontexto.com.br | 1 |  |
+| books.google.com | 1 |  |
+| curadoria.casadosaber.com.br | 1 |  |
+| editoracontexto.com.br | 1 |  |
+| ensaiosenotas.com | 1 |  |
+| escolavirtual.gov.br | 1 |  |
+| escrevedeira.com.br | 1 |  |
+| estadao.com.br | 1 |  |
+| github.com | 1 |  |
+| googleapis.com | 1 | 429, sem resposta |
+| graciliano.com.br | 1 |  |
+| ife.org.br | 1 |  |
+| livroseautores.com.br | 1 |  |
+| lpm.com.br | 1 |  |
+| mariamortatti.com.br | 1 |  |
+| mdskill.dev | 1 |  |
+| online.pucrs.br | 1 |  |
+| openlibrary.org | 1 |  |
+| orwellfoundation.com | 1 |  |
+| plataformadeescritores.com.br | 1 |  |
+| portal.pucrs.br | 1 |  |
+| proec.unicamp.br | 1 |  |
+| pt.wikipedia.org | 1 |  |
+| raw.githubusercontent.com | 1 |  |
+| revistaseletronicas.pucrs.br | 1 |  |
+| rodrigogurgel.com.br | 1 |  |
+| suap.enap.gov.br | 1 |  |
+| www1.folha.uol.com.br | 1 | página não abriu |
+
+Dados que vêm só de resultados de busca (por exemplo, Martins Fontes, Alta Books, LexML, Fundação Republicana e o IFE) levam a marca `(nv)` na lista de livros, pois só o título e o trecho foram lidos.
 
 ## Skills usadas {-}
 
@@ -509,6 +571,8 @@ Skills encontradas na web, antes de executar, como o autor pediu:
 - [clyderankin/essay-skills](https://github.com/clyderankin/essay-skills): um *pipeline* de ensaio para Claude Code, com seis etapas. O repositório não declara licença, então nada foi copiado. A página só foi listada, o texto do `SKILL.md` não foi lido.
 - [terrylica/cc-skills, pandoc-pdf-generation](https://mdskill.dev/terrylica/cc-skills/pandoc-pdf-generation): licença MIT. O cabeçalho do `SKILL.md` foi lido. Não foi usada, porque o autor pediu o pandoc de h0ffmann/proof e de h0ffmann/closed-source.
 - [eins78/agent-skills, pandoc](https://github.com/eins78/agent-skills/blob/main/skills/pandoc/SKILL.md): só o resultado da busca foi lido. A skill usa Chrome para gerar o PDF, e o autor pediu XeLaTeX.
+
+- `md-to-pdf-closed-source`: apareceu na lista de skills no fim da tarefa. O assistente a leu depois de montar o PDF e de abrir o PR. Ela descreve a montagem que ele já tinha feito e não guiou o trabalho.
 
 Nenhuma skill da web foi instalada. O assistente usou só as do autor, mais o `pandoc` e o modelo de documento de h0ffmann/closed-source.
 
