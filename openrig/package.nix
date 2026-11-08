@@ -1,4 +1,4 @@
-# OpenRig (github.com/mvschwarz/openrig, Apache-2.0), built from source at a release tag. The
+# OpenRig (github.com/mvschwarz/openrig, Apache-2.0), built from source at a pinned commit. The
 # source is an npm workspace (daemon, UI, TUI, CLI). This file repeats the steps of
 # scripts/build-package.sh, which needs git and the network: it builds the daemon, the UI, the TUI
 # and the CLI with tsc and vite, writes the build stamp, makes the context packs, and puts the
@@ -11,9 +11,10 @@
 # from the bundled SQLite source. Bump `version`, `commit` and both hashes together.
 { lib, buildNpmPackage, fetchFromGitHub, makeWrapper, nodejs_24 }:
 let
-  version = "0.7.7";
-  # The commit of the tag v${version}.
-  commit = "f3d8bac42e1f874aa0f784e412909fab27dded1b";
+  version = "0.7.9-main.a0f410e";
+  # The upstream commit that `version` names: a release, or the head of `main` at the time of the
+  # bump.
+  commit = "a0f410e161e60b38e7d7cb6ed1346f89ba3d1aea";
 in
 (buildNpmPackage.override { nodejs = nodejs_24; }) {
   pname = "openrig";
@@ -23,9 +24,9 @@ in
     owner = "mvschwarz";
     repo = "openrig";
     rev = commit;
-    hash = "sha256-Hzog+WHFjkLOqE9/DaMsJRjhdjtUl/+yLSulp2PVrvw=";
+    hash = "sha256-z8oQGR3XVc2V3zmn1AuVK8ij8/QqzC0HadQXfMVI7qk=";
   };
-  npmDepsHash = "sha256-fg0TrtDGQggrHo2RPMMQ97tmzIMlwxFWNwVA3OybL4g=";
+  npmDepsHash = "sha256-Z9j11s0be55MGd8mxvtgDGnEIMFR/LA4Ij5sBohs64I=";
 
   nativeBuildInputs = [ makeWrapper ];
 

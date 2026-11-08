@@ -8,8 +8,9 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import piabrota_site/community
-import piabrota_site/data.{type Closed, type Project}
+import piabrota_site/data.{type Closed, type Project, type Service}
 import piabrota_site/i18n
+import piabrota_site/marks
 import piabrota_site/parts
 
 pub fn view(lang: String) -> Element(msg) {
@@ -34,6 +35,7 @@ pub fn view(lang: String) -> Element(msg) {
       ]),
     ]),
     html.main([], [
+      services(lang),
       html.section([attribute.class("wrap"), attribute.id("projects")], [
         parts.section_head(
           i18n.t(lang, "head.projects"),
@@ -140,4 +142,47 @@ fn tile_href(p: Project) -> String {
     "" -> p.repo
     href -> href
   }
+}
+
+/// What piabrota2 serves on its own names: one link card each, with its mark and whether it needs
+/// the login.
+fn services(lang: String) -> Element(msg) {
+  html.section([attribute.class("wrap"), attribute.id("services")], [
+    parts.section_head(
+      i18n.t(lang, "head.services"),
+      i18n.t(lang, "note.services"),
+    ),
+    html.ul(
+      [attribute.class("services")],
+      list.map(data.services, service(_, lang)),
+    ),
+  ])
+}
+
+fn service(s: Service, lang: String) -> Element(msg) {
+  let mark = case marks.for(s.name, 52) {
+    Ok(mark) -> mark
+    Error(Nil) -> element.none()
+  }
+  html.li([attribute.class("service"), attribute.data("name", s.name)], [
+    mark,
+    html.div([attribute.class("service-body")], [
+      html.h3([], [
+        html.a(
+          [
+            attribute.class("tile-link"),
+            attribute.href("https://" <> s.host <> "/"),
+          ],
+          [html.text(s.label)],
+        ),
+        html.span([attribute.class("access is-" <> s.access)], [
+          html.text(i18n.t(lang, "access." <> s.access)),
+        ]),
+      ]),
+      html.p([attribute.class("blurb")], [
+        html.text(i18n.fact(lang, "service." <> s.name, s.blurb)),
+      ]),
+      html.span([attribute.class("host")], [html.text(s.host <> " ↗")]),
+    ]),
+  ])
 }

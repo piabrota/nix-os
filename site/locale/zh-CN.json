@@ -25,6 +25,10 @@
   "head.projects": "项目",
   "note.projects": "来自 piabrota/.github",
   "sub.projects": "每一行是一种工作。点击卡片，可以打开项目的网站。没有网站时，打开代码仓库。",
+  "head.services": "各自的域名",
+  "note.services": "由 piabrota2 提供",
+  "access.public": "公开",
+  "access.login": "需登录",
   "head.structure": "结构",
   "note.structure": "来自 piabrota/mu 和 piabrota/dojo",
   "head.why": "为什么开放",
@@ -124,5 +128,8 @@
   "closed.tag": "闭源",
   "project.chaceon": "用 Rust 重写的 WW3。WW3 是波浪物理模型。ondaseventos.ufsc.br 和 NOAA 使用 WW3。",
   "structure.image": "https://raw.githubusercontent.com/piabrota/.github/da0ebfaea2ccb900a6d8a8f1b4350d9633459c5a/profile/img/fabric.png",
-  "structure.alt": "piabrota 的结构图：dojo 是公共层。dojo 接收 mu 的规则，并固定下面的每个仓库。"
+  "structure.alt": "piabrota 的结构图：dojo 是公共层。dojo 接收 mu 的规则，并固定下面的每个仓库。",
+  "service.openrig": "OpenRig 的网页界面，软件工厂的引擎：构建者和审查者的席位，以及它们的终端。",
+  "service.metrics": "两台主机的进程、内存和 vCPU，每 10 秒读取一次。",
+  "service.room": "piabrota/room：一个 3D 房间，有镜头切换、录像机、望向里约的窗户和 piabrota RADIO。"
 }

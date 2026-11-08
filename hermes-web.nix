@@ -92,7 +92,8 @@ in
           add_header Strict-Transport-Security "max-age=31536000" always;
           if ($hermes_web_foreign_origin) { return 403; }
         '';
-        locations = {
+        # favicon.nix answers /favicon.ico, the path of the dashboard's own <link rel="icon">.
+        locations = config.piabrota.favicon.locations // {
           "/" = {
             proxyPass = "http://${backend}";
             proxyWebsockets = true;
@@ -134,8 +135,10 @@ in
           };
           # Never show a secret's value in the browser: the token and the bot tokens stay on the
           # box. Edits to .env are refused too, since activation writes it from the env file on
-          # every deploy (hermes.nix).
+          # every deploy (hermes.nix). /api/audio/voice-config hands a cloud STT or TTS key to the
+          # browser when a voice provider is set (v0.23.0, voice.client_direct is on by default).
           "= /api/env/reveal".return = "403";
+          "= /api/audio/voice-config".return = "403";
           ${docsPath} = {
             alias = "${cfg.docs}/";
             index = "index.html";

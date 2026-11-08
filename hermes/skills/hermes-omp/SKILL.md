@@ -1,7 +1,7 @@
 ---
 name: hermes-omp
 description: "Hand every code implementation or review to omp (oh-my-pi), then check its diff and open the PR yourself."
-version: 1.3.0
+version: 1.4.0
 author: piabrota
 license: MPL-2.0
 platforms: [linux]
@@ -83,12 +83,17 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
      files and the checks you ran, with their result."
 
    Never put a secret or a token in the task file.
-3. **Run.** From the working tree, in the background, with the output of omp filtered by
-   `omp-stream`:
+3. **Run.** From the working tree, in the background, with `omp-run`:
 
    ```
-   terminal(command="omp -p --mode json --no-title --max-time 15m < /var/lib/hermes/workspace/omp-tasks/<a-few-words>.md 2>&1 | omp-stream; cat /var/lib/hermes/workspace/omp-tasks/<a-few-words>.progress 2>/dev/null", workdir="/var/lib/hermes/workspace/<repo>", background=true, notify=true, heartbeat=120)
+   terminal(command="omp-run <a-few-words> --max-time 15m", workdir="/var/lib/hermes/workspace/<repo>", background=true, notify=true, heartbeat=120)
    ```
+
+   `omp-run <name> [flags]` runs `omp -p --mode json --no-title [flags]` on the task file
+   `omp-tasks/<name>.md`, pipes the output through `omp-stream`, and at the end prints how the run
+   ended and the progress file `omp-tasks/<name>.progress`. Put only omp flags after the name. Do
+   not write the `omp ... | omp-stream` pipeline yourself: when a signal kills it, the background
+   shell prints `tcsetattr: Inappropriate ioctl for device` and the task fails with exit 143.
 
    `--mode json` makes omp print one event per line as it works. `omp-stream` turns each event
    into one plain line: `omp: start`, `> <tool>: <what>`, `< <tool> ok (<ms> ms)` with the first
@@ -98,8 +103,14 @@ The owner can also start it by name: the skill is the command `/hermes-omp` (Tel
    Each heartbeat (every 120 seconds) delivers the new lines to the conversation. Show them to the
    owner as they arrive: short, in a code block. Do not rewrite them. Each heartbeat costs one turn
    of yours, so keep your own words to a line or none. A run with no `omp: done` line ended in an
-   abnormal way: it was stopped or killed, or an `omp stderr` line says why. The command shows the
-   progress file when the stream ends. For a task that needs more than 10 minutes, follow "Long
+   abnormal way, and an `omp-run:` line or an `omp stderr` line says why.
+
+   **To stop or restart a run** (the owner changed the task, or it went the wrong way), run
+   `omp-run --stop <a-few-words>` in the foreground. It stops only that run, waits until it has
+   ended, and the background task then ends with `omp-run: stopped on request` and exit 0, not as
+   a failure. Then write the new task file and start again. Never stop omp with `pkill -f`,
+   `pgrep ... | kill` or `kill <pid>`: a pattern can match another run, and the task ends as a
+   failure with exit 143. For a task that needs more than 10 minutes, follow "Long
    tasks". The wrapper stops every run at 35 minutes.
 
    For a review only, say so in the task file and add `--approval-mode write`, so omp can read and
@@ -167,6 +178,8 @@ request), omp edits the files directly.
 ## Long tasks
 
 A deploy or a restart of the gateway stops omp, and the wrapper stops every run at 35 minutes.
+This section and step 3 win over a skill that you wrote yourself about omp runs (for example
+`omp-long-tasks`): start and stop every run with `omp-run`.
 
 - Split a task that needs more than 10 minutes into steps in the task file. Give each step one
   check. Name a progress file in the task file: `omp-tasks/<name>.progress`. Run one omp for each
@@ -178,7 +191,7 @@ A deploy or a restart of the gateway stops omp, and the wrapper stops every run 
   deploy can restart the gateway.
 - Start the run as in step 3 (`terminal(background=true, notify=true, heartbeat=120)`) and end the
   turn. Do not poll: the heartbeat delivers the output.
-- If the output says `[Stopped by SIGTERM]`, read the progress file and `git status`. Then start a
+- If the output says `omp-run: stopped by SIGTERM`, read the progress file and `git status`. Then start a
   new run with a task file that says: continue after the last finished step. Tell the owner that
   the run stopped, and why.
 - If `NRestarts` of `hermes-agent` rises while you work, stop. Run `hermes doctor` and
@@ -195,8 +208,11 @@ installed, has the `rig` commands.
 
 - Exit 137, or the run stops with no `omp: done` line and no output: the box ran out of memory and
   the kernel stopped omp first. Tell the owner. Do not run it again until he says so.
+- Exit 143 with `omp-run: stopped by SIGTERM`: a restart of your unit, a deploy or a kill stopped
+  the run. It is not a bug of omp: follow "Long tasks". Exit 0 with `omp-run: stopped on request`
+  is your own `omp-run --stop`: it is not a failure, so do not report it as one.
 - No `omp: done` line and no memory kill: report the last lines of the stream, with the
-  `omp stderr` lines.
+  `omp-run` and `omp stderr` lines.
 - An authentication error: the token in the env file does not work for omp. Tell the owner; do
   not look for another token.
 - A command that omp needed was refused by its rules: do that step yourself only if your own rules

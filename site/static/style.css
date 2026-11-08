@@ -194,7 +194,24 @@ span.where { color: var(--muted); }
 .hosts-figure img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: 12px; }
 .hosts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .hosts-grid ul { margin: 8px 0 0; padding-left: 18px; }
-.caduceus { display: block; font: 400 160px/1 var(--display); color: var(--accent-text); text-align: center; }
+/* The marks drawn here (marks.gleam): the piabrota mark's square, one cream drawing. */
+.logo-mark { display: block; flex: none; border-radius: 22%; }
+.drawing .logo-mark { margin: 0 auto; width: 176px; height: auto; filter: drop-shadow(0 18px 40px color-mix(in srgb, var(--accent) 35%, transparent)); }
+.tile .logo-mark { width: 44px; height: 44px; }
+
+/* A · services: one link card each for what piabrota2 serves on its own name. */
+.services { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.service { position: relative; display: flex; gap: 16px; align-items: flex-start; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
+.service:hover { border-color: var(--accent-text); transform: translateY(-2px); }
+.service:focus-within { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+.service .logo-mark { width: 52px; height: 52px; }
+.service-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.service h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 1.45rem; line-height: 1.1; }
+.service .blurb { margin: 0; color: var(--muted); font-size: 14px; }
+.service .host { font: 400 12px/1.4 var(--mono); color: var(--accent-text); overflow-wrap: anywhere; }
+.access { font: 600 11px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.access.is-public { color: var(--ok); border-color: var(--ok); }
+.access.is-login { border-style: dashed; }
 
 /* /figures: one card a figure, its PNG on top (figures-site/default.nix writes the page). */
 .figures-grid { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 16px; }
@@ -220,7 +237,7 @@ span.where { color: var(--muted); }
   .drawing { order: -1; justify-self: start; }
   .drawing img { width: 120px; }
   .drawing .eye { width: 96px; }
-  .caduceus { font-size: 96px; text-align: left; }
+  .drawing .logo-mark { width: 96px; margin: 0; }
   .drawing figcaption { display: none; }
   .term-block li { grid-template-columns: minmax(0, 1fr) 7.5rem; }
   .term-block .where { grid-column: 1 / -1; }

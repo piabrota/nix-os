@@ -1,0 +1,10 @@
+$documentclass-line$
+% One section of a thesis, for the writer to look at. Made by `thesis build-section`; the whole work
+% is made by `thesis assemble` from main.latex. Same preamble, same overlay.
+\input{../shared/thesis_pack}
+$common.latex()$
+\input{../overlay/preamble}
+\begin{document}
+$if(pretext)$\thesispretitle{$section-title$}$endif$
+\input{sections/frag}
+\end{document}

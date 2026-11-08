@@ -16,10 +16,13 @@ metadata:
 [OpenRig](https://github.com/mvschwarz/openrig) (v0.7.7) is a control plane for teams of coding
 agents. A daemon keeps the state. Each agent is a **seat**: a program in a tmux pane. The command
 is the systemd unit `openrig` on `127.0.0.1:7433` (the web UI is on at that address, for the
-owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp`, with the same Claude subscription as you. Four rigs
+owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp` or
+Claude Code, with the same Claude subscription as you. Five rigs
 are specified: `piabrota-dev`, with a builder seat and a reviewer seat, the two rigs of the
-block wave-forecaster-dev (see "wave-forecaster-dev" below) and `reels-fabric`, five seats that make a
-reel (`references/reels-fabric.md`). This skill and its `references/` are enough to run them: you do not need the web.
+block wave-forecaster-dev (see "wave-forecaster-dev" below), `wave-forecaster-thesis`
+(`references/thesis-rig.md`) and `reels-fabric`, five seats that make a reel
+(`references/reels-fabric.md`). This skill and its `references/` are
+enough to run them: you do not need the web.
 
 Your `rig` command is a wrapper that already points at the daemon. Your deny list blocks the
 commands that this skill says you must never run.
@@ -164,6 +167,7 @@ git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:
 |What you never do, and why|`references/safety.md`|
 |Run the rig `reels-fabric` phase by phase: the seats, the approval gate, what to show the owner|`references/reels-fabric.md`|
 |A symptom: daemon down, port, tmux, OOM, restart loop, disk, deploy|`references/troubleshooting.md`|
+|The thesis rig `wave-forecaster-thesis`: the phases, what to show the owner, the outbox|`references/thesis-rig.md`|
 
 ## What was tested
 

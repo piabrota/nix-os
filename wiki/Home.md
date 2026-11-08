@@ -22,6 +22,7 @@ para eles.
 - [Hermes](Hermes): como o Hermes Agent roda aqui (a unidade, os modelos, os limites, o reinício num deploy) e onde fica a configuração dele.
 - [Fábrica](Fabrica): a fábrica de software aberta, com o OpenRig como motor (as etapas, quem faz cada uma, o estado de hoje e as regras que ficam).
 - [Runtimes](Runtimes): os runtimes do OpenRig (Claude Code, Codex, Pi, omp, terminal, stub e os harnesses da comunidade): prós, contras e quais a máquina roda.
+- [A tese](Thesis): o rig que escreve um projeto de graduação da UFRJ em português, seção por seção, com quatro portões e um PDF (nenhum seat o rodou ainda).
 - [Reels](Reels): a Fábrica de Reels, a rig do OpenRig que faz vídeos de 15 s e 30 s para o Instagram, com o roteiro como fonte e só Claude (sem API de mídia).
 - [Maquetes](Maquetes): três direções para a home de piabrota.art, geradas em Nix.
 

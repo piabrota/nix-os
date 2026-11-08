@@ -54,7 +54,7 @@ day; they move.
 - ✅ **Bundled skills**: `github`, `arxiv`, `grounded-citations`, `obsidian`,
   `weekly-review-planning`, `document-to-action-items`, `codebase-inspection` and the rest.
 - ✅ **Optional skills** (`optional-skills/` at the pin, copied into the store): `watchers`,
-  `rss-feeds`, `duckduckgo-search`, `research-paper-writing`, `ast-grep`.
+  `rss-feeds`, `research-paper-writing`, `ast-grep`. DuckDuckGo search is a web provider since v0.23.0.
 - ✅ **MCP servers** from the approved catalog (`optional-mcps/`), remote, no key:
   [DeepWiki](https://mcp.deepwiki.com) and [Context7](https://context7.com).
 - ✅ **Identity and brief**: `hermes/SOUL.md` (rules from piabrota's dogma) and `hermes/AGENTS.md`.

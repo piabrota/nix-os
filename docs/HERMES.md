@@ -10,8 +10,9 @@ which answers on the platforms it has tokens for.
 The project publishes a flake with a package and a NixOS module (`nixosModules.default`). This
 repository's `flake.nix` takes it as the input `hermes-agent`, and `hermes.nix` only picks the
 options. For the project, Nix and NixOS are a Tier 2 platform: the flake and the module are kept
-"best effort", and a commit to their `main` can break them. So `flake.lock` pins a commit, and the
-weekly flake update (`flake-update.yml`) moves it only in a PR that CI builds before the merge.
+"best effort", and a commit to their `main` can break them. So `flake.nix` pins the input to a release
+tag, and `flake.lock` holds the commit of that tag. The weekly flake update (`flake-update.yml`)
+cannot move it off the release.
 
 What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](AWESOME-HERMES.md).
 
@@ -82,12 +83,31 @@ old configuration.
 
 A reload is a graceful restart. `ExecReload` sends `SIGUSR1`; the gateway takes no new work, lets
 the turns, cron jobs and subagents in flight finish (at most `agent.restart_after_turn_timeout`,
-600 s here), and exits with code 75. systemd (`Restart=always`) then starts it with the new
-configuration. Before this, a deploy stopped the unit with `SIGTERM` and cut the turn in flight,
-also when the merge was Hermes's own PR. A new Hermes package changes the unit's `ExecStart`, and
-that still restarts it at once. While it drains, a new message waits until the gateway is back.
-The gateway runs with `--external-supervisor`. This tells it that systemd owns it, so a reload
-exits with code 75 and does not start a detached gateway.
+600 s here), and exits with code 75. Then the new configuration starts. Before this, a deploy
+stopped the unit with `SIGTERM` and cut the turn in flight, also when the merge was Hermes's own
+PR. A new Hermes package changes the unit's `ExecStart`, and that still restarts it at once. While
+it drains, a new message waits until the gateway is back.
+
+The main process of the unit is `hermes/scripts/gateway-wrapper.sh`, not the gateway. It passes
+`SIGUSR1` and `SIGTERM` on to the gateway. The gateway runs with `--external-supervisor`. This
+tells it that systemd owns it, so a reload exits with code 75 and does not start a detached
+gateway.
+
+On code 75 the wrapper starts the gateway again itself, at once, with no pause. The unit stays
+active, and `RestartSec` is not part of a reload. Before, systemd waited 5 s (`Restart=always`).
+In that gap the Chat tab of the dashboard (`hermes-backend`) found no gateway and started a second
+one. That gateway is outside `hermes-agent`. The new gateway of the unit then said "already serves"
+and exited at once, and systemd restarted it every 6 s (2026-11-05). A gateway that exits 75 more
+than 5 times in 60 s makes the wrapper exit 1, and systemd restarts the unit and counts it.
+
+When another gateway serves the host, the new gateway exits at once with code 75 (older versions
+may use 0). A reload also exits 75, so the wrapper uses the run time to tell them apart. A reload
+comes after a long run, because the gateway drains its work first. A foreign gateway makes the new
+one exit within 20 s. If that happens and `gateway.pid` names another live process, the wrapper
+does not exit and does not count a reload. It logs `another gateway (pid N) serves this host (the
+gateway exited S): waiting for it to exit` and checks every 5 s. When that process ends, the
+wrapper starts its own gateway. `SIGTERM` ends the wait at once. The test is
+`hermes/scripts/gateway-wrapper.test.sh`.
 
 ## Who it is
 
@@ -108,10 +128,10 @@ All are declared in `hermes.nix`, so they arrive with a deploy and move with the
 
 | Add-on | Kind | What for |
 |---|---|---|
-| `mcp`, `ddgs` | extras | The MCP client (without it the servers below do nothing) and DuckDuckGo search, with no key |
+| `mcp`, `ddgs` | extras | The MCP client (without it the servers below do nothing) and DuckDuckGo search, with no key. Since v0.23.0 `ddgs` is a web search provider, not a skill: Hermes picks it when no other web key is set. |
 | DeepWiki, Context7 | remote MCP servers, no key | Questions about public repositories (piabrota, marola-dev, nixpkgs) and current library docs. Nothing runs on the box for them. |
 | `watchers`, `rss-feeds` | optional skills | Poll RSS, JSON APIs and GitHub with dedup on Hermes's cron: bathing-water bulletins, Defesa Civil and INMET alerts, ocean news |
-| `duckduckgo-search`, `research-paper-writing` | optional skills | Web search; papers, with the bundled `arxiv` and `grounded-citations` |
+| `research-paper-writing` | optional skill | Papers, with the bundled `arxiv` and `grounded-citations` |
 | `ast-grep` | optional skill, plus `pkgs.ast-grep` | Structural code search |
 | `gh` | package | For the bundled `github` skill. Put a fine-grained token with read access only in the env file as `GITHUB_TOKEN`: it reads, and it cannot push or merge. |
 
@@ -149,7 +169,27 @@ sends), and pinned by commit in `hermes.nix`:
 | [hermes-guide](https://github.com/iap/hermes-guide) v0.8.12 (MIT) | plugin | `/hermes-doctor` in chat and `hermes guide` on the box: ten read-only checks (config, MCP, skills, commands, hooks, plugins, memories, sessions, storage, update). Its report quotes short snippets of memory and the session ids and token counts of runaway sessions. Each run makes one `git ls-remote` of its own repository for a release notice (none with `--fast`); `proactive` (the checks at every session start and end) stays off. Its 22 troubleshooting skills are a separate tap and are not installed. |
 | [hermes-plugin-guard](https://github.com/mauricemohr88-debug/hermes-plugin-guard) v0.2.1 (MIT) | plugin | `hermes plugin-guard scan <directory> --fail-on high`: a static scan of a candidate plugin (manifest, Python, dependencies, secrets) that never imports or runs it. One read-only tool, `plugin_guard_review_candidate`, for a plugin installed but not enabled; here every plugin comes from Nix and is enabled, so the CLI is the path. No network. Only `src/` is installed, without the scanner's unsafe test fixtures. The gate for every plugin proposed after it (`hermes/AGENTS.md`, "Plugins"). |
 | [kvm4-health](../hermes/skills/kvm4-health/SKILL.md) (this repository) | skill | `kvm4-health`: memory, swap, pressure, load, disk and the journal, and for `hermes-agent`, `hermes-backend`, `pgx`, `paperclip`, `postgresql` and the `hermes` user's slice (where cron jobs run) the memory now and `MemoryPeak` against `MemoryMax`, tasks and restarts; growth of `/` a day and of `hermes-agent` with no restart, from a sample every 30 minutes. `WARN` and `CRIT` thresholds are `KH_*` variables. The watchdog is a `no_agent` cron job on `~/.hermes/scripts/kvm4-health-alert.sh`: no model call, and a message only when the findings change (again every 6 hours, and once on recovery). Hermes creates the job once, from the skill. Read-only on the system; it writes only `plugin-data/kvm4-health/`. `just remote-health` runs it from your computer. |
+| [rbi](../hermes/skills/rbi/SKILL.md) (this repository) | skill | `/rbi <prompt>`, "refine before implementing". It fixes spelling and grammar, puts one idea on each line, labels goal, constraints, deliverable and a `Done when` check, and reads what the prompt names before it asks. When something that changes the result is open, it says the request back, asks one question at a time, lays out two or three approaches with a pick and asks for a yes to a short design before it builds a project. Then it plans the steps for run time (what runs in parallel; who does each step: you, subagents, omp or the owner) and does the work. Flags in the prompt: `--dry` stops after the plan, `--go` opts out of the questions, `--pt` turns on ponytail, which is off otherwise: the omp task gets lean-code rules, then a read-only omp review with the `ponytail-review` skill, and a fix run only for confirmed Must fix findings. The talking steps follow the `brainstorming` skill of [obra/superpowers](https://github.com/obra/superpowers) (MIT), which is also installed as a plugin (next row): `/rbi` is the explicit way, and the plugin is the automatic way. No network, no script, no new permission. A merge restarts `hermes-agent`, because the skills directory is part of its settings. |
+| [superpowers](https://github.com/obra/superpowers) v7.0.2 (MIT) | plugin | A community plugin (not in Nous's catalog), read at v7.0.2 and pinned by commit. It adds 15 skills: `brainstorming`, `writing-plans`, `subagent-driven-development`, `systematic-debugging`, `test-driven-development` and others. Its `pre_llm_call` hook adds a bootstrap text (about 5 KB) to the first turn of each session that is not a subagent, cron sessions included. The text tells the model to look for a matching skill before it acts. Its `brainstorming` skill asks one question at a time and wants an approved design before any build. The plugin code has no network call. The visual companion of `brainstorming` needs node, which this box does not have, so it stays inert. The scan with `hermes plugin-guard` gave one low finding (no SECURITY.md). |
 | [hermes-cron](https://github.com/itpartypattaya/hermes-cron) v1.5.2 (MIT) | skill | Rules for cron jobs: pause, disable or remove; and `no_agent`, the `wakeAgent` pre-check and `[SILENT]`, so that a quiet tick makes no model call. Its read-only doctor script needs `python3`, which is not on Hermes's `PATH` here; the rules work without it. |
+
+### Two ways to send a fuzzy prompt
+
+A prompt with typing errors, ideas stuck together or a missing reason can go two ways. Both are on.
+
+| | `/rbi <prompt>` | superpowers (automatic) |
+|---|---|---|
+| How it starts | You type the command. | The bootstrap text loads on the first turn of each session. The model decides by itself to use a skill. |
+| What it does | Fixes spelling and grammar, puts one idea on each line, plans the steps for run time and says who does each step: Hermes, subagents, omp or you. | `brainstorming` asks one question at a time and writes a design. `writing-plans` writes the steps. Other skills cover tests, debugging and review. |
+| Questions | One message, at most once for a task. A small change goes straight on. | One question at a time, and a project waits for an approved design. |
+| Flags | `--dry` stops after the plan. `--go` skips the questions. `--pt` turns on ponytail. | None. Say in words that you want no questions. |
+| Cost | No hook, no extra text. | About 5 KB on the first turn of a session. The model cache keeps it after that. |
+
+Use `/rbi` when you want the prompt cleaned and the work planned for run time. Let superpowers act
+when you describe an idea and want a design talk. If the two disagree on a prompt that starts with
+`/rbi`, Hermes follows `/rbi` and the owner's rules (SOUL.md and the deny list). The plugin cannot
+widen a permission. To remove it, delete its block and its two list entries in `hermes.nix`. `/rbi` stays, because it
+needs no plugin.
 
 Limits from the list's operational playbooks: `agent.max_turns = 60`; subagents at most 2 at a
 time, 50 iterations each, one level deep; `tool_loop_guardrails.hard_stop_enabled`; no update
@@ -335,8 +375,11 @@ hermes doctor
 the add-ons of the last deploy in one run, read-only: the unit and when it started, each plugin
 linked and enabled, the `hermes-omp` skill, `omp --version` and `yt-dlp --version`, and plugin
 errors in the journal. It prints `FAIL` for each missing part and never reads the secrets.
-`just remote-health` prints the box's health (`hermes/skills/kvm4-health`): memory, disk, CPU, and
-each Hermes unit against its `MemoryMax`.
+`just remote-health` prints the health of a box (`hermes/skills/kvm4-health`): memory, disk, CPU, and
+each Hermes unit against its `MemoryMax`. It asks KVM 1 (`piabrota.art`, or `DEPLOY_HOST`). For
+another box, give the host as the second argument: `just remote-health h0ffmann <address>`. A unit
+that the box does not run is not a finding. The journal warns only above its own 200 MiB cap
+(`KH_JOURNAL_MIB=220`). Exit 1 means a `WARN` or `CRIT` line; the recipe then says so.
 
 The log says which platforms connected; "No messaging platforms enabled" means the `.env` has no
 platform token. Two warnings are expected: the Discord adapter's "Opus codec not found" (voice is
@@ -367,8 +410,9 @@ web app is part of the Hermes package that `hermes.nix` installs, so it adds no 
   basic-auth login to write.
 - **No secret reaches the browser.** `POST /api/env/reveal` (shows a value of `.env`) is refused,
   and so is every write to `/api/env`: activation writes `.env` from the secrets file on each
-  deploy, so an edit there is lost anyway. The page still lists the names of the variables, with
-  their values redacted.
+  deploy, so an edit there is lost anyway. `GET /api/audio/voice-config` is refused too: it hands
+  a cloud STT or TTS key to the browser when a voice provider is set. The page still lists the
+  names of the variables, with their values redacted.
 - **Nix owns the config.** A change made in the Config page lasts only until the next deploy
   writes `config.yaml` again. Change `hermes.nix` in a PR instead.
 - **The Documentation tab shows piabrota's page**, `hermes-web/docs/index.html`, not Nous
@@ -458,8 +502,10 @@ secret's name gets through. Store paths keep their name and lose their hash.
 
 ## Updating and turning it off
 
-- **Update:** the weekly `flake-update.yml` PR moves the `hermes-agent` input with the rest, with
-  the closure difference (`dix`). CI builds it; the merge deploys it.
+- **Update:** the pin is a release tag. A new release is one PR with three changes: the tag in
+  `flake.nix` (`hermes-agent.url`), `nix flake update hermes-agent`, and `hermesVersion` in
+  `hermes.nix` (and the badge in `README.md`). The weekly `flake-update.yml` PR does not move this
+  input. CI builds the PR with the closure difference (`dix`); the merge deploys it.
 - **Turn off:** take `../../hermes.nix` out of the host's `imports` (`hosts/<name>/default.nix`) in a PR. The deploy stops
   and removes the unit; `/var/lib/hermes` and `/var/lib/hermes-secrets` stay on the box until
   someone deletes them.

@@ -27,6 +27,25 @@ pub fn documents_test() {
   })
 }
 
+// Every page of the site, in every language, names the org's icon (favicon/, favicon.nix).
+pub fn icon_test() {
+  let all =
+    list.append(pages(), [
+      #("hermes", page.hermes()),
+      #("hosts", page.hosts()),
+      #("pt-BR", page.fabric_in("pt-BR")),
+      #("zh-CN", page.fabric_in("zh-CN")),
+      #("ja-JP", page.fabric_in("ja-JP")),
+    ])
+  list.each(all, fn(p) {
+    let #(_, html) = p
+    assert string.contains(html, "href=\"/favicon.svg\"")
+    assert string.contains(html, "href=\"/favicon.ico\"")
+    assert string.contains(html, "href=\"/apple-touch-icon.png\"")
+    assert !string.contains(html, "href=\"data:,\"")
+  })
+}
+
 // Every page names every project of the org profile, and says what it is or where it meets the web.
 pub fn every_project_test() {
   assert data.projects != []
@@ -182,4 +201,18 @@ pub fn hermes_no_secret_test() {
   list.each(["hermes.env", "TOKEN", "ALLOWED", "PRIVATE KEY"], fn(word) {
     assert !string.contains(text, word)
   })
+}
+
+// Design A links each service on its own name, with its drawn mark, and the hermes tile and
+// /hermes show the hermes mark, not the ☤ glyph.
+pub fn services_test() {
+  assert list.length(data.services) == 3
+  let html = page.fabric()
+  list.each(data.services, fn(s) {
+    assert string.contains(html, "href=\"https://" <> s.host <> "/\"")
+    assert string.contains(html, "logo-mark logo-mark-" <> s.name)
+  })
+  assert string.contains(html, "logo-mark logo-mark-hermes")
+  assert string.contains(page.hermes(), "logo-mark logo-mark-hermes")
+  assert !string.contains(page.hermes(), "☤")
 }

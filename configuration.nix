@@ -16,6 +16,10 @@
     ./site.nix
     # A Postgres-compatible database (docs/PGX.md), off until a host turns it on.
     ./pgx.nix
+    # Live metrics (docs/METRICS.md): a collector, a page and a pull, off until a host turns them on.
+    ./metrics.nix
+    # The eye as the icon of every vhost (favicon.nix): each vhost carries its locations.
+    ./favicon.nix
     # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
     ./kubesolo-purge.nix
   ];

@@ -17,6 +17,8 @@ let
   sources = "https://github.com/piabrota/nix-os/tree/main/docs/archify";
   # The foot's partnership line, as parts.foot writes it (site/src/piabrota_site/parts.gleam).
   inherit ((import ../mockups/data.nix).org) contact;
+  # The three icon links, the same on every page of the site (favicon/links.nix).
+  icons = import ../favicon/links.nix;
 
   # The org's mark, as parts.eye draws it (the same markup as the other pages of the site).
   eye = class: size: ''<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="${class}" height="${size}" viewBox="0 0 100 100" width="${size}"><rect fill="#BC2318" height="100" rx="22" width="100"></rect><path d="M12 50 Q50 18 88 50 Q50 82 12 50Z" fill="#F7F3EA"></path><circle cx="50" cy="50" fill="#2E9E4F" r="14"></circle><circle cx="50" cy="50" fill="#0B0D12" r="6"></circle></svg>'';
@@ -103,17 +105,18 @@ stdenvNoCC.mkDerivation {
       fi
       node -e '
         const fs = require("fs");
-        const [page, css, bar, out] = process.argv.slice(1);
-        const html = fs.readFileSync(page, "utf8");
+        const [page, css, bar, out, icons] = process.argv.slice(1);
+        // The icon is the eye of the org: drop any icon that archify wrote, then add ours.
+        const html = fs.readFileSync(page, "utf8").replace(/<link[^>]*rel="?icon"?[^>]*>/g, "");
         const at = html.indexOf("</head>");
         if (at < 0) throw new Error("no </head> in " + page);
         const body = /<body[^>]*>/.exec(html);
         if (!body) throw new Error("no <body> in " + page);
-        const head = html.slice(0, at) + "<style>" + fs.readFileSync(css, "utf8") + "</style>";
+        const head = html.slice(0, at) + icons + "<style>" + fs.readFileSync(css, "utf8") + "</style>";
         const rest = html.slice(at);
         const cut = body.index + body[0].length - at;
         fs.writeFileSync(out, head + rest.slice(0, cut) + bar + rest.slice(cut));
-      ' "$work/page.html" "$TMPDIR/look.css" "$html" "$dest/index.html"
+      ' "$work/page.html" "$TMPDIR/look.css" "$html" "$dest/index.html" '${icons}'
     }
 
     # esc <text>: the text as HTML.
@@ -174,7 +177,13 @@ stdenvNoCC.mkDerivation {
     </section></main>
     <footer class="foot"><div class="wrap"><p>piabrota.art is served by <a href="/nixos">nix-os</a>, from /nix/store. Partnerships: ${contact}. <a href="/notes">Notes demo (Loco)</a>.</p><nav aria-label="Designs" class="designs"><a href="/"><b>A</b> fabric</a><a href="/index/"><b>B</b> index</a><a href="/paths/"><b>C</b> paths</a></nav></div></footer></div></body></html>
     EOF
-    } > dist/index.html
+    } > "$TMPDIR/index.html"
+    # The index says `<link href="data:," rel="icon">`, an empty icon: the eye takes its place.
+    empty='<link href="data:," rel="icon">'
+    eyes='${icons}'
+    page=$(cat "$TMPDIR/index.html")
+    printf '%s\n' "''${page/"$empty"/$eyes}" > dist/index.html
+    grep -qF "$eyes" dist/index.html || { echo "the index has no icon links" >&2; exit 1; }
     # render's stdout is inside the block above: a log line there lands in the index as page text.
     if grep -qE 'finalize|gates validate|/build/' dist/index.html; then
       echo "dist/index.html holds archify log text" >&2; exit 1

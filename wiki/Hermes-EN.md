@@ -22,7 +22,7 @@ reads them from the evaluated system, so the page changes with every merge that 
 | | |
 |---|---|
 | Unit | `hermes-agent`, a systemd service from the NixOS module of Hermes's flake (the input `hermes-agent`, pinned in `flake.lock`). Native mode, not a container. |
-| Version | The release v0.22.7 (commit `b200f5b`, 2026-11-03), pinned in `flake.lock`. |
+| Version | The release v0.23.0 (commit `2bd378e`, 2026-11-05), pinned by tag in `flake.nix` and by commit in `flake.lock`. |
 | Host | `piabrota2`, the KVM 4 VPS (`hosts/piabrota2/default.nix`). |
 | Package | `full`, the default of Hermes's flake, plus the extras `anthropic`, `messaging`, `mcp` and `ddgs`. |
 | Limits | `MemoryMax=8G` (half the RAM) and `CPUWeight=50`: when the four cores are busy, sshd and the other units get twice Hermes's CPU share. |
@@ -81,7 +81,7 @@ with the time of the deploy. Because of the drain, it can be up to 10 minutes la
 
 - `hermes/SOUL.md`: its identity and rules (from piabrota's dogma). `hermes/AGENTS.md`: a brief of
   the owner's projects, sources and jobs. Activation installs both on every deploy.
-- Skills: five from the project's optional catalog, evidence-ledger-research, and 29 of the
+- Skills: four from the project's optional catalog, evidence-ledger-research, and 29 of the
   owner's skills ([`docs/HERMES-SKILLS.md`](https://github.com/piabrota/nix-os/blob/main/docs/HERMES-SKILLS.md)).
 - MCP servers: DeepWiki and Context7, remote, with no key.
 - Guardrail: the custom-dangerous-patterns plugin blocks the commands in

@@ -5,10 +5,10 @@
 # Every host gets this file. It sets what does not depend on the machine and leaves the rest at
 # upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
-{ config, lib, pkgs, hermes-agent, ... }:
+{ config, lib, pkgs, utils, hermes-agent, ... }:
 let
-  # The release tag of the pinned hermes-agent input (flake.lock): v0.22.7 is b200f5b.
-  hermesVersion = "0.22.7";
+  # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.0 is 2bd378e.
+  hermesVersion = "0.23.0";
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
   # Copied, not linked: a link into the input keeps its whole source (234 MiB) in the closure, and
@@ -18,7 +18,6 @@ let
   skills = [
     "devops/watchers" # poll RSS, JSON APIs and GitHub, with dedup: bulletins and alerts
     "research/rss-feeds" # read and discover feeds
-    "research/duckduckgo-search" # web search with no key (the ddgs extra)
     "research/research-paper-writing" # papers, with the bundled arxiv and grounded-citations
     "software-development/ast-grep" # structural code search (pkgs.ast-grep below)
   ];
@@ -133,6 +132,23 @@ let
     rev = "857d881be77249c192c5fefa8254db186a7abbca";
     hash = "sha256-XQGm8nJanbCQzrfvpfABdwRy8NwzGlH9HvGiPU/V5cE=";
   }}/src $out";
+  # superpowers v7.0.2 (obra/superpowers, MIT): 15 skills, and a `pre_llm_call` hook that adds a
+  # bootstrap text (about 5 KB) to the first turn of a session, not to a subagent. The visual
+  # companion of the brainstorming skill (skills/brainstorming/scripts/server.cjs) needs node.
+  # This box has no node, so it stays inert. The plugin code makes no network call. Read at
+  # v7.0.2, hash pinned; a new commit is a PR. The plugin keeps plugin.yaml and __init__.py in
+  # .hermes-plugin/; the flat layout (both files next to skills/) is one it supports.
+  superpowers = pkgs.runCommand "superpowers" { } ''
+    src=${pkgs.fetchFromGitHub {
+      owner = "obra";
+      repo = "superpowers";
+      rev = "22f0b463e7a5e579904dd6211a520321035526f7";
+      hash = "sha256-rP5YsyGuPd9YSW/Fj3aukrq1bLuV+nwwQMK4JaZQgkI=";
+    }}
+    mkdir -p "$out"
+    cp "$src/.hermes-plugin/plugin.yaml" "$src/.hermes-plugin/__init__.py" "$out/"
+    cp -r "$src/skills" "$out/skills"
+  '';
   # The kvm4-health skill's script as a command (hermes/skills/kvm4-health), with the tools it
   # reads with on its PATH, for chat and for the watchdog cron job below.
   kvm4Health = pkgs.writeShellApplication {
@@ -146,6 +162,14 @@ let
     name = "omp-stream";
     runtimeInputs = [ pkgs.jq ];
     text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/hermes-omp/scripts/omp-stream.sh} "$@"'';
+  };
+  # The hermes-omp skill's runner (hermes/skills/hermes-omp/scripts/omp-run.sh): one background omp
+  # run through omp-stream, and `omp-run --stop <name>`. It ends with a code, never by a signal, so
+  # the `bash -lic` of a background task prints no tcsetattr error and a stop is not a failure.
+  ompRun = pkgs.writeShellApplication {
+    name = "omp-run";
+    runtimeInputs = [ pkgs.coreutils ompWrapped ompStream ];
+    text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/hermes-omp/scripts/omp-run.sh} "$@"'';
   };
   # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
   subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
@@ -260,7 +284,8 @@ in
     });
     # The extras every host uses, added to the package's own: Anthropic's SDK and the chat platforms
     # (Telegram, Discord, Slack), already in `full`; mcp, the MCP client, without which mcpServers
-    # below do nothing; ddgs, DuckDuckGo search.
+    # below do nothing; ddgs, DuckDuckGo search with no key (since v0.23.0 a web search provider
+    # that Hermes picks when no other web key is set, no longer an optional skill).
     extraDependencyGroups = [ "anthropic" "messaging" "mcp" "ddgs" ];
     # Claude through the owner's subscription: CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`) in the
     # env file below, as piabrota/agents does. Never a key here: settings land in the store.
@@ -325,6 +350,7 @@ in
       (subPlugin "memory-rewind" memoryRewind)
       hermesGuide
       pluginGuard
+      superpowers
     ] ++ lib.mapAttrsToList subPlugin (labs // more) ++ map ownPlugin ownPlugins;
     settings.plugins.enabled = [
       "custom-dangerous-patterns"
@@ -333,6 +359,7 @@ in
       "memory-rewind"
       "hermes-guide"
       "hermes-plugin-guard"
+      "superpowers"
     ] ++ builtins.attrNames (labs // more) ++ ownPlugins;
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for a subscription's quota (the fan-out limits
@@ -380,9 +407,10 @@ in
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
     # omp is the wrapper above, for the hermes-omp skill.
     # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
-    # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts).
+    # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts),
+    # and omp-run runs and stops a background omp through it.
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix, as Paperclip's jq is.
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ompStream ];
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ompStream ompRun ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
@@ -457,13 +485,18 @@ in
   # The gateway's exit 75 after a reload failed the first deploy that reloaded it (#76,
   # 2026-11-03): switch-to-configuration counts a service in auto-restart whose ExecMainStatus is
   # not 0 as failed, so deploy-rs rolled the box back. SuccessExitStatus does not change
-  # ExecMainStatus. This wrapper is the main process instead: it passes SIGUSR1 and SIGTERM on to
-  # the gateway and turns its 75 into 0, so a reload restarts it without a failed unit. The
-  # package is the module's own (moduleCommon.nix, effectivePackage).
+  # ExecMainStatus. hermes/scripts/gateway-wrapper.sh is the main process instead: it passes
+  # SIGUSR1 and SIGTERM on to the gateway, and on a 75 it starts the gateway again itself, with no
+  # pause, so a reload never leaves "active" and never fails the unit. The package is the module's
+  # own (moduleCommon.nix, effectivePackage).
+  # The gap of Restart=always (RestartSec 5 s) let the dashboard's Chat tab start a second,
+  # unmanaged gateway, and the unit then looped on "already serves" (2026-11-05). The wrapper
+  # also waits for such a gateway to exit and does not loop. See docs/HERMES.md.
   # The wrapper also hides systemd from the gateway: the gateway is a child of a shell, not of
-  # systemd. Without --external-supervisor, Hermes v0.22.7 treats a reload as a graceful restart
-  # and starts a detached gateway, and the unit then loops (2026-11-04). The flag makes the
-  # gateway exit back to this wrapper instead.
+  # systemd. Without --external-supervisor, Hermes v0.22.7 treated a reload as a graceful restart
+  # and started a detached gateway, and the unit then looped (2026-11-04). The flag makes the
+  # gateway exit back to this wrapper instead. v0.23.0 still reads it (gateway/restart.py) and
+  # exits 75 on a reload and when another gateway serves the host.
   systemd.services.hermes-agent.serviceConfig = {
     ExecStart = lib.mkForce (
       let
@@ -476,19 +509,11 @@ in
               extraPythonPackages = (prev.extraPythonPackages or [ ]) ++ cfg.extraPythonPackages;
               extraDependencyGroups = (prev.extraDependencyGroups or [ ]) ++ cfg.extraDependencyGroups;
             });
+        wrapper = pkgs.writeShellScript "hermes-gateway" (builtins.readFile ./hermes/scripts/gateway-wrapper.sh);
       in
-      pkgs.writeShellScript "hermes-gateway" ''
-        ${package}/bin/hermes gateway run --external-supervisor ${lib.escapeShellArgs cfg.extraArgs} &
-        child=$!
-        trap 'kill -USR1 "$child" 2>/dev/null' USR1
-        trap 'kill -TERM "$child" 2>/dev/null' TERM INT
-        # A trapped signal ends `wait` early; wait again until the gateway has exited.
-        while kill -0 "$child" 2>/dev/null; do wait "$child"; done
-        wait "$child"
-        status=$?
-        if [ "$status" -eq 75 ]; then exit 0; fi
-        exit "$status"
-      ''
+      utils.escapeSystemdExecArgs (
+        [ wrapper "${package}/bin/hermes" "gateway" "run" "--external-supervisor" ] ++ cfg.extraArgs
+      )
     );
     ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
   };

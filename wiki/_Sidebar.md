@@ -6,6 +6,7 @@
 - [Hermes](Hermes)
 - [Fábrica](Fabrica)
 - [Runtimes](Runtimes)
+- [A tese](Thesis)
 - [Reels](Reels)
 - [Maquetes](Maquetes)
 
@@ -17,5 +18,6 @@
 - [Hermes](Hermes-EN)
 - [Factory](Factory)
 - [Runtimes](Runtimes-EN)
+- [Thesis](Thesis-EN)
 - [Reels](Reels-EN)
 - [Mockups](Mockups)

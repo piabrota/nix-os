@@ -496,7 +496,9 @@ fn page(title: String, current: String, hero: String, main: String) -> String {
 <title>" <> escape(title) <> "</title>
 <meta name='theme-color' content='#0B0D12' media='(prefers-color-scheme: dark)'>
 <meta name='theme-color' content='#FFFFFF' media='(prefers-color-scheme: light)'>
-<link rel='icon' href='data:,'>
+<link rel='icon' type='image/svg+xml' href='/favicon.svg'>
+<link rel='icon' href='/favicon.ico' sizes='48x48'>
+<link rel='apple-touch-icon' href='/apple-touch-icon.png'>
 <link rel='preconnect' href='https://fonts.googleapis.com'>
 <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
 <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Fjalla+One&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono&amp;display=swap'>

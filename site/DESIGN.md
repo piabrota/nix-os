@@ -61,10 +61,14 @@ font file is stored here.
   title, and below 420 px the buttons fill the row.
 - A: tiles in a grid of the profile's lanes; mu's is the one filled tile, in `--accent`, across the
   row. B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
-- **/hermes** is not a design and has no place in the switcher: its hero carries ☤ in Fjalla One
-  and `--accent-text` where the others carry a drawing, its numbers are facts in mono, and its
+- **/hermes** is not a design and has no place in the switcher: its hero carries the hermes mark
+  (below, "Marks") where the others carry a drawing, its numbers are facts in mono, and its
   YAML sits in C's terminal, in a `<pre>` that scrolls sideways on a phone. It ends at the foot,
   without the shared sections.
+- **Services**, on A, the first section: one link card for each name piabrota2 serves on its own
+  (`services` in `mockups/data.nix`): the mark, the name in Fjalla One, an uppercase pill that says
+  whether it is `public` (green) or needs the `login` (dashed), the line, and the host in mono and
+  `--accent-text`. The name's link covers the card. The mockups do not draw them.
 - **Tiles**, on A: tags (the state pill, the language, own or personal), the name in Fjalla One, the
   blurb, the licence and the address. The name's link covers the tile. Hover scales it 1.5%.
 - **The numbers** in the hero are `<dl>` pairs, counted from the facts, never typed.
@@ -99,6 +103,23 @@ The top band names the four languages. A project's card carries its repository's
 `raw.githubusercontent.com`; a repository with no logo yet shows its text mark. Partner cards share one
 height, so their logos line up. Avatars and logos load from where GitHub publishes them (`avatars.githubusercontent.com`), as the
 sister sites load their icons; none is stored here. The names and logos are their owners' marks.
+
+## Marks
+
+What piabrota runs with no repository logo of its own (Hermes, OpenRig, the metrics page, the room)
+gets a mark drawn in `src/piabrota_site/marks.gleam`: the piabrota mark's red square with a 22
+radius, and one drawing in its cream (`#F7F3EA`), with `--bg`'s ink for a detail. No other colour,
+no text in the mark, no Unicode glyph (a glyph is drawn by whatever font the visitor has). Hermes is
+a caduceus, OpenRig three seats tied to a hub, metrics three rising bars, the room a room seen from
+its open side with a window on the sea. They are inline SVG, so no file is stored. They are
+piabrota's drawings, not the upstream projects' logos.
+
+## The icon
+
+The piabrota mark (the open green eye on red, the drawing of `parts.eye`) is the favicon of every
+site under piabrota.art: the site, `/skills/`, `/figures/`, `/notes`, and the dashboards on the
+other names. Its one source is `favicon/favicon.svg`. Change the mark there and in `parts.eye`
+together: `checks.favicon` compares them. No page stores or draws an icon of its own.
 
 ## Motion
 

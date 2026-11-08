@@ -33,11 +33,12 @@ The rig has not yet done a task: see "Status today".
 
 - OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
   is at https://rig.piabrota.art behind basic auth (see "The web UI").
-- Four rigs are specified: `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`: two seats on
-  `omp`, `dev-builder` and `dev-reviewer`), the two rigs of wave-forecaster-dev and `reels-fabric`
-  (below). All run without approval prompts
+- Five rigs are specified. `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`) has two seats on
+  `omp`, `dev-builder` and `dev-reviewer`. All run without approval prompts
   (`permission_policy: builtin:yolo`, the owner's decision in PR 124). They use the owner's Claude
   subscription (see "The token of the seats").
+  The other four are the two rigs of wave-forecaster-dev, `wave-forecaster-thesis` and `reels-fabric`
+  (below). The options that turn them on are off.
 - Hermes operates the rig with the `rig` CLI and the skill `hermes-rig`. Hermes does not start seats
   from cron.
 - **The seats are idle.** No task has gone through the builder to reviewer loop yet.
@@ -91,7 +92,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 
 |Part|What it is|
 |---|---|
-|Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module.|
+|Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module. `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.thesis.enable` turn on the rigs of the two blocks below. Both are off.|
 |User|The system user and group `openrig`, no login shell. State in `/var/lib/openrig` (`HOME`, and `OPENRIG_HOME` is `.openrig` in it). Seats work in `/var/lib/openrig/work`.|
 |Unit|`openrig` runs `node .../daemon/dist/index.js` in the foreground, as `openrig`.|
 |Network|The daemon listens on `127.0.0.1:7433` (`OPENRIG_BIND_HOST`) and serves the web UI there. No firewall port, no ACME. The option `piabrota.openrig.web` adds an nginx vhost at `rig.piabrota.art` with basic auth: it is on.|
@@ -267,6 +268,19 @@ openrig/specs/
   rigs/wave-forecaster-dev-integrate/rig.yaml  # pod "wire": integrator and auditor
 ```
 
+The block wave-forecaster-thesis adds one rig and five agents (see "wave-forecaster-thesis" above):
+
+```text
+openrig/specs/
+  agents/
+    thesis-shared/...                  # the norms for the thesis seats
+    thesis-editor/...                  # agent.yaml, guidance/role.md, startup/context.md
+    thesis-librarian/...
+    thesis-writer/...                  # one spec for writer-a, writer-b and writer-c
+    thesis-reviewer/...
+  rigs/wave-forecaster-thesis/rig.yaml # pods "plan", "writing", "review": six Claude Code seats
+```
+
 The block reels-fabric adds one rig and six agents (see "reels-fabric" below):
 
 ```text
@@ -281,7 +295,6 @@ openrig/specs/
     reels-qa/...
   rigs/reels-fabric/rig.yaml           # pod "story": writer, script-editor; pod "studio": director, maker, qa
 ```
-
 - `rig.yaml` has one pod, `dev`, with the members `builder` and `reviewer`. Both use the runtime
   `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`. An edge
   `delegates_to` goes from `builder` to `reviewer`. The rig sets `permission_policy: builtin:yolo`
@@ -326,6 +339,7 @@ pros, cons, a spec line, credentials, permission mapping, state and the status o
 |`piabrota-dev`|`omp`|
 |`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (off)|
 |`wave-forecaster-dev-integrate`|`omp`|
+|`wave-forecaster-thesis`|`claude-code`, when `piabrota.openrig.thesis.enable` is on (off)|
 |`reels-fabric`|`omp`, five seats|
 
 ## wave-forecaster-dev
@@ -371,7 +385,7 @@ bypass-permissions warning: `rig seat continue` answers it (docs/RUNTIMES.md, "C
 
 |Part|Setting|
 |---|---|
-|Tools|`rustup`, `gcc` (the linker of build scripts), `just`, `shellcheck`, `chaceon-clone` and `claude` (`seatClaude`: `pkgs.claude-code` behind a small wrapper) in the profile of the user `openrig` and in the unit's `path`. A Claude seat that OpenRig starts with a clean environment finds its tools only through the path. Each seat installs Rust 1.99.1 with rustup into its own home under `/var/lib/openrig`.|
+|Tools|`rustup`, `gcc` (the linker of build scripts), `just`, `shellcheck` and `chaceon-clone` in the profile of the user `openrig` and in the unit's `path`. A Claude seat that OpenRig starts with a clean environment finds its tools only through the path. `claude` (`seatClaude`: `pkgs.claude-code` behind a small wrapper) is in the same two places, and `piabrota.openrig.thesis.enable` adds it too. Each seat installs Rust 1.99.1 with rustup into its own home under `/var/lib/openrig`.|
 |Claude Code|`unfree.nix` allows `claude-code` by name (`allowUnfree` stays off). `seatClaude` moves the subscription token from `ANTHROPIC_API_KEY` to `CLAUDE_CODE_OAUTH_TOKEN` and drops what Claude Code ranks above it, for Claude's process only. `/etc/claude-code/managed-settings.json` holds the deny rules of a Claude seat (below). Closure: about +280 MiB, built on the CI runner.|
 |Folders|`/var/lib/openrig/work/wave-forecaster-dev/{porter,auditor,integrator}` (`StateDirectory`). Each seat has its own folder: the norms go in its `CLAUDE.md` (port rig) or `AGENTS.md` (omp seats), and the chaceon clone in a subfolder, so the files never mix.|
 |Read token|`piabrota.openrig.githubRead = [ "h0ffmann/chaceon" ]`. `hermes-github.nix` mints, every 45 minutes, a token of Hermes's App with `contents: read` on that repository only, into `/run/openrig-github/h0ffmann--chaceon` (root, group `openrig`, 0640). `chaceon-clone` clones with a credential helper that reads it. The App must be installed on h0ffmann/chaceon.|
@@ -406,6 +420,30 @@ When the porter reports a bundle, Hermes fetches it into its own clone of chaceo
 git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:hermes/wf-<slug>
 ```
 
+## wave-forecaster-thesis
+
+The rig `wave-forecaster-thesis` has six Claude Code seats (`plan-editor`, `writing-librarian`,
+`writing-writer-a`, `-b`, `-c` and `review-reviewer`). They write one final-year project of the
+Escola Politécnica of UFRJ in Portuguese, one section at a time, and hand in a PDF. The command
+`thesis` (`thesis/`, no model, no network) claims the sections, runs four gates and builds the PDF
+with pandoc and TeX. Only the librarian may use the web. The guide is [`THESIS.md`](THESIS.md): the
+parts, the contract, the gates and what each cannot prove, the UFRJ rules, and the deployment notes.
+
+**Off at the start.** `piabrota.openrig.thesis.enable` is off at piabrota2. The specs are in
+`/etc/openrig/specs` as a definition only. When the owner turns the option on, it adds:
+
+|Part|Setting|
+|---|---|
+|Tools|`thesis` (the package `thesis/default.nix`, closure 727.3 MiB: pandoc, poppler-utils and a small TeX set) and `claude` (`seatClaude`) in the profile of the user `openrig` and in the unit's `path`.|
+|Claude Code|The same pieces as for the port rig: `unfree.nix`, `seatClaude`, and `/etc/claude-code/managed-settings.json`. They turn on when `waveForecaster.enable` or `thesis.enable` is on.|
+|Folders|`/var/lib/openrig/work/wave-forecaster-thesis/{editor,writer-a,writer-b,writer-c,librarian,reviewer,projects,out}` (`StateDirectory`).|
+|Outbox|`/var/lib/rig-outbox/wave-forecaster-thesis` (owner `openrig`, group `hermes`, 0750, a default ACL, files older than 14 days removed). The seats write the PDF there. The unit has it in `ReadWritePaths`.|
+
+**Run it by phases, two seats at a time**, and never together with another rig. The memory of a
+Claude Code seat is not measured: [`THESIS.md`](THESIS.md), "Deployment notes", step 9, says how to
+measure it. **Not run:** no seat has run this rig. The proof so far is `thesis` on a sample thesis
+(60 checks, 0 failed).
+
 ## reels-fabric
 
 The rig `reels-fabric` makes one 15 s or 30 s vertical video (1080x1920) for Instagram Reels. Claude
@@ -419,7 +457,7 @@ screenplay is approved. The guide is [`REELS.md`](REELS.md), and the wiki's `Ree
 |Option|`piabrota.openrig.reels.enable`. Off at piabrota2. The specs are in `/etc/openrig/specs` as a definition only.|
 |Tools|The toolkit `reel` (`reels/`, built by `reels/default.nix`) with `ffmpeg-headless` and `jq`, in the profile of the user `openrig` and in the unit's `path`. Two font files (Inter and Fjalla One) are the owner's exception to "no fonts".|
 |Folders|`/var/lib/openrig/work/reels-fabric/{writer,script-editor,director,maker,qa}` (the seats' own folders), `projects` (shared, one folder for each slug) and `out` (the renders), all `StateDirectory`.|
-|Outbox|`/var/lib/rig-outbox/reels-fabric` (owner `openrig`, group `hermes`, 2750 with setgid, a default ACL for the group, files older than 14 days removed). `reel publish` writes `reel.mp4`, `qa.json`, `screenplay.json` and `review/` to `<slug>/` and gives the group read access to them. The unit has it in `ReadWritePaths`. The parent is shared with the wave rig.|
+|Outbox|`/var/lib/rig-outbox/reels-fabric` (owner `openrig`, group `hermes`, 2750 with setgid, a default ACL for the group, files older than 14 days removed). `reel publish` writes `reel.mp4`, `qa.json`, `screenplay.json` and `review/` to `<slug>/` and gives the group read access to them. The unit has it in `ReadWritePaths`. The parent is shared with the wave and thesis rigs.|
 |Env|The rig sets `REELS_HOME=/var/lib/openrig/work/reels-fabric` and `REELS_OUTBOX=/var/lib/rig-outbox/reels-fabric`.|
 
 **Three phases, two seats at a time.** The rig has five seats, and a render adds an `ffmpeg` of up to
@@ -431,14 +469,14 @@ with the published reel. A human approves or the script editor does: Hermes neve
 
 **Not proved.** A live run of the rig, OpenRig's validation of the specs, and Instagram's acceptance
 of the file. The toolkit ran on this box: the numbers are in [`REELS.md`](REELS.md), "Measured numbers".
-
 ## What is not done
 
 - **No public web page without auth.** The daemon runs on loopback only. The public vhost (`rig.piabrota.art`) has TLS and basic auth (see "The web UI").
 - **No `rig setup`.** It installs tools and edits `~/.tmux.conf`. The deny list blocks it.
 - **No herdr, no remote hosts.** `rig host`, `rig up --host` and pairing are blocked.
-- **No Codex seat.** Codex is not installed. A Claude Code seat exists only in the port rig, and only
-  with `piabrota.openrig.waveForecaster.enable` on (off today): `claude` is unfree, allowed by name
+- **No Codex seat.** Codex is not installed. A Claude Code seat exists only in the port rig and the
+  thesis rig, and only with `piabrota.openrig.waveForecaster.enable` or `piabrota.openrig.thesis.enable`
+  on (both off today): `claude` is unfree, allowed by name
   in `unfree.nix`. See [`RUNTIMES.md`](RUNTIMES.md).
 - **No `PrivateDevices`.** In a test with a user unit, tmux could not start a pane with a private
   `/dev`. A pane needs a pseudo terminal. The test used a user manager, not the system manager, so
@@ -455,6 +493,12 @@ that OpenRig finds the process behind `seatClaude`), rustup's toolchain on NixOS
 it for NixOS: not checked here), the read token (the App's installation may not include
 h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and Hermes's read of the outbox under the
 `hermes-agent` sandbox.
+
+For wave-forecaster-thesis, no seat ran. Not tested: a deploy with the option on, the closure growth
+of the system (`dix`), a Claude Code seat (the memory of one, the bypass dialog, the tool `deny`
+rules), `rig spec validate` on the new spec, the outbox ACL with the unit's `UMask`, and Hermes's
+read of the outbox. Tested: the `thesis` command, in [`THESIS.md`](THESIS.md), "What is proved and
+what is not".
 
 For the rest:
 

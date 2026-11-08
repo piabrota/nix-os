@@ -16,4 +16,16 @@
 
   # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
   piabrota.site.enable = true;
+
+  # Live metrics (metrics.nix, docs/METRICS.md): the collector, and the one location that lets
+  # piabrota2's address fetch its file. No port, no package of its own.
+  piabrota.metrics = {
+    name = "piabrota";
+    label = "piabrota (KVM 1)";
+    collector.enable = true;
+    publish = {
+      enable = true;
+      allowFrom = [ "187.41.117.18" ];
+    };
+  };
 }

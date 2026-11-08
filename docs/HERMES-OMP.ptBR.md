@@ -39,10 +39,11 @@ home do Hermes. O comando `omp --export <session>` escreve uma sessão em HTML (
 
 ## Ver o omp trabalhar
 
-O Hermes roda o omp em segundo plano e passa a saída dele pelo `omp-stream`:
+O Hermes roda o omp em segundo plano com o `omp-run`, que passa a saída dele pelo `omp-stream`:
 
 ```
-omp -p --mode json --no-title --max-time 15m < task.md 2>&1 | omp-stream
+omp-run <nome> --max-time 15m      # omp -p --mode json --no-title --max-time 15m < omp-tasks/<nome>.md 2>&1 | omp-stream
+omp-run --stop <nome>              # para essa execução e espera ela terminar
 ```
 
 O `--mode json` faz o omp escrever um evento JSON por linha. O `omp-stream`
@@ -69,6 +70,33 @@ heartbeat entrega as linhas novas ao chat. Cada heartbeat custa um turno do Herm
 Teste: `sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh` (precisa de `jq`). Ele roda uma
 execução gravada (`scripts/fixtures/`) e mais três casos: uma linha que não é JSON, um erro de
 ferramenta e um segredo.
+
+### Como uma execução termina
+
+O `omp-run` ([`hermes/skills/hermes-omp/scripts/omp-run.sh`](../hermes/skills/hermes-omp/scripts/omp-run.sh),
+um comando no PATH do Hermes, em `hermes.nix`) escreve uma última linha quando o omp não terminou,
+e depois o arquivo de progresso `omp-tasks/<nome>.progress`:
+
+|Última linha|Saída|Causa|
+|---|---|---|
+|`omp-run: stopped on request (omp-run --stop <nome>)`|0|O Hermes parou a execução, por exemplo para recomeçar com uma tarefa nova|
+|`omp-run: stopped by SIGTERM, not by omp-run --stop: ...`|143|Um restart do `hermes-agent`, um deploy, ou um kill da tarefa em segundo plano|
+|`omp-run: stopped by the time limit ...`|124|`--max-time`, ou o teto de 35 minutos do wrapper|
+|`omp-run: omp was killed (SIGKILL ...)`|137|Falta de memória, ou 30 segundos depois do limite de tempo|
+|`omp-run: omp was stopped by signal <n>`|128 + n|Um sinal mandado só para o omp|
+
+O Hermes inicia um comando em segundo plano como `bash -lic`, sem terminal. Antes do `omp-run`, o
+Hermes escrevia o pipeline ele mesmo e parava uma execução com `pkill -f <arquivo da tarefa>` ou
+`kill <pid>`. O sinal matava o pipeline, o bash escrevia `tcsetattr: Inappropriate ioctl for
+device`, e a tarefa terminava como falha com saída 143, mesmo quando o Hermes tinha parado de
+propósito (2026-11-05, a execução das métricas). O `omp-run` pega SIGTERM, SIGINT e SIGHUP, manda
+SIGTERM ao omp, deixa o `omp-stream` escrever as últimas linhas e sai com um código, então o bash
+não escreve a linha `tcsetattr`.
+
+Teste: `bash hermes/skills/hermes-omp/scripts/test-omp-run.sh` (precisa de `jq` e `setsid`). Ele roda
+o `omp-run` com um omp falso em `bash -lic` sem terminal: uma execução normal, `--stop`, um SIGTERM
+ao grupo de processos, um SIGTERM só ao omp, e um arquivo de tarefa que falta. `just omp-test` roda
+os dois testes.
 
 ## As camadas: o que você pode editar
 

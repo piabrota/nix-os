@@ -14,15 +14,23 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
-    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh
+    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
 hermes-plugins-test:
     cd hermes/plugins/tests && python3 -m unittest -v test_plugins
+
+# tests of hermes/skills/kvm4-health/scripts/kvm4-health.sh with a stub journalctl and systemctl (offline)
+health-test:
+    sh hermes/skills/kvm4-health/scripts/kvm4-health.test.sh
+
+# tests of scripts/restart-services.sh with stub systemctl, tmux and a fixture /proc (offline)
+restart-test:
+    sh scripts/restart-services.test.sh
 
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
@@ -32,6 +40,11 @@ feeds-test:
 paperclip-test:
     bash paperclip/pi-to-omp.test.sh
     sh paperclip/hermes-key.test.sh
+
+# tests of the hermes-omp commands (hermes/skills/hermes-omp/scripts): omp-stream and omp-run; needs bash, jq and setsid
+omp-test:
+    sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh
+    bash hermes/skills/hermes-omp/scripts/test-omp-run.sh
 
 # build the personal feed from the real sources into a temporary folder; writes no state (needs network)
 feeds-build:
@@ -151,10 +164,24 @@ remote-specs user="h0ffmann":
 remote-hermes-check user="h0ffmann":
     ssh {{user}}@{{host}} sh -s < scripts/hermes-check.sh
 
-# the health of the VPS and its Hermes units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only)
-remote-health user="h0ffmann":
-    ssh {{user}}@{{host}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh
+# the health of a VPS and its units: memory, MemoryPeak against MemoryMax, disk, CPU (read-only); `just remote-health h0ffmann srv2125808.hstgr.cloud` asks the other box; exit 1 means a WARN or CRIT line
+remote-health user="h0ffmann" target=host:
+    ssh {{user}}@{{target}} sh -s < hermes/skills/kvm4-health/scripts/kvm4-health.sh || { s=$?; [ "$s" -ne 1 ] || echo "remote-health: {{target}} has a WARN or CRIT line, see above" >&2; exit "$s"; }
+
+# restart the services the VPS has, over SSH, through sudo; a human only, never an agent (docs/DEPLOY.md, "Restarting the services by hand"). Groups: metrics web pgx room loco rig hermes, `list` (the plan only), default all. It asks `Proceed? [y/N]` on your terminal; flags go inside the quoted first argument: `just remote-restart "hermes --dry-run"`, `just remote-restart "all --yes"`; KVM 4: `just remote-restart all h0ffmann <address>`
+remote-restart what="all" user="h0ffmann" target=host:
+    case '{{what}}' in *[!a-z\ -]*) echo "remote-restart: the first argument takes letters, spaces and - only" >&2; exit 2 ;; esac
+    b64=$(base64 < scripts/restart-services.sh | tr -d '\n') && ssh -t {{user}}@{{target}} "sudo sh -c \"\$(echo $b64 | base64 -d)\" restart-services {{what}}"
 
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:
     sh video-lab/dummy/run.sh
+
+# tests of the metrics collector (fixture /proc) and page; needs jq, and python3 and curl for the page's HTTP check
+metrics-test:
+    sh metrics/test/run.sh
+    sh metrics/test/page.sh
+
+# open the metrics page on fixtures (healthy, stale, missing or hostile) at http://127.0.0.1:<port>/; needs python3 and jq
+metrics-preview case="healthy" port="8080":
+    sh metrics/test/preview.sh {{case}} {{port}}
