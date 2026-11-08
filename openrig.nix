@@ -516,7 +516,7 @@ in
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = work;
-        ReadWritePaths = lib.optionals (wf.enable || rf.enable) [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ];
+        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ] ++ lib.optionals rf.enable [ "${outbox}/reels-fabric" ];
         UMask = "0077";
         Restart = "on-failure";
         RestartSec = "10s";
