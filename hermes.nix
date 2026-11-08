@@ -199,6 +199,16 @@ let
     rev = "d4af8c3a5596ed055f5be5bbbd4c36b37d535530"; # MIT
     hash = "sha256-yjc2tz3WNQ3xvNs7CSvTSOGPt9RypFkB5cBNqkB2zKY=";
   };
+  # synalinks: Apache-2.0, read at that commit; a new commit is a PR. It teaches the Synalinks
+  # framework (a Keras-shaped neuro-symbolic LM framework in Python). The skill is markdown,
+  # references and example scripts. None of them runs by itself. The box has no Python for Hermes
+  # and no `synalinks` package, so the scripts are for reading only.
+  synalinksSkills = pkgs.fetchFromGitHub {
+    owner = "SynaLinks";
+    repo = "synalinks-skills";
+    rev = "092970a578e53590f3b87597887952a4cfa98a4e";
+    hash = "sha256-BhvPkdux6/8Z1JG1SHZ7cebm+o7ZVZ0QV/Re2gpGhpo=";
+  };
   # The owner's skills (github.com/h0ffmann/skills, MPL-2.0), pinned by commit; a new commit is a
   # PR. Not a git submodule: a flake reads its git tree without submodules unless the flake URL
   # says `?submodules=1`, so a submodule path is empty at build time. Each skill becomes a /name command, and on
@@ -262,9 +272,10 @@ let
       cp -r ${hermes-agent}/optional-skills/${path} $out/${path}
     '')
     skills + ''
-    mkdir -p $out/research $out/devops
+    mkdir -p $out/research $out/devops $out/software-development
     cp -r ${abvxSkills}/skills/evidence-ledger-research $out/research/evidence-ledger-research
     cp -r ${hermesCron}/skills/hermes-cron $out/devops/hermes-cron
+    cp -r ${synalinksSkills}/skills/synalinks $out/software-development/synalinks
   '');
 in
 {
