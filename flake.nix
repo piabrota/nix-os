@@ -231,8 +231,9 @@
         # pgx.nix in a VM: the unit starts in its sandbox, takes a password and keeps its data
         # across a restart (pgx/test.nix).
         pgx = pkgs.testers.runNixOSTest ./pgx/test.nix;
-        # metrics.nix in three VMs: the collector, the page behind basic auth, the pull and the
-        # published location (metrics/test.nix). Needs KVM to run in reasonable time.
+        # metrics.nix in four VMs: the collector, the public page, robots.txt and the agent block,
+        # the optional login, the pull and the published location (metrics/test.nix). Needs KVM to
+        # run in reasonable time.
         metrics = pkgs.testers.runNixOSTest ./metrics/test.nix;
       };
 

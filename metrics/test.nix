@@ -1,9 +1,10 @@
-# checks.metrics: three VMs. `hub` has the collector, the page and the pull (piabrota2's roles),
-# `edge` has the collector and the published location on the site's vhost (piabrota's roles),
-# `client` is an address that is not in the allow list. TLS and ACME are off in the VM (there is
-# no ACME server), so every request is plain HTTP, and the names are the node names, not
-# metrics.piabrota.art and www.piabrota.art. Everything else is the real module: the units, their
-# sandbox, nginx, the basic-auth file. Needs KVM to run in reasonable time.
+# checks.metrics: four VMs. `hub` has the collector, the public page and the pull (piabrota2's
+# roles), `edge` has the collector and the published location on the site's vhost (piabrota's
+# roles), `locked` has the page with `web.htpasswdFile` set, and `client` is an address that is not
+# in the allow list. TLS and ACME are off in the VM (there is no ACME server), so every request is
+# plain HTTP, and the names are the node names, not metrics.piabrota.art and www.piabrota.art.
+# Everything else is the real module: the units, their sandbox, nginx, robots.txt and the agent
+# block. Needs KVM to run in reasonable time.
 { pkgs, ... }:
 {
   name = "metrics";
@@ -11,7 +12,7 @@
   nodes =
     let
       common = {
-        imports = [ ../loco.nix ../metrics.nix ];
+        imports = [ ../favicon.nix ../loco.nix ../metrics.nix ];
         networking.firewall.allowedTCPPorts = [ 80 ];
         environment.systemPackages = [ pkgs.jq pkgs.curl ];
       };
@@ -29,7 +30,6 @@
           web = {
             enable = true;
             domain = "hub";
-            htpasswdFile = "/etc/metrics-test-htpasswd";
           };
           pull = {
             enable = true;
@@ -37,6 +37,19 @@
           };
         };
         services.nginx.virtualHosts.hub = {
+          forceSSL = lib.mkForce false;
+          enableACME = lib.mkForce false;
+        };
+      };
+
+      locked = { lib, ... }: {
+        imports = [ common ];
+        piabrota.metrics.web = {
+          enable = true;
+          domain = "locked";
+          htpasswdFile = "/etc/metrics-test-htpasswd";
+        };
+        services.nginx.virtualHosts.locked = {
           forceSSL = lib.mkForce false;
           enableACME = lib.mkForce false;
         };
@@ -87,6 +100,7 @@
     start_all()
     hub.wait_for_unit("nginx.service")
     edge.wait_for_unit("nginx.service")
+    locked.wait_for_unit("nginx.service")
 
     def code(node, cmd):
         return node.succeed(f"curl -s -o /dev/null -w '%{{http_code}}' {cmd}").strip()
@@ -106,26 +120,65 @@
         print(hub.succeed("systemd-analyze security metrics-collect.service --no-pager | tail -n 1"))
         print(hub.succeed("systemd-analyze security metrics-pull.service --no-pager | tail -n 1"))
 
-    with subtest("The page needs the basic-auth login"):
-        hub.succeed("echo \"metrics:$(openssl passwd -apr1 s3cret)\" > /etc/metrics-test-htpasswd && chmod 644 /etc/metrics-test-htpasswd")
-        assert code(client, "http://hub/") == "401"
-        assert code(client, "http://hub/data/piabrota2.json") == "401"
-        assert code(client, "-u metrics:wrong http://hub/") == "401"
-        assert code(client, "-u metrics:s3cret http://hub/") == "200"
+    BROWSER = "-A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'"
+    TAG = "noindex, nofollow, noarchive, noimageindex, noai, noimageai"
+
+    with subtest("The page and its data are public"):
+        assert code(client, "http://hub/") == "200"
+        assert code(client, "http://hub/data/piabrota2.json") == "200"
+        # No login is set, so a login that a client sends is ignored: this is a normal request.
+        assert code(client, "-u metrics:wrong http://hub/") == "200"
+        assert code(client, "-u metrics:wrong http://hub/data/piabrota2.json") == "200"
         # No grep -q: it closes the pipe early and curl fails with exit code 23.
-        client.succeed("curl -s -u metrics:s3cret http://hub/ | grep -c 'piabrota metrics'")
-        client.succeed("curl -s -u metrics:s3cret http://hub/data/piabrota2.json | jq -e '.host == \"piabrota2\"'")
-        client.succeed("curl -sI -u metrics:s3cret http://hub/data/piabrota2.json | grep -i '^cache-control: no-store'")
-        client.succeed("curl -sI -u metrics:s3cret http://hub/data/piabrota2.json | grep -i '^x-frame-options: DENY'")
+        client.succeed("curl -s http://hub/ | grep -c 'piabrota metrics'")
+        client.succeed("curl -s http://hub/data/piabrota2.json | jq -e '.host == \"piabrota2\"'")
+        client.succeed("curl -sI http://hub/data/piabrota2.json | grep -i '^cache-control: no-store'")
+        client.succeed("curl -sI http://hub/data/piabrota2.json | grep -i '^x-frame-options: DENY'")
+
+    with subtest("robots.txt tells every crawler to go away"):
+        assert code(client, "http://hub/robots.txt") == "200"
+        client.succeed("curl -sI http://hub/robots.txt | grep -i '^content-type: text/plain'")
+        client.succeed("curl -sI http://hub/robots.txt | grep -i '^cache-control: public, max-age=86400'")
+        robots = client.succeed("curl -s http://hub/robots.txt")
+        assert "User-agent: GPTBot\nDisallow: /\n" in robots, robots
+        assert "User-agent: ClaudeBot\nDisallow: /\n" in robots, robots
+        assert robots.endswith("User-agent: *\nDisallow: /\n"), robots
+        assert robots.count("User-agent:") == robots.count("Disallow: /\n") >= 26, robots
+
+    with subtest("Named AI agents get a 403, every other client a 200"):
+        for agent in ("GPTBot", "gptbot/1.1", "Mozilla/5.0 (compatible; ClaudeBot/1.0)", "Google-Extended"):
+            assert code(client, f"-A '{agent}' http://hub/") == "403", agent
+            assert code(client, f"-A '{agent}' http://hub/data/piabrota2.json") == "403", agent
+            assert code(client, f"-A '{agent}' http://hub/favicon.svg") == "403", agent
+            # The file that tells the agent to go away stays readable.
+            assert code(client, f"-A '{agent}' http://hub/robots.txt") == "200", agent
+        assert code(client, f"{BROWSER} http://hub/") == "200"
+        assert code(client, f"{BROWSER} http://hub/data/piabrota2.json") == "200"
+        assert code(client, "http://hub/") == "200"  # curl's own User-Agent
+        assert code(client, "-A python-requests/2.31.0 http://hub/") == "200"
+        assert code(client, "-H 'User-Agent:' http://hub/") == "200"  # no User-Agent
+
+    with subtest("Every response carries X-Robots-Tag"):
+        for path in ("/", "/data/piabrota2.json", "/robots.txt", "/favicon.svg"):
+            client.succeed(f"curl -sI http://hub{path} | grep -i '^x-robots-tag: {TAG}'")
+        client.succeed(f"curl -sI -A GPTBot http://hub/ | grep -i '^x-robots-tag: {TAG}'")
+
+    with subtest("With web.htpasswdFile set, the page asks for a login again"):
+        locked.succeed("echo \"metrics:$(openssl passwd -apr1 s3cret)\" > /etc/metrics-test-htpasswd && chmod 644 /etc/metrics-test-htpasswd")
+        assert code(client, "http://locked/") == "401"
+        assert code(client, "http://locked/data/x.json") == "401"
+        assert code(client, "-u metrics:wrong http://locked/") == "401"
+        assert code(client, "-u metrics:s3cret http://locked/") == "200"
+        assert code(client, "-A GPTBot -u metrics:s3cret http://locked/") == "403"
 
     with subtest("The state is not in the served folder"):
         hub.succeed("test -s /run/metrics-state/piabrota2.state")
         hub.fail("ls -A /run/metrics-web | grep -q state")
-        assert code(client, "-u metrics:s3cret http://hub/data/piabrota2.state") == "404"
+        assert code(client, "http://hub/data/piabrota2.state") == "404"
 
     with subtest("The hub pulls the edge's file"):
         hub.wait_until_succeeds("jq -e '.host == \"piabrota\"' /run/metrics-web/piabrota.json", timeout=60)
-        client.succeed("curl -s -u metrics:s3cret http://hub/data/piabrota.json | jq -e '.label == \"piabrota (KVM 1)\"'")
+        client.succeed("curl -s http://hub/data/piabrota.json | jq -e '.label == \"piabrota (KVM 1)\"'")
         hub.fail("systemctl is-failed metrics-pull.service")
 
     with subtest("The edge serves its file to the hub's address only"):
@@ -155,7 +208,7 @@
         mine_after = json.loads(hub.succeed("cat /run/metrics-web/piabrota2.json"))["ts"]
         assert before == after, (before, after)
         assert mine_after > mine_before, (mine_before, mine_after)
-        assert client.succeed("curl -s -u metrics:s3cret http://hub/data/piabrota.json | jq .ts").strip() == str(after)
+        assert client.succeed("curl -s http://hub/data/piabrota.json | jq .ts").strip() == str(after)
 
     with subtest("A failed pull keeps the old file and the unit does not fail"):
         edge.succeed("systemctl stop nginx.service")

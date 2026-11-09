@@ -90,7 +90,7 @@
     },
     {
       "title": "Metrics page",
-      "purpose": "metrics.nix, metrics/collect.sh, metrics/pull.sh, metrics/index.html, metrics/SCHEMA.md, metrics/test/, metrics/test.nix and docs/METRICS.md: the home-made metrics page at metrics.piabrota.art on piabrota2 (static page, nginx with ACME and the Hermes dashboard's basic auth), the POSIX sh collector run by a 10 s timer on both hosts (reads /proc and cgroups only), the KVM 1 data path (an allow-listed /_metrics/piabrota.json location pulled by metrics-pull), the offline rules, the measured cost, the hardening, the piabrota.metrics options, the tests and the preview."
+      "purpose": "metrics.nix, metrics/collect.sh, metrics/pull.sh, metrics/index.html, metrics/SCHEMA.md, metrics/test/, metrics/test.nix and docs/METRICS.md: the home-made metrics page at metrics.piabrota.art on piabrota2 (static page, nginx with ACME, public with a robots.txt and agent blocks, and an optional basic-auth login), the POSIX sh collector run by a 10 s timer on both hosts (reads /proc and cgroups only), the KVM 1 data path (an allow-listed /_metrics/piabrota.json location pulled by metrics-pull), the offline rules, the measured cost, the hardening, the piabrota.metrics options, the tests and the preview."
     },
     {
       "title": "Paperclip",
