@@ -122,6 +122,7 @@
   "project.astrbot_dw_ext_br_south_disaster": "巴西南部（RS、SC、PR）灾害扩展，用于 AstrBot 插件 astrbot_plugin_disaster_warning。",
   "project.astrbot_dw_ext_br_south_waterq": "巴西南部（RS、SC、PR）海滩水质警报。它是 astrbot_plugin_disaster_warning 的扩展。",
   "project.ihero": "FOSS 音乐播放器和游戏，用 Rust 编写。即将推出：仓库现在只有许可证。",
+  "project.ondecomer": "一个列出巴西餐厅的网站，可按类别、位置等筛选。目前只覆盖里约热内卢市。",
   "partner.marola-dev": "巴西的水上超级应用",
   "partner.ouroboric-dev": "会自我改进的开放工厂。有章程、标准、日志和品牌。",
   "closed.lane": "暂时闭源",
