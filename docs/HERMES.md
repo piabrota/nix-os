@@ -492,10 +492,15 @@ The API server starts only when `hermes.env` has `API_SERVER_KEY`; Hermes's key 
 
 [www.piabrota.art/hermes](https://www.piabrota.art/hermes) shows this configuration in plain YAML,
 not in Nix: the settings that `hermes.nix` writes to `config.yaml`, and how the unit runs (the
-package, the extras, the limits, the plugins, the files and the pinned upstream commit). The site
+package, the extras, the limits, the plugins, the files and the pinned upstream commit). The hero
+and the unit's YAML also show the release tag, read from `flake.lock` (`nodes.hermes-agent.original.ref`,
+for example `v0.23.0`), with a link to that release. The site
 build reads them from the evaluated system (`site/hermes.nix`), so the page changes with every
 merge that changes `hermes.nix`. It is the configuration that the last deploy of `main` sets, not a
 live check of the unit: for that, see "Checking it".
+
+The tag in `flake.lock` and `hermesVersion` in `hermes.nix` must agree. If they differ, the site
+build stops with `flake.lock pins <tag> but hermes.nix says <version>`.
 
 No secret reaches the page. The site never reads the env files and does not name them; a key that
 names a token, a key, a secret, a password or allowed users is dropped; and the build stops if a
@@ -506,7 +511,8 @@ secret's name gets through. Store paths keep their name and lose their hash.
 - **Update:** the pin is a release tag. A new release is one PR with three changes: the tag in
   `flake.nix` (`hermes-agent.url`), `nix flake update hermes-agent`, and `hermesVersion` in
   `hermes.nix` (and the badge in `README.md`). The weekly `flake-update.yml` PR does not move this
-  input. CI builds the PR with the closure difference (`dix`); the merge deploys it.
+  input. CI builds the PR with the closure difference (`dix`); the merge deploys it. If the tag and
+  `hermesVersion` differ, the site build stops, so change both in the same PR.
 - **Turn off:** take `../../hermes.nix` out of the host's `imports` (`hosts/<name>/default.nix`) in a PR. The deploy stops
   and removes the unit; `/var/lib/hermes` and `/var/lib/hermes-secrets` stay on the box until
   someone deletes them.
