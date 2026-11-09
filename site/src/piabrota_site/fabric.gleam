@@ -60,7 +60,7 @@ pub fn view(lang: String) -> Element(msg) {
               ),
             ])
           }),
-          [closed_lane(lang)],
+          closed_lane(lang),
         )
       ]),
       ..community.sections(lang)
@@ -70,19 +70,25 @@ pub fn view(lang: String) -> Element(msg) {
 }
 
 /// The projects that are not FOSS yet. Their tiles link nowhere: the repositories are private.
-fn closed_lane(lang: String) -> Element(msg) {
-  html.div([attribute.class("lane")], [
-    html.h3([], [
-      html.text(i18n.t(lang, "closed.lane")),
-      html.span([attribute.class("count")], [
-        html.text(int.to_string(list.length(data.closed))),
+/// With none, there is no lane.
+fn closed_lane(lang: String) -> List(Element(msg)) {
+  case data.closed {
+    [] -> []
+    closed -> [
+      html.div([attribute.class("lane")], [
+        html.h3([], [
+          html.text(i18n.t(lang, "closed.lane")),
+          html.span([attribute.class("count")], [
+            html.text(int.to_string(list.length(closed))),
+          ]),
+        ]),
+        html.ul(
+          [attribute.class("tiles")],
+          list.map(closed, closed_tile(_, lang)),
+        ),
       ]),
-    ]),
-    html.ul(
-      [attribute.class("tiles")],
-      list.map(data.closed, closed_tile(_, lang)),
-    ),
-  ])
+    ]
+  }
 }
 
 fn closed_tile(p: Closed, lang: String) -> Element(msg) {
