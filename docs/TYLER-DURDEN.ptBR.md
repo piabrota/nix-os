@@ -70,6 +70,37 @@ O dono, uma vez:
   (não é opened, ou abaixo dos thresholds); um 202 iniciou o agente.
 - Abrir um pull request de teste com mais de 1000 linhas no `h0ffmann/proof`.
 
+## Pilhas de pull requests
+
+Uma pilha são vários pull requests, cada um baseado na branch do que está embaixo, abertos ou
+atualizados com push em poucos segundos. O bot trata assim:
+
+- O script conta os arquivos de um pull request (`GET /pulls/N/files`). Essa lista é o diff do pull
+  request contra a sua própria branch base. Um pull request da pilha é contado só pelas suas
+  próprias mudanças.
+- O filtro da rota olha `action: opened` e não olha a branch base. Todo pull request que abre em um
+  repositório vigiado é considerado, em pilha ou não.
+
+Duas opções evitam que uma pilha grande perca um pull request:
+
+| Opção | Padrão | Por quê |
+|---|---|---|
+| `piabrota.tylerDurden.rateLimit` | 300 | O Hermes conta toda entrega da rota contra esse limite (30 por minuto, por padrão) antes de aplicar o filtro. Os eventos `synchronize`, `edited` e `labeled`, que o filtro ignora, também contam. Um restack de 40 branches manda 40 eventos `synchronize` de uma vez. Acima do limite o Hermes responde 429, e o GitHub não manda essa entrega de novo sozinho: o pull request fica sem comentário. |
+| `piabrota.tylerDurden.scriptTimeoutSeconds` | 120 | O script lista os arquivos de 100 em 100, até 30 páginas, uma depois da outra. Um pull request muito grande pode precisar de mais que os 30 segundos que o Hermes dá por padrão. Num timeout o Hermes descarta o evento. |
+
+Para ver uma entrega perdida: configurações da App no GitHub, Advanced, Recent Deliveries. Um 429 ou
+um timeout aparece ali. Redeliver manda de novo com o mesmo id. O Hermes aceita, porque recusou a
+primeira tentativa antes de guardar o id.
+
+### Não coberto
+
+- O prompt não diz a branch base nem o lugar do pull request na pilha. O script da rota monta o
+  payload, e ele fica no piabrota/agents (PR 6). Isso pede uma mudança lá.
+- Nada limita nem mede quantas execuções do agente rodam ao mesmo tempo.
+- O GitHub corta uma entrega que demora mais de 10 segundos para responder. O trabalho pode
+  continuar. Não verificado.
+- Não testado: nada disso foi rodado em uma pilha de verdade.
+
 ## Desligar
 
 `piabrota.tylerDurden.enable = false`, ou desinstalar a App do `h0ffmann/proof`.
