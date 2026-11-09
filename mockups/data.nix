@@ -38,15 +38,9 @@ rec {
   };
 
   # Projects that are not FOSS yet. They stay out of `projects`: no repository link, no place in the
-  # FOSS inventory or its counts, and no place in the mockups.
-  closed = [
-    {
-      name = "chaceon";
-      glyph = "🌊";
-      lang = "Rust";
-      blurb = "Rust port of WW3, the wave physics model used by ondaseventos.ufsc.br and NOAA.";
-    }
-  ];
+  # FOSS inventory or its counts, and no place in the mockups. None today: chaceon went public.
+  # An empty list draws no lane.
+  closed = [ ];
 
   lanes = [
     { id = "company"; label = "the company"; }
@@ -282,6 +276,18 @@ rec {
       pushed = "2026-11-09";
       site = "proof.piabrota.art";
       state = "live";
+    }
+    {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-09.
+      name = "chaceon";
+      owner = "h0ffmann";
+      glyph = "🌊";
+      lane = "incubating";
+      blurb = "Rust port of WW3, the wave physics model used by ondaseventos.ufsc.br and NOAA.";
+      lang = "Rust";
+      licence = "MPL-2.0";
+      pushed = "2026-11-09";
+      state = "none";
     }
   ];
 

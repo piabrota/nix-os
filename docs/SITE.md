@@ -258,7 +258,9 @@ there at a pinned commit, in English or pt-BR, and no copy lives here. `structur
 ## Closed projects
 
 `closed` in `mockups/data.nix` lists a project that is not FOSS yet. It gets a tile in design A, with no
-link. It stays out of the FOSS inventory, the counts and the mockups.
+link. It stays out of the FOSS inventory, the counts and the mockups. The list is empty today, and an
+empty list draws no lane. chaceon was the last entry: it is public now, so it is in `projects`, with a
+link to its repository.
 
 ## Commit counts
 
