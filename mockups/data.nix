@@ -48,6 +48,7 @@ rec {
     { id = "think"; label = "think and write"; }
     { id = "host"; label = "warn and host"; }
     { id = "play"; label = "play"; }
+    { id = "incubating"; label = "incubating"; }
   ];
 
   # logo: the repository's own logo, at a pinned commit, never stored here. glyph: the text mark of a
@@ -228,6 +229,18 @@ rec {
       pushed = "2026-11-06";
       site = "aracyla.github.io/onde-comer";
       state = "live";
+    }
+    {
+      # Personal repository of h0ffmann, formerly named dogma; facts read from GitHub on 2026-11-09.
+      name = "proof";
+      owner = "h0ffmann";
+      logo = "https://raw.githubusercontent.com/h0ffmann/proof/361e50fb1cea81433d50c941db4f00363af2bd75/docs/logo/logo.svg";
+      lane = "incubating";
+      blurb = "Specifications written and proved in Lean 4, with Haskell and Rust implementations checked against them, and data experiments with papers.";
+      lang = "Lean, Python, Rust";
+      licence = "MPL-2.0";
+      pushed = "2026-11-09";
+      state = "none";
     }
   ];
 
