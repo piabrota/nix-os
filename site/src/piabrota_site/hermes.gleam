@@ -71,6 +71,11 @@ pub fn view() -> Element(msg) {
               html.text("The upstream commit the flake pins ↗"),
             ]),
           ]),
+          html.p([attribute.class("sub")], [
+            html.a([attribute.href(data.hermes_release)], [
+              html.text("The upstream release the flake pins ↗"),
+            ]),
+          ]),
         ]),
         html.section([attribute.class("wrap"), attribute.id("secrets")], [
           parts.section_head("Not shown", "secrets"),

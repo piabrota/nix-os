@@ -499,9 +499,14 @@ configuração está no [PAPERCLIP.md](PAPERCLIP.md) (só em inglês).
 A página [www.piabrota.art/hermes](https://www.piabrota.art/hermes) mostra esta configuração em
 YAML simples, não em Nix. Ela mostra as opções que o `hermes.nix` grava no `config.yaml` e como a
 unit roda: o pacote, os extras, os limites, os plugins, os arquivos e o commit fixado do upstream. O
+herói e o YAML da unit também mostram a tag de release, lida do `flake.lock`
+(`nodes.hermes-agent.original.ref`, por exemplo `v0.23.0`), com um link para essa release. O
 build do site lê esses dados do sistema avaliado (`site/hermes.nix`). Por isso a página muda a cada
 merge que muda o `hermes.nix`. A página mostra a configuração que o último deploy da `main` aplica.
 Ela não confere a unit ao vivo: para isso, veja "Conferir".
+
+A tag do `flake.lock` e o `hermesVersion` do `hermes.nix` precisam concordar. Se diferirem, o build
+do site para com `flake.lock pins <tag> but hermes.nix says <version>`.
 
 Nenhum segredo chega à página. O site nunca lê os arquivos de ambiente e não cita o nome deles. Uma
 chave que cita token, chave, segredo, senha ou usuários permitidos sai antes do build, e o build
@@ -512,7 +517,8 @@ para se o nome de um segredo passar. Os caminhos da store mantêm o nome e perde
 - **Atualizar:** o pin é uma tag de release. Uma release nova é um PR com três mudanças: a tag no
   `flake.nix` (`hermes-agent.url`), o `nix flake update hermes-agent` e o `hermesVersion` no
   `hermes.nix` (e o selo no `README.md`). O PR semanal do `flake-update.yml` não move este input. O CI
-  constrói o PR com a diferença do closure (`dix`); o merge faz o deploy.
+  constrói o PR com a diferença do closure (`dix`); o merge faz o deploy. Se a tag e o
+  `hermesVersion` diferirem, o build do site para, então mude os dois no mesmo PR.
 - **Desligar:** tire o `../../hermes.nix` dos `imports` do host (`hosts/<nome>/default.nix`) num PR. O deploy para e
   remove a unit; `/var/lib/hermes` e `/var/lib/hermes-secrets` ficam na máquina até alguém apagar.
 

@@ -238,7 +238,7 @@ same file the mockups draw: the mockups and the site cannot disagree. Change a f
 | `site/src/piabrota_site/page.gleam` | the HTML document around each page: head, theme colour, stylesheet |
 | `site/src/piabrota_site/render/` | one module a page, which prints it as HTML |
 | `site/data.nix` | writes `src/piabrota_site/data.gleam` from `mockups/data.nix`; that file is not committed |
-| `site/hermes.nix`, `src/piabrota_site/hermes.gleam` | the /hermes page: `site/hermes.nix` writes `services.hermes-agent` of the evaluated system as YAML, without secrets; `site.nix` passes it to the build as `piabrota.site.hermes` |
+| `site/hermes.nix`, `src/piabrota_site/hermes.gleam` | the /hermes page: `site/hermes.nix` writes `services.hermes-agent` of the evaluated system as YAML, without secrets, and the release tag that `flake.lock` pins (`nodes.hermes-agent.original.ref`); `site.nix` passes it to the build as `piabrota.site.hermes`. The build stops if that tag and `hermesVersion` in `hermes.nix` differ: change both in one pull request |
 | `site/test/` | gleeunit tests on the rendered pages |
 | `site/static/` | copied as is next to the pages (`style.css`, one body class a design) |
 | `site/gleam.toml`, `site/manifest.toml` | the Gleam project and its locked hex packages |

@@ -44,7 +44,7 @@ let
   clause = l: k: "    ${str l}, ${str k} -> ${str (locale l).${k}}\n";
   clauses = lib.concatMapStrings (l: lib.concatMapStrings (clause l) (keys l)) languages;
   # site/hermes.nix's facts; with no Hermes, empty, and the page says so.
-  h = if hermes == null then { config = ""; service = ""; upstream = ""; facts = [ ]; } else hermes;
+  h = if hermes == null then { config = ""; service = ""; upstream = ""; release = ""; facts = [ ]; } else hermes;
   fact = f: "#(${str f.label}, ${str f.value})";
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
@@ -120,6 +120,9 @@ assert checked;
 
   /// The upstream commit the flake pins.
   pub const hermes_upstream = ${str h.upstream}
+
+  /// The upstream release (tag) the flake pins.
+  pub const hermes_release = ${str h.release}
 
   pub const hermes_facts = ${list fact h.facts}
 

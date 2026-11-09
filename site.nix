@@ -60,6 +60,7 @@ in
               cfg = config.services.hermes-agent;
               unit = config.systemd.services.hermes-agent.serviceConfig;
               lock = (lib.importJSON ./flake.lock).nodes.hermes-agent.locked;
+              original = (lib.importJSON ./flake.lock).nodes.hermes-agent.original;
             }
         else null;
       defaultText = lib.literalMD "the facts of `site/hermes.nix`, when Hermes is on";

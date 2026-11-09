@@ -181,6 +181,13 @@ pub fn hermes_page_test() {
   assert string.contains(html, "<pre class=\"yaml\">")
   assert string.contains(html, "model:")
   assert string.contains(html, "hermes-agent.service")
+  // The release tag in the hero, in the YAML and in the link are the same string.
+  let assert Ok(tag) = list.key_find(data.hermes_facts, "version")
+  assert string.starts_with(tag, "v")
+  assert string.contains(data.hermes_service, "  version: " <> tag <> "\n")
+  assert data.hermes_release
+    == "https://github.com/NousResearch/hermes-agent/releases/tag/" <> tag
+  assert string.contains(html, "href=\"" <> data.hermes_release <> "\"")
   assert string.contains(page.fabric(), "href=\"/hermes\"")
 }
 
