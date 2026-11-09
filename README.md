@@ -46,6 +46,7 @@ The status is that of the first request on 2026-11-05 (`metrics` and `room` on 2
 | [`piabrota.art`](https://piabrota.art) | 301 to `https://www.piabrota.art/`, same path | KVM 1 | public | `site.nix` |
 | [`www.piabrota.art`](https://www.piabrota.art/) | The site, with `/hermes/` (Hermes's configuration as plain YAML, no secret), [`/skills/`](https://www.piabrota.art/skills/), [`/figures/`](https://www.piabrota.art/figures/), `/notes` (one password) and `/nixos` (302 to this repository) | KVM 1 | public | `site.nix`, `apps/notes/`, `skills-site/`, `figures-site/` |
 | [`room.piabrota.art`](https://room.piabrota.art/) | The 3D room, [piabrota/room](https://github.com/piabrota/room) at a pinned commit, with its radio | KVM 4 | public | `room.nix`, `room-site/` |
+| [`grid.piabrota.art`](https://grid.piabrota.art/) | The same room, opened on its ▲ grid view: the Brazilian coast on triangles. Not yet answering: its DNS record comes first | KVM 4 | public | `room.nix` (`piabrota.room.grid`) |
 | [`proof.piabrota.art`](https://proof.piabrota.art/) | Every HTML page of [h0ffmann/proof](https://github.com/h0ffmann/proof) and [piabrota/pirsig](https://github.com/piabrota/pirsig) at pinned commits, with an index. The archify pages open dark. Not yet answering: its DNS record comes first | KVM 4 | public | `proof.nix`, `proof-site/` |
 | `paperclip.piabrota.art` | Paperclip. Off since 2026-11-04: no answer | KVM 4 | none while off | `paperclip.nix`, [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md) |
 

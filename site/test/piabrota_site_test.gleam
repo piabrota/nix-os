@@ -215,7 +215,7 @@ pub fn hermes_no_secret_test() {
 // Design A links each service on its own name, with its drawn mark, and the hermes tile and
 // /hermes show the hermes mark, not the ☤ glyph.
 pub fn services_test() {
-  assert list.length(data.services) == 4
+  assert list.length(data.services) == 5
   let html = page.fabric()
   list.each(data.services, fn(s) {
     assert string.contains(html, "href=\"https://" <> s.host <> "/\"")

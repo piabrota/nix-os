@@ -135,6 +135,17 @@ hash is the NAR hash of the tree at that commit (`nix hash path` on `git archive
 `proof.piabrota.art` needs its DNS A record at piabrota2's address before the first deploy
 ([DNS on Porkbun](#dns-on-porkbun)).
 
+## The ▲ grid at grid.piabrota.art
+
+`piabrota.room.grid` (`room.nix`) serves the room's files a second time, on piabrota2, at
+`grid.piabrota.art`. The room has no address for a shot, so that copy of `index.html` has one
+script more: it waits for `window.__room` (set by `app.js` once the HIFI room has loaded) and calls
+`window.__room.rig.go('grid', true)`, which lands the camera on the chart and opens the map. In LOFI
+there is no `window.__room`; the script stops after 30 s and the LOFI page stays. "back to the room"
+goes to the room's first shot, on the same name. The name needs its DNS A record at piabrota2's
+address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)). A room pin that renames the
+shot or `window.__room` breaks it: open the name after a bump.
+
 ## The skills website at /skills
 
 `https://www.piabrota.art/skills/` is the website that GitHub Pages served for

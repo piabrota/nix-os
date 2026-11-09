@@ -54,6 +54,9 @@
   piabrota.openrig.waveForecaster.enable = false;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
+  # The same room on grid.piabrota.art, opened on its ▲ grid view (room.nix). The name must point
+  # at this box.
+  piabrota.room.grid.enable = true;
   # Every HTML page of h0ffmann/proof and piabrota/pirsig at pinned commits, with an index
   # (proof-site/default.nix), at proof.piabrota.art.
   piabrota.proof.enable = true;

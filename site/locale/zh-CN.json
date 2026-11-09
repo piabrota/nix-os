@@ -140,5 +140,6 @@
   "service.openrig": "OpenRig 的网页界面，软件工厂的引擎：构建者和审查者的席位，以及它们的终端。",
   "service.metrics": "两台主机的进程、内存和 vCPU，每 10 秒读取一次。",
   "service.room": "piabrota/room：一个 3D 房间，有镜头切换、录像机、望向里约的窗户和 piabrota RADIO。",
+  "service.grid": "房间的第十个视图，有自己的域名：三角网格上的巴西海岸，24 小时的海况和海温。",
   "service.proof": "h0ffmann/proof 和 piabrota/pirsig 的全部 HTML 页面：规格说明、Z3 报告、图表、插图和视频笔记。"
 }
