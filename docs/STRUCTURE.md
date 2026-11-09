@@ -57,6 +57,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
 ├── metrics.nix, metrics/    the metrics page at metrics.piabrota.art: collector, page, tests (docs/METRICS.md)
+├── proof.nix, proof-site/   the HTML pages of h0ffmann/proof and piabrota/pirsig at proof.piabrota.art, with an index
 ├── favicon.nix, favicon/    the eye as the icon of every vhost under piabrota.art (docs/SITE.md)
 ├── openrig.nix, openrig/    OpenRig, the engine of the software factory: its package, its rig specs and its UI (docs/OPENRIG.md)
 ├── thesis/                  the `thesis` toolkit of the thesis rig: POSIX sh, pandoc, TeX; its tests (docs/THESIS.md)

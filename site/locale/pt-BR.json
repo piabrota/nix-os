@@ -139,5 +139,7 @@
   "structure.alt": "A fábrica piabrota: o dojo é a camada comum, recebe as regras do mu e fixa cada repositório abaixo dele.",
   "service.openrig": "A interface web do OpenRig, o motor da fábrica de software: os assentos de quem constrói e de quem revisa, e os terminais deles.",
   "service.metrics": "Processos, memória e vCPU dos dois hosts, lidos a cada 10 segundos.",
-  "service.room": "piabrota/room: um quarto em 3D com planos de câmera, um videocassete, uma janela para o Rio e a piabrota RADIO."
+  "service.room": "piabrota/room: um quarto em 3D com planos de câmera, um videocassete, uma janela para o Rio e a piabrota RADIO.",
+  "service.grid": "A décima vista do quarto, com nome próprio: a costa brasileira em triângulos, com 24 h de mar e a temperatura dele.",
+  "service.proof": "Todas as páginas HTML de h0ffmann/proof e piabrota/pirsig: especificações, relatórios do Z3, diagramas, figuras e notas de vídeo."
 }

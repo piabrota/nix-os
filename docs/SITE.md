@@ -110,10 +110,41 @@ that we do not write names its own icon, so nginx answers for that name as well:
 |---|---|---|
 | Hermes dashboard | `/favicon.ico` | serves the eye there |
 | The room | `/favicon.svg` (the same eye) | serves the shared file there |
+| proof.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
 equals `parts.eye`.
+
+## The proof pages at proof.piabrota.art
+
+`proof.nix` serves, on piabrota2, every HTML page of two repositories at pinned commits
+(`proof-site/default.nix`): h0ffmann/proof's own browsable index (its `site/default.nix`, built
+here with this flake's nixpkgs) under `/proof/`, and piabrota/pirsig's `brain/Videos/index.html`
+and its `docs/archify/*.json` figures (drawn by the archify of `figures-site/`) under `/pirsig/`.
+The index at `/` lists every page, dark, in the tokens of `site/DESIGN.md`.
+
+The archify pages open dark, whatever the reader's setting (the owner, 2026-11-09). archify reads
+`?theme=` from the address before localStorage and the system setting; nginx answers a request for
+an archify page without `?theme=dark` with a 302 to that address, and the index links them with it.
+The build fails if an archify page is outside the folders nginx watches, or no longer reads
+`?theme=`.
+
+To move a pin: change `proofRev` or `pirsigRev` and its `hash` in `proof-site/default.nix`. The
+hash is the NAR hash of the tree at that commit (`nix hash path` on `git archive <commit>`).
+`proof.piabrota.art` needs its DNS A record at piabrota2's address before the first deploy
+([DNS on Porkbun](#dns-on-porkbun)).
+
+## The ▲ grid at grid.piabrota.art
+
+`piabrota.room.grid` (`room.nix`) serves the room's files a second time, on piabrota2, at
+`grid.piabrota.art`. The room has no address for a shot, so that copy of `index.html` has one
+script more: it waits for `window.__room` (set by `app.js` once the HIFI room has loaded) and calls
+`window.__room.rig.go('grid', true)`, which lands the camera on the chart and opens the map. In LOFI
+there is no `window.__room`; the script stops after 30 s and the LOFI page stays. "back to the room"
+goes to the room's first shot, on the same name. The name needs its DNS A record at piabrota2's
+address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)). A room pin that renames the
+shot or `window.__room` breaks it: open the name after a bump.
 
 ## The skills website at /skills
 
