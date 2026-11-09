@@ -143,6 +143,19 @@ rec {
       state = "live";
     }
     {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-09. The glyph is the one
+      # its README header opens with; its banner is the logo proof already shows.
+      name = "awesome-neurosymbolic-ai";
+      glyph = "∀";
+      lane = "think";
+      owner = "h0ffmann";
+      blurb = "A curated list of frameworks, reasoners, papers, courses and benchmarks for neurosymbolic AI: neural learning with symbolic reasoning.";
+      lang = "Markdown, Python";
+      licence = "CC0-1.0";
+      pushed = "2026-11-08";
+      state = "none";
+    }
+    {
       name = "alerts";
       logo = "https://raw.githubusercontent.com/piabrota/alerts/40d244f5e83bdb3700493de6612528982509f2a8/desktop/app/icons/icon.png";
       lane = "host";

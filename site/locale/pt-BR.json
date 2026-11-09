@@ -116,6 +116,7 @@
   "project.closed-source": "The god that failed: um livro sobre por que o código fechado falhou como proteção, a começar pela ciência.",
   "project.skills": "Um canivete suíço de skills para agentes.",
   "project.hermes": "O Hermes Agent, da Nous Research, na VPS, com o Claude no Telegram e no Discord. A configuração dele, em YAML simples.",
+  "project.awesome-neurosymbolic-ai": "Uma lista curada de frameworks, raciocinadores, artigos, cursos e benchmarks de IA neurossimbólica: aprendizado neural com raciocínio simbólico.",
   "project.alerts": "Alertas só de fontes oficiais, para o Discord e um feed Atom com CAP 1.2. Primeiro risco: enchentes no Sul do Brasil.",
   "project.rax": "Rustic Agentic Runtime: um port em Rust puro do AX, o orquestrador declarativo de tarefas agênticas.",
   "project.agents": "Agentes pequenos que vigiam o nix-os e a VPS, e relatam no GitHub como piabrota-ops. Os agentes abrem pull requests e nunca fazem merge.",
