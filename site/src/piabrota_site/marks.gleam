@@ -1,5 +1,5 @@
 //// The marks of what piabrota runs but has no repository logo for: Hermes, OpenRig, the metrics
-//// page, the room, its grid view and the proof pages. Each is the piabrota mark's square (red, radius 22) with one cream drawing,
+//// page, the room, its grid view, the proof pages and the pirsig pages. Each is the piabrota mark's square (red, radius 22) with one cream drawing,
 //// in the mark's own colours only (site/DESIGN.md, "Marks"). Inline, so no file is stored.
 
 import gleam/float
@@ -23,6 +23,7 @@ pub fn for(name: String, size: Int) -> Result(Element(msg), Nil) {
     "room" -> Ok(room(size))
     "proof" -> Ok(proof(size))
     "grid" -> Ok(grid(size))
+    "pirsig" -> Ok(pirsig(size))
     _ -> Error(Nil)
   }
 }
@@ -104,6 +105,14 @@ pub fn proof(size: Int) -> Element(msg) {
   frame("proof", size, [
     stroke("M24 22 L50 80 L76 22", 7.0),
     stroke("M34 44 H66", 7.0),
+  ])
+}
+
+/// Two notes that overlap: pirsig's slip-box, where each note links to another.
+pub fn pirsig(size: Int) -> Element(msg) {
+  frame("pirsig", size, [
+    stroke("M22 22 H56 V56 H22 Z", 6.0),
+    stroke("M44 44 H78 V78 H44 Z", 6.0),
   ])
 }
 

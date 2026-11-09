@@ -44,7 +44,7 @@ yet.
 
 ## DNS on Porkbun
 
-Both names must point at the VPS before the site is turned on: on the first switch, Let's Encrypt
+Each name must point at the VPS before the site is turned on: on the first switch, Let's Encrypt
 checks each one over HTTP. If one does not answer from the VPS, the ACME unit fails, deploy-rs
 reports the activation as failed and rolls back. Fix DNS and deploy again.
 
@@ -54,25 +54,35 @@ reports the activation as failed and rolls back. Fix DNS and deploy again.
 1. Delete the parking records Porkbun creates for a new domain: the `ALIAS` on `piabrota.art`
    and the `CNAME` on `*.piabrota.art` (or on `www`), both to `pixie.porkbun.com`. Turn off any
    **URL Forwarding** on the domain.
-2. Add two records with the VPS's IPv4 address (the `DEPLOY_HOST` secret; hPanel, **VPS >
+2. Add these records with the VPS's IPv4 address (the `DEPLOY_HOST` secret; hPanel, **VPS >
    Overview**):
 
    | Type | Host | Answer | TTL |
    |---|---|---|---|
    | `A` | *(empty, the domain itself)* | `<VPS IPv4>` | 600 |
    | `A` | `www` | `<VPS IPv4>` | 600 |
+   | `A` | `skills` | `<VPS IPv4>` | 600 |
 
    Add no `AAAA` record unless the VPS answers on IPv6: Let's Encrypt tries IPv6 first when it
    finds one.
-3. Wait until both names resolve to the VPS from outside:
+3. Wait until the names resolve to the VPS from outside:
 
    ```sh
    dig +short piabrota.art A
    dig +short www.piabrota.art A
+   dig +short skills.piabrota.art A
    ```
 
 Then merge the PR that turns the site on, or run the `deploy` workflow again if it already
 failed.
+
+The names that piabrota2 serves (`proof`, `pirsig`, `grid` and the others under `piabrota.art`)
+each need one `A` record on their host name, with piabrota2's address, before the deploy that
+turns them on.
+
+The skills website's name, `skills.piabrota.art` (`piabrota.site.skillsDomain`), is on piabrota, so
+its `A` record has piabrota's address, like `www`. Add it to the table above and to the `dig`
+check. Without the record the ACME order for that name fails on the deploy.
 
 ## What answers where
 
@@ -80,10 +90,10 @@ failed.
 |---|---|
 | `http://www.piabrota.art/` | the site |
 | `https://www.piabrota.art/` | the site: design A; B at `/index/`, C at `/paths/`, Hermes's configuration at `/hermes/` |
-| `https://www.piabrota.art/skills/` | the skills website, from `skills-site/` |
+| `https://skills.piabrota.art/` | the skills website, from `skills-site/` (HTTP redirects to HTTPS) |
 | `https://www.piabrota.art/figures/` | the figures as interactive pages, from `figures-site/`; `<slug>/` in English, `pt-BR/<slug>/` in pt-BR |
 | `…/figures` | 301 to `…/figures/` |
-| `…/skills` | 301 to `…/skills/` |
+| `…/skills`, `…/skills/<page>` | 301 to `https://skills.piabrota.art/<page>` |
 | `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `…/nixos` | 302 to this repository, so the README link keeps working |
@@ -102,38 +112,48 @@ Every name under piabrota.art shows the eye as its tab icon. The source is `favi
 `locations = config.piabrota.favicon.locations // { ... };`. Add that term to a new vhost. Basic
 auth stays on them.
 
-The pages that we write link the files: the site (`page.gleam`), `skills-site/`, `figures-site/`,
-the notes layout, the Hermes docs page and the metrics page (its CSP has `img-src 'self'`). An app
-that we do not write names its own icon, so nginx answers for that name as well:
+The pages that we write link the files: the site (`page.gleam`), `skills-site/` (on its own name),
+`figures-site/`, the notes layout, the Hermes docs page and the metrics page (its CSP has
+`img-src 'self'`). An app that we do not write names its own icon, so nginx answers for that name
+as well:
 
 | App | Its own icon | What nginx does |
 |---|---|---|
 | Hermes dashboard | `/favicon.ico` | serves the eye there |
 | The room | `/favicon.svg` (the same eye) | serves the shared file there |
-| proof.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
+| proof.piabrota.art, pirsig.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
 equals `parts.eye`.
 
-## The proof pages at proof.piabrota.art
+## The proof pages at proof.piabrota.art and pirsig.piabrota.art
 
-`proof.nix` serves, on piabrota2, every HTML page of two repositories at pinned commits
-(`proof-site/default.nix`): h0ffmann/proof's own browsable index (its `site/default.nix`, built
-here with this flake's nixpkgs) under `/proof/`, and piabrota/pirsig's `brain/Videos/index.html`
-and its `docs/archify/*.json` figures (drawn by the archify of `figures-site/`) under `/pirsig/`.
-The index at `/` lists every page, dark, in the tokens of `site/DESIGN.md`.
+`proof.nix` serves two names on piabrota2, each a static vhost with its own ACME certificate. Both
+are built from pinned commits by `proof-site/`, which shares the index, its dark tokens and the
+archify gate between the two (`proof-site/common.nix`):
+
+- `proof.piabrota.art` (`proof-site/default.nix`, option `domain`): h0ffmann/proof's own browsable
+  index (its `site/default.nix`, built here with this flake's nixpkgs) under `/proof/`, and an
+  index at `/` that lists its pages.
+- `pirsig.piabrota.art` (`proof-site/pirsig.nix`, option `pirsig.domain`): piabrota/pirsig's
+  `brain/Videos/index.html` under `/videos/` and its `docs/archify/*.json` figures (drawn by the
+  archify of `figures-site/`) under `/figures/`, and an index at `/`. The proof name has no
+  `/pirsig/` path, and it has no redirect: the old address never answered.
+
+Both indexes are dark, in the tokens of `site/DESIGN.md`. `piabrota.proof.enable` turns both names
+on.
 
 The archify pages open dark, whatever the reader's setting (the owner, 2026-11-09). archify reads
 `?theme=` from the address before localStorage and the system setting; nginx answers a request for
 an archify page without `?theme=dark` with a 302 to that address, and the index links them with it.
-The build fails if an archify page is outside the folders nginx watches, or no longer reads
-`?theme=`.
+The build of each output fails if an archify page is outside the folders nginx watches on its name
+(`proof/docs/diagrams/{en,pt-BR}/` on proof, `figures/` on pirsig), or no longer reads `?theme=`.
 
-To move a pin: change `proofRev` or `pirsigRev` and its `hash` in `proof-site/default.nix`. The
-hash is the NAR hash of the tree at that commit (`nix hash path` on `git archive <commit>`).
-`proof.piabrota.art` needs its DNS A record at piabrota2's address before the first deploy
-([DNS on Porkbun](#dns-on-porkbun)).
+To move a pin: change `proofRev` in `proof-site/default.nix`, or `pirsigRev` in
+`proof-site/pirsig.nix`, and its `hash`. The hash is the NAR hash of the tree at that commit
+(`nix hash path` on `git archive <commit>`). Each name needs its DNS A record at piabrota2's
+address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)).
 
 ## The ▲ grid at grid.piabrota.art
 
@@ -146,10 +166,19 @@ the gate for the sound waits. The name needs its DNS A record at piabrota2's add
 first deploy ([DNS on Porkbun](#dns-on-porkbun)). `domain` here and `grid.host` in the room must
 be the same name.
 
-## The skills website at /skills
+## The skills website at skills.piabrota.art
 
-`https://www.piabrota.art/skills/` is the website that GitHub Pages served for
-[piabrota/skills](https://github.com/piabrota/skills). It moved here.
+`https://skills.piabrota.art/` is the website that GitHub Pages served for
+[piabrota/skills](https://github.com/piabrota/skills). It moved to `www.piabrota.art/skills/`, and
+from there to its own name, like the pirsig pages.
+
+`site.nix` serves it as a second vhost on piabrota (KVM 1): `piabrota.site.skillsDomain`, HTTPS
+only, its own ACME certificate, the three icon locations, and `Cache-Control: no-cache` because a
+new pin keeps the names of the pages. The root is `piabrota.site.skills`, the output of
+`skills-site/`. The `www` vhost answers `/skills` and `/skills/<page>` with a 301 to the same page
+on the new name (the query string stays), so old links keep working. `skillsDomain = null` removes
+the vhost and the redirect. The name needs its DNS A record at piabrota's address before the first
+deploy ([DNS on Porkbun](#dns-on-porkbun)).
 
 `skills-site/` holds the Gleam program. It was copied from piabrota/skills, and it is edited here on purpose, for the look.
 The look is the one of the site: [`site/DESIGN.md`](../site/DESIGN.md) has its rules.
@@ -170,8 +199,9 @@ A new commit of that repository shows on the site only after a PR here moves the
 You can also set `hash` to an empty string. The failed build then prints the right one.
 
 Gleam and Erlang run on the CI builder only. The VPS gets the HTML, which is small.
-`allowedReferences = [ ]` keeps them out of the VPS closure. The pages use relative links, so
-they work under `/skills/`. `piabrota.site.skills = null` removes the page.
+`allowedReferences = [ ]` keeps them out of the VPS closure. The pages link each other and their
+favicon from the root of the name, and the other links are absolute, so nothing needs a base
+path. `piabrota.site.skills = null` removes the pages and the redirect.
 
 To preview, run `just skills-site`. It builds into `./result-skills-site`.
 

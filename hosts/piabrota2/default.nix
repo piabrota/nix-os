@@ -21,8 +21,8 @@
     ../../openrig.nix
     # The room (piabrota/room) on room.piabrota.art, which must point at this box.
     ../../room.nix
-    # The HTML pages of h0ffmann/proof and piabrota/pirsig on proof.piabrota.art, which must point
-    # at this box.
+    # The HTML pages of h0ffmann/proof on proof.piabrota.art and those of piabrota/pirsig on
+    # pirsig.piabrota.art; both names must point at this box.
     ../../proof.nix
   ];
 
@@ -57,8 +57,8 @@
   # The same room on grid.piabrota.art, opened on its ▲ grid view (room.nix). The name must point
   # at this box.
   piabrota.room.grid.enable = true;
-  # Every HTML page of h0ffmann/proof and piabrota/pirsig at pinned commits, with an index
-  # (proof-site/default.nix), at proof.piabrota.art.
+  # The HTML pages of h0ffmann/proof and of piabrota/pirsig at pinned commits, each with an index
+  # (proof-site/), at proof.piabrota.art and pirsig.piabrota.art.
   piabrota.proof.enable = true;
   # Live metrics (metrics.nix, docs/METRICS.md): the page at metrics.piabrota.art, which must point at
   # this box, this host's own collector, and the pull of piabrota's file.
