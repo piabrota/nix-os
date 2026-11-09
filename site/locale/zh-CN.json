@@ -116,6 +116,7 @@
   "project.closed-source": "The god that failed：一本书。它说明闭源为什么不能起到保护作用，先讲科学领域。",
   "project.skills": "一套给智能体用的技能。",
   "project.hermes": "Nous Research 的 Hermes Agent，运行在 VPS 上，在 Telegram 和 Discord 上使用 Claude。它的配置以纯 YAML 显示。",
+  "project.awesome-neurosymbolic-ai": "一份精选清单，收录神经符号 AI 的框架、推理器、论文、课程和基准。神经符号 AI 把神经网络学习和符号推理结合在一起。",
   "project.alerts": "只使用官方来源的警报，发送到 Discord 和 Atom 订阅（CAP 1.2）。先覆盖巴西南部的洪水。",
   "project.rax": "Rustic Agentic Runtime：用纯 Rust 重写 AX。AX 负责安排智能体任务。",
   "project.agents": "小型智能体。它们监视 nix-os 和服务器，并以 piabrota-ops 的身份在 GitHub 上报告。它们打开 pull request，从不合并。",
