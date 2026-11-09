@@ -24,6 +24,10 @@ check:
 hermes-plugins-test:
     cd hermes/plugins/tests && python3 -m unittest -v test_plugins
 
+# tests of the design kit (design/) and of the proof and pirsig indexes (proof-site/): node only, offline
+design-test:
+    node --test design/test.mjs proof-site/test.mjs
+
 # tests of hermes/skills/kvm4-health/scripts/kvm4-health.sh with a stub journalctl and systemctl (offline)
 health-test:
     sh hermes/skills/kvm4-health/scripts/kvm4-health.test.sh

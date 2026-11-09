@@ -241,6 +241,26 @@
           '') (builtins.attrNames mockups.files)}
           touch $out
         '';
+        # Every nginx virtual host under piabrota.art is a site of design/sites.nix or is listed there as
+        # hidden, and every site names a host that a system serves. Evaluation only: no system is built.
+        design-sites =
+          let
+            inherit (pkgs) lib;
+            list = import ./design/sites.nix;
+            served = lib.unique (lib.concatMap
+              (name: lib.attrNames self.nixosConfigurations.${name}.config.services.nginx.virtualHosts)
+              (lib.attrNames self.nixosConfigurations));
+            underPiabrota = lib.filter (h: h == "piabrota.art" || lib.hasSuffix ".piabrota.art" h) served;
+            listed = map (s: s.host) list.sites ++ list.hidden;
+            unlisted = lib.filter (h: !(lib.elem h listed)) underPiabrota;
+            unserved = lib.filter (s: !(lib.elem s.host served)) list.sites;
+          in
+          pkgs.runCommand "design-sites-check" { } ''
+            ${lib.concatMapStrings (h: "echo 'not in design/sites.nix: ${h}' >&2\n") unlisted}
+            ${lib.concatMapStrings (s: "echo 'no system serves ${s.id}: ${s.host}' >&2\n") unserved}
+            ${lib.optionalString (unlisted != [ ] || unserved != [ ]) "exit 1"}
+            touch $out
+          '';
         # The system with one stand-in Loco app, so the module and the hosting stack (nginx,
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {

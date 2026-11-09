@@ -146,10 +146,21 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 2 px. No page loads JavaScript, except Google's analytics tag when
 `piabrota.site.analytics.measurementId` is set (`page.analytics`).
 
+## The kit
+
+`design/` owns the tokens for the sites built outside `site/` ([docs/DESIGN-KIT.md](../docs/DESIGN-KIT.md)):
+`design/css/tokens.css` repeats the table above, and `design/test.mjs` fails when it or this table
+differs from `site/static/style.css`. Change a token in all three in one pull request. The kit also holds
+one small CSS module for each part of a page, the list of sites (`design/sites.nix`) and the brand bar
+that goes into pages from other repositories.
+
 ## Where else the look is used
 
-The same tokens and type dress three things that are not the site's Gleam pages:
+The same tokens and type dress four things that are not the site's Gleam pages:
 
+- **proof.piabrota.art and pirsig.piabrota.art**: the indexes are made by the kit (`proof-site/index.mjs`),
+  with the hero, numbered sections and card grids of this file. The pages from h0ffmann/proof and
+  piabrota/pirsig keep their own looks and get the brand bar.
 - **The figures** at `/figures/`: the index is a page frame like `/hosts/` in this `style.css`
   (`.figures-grid`, `.figure-card`), written by `figures-site/default.nix`; each figure page has a bar
   of 44 px with the dark tokens, from the same file.

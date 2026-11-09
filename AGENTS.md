@@ -1,13 +1,13 @@
 # AGENTS.md
 
-Instructions for any AI coding agent working in this repository. Read this file before you change
-or run anything. Humans should read it too.
+Instructions for any AI coding agent working in this repository. Read it before you change or run
+anything. Humans should too.
 
 ## What this repo is
 
 The NixOS configuration of one small, live VPS: a Hostinger KVM guest on Proxmox that hosts
-piabrota.art/nixos. The machine has little RAM and a small disk, so every change is judged by what
-it adds to the system closure and to memory use.
+piabrota.art/nixos. RAM and disk are small, so every change is judged by what it adds to the system
+closure and to memory use.
 
 Agents do not run on the VPS. You work in a clone elsewhere and open a PR. A merge to `main` is
 the deploy: GitHub Actions builds the system and switches the VPS to it ([docs/DEPLOY.md](docs/DEPLOY.md)).
@@ -31,13 +31,14 @@ A doc with a `.ptBR.md` file: pt-BR first, English mirror; change both together.
 | `skills-site/` | The skills website at `skills.piabrota.art` (`piabrota.site.skills`, `skillsDomain`; a vhost of `site.nix` on KVM 1; `www.piabrota.art/skills` redirects to it), from `www/` of [piabrota/skills](https://github.com/piabrota/skills). `src/`, `gleam.toml`, `manifest.toml`: that Gleam program, edited here for the look (`site/DESIGN.md`); content stays. `default.nix` builds it from a pinned commit (`rev`, `hash`). `just skills-site` builds it. `hermes.nix` has its own pin. |
 | `room.nix`, `room-site/` | piabrota/room, pinned by commit, on piabrota2 at `room.piabrota.art`, with its radio's live listeners count behind `/live/`. `piabrota.room.grid`: the same files at `grid.piabrota.art`, where the room opens on its ▲ grid view by itself (its `grid.host`, piabrota/room#28; the owner, 2026-11-09). |
 | `proof.nix`, `proof-site/` | `piabrota.proof`, on at piabrota2, two vhosts (shared part: `proof-site/common.nix`): `proof.piabrota.art`, the pages of h0ffmann/proof (its `site/` build at a pinned commit, under `/proof/`), and `pirsig.piabrota.art` (`piabrota.proof.pirsig.domain`), the pages of piabrota/pirsig (`brain/Videos/index.html` under `/videos/`, its archify figures under `/figures/`). The archify pages open dark: nginx sends a request without `?theme=dark` to that address (the owner, 2026-11-09). |
+| `design/` | The design kit (docs/DESIGN-KIT.md): tokens, CSS modules, `sites.nix` (`checks.design-sites`), `kit.mjs`, `inject.mjs` (brand bar). `just design-test`. |
 | `figures-site/` | Figures as archify pages at `/figures/` (`piabrota.site.figures`), built by Nix from `docs/archify/` at a pinned archify. No HTML committed. |
 | `favicon.nix`, `favicon/` | The eye as the icon of every site under piabrota.art: `favicon/favicon.svg` (the drawing of `parts.eye`) built into `favicon.svg`, `.ico` and `apple-touch-icon.png`. **Every vhost under piabrota.art must carry `config.piabrota.favicon.locations`.** See docs/SITE.md. |
-| `hermes.nix` | [Hermes Agent](https://github.com/NousResearch/hermes-agent) as the unit `hermes-agent`, from the NixOS module of its flake (input `hermes-agent`, pinned to a release tag in `flake.nix`; a bump is by hand). Native mode, not a container; the `full` package on piabrota2 with the `anthropic` and `messaging` extras; Claude through the owner's subscription (`CLAUDE_CODE_OAUTH_TOKEN`), never an API key: Sonnet (`claude-sonnet-5-5`) as the main model, Haiku (`claude-haiku-5-5`) for subagents and side tasks. `MemoryMax=8G` and `CPUWeight=50` on piabrota2 (`hosts/piabrota2`); state in `/var/lib/hermes`. The `hermes` CLI for `h0ffmann` is `sudo -u hermes hermes ...`: he is not in the `hermes` group, or upstream refuses the gateway control socket and the dashboard Chat tab cannot attach. Its secrets live only in `/var/lib/hermes-secrets/hermes.env`, which activation copies into its `.env`; without the file it starts with no platform. Activation installs `hermes/SOUL.md` (identity and rules) and `hermes/AGENTS.md` (the owner's projects, sources and jobs) on every run. All add-ons are declared there and listed in [docs/HERMES.md](docs/HERMES.md): MCP servers, the owner's skills and community plugins (pinned by commit), among them a deny-list plugin with its list in `hermes/dangerous-patterns.yaml` (no merges, no push except to `hermes/*`, no secrets, no `sudo`, no installs). Its coding worker is [oh-my-pi](https://github.com/can1357/oh-my-pi) (`omp`, `omp/package.nix`), on its PATH only as a wrapper that loads `hermes/omp.yml` and appends `hermes/omp-append-system.md`; every task that writes or reviews code goes through the `hermes-omp` skill, which starts and stops each run with `omp-run` and pipes its output through `omp-stream` ([docs/HERMES-OMP.md](docs/HERMES-OMP.md)). `hermes/scripts/export-skills.sh` (skills) and `refresh-grid.sh` (room's ▲ grid data) are daily cron jobs that open PRs. |
+| `hermes.nix` | [Hermes Agent](https://github.com/NousResearch/hermes-agent) as the unit `hermes-agent`, from the NixOS module of its flake (input `hermes-agent`, pinned to a release tag in `flake.nix`; a bump is by hand). Native mode, not a container; the `full` package on piabrota2 with the `anthropic` and `messaging` extras; Claude through the owner's subscription (`CLAUDE_CODE_OAUTH_TOKEN`), never an API key: Sonnet (`claude-sonnet-5-5`) as the main model, Haiku (`claude-haiku-5-5`) for subagents and side tasks. `MemoryMax=8G` and `CPUWeight=50` on piabrota2 (`hosts/piabrota2`); state in `/var/lib/hermes`. `h0ffmann` runs the CLI as `sudo -u hermes hermes ...`, not as a member of the `hermes` group: upstream then refuses the gateway control socket and the Chat tab cannot attach. Secrets live only in `/var/lib/hermes-secrets/hermes.env`, copied into its `.env` on activation; without the file it starts with no platform. Activation installs `hermes/SOUL.md` (identity and rules) and `hermes/AGENTS.md` (the owner's projects, sources and jobs) on every run. All add-ons are declared there and listed in [docs/HERMES.md](docs/HERMES.md): MCP servers, the owner's skills and community plugins (pinned by commit), among them a deny-list plugin with its list in `hermes/dangerous-patterns.yaml` (no merges, no push except to `hermes/*`, no secrets, no `sudo`, no installs). Its coding worker is [oh-my-pi](https://github.com/can1357/oh-my-pi) (`omp`, `omp/package.nix`), on its PATH only as a wrapper that loads `hermes/omp.yml` and appends `hermes/omp-append-system.md`; the `hermes-omp` skill runs every task that writes or reviews code, starting and stopping each run with `omp-run` and piping its output through `omp-stream` ([docs/HERMES-OMP.md](docs/HERMES-OMP.md)). `hermes/scripts/export-skills.sh` (skills) and `refresh-grid.sh` (room's ▲ grid data) are daily cron jobs that open PRs. |
 | `hermes/scripts/gateway-wrapper.sh` | The unit's main process: on exit 75 it restarts the gateway at once. `.test.sh` tests it. |
 | `hermes-github.nix` | Hermes's write access to GitHub as its own App, piabrota-hermes[bot]: the App's key stays root-only (`/var/lib/hermes-secrets/github-app.env`); the unit `hermes-github-token` mints one-hour installation tokens every 45 minutes (contents, pull requests and issues; not workflows) for piabrota, marola-dev and h0ffmann, for `git` (a credential helper) and `gh`. Hermes pushes only `hermes/*` branches and opens pull requests when the owner asks; the deny list and a ruleset on each default branch block the rest. Without the key file it does nothing. |
 | `hermes-web.nix` | `piabrota.hermesWeb.enable`, on: Hermes's web dashboard (`hermes dashboard`) as the unit `hermes-backend` on `127.0.0.1:9119` only (`MemoryMax=2G`), on piabrota2, behind nginx at `hermes.piabrota.art` with ACME and HTTP basic auth against `/var/lib/hermes-web-secrets/htpasswd` (by hand; without it every request is a 500). nginx refuses `/api/env/reveal`, `/api/audio/voice-config` and writes to `/api/env`, so no secret reaches the browser. `checks.hermes-docs-url` fails if a Hermes bump renames the docs address that nginx swaps or one of those two routes. The DNS record must point at the box before it is on. See [docs/HERMES.md](docs/HERMES.md), "The web dashboard". |
-| `hermes/plugins/` | The owner's two Hermes plugins, `pirsig-notes` and `pirsig-videos`, which open pull requests to piabrota/pirsig on `hermes/*` branches; `common/brain.py` is shared and copied into each at build time (`ownPlugin` in `hermes.nix`); `tests/` runs in `checks.hermes-plugins` and `just hermes-plugins-test`. See [docs/HERMES-PLUGINS.md](docs/HERMES-PLUGINS.md). |
+| `hermes/plugins/` | The owner's two Hermes plugins, `pirsig-notes` and `pirsig-videos`, which open pull requests to piabrota/pirsig on `hermes/*` branches; `common/brain.py`, shared, is copied into each at build time (`ownPlugin` in `hermes.nix`); `tests/` runs in `checks.hermes-plugins` and `just hermes-plugins-test`. See [docs/HERMES-PLUGINS.md](docs/HERMES-PLUGINS.md). |
 | `hermes/feeds/` | The owner's personal feed: `build_feed.py` (stdlib Python, no agent) scores RSS, Atom, GitHub and podcast sources from `feeds.toml`. `tests/` run offline. `hermes.nix` installs it. See docs/FEEDS.md. |
 | `hermes/dashboard-themes/`, `hermes/skins/` | Dashboard theme and TUI skin in the look of `site/DESIGN.md`. |
 | `kubesolo-purge.nix` | Temporary oneshot that clears an old install; it runs only while `/var/lib/kubesolo` exists. A human deletes it later. |
@@ -48,9 +49,9 @@ A doc with a `.ptBR.md` file: pt-BR first, English mirror; change both together.
 | `thesis/`, `docs/THESIS.ptBR.md`, `docs/THESIS.md`, `openrig/specs/rigs/wave-forecaster-thesis/` | The thesis rig: six Claude Code seats write one UFRJ Poli final project in pt-BR, one section each, with `thesis` (POSIX sh, jq, pandoc, a small TeX set; no model, no network): claims, four gates (readability, slop, UFRJ rules, citations), verdicts by hash, `publish` to `/var/lib/rig-outbox/wave-forecaster-thesis`. The doc has the deployment notes; change it with `thesis/profile.json`. |
 | `docs/VIDEO-PIPELINE.md`, `video-lab/` | Spec of the faceless video pipeline (English only). `just video-dummy` makes a 28 s test video from `ffmpeg` alone. |
 | `keys/deploy.pub` | The public half of the CI deploy key. Never a private key. |
-| `observer.nix`, `keys/observer.pub` | The `observer` account: SSH key only, no sudo, not a Nix trusted user, in `systemd-journal`. A coding agent's session logs in with it (`ssh piabrota-observer`, the private key on the owner's computer) to read logs and unit states while it debugs. It only reads. |
+| `observer.nix`, `keys/observer.pub` | The `observer` account: SSH key only, no sudo, not a Nix trusted user, in `systemd-journal`. A coding agent logs in with it (`ssh piabrota-observer`, the private key on the owner's computer) to read logs and unit states while it debugs. It only reads. |
 | `scripts/specs.sh` | POSIX sh: prints OS, kernel, CPU, RAM, swap, disk, uptime and the NixOS generation. |
-| `scripts/hermes-check.sh` | POSIX sh, read-only, run as `h0ffmann` on the box (`just remote-hermes-check`): the unit, its plugins and skills, the `omp`, `yt-dlp` and `manim` versions, and plugin errors in the journal since the start. It never reads the secrets or prints the environment. Its two plugin lists follow `extraPlugins` and `ownPlugins` in `hermes.nix`: change them together. |
+| `scripts/hermes-check.sh` | POSIX sh, read-only, run as `h0ffmann` on the box (`just remote-hermes-check`): the unit, its plugins and skills, the `omp`, `yt-dlp` and `manim` versions, and plugin errors in the journal since the start. It never reads secrets or prints the environment. Its two plugin lists follow `extraPlugins` and `ownPlugins` in `hermes.nix`: change both. |
 | `scripts/freeze.sh` | POSIX sh, like `pip freeze`: every package of the running system as `name==version` with its size. `--by-size` sorts by size. |
 | `scripts/context-size.sh` | POSIX sh, read-only: the size of the three context files against Hermes's 32000-character cut. Warns at 30000, fails above 32000. `just context-size`. |
 | `scripts/restart-services.sh` | Run as root by `just remote-restart`, a human only, never an agent: restarts the unit groups the box has, from an allow list. `docs/DEPLOY.md`; `just restart-test`. |
@@ -111,8 +112,7 @@ Never change `system.stateVersion`.
 Loco apps: never put a secret in `piabrota.loco.apps.<name>.environment` (it lands in the world-readable
 store); secrets go in the `environmentFile` on the box. Add an app only after its DNS record points at
 the VPS, or the ACME order fails on the deploy. Do not add a PostgreSQL server or Redis for an app: SQLite and
-in-process workers (docs/LOCO.md); Paperclip's PostgreSQL is the owner's exception. PGX (`pgx.nix`) is for data you can lose, such as a task queue;
-an app's own data stays in SQLite.
+in-process workers (docs/LOCO.md); Paperclip's PostgreSQL is the owner's exception. PGX (`pgx.nix`) is for data you can lose; an app's own data stays in SQLite.
 
 ## Resource budget
 
@@ -128,9 +128,9 @@ machine:
 The rules below hold on both hosts; piabrota2 has room for the full Hermes, not for heavy tools on
 every host. A tool only one host needs goes in that host's directory.
 
-These are the plan's figures. What the system can use is less (the kernel, zram, the root
-partition). Read the machine's own numbers (`just remote-specs`, or the summary of the last
-`deploy` run) before you rely on a number, and change this table when the plan changes.
+These are the plan's figures; the system can use less (the kernel, zram, the root partition). Read the
+machine's own numbers (`just remote-specs`, or the last `deploy` summary) before you rely on one, and
+change this table when the plan changes.
 
 Rules for anything you add:
 
@@ -161,9 +161,8 @@ What `tools.nix` does for the budget:
 - `zramSwap` gives compressed swap in RAM, up to 50 % of memory.
 - `programs.command-not-found` is off: it needs a channel database.
 
-Measured against nixos-26.05 (13050.08d3a97586f6) on 2026-10-29, adding `tools.nix` made the
-system closure 25.9 MiB smaller (1.49 GiB to 1.46 GiB): the tools add about 38 MiB, the removed
-documentation saves more.
+Measured on 2026-10-29 (nixos-26.05, 13050.08d3a97586f6), `tools.nix` made the system closure 25.9 MiB
+smaller (1.49 GiB to 1.46 GiB): the tools add about 38 MiB, the removed documentation saves more.
 
 `deploy.nix` sets garbage collection (weekly, paths older than 14 days, and when free disk falls under 2 GiB), a weekly store optimisation,
 five boot generations and `max-jobs = 1`, `cores = 1`. Change them there, not in a second module.
@@ -197,7 +196,7 @@ Update nixpkgs with `nix flake update` in its own PR; CI runs with `--no-update-
 
 ## Deploy
 
-An agent never deploys and never runs `just deploy`. To look at the box while debugging, it may log in as `observer` (`observer.nix`) and run read-only commands; it never asks the owner for root access to fix something there: the fix goes in a PR. The merge
+An agent never deploys and never runs `just deploy`. To look at the box while debugging, it may log in as `observer` (`observer.nix`) and run read-only commands; it never asks for root access to fix something there: the fix goes in a PR. The merge
 to `main` deploys it ([docs/DEPLOY.md](docs/DEPLOY.md)).
 
 `deploy.yml` builds the system on the GitHub runner, and deploy-rs copies it to the VPS over SSH
@@ -209,7 +208,7 @@ for both hosts), `DEPLOY_HOST` (piabrota's address), `DEPLOY_HOST_KVM4` and `DEP
 (one line per host) in the `prod` environment. Until `DEPLOY_HOST_KVM4` exists, piabrota2's job is
 skipped with a notice.
 
-A human can deploy by hand with the same tool, for example before the `deploy`
+A human can deploy by hand with the same tool, e.g. before the `deploy`
 user exists: `DEPLOY_HOST=<ip> just deploy h0ffmann piabrota2`, or **Run workflow** with the host
 `kvm4` (the name `deploy.yml` still uses for `piabrota2`) and the SSH user `h0ffmann`. To undo a bad switch on the VPS:
 `sudo nixos-rebuild switch --rollback`, or pick an older generation in the GRUB menu on the
