@@ -149,6 +149,16 @@ let
     cp "$src/.hermes-plugin/plugin.yaml" "$src/.hermes-plugin/__init__.py" "$out/"
     cp -r "$src/skills" "$out/skills"
   '';
+  # Manim Community, for the hermes-manim skill (hermes/skills/hermes-manim). It renders on the CPU
+  # only. It adds about 2.4 GiB to the closure of piabrota2, the only host that imports this file.
+  # Two tests of nixpkgs fail at this pin: test_ImageMobject and test_ImageInterpolation. The
+  # Pillow of this pin refuses `Image.fromarray(..., mode="RGBA")` on a float array, in
+  # `Camera.display_image_mobject`. So a scene with an ImageMobject fails; text, MathTex and
+  # shapes work. Hydra has no cached build, so the host that builds runs the tests itself.
+  # Remove this override when nixpkgs fixes the build.
+  manim = pkgs.manim.overridePythonAttrs (old: {
+    disabledTests = (old.disabledTests or [ ]) ++ [ "test_ImageMobject" "test_ImageInterpolation" ];
+  });
   # The kvm4-health skill's script as a command (hermes/skills/kvm4-health), with the tools it
   # reads with on its PATH, for chat and for the watchdog cron job below.
   kvm4Health = pkgs.writeShellApplication {
@@ -421,7 +431,8 @@ in
     # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts),
     # and omp-run runs and stops a background omp through it.
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix, as Paperclip's jq is.
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light ompWrapped kvm4Health ompStream ompRun ];
+    # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim).
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
