@@ -199,6 +199,23 @@ there at a pinned commit, in English or pt-BR, and no copy lives here. `structur
 `closed` in `mockups/data.nix` lists a project that is not FOSS yet. It gets a tile in design A, with no
 link. It stays out of the FOSS inventory, the counts and the mockups.
 
+## Commit counts
+
+Each project in an own repository of the org (`origin` `own`, no `repository` override; so not hermes
+and not a personal project) has `commits = { human = N; agent = M; };` in `mockups/data.nix`, and the
+file has one `commitsAsOf`. Design A shows them in the tile, design C in the row, and every design in
+the inventory entry, in the four languages (`commits.*` in `site/locale/<lang>.json`). A project with
+no `commits` shows nothing. The tooltip says what the count is and the day it was read.
+
+- Rule: a commit is agent when its GitHub author login ends with `[bot]` or is exactly `claude`.
+  Every other commit is human.
+- Limit: a commit that a person made with an agent's help, under their own name, counts as human.
+  The repository's rule is "no agent trail in a commit", so the agent number is a floor.
+- The page never calls the network. The numbers are typed in `data.nix`, like `pushed`.
+- Refresh: `just commit-counts` prints one line for each project. Paste the lines, set `commitsAsOf`,
+  run `just mockups`, and open a pull request. `just commit-counts-test` tests the rule with a stub `gh`.
+  [MOCKUPS.md](MOCKUPS.md#commit-counts) has the same rule.
+
 ## Languages
 
 Design A has four languages; designs B and C stay in English. English is the source, and it wins when two

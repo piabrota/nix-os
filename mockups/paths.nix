@@ -3,7 +3,7 @@
 { lib, s, data, where, mu }:
 w:
 let
-  inherit (lib) concatStrings filter length foldl';
+  inherit (lib) concatStrings filter foldl';
   wide = w >= 900;
   col = if wide then 620 else w - 40;
   x0 = (w - col) / 2;
@@ -30,13 +30,15 @@ let
   here = filter (p: p ? path) data.projects;
   away = filter (p: !(p ? path)) data.projects;
   lead = 22;
-  entryH = if wide then lead else 2 * lead + 4;
+  # A project with counts has one more line, in the terminal's muted colour.
+  entryH = p: (if wide then lead else 2 * lead + 4) + (if p ? commits then 20 else 0);
   entry = y: p:
     if wide then
       concatStrings [
         (s.text (x0 + 24) y { fill = tfg; } (p.path or (where p)))
         (s.text (x0 + 24 + 320) y { fill = tmuted; } p.name)
         (s.text (x0 + col - 24 - s.width 13 p.state) y { fill = stateCol p.state; } p.state)
+        (s.commits data (x0 + 24) (y + 20) { fill = tmuted; font-size = 12; } p)
       ] else
       concatStrings [
         (s.text (x0 + 16) y { fill = tfg; } (p.path or (where p)))
@@ -44,12 +46,16 @@ let
           (s.esc "${p.name} · ")
           (s.el "tspan" { fill = stateCol p.state; } [ p.state ])
         ])
+        (s.commits data (x0 + 32) (y + lead + 20) { fill = tmuted; font-size = 12; } p)
       ];
-  block = y: prompt: ps: {
-    h = lead + 10 + length ps * entryH + 18;
-    out = s.text (x0 + (if wide then 24 else 16)) y { fill = tmuted; } "$ ${prompt}"
-      + (foldl' (acc: p: { y = acc.y + entryH; out = acc.out + entry acc.y p; }) { y = y + lead + 10; out = ""; } ps).out;
-  };
+  block = y: prompt: ps:
+    let
+      rows = foldl' (acc: p: { y = acc.y + entryH p; out = acc.out + entry acc.y p; }) { y = y + lead + 10; out = ""; } ps;
+    in
+    {
+      h = lead + 10 + (rows.y - (y + lead + 10)) + 18;
+      out = s.text (x0 + (if wide then 24 else 16)) y { fill = tmuted; } "$ ${prompt}" + rows.out;
+    };
   tTop = nameY + 50;
   b1 = block (tTop + 56) "ls piabrota.art/" here;
   b2 = block (tTop + 56 + b1.h) "ls elsewhere/" away;

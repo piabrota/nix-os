@@ -72,6 +72,11 @@ font file is stored here.
   `--accent-text`. The name's link covers the card. The mockups do not draw them.
 - **Tiles**, on A: tags (the state pill, the language, own or personal), the name in Fjalla One, the
   blurb, the licence and the address. The name's link covers the tile. Hover scales it 1.5%.
+- **Commit counts**, on a tile (A), on a row of C's terminal and in the inventory: one quiet line,
+  the word `commits` in Inter, 11 px, uppercase, then `35 human · 72 agent` in JetBrains Mono, 12 px,
+  both in `--muted`. No new colour. A tooltip says what the count is and the day it was read. A
+  project with no counts shows no line and no zero. On a tile the line sits above the link that
+  covers it, so the tooltip shows; on a phone it wraps, and in C it takes a row of its own.
 - **The numbers** in the hero are `<dl>` pairs, counted from the facts, never typed.
 - **The bar of anchors** stays at the top while the page scrolls, and scrolls sideways on a phone.
 - **/skills/** (`skills-site/`) wears the same look: these tokens, type and shapes, its own CSS in `skills-site/src/www.gleam`, the 技 drawing in `--accent-text` as its hero drawing, and a card for each skill.
@@ -86,7 +91,8 @@ Every design ends with the same sections, in this order (`src/piabrota_site/comm
 - **Dogma**: the ten invariants of piabrota/mu, shortened only where a list or a link would not fit.
   The list numbers them, in `--accent-text`.
 - **FOSS inventory**: one entry a project, closed-source's detail: the name, the state pill, the
-  blurb, four facts in a `<dl>` (origin, language, licence, last push), the repository link and the
+  blurb, four facts in a `<dl>` (origin, language, licence, last push; a fifth, the commit counts,
+  when the project has them), the repository link and the
   address. The state colours the entry's 3 px edge. `own` is the org's; `personal` is a repository
   that dojo pins and a person keeps.
 - **Board**: a card a person, with the avatar, the name (or the `@login`), the line from the org

@@ -38,6 +38,24 @@ terminal, do que responde em piabrota.art e de onde o resto mora. É a menor mud
 |---|---|
 | ![Maquete C, paths, desktop](mockups/paths-desktop.svg) | ![Maquete C, paths, celular](mockups/paths-mobile.svg) |
 
+## Contagem de commits
+
+Cada projeto que mora em um repositório próprio da org mostra dois números: no cartão (A), na linha
+(B e C) e na entrada do inventário. São os commits da branch padrão, humanos e de agentes. O campo
+`commits` de cada projeto em `mockups/data.nix` guarda os números, e `commitsAsOf` guarda o dia em
+que foram lidos. Um projeto sem `commits` (o hermes e os repositórios pessoais) não mostra nada. O
+build não tem rede, então os números só mudam quando alguém os atualiza.
+
+- Regra: um commit é de agente quando o login do autor no GitHub termina em `[bot]` ou é exatamente
+  `claude`, a conta que o GitHub associa ao autor do Claude Code. Todo outro commit é humano.
+- Limite: um commit que uma pessoa fez com a ajuda de um agente, em seu próprio nome, conta como
+  humano. A regra do repositório é "nenhum rastro de agente em um commit", então não dá para
+  distinguir os dois. O número de agentes é um piso.
+- Atualizar: `just commit-counts` lê o GitHub (só leitura, precisa do `gh`) e imprime uma linha por
+  projeto, como `nix-os: commits = { human = 104; agent = 63; };`. Cole cada linha sobre o
+  `commits` do projeto, ajuste `commitsAsOf` para o dia, rode `just mockups` e abra um pull
+  request. Um repositório que não responde imprime `no data`, e o comando sai com 1.
+
 ## Como mudar
 
 Edite `mockups/data.nix` (os fatos) ou `mockups/<direção>.nix` (o layout) e rode `just mockups`. O
