@@ -122,6 +122,7 @@
   "project.astrbot_dw_ext_br_south_disaster": "ブラジル南部（RS、SC、PR）の 災害（さいがい）の 拡張です。AstrBot の プラグイン astrbot_plugin_disaster_warning で 使います。",
   "project.astrbot_dw_ext_br_south_waterq": "ブラジル南部（RS、SC、PR）の 海水浴場の 水質の 警報です。astrbot_plugin_disaster_warning の 拡張です。",
   "project.ihero": "FOSS の 音楽プレーヤーと ゲームです。Rust で 作ります。もうすぐ 公開します。今は ライセンスだけ あります。",
+  "project.ondecomer": "ブラジルの レストランを 一覧にする サイトです。カテゴリや 場所などで 絞り込めます。今のところ リオデジャネイロ市だけが 対象です。",
   "partner.marola-dev": "ブラジルの 水の スーパーアプリ",
   "partner.ouroboric-dev": "自分で よくなる オープンな 工場です。憲章、標準、日誌、ブランドが あります。",
   "closed.lane": "今は クローズドソース",

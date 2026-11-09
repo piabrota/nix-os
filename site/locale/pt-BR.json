@@ -122,6 +122,7 @@
   "project.astrbot_dw_ext_br_south_disaster": "Extensão de desastres do Sul do Brasil (RS, SC, PR) para o plugin astrbot_plugin_disaster_warning do AstrBot.",
   "project.astrbot_dw_ext_br_south_waterq": "Alertas de balneabilidade do Sul do Brasil (RS, SC, PR). Uma extensão para o astrbot_plugin_disaster_warning.",
   "project.ihero": "Um player de música e jogo FOSS, em Rust. Em breve: o repositório só tem a licença.",
+  "project.ondecomer": "Um site que lista os restaurantes do Brasil, com filtros por categoria, localização e mais. Por enquanto cobre só a cidade do Rio de Janeiro.",
   "partner.marola-dev": "Super app brasileiro da água",
   "partner.ouroboric-dev": "Fábricas abertas que melhoram a si mesmas. Carta, padrões, diário e marca.",
   "closed.lane": "código fechado, por enquanto",

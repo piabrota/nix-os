@@ -215,6 +215,20 @@ rec {
       pushed = "2026-11-01";
       state = "coming";
     }
+    {
+      # Personal repository of aracyla; facts read from GitHub on 2026-11-08.
+      name = "ondecomer";
+      glyph = "🍴";
+      lane = "play";
+      repository = "onde-comer";
+      owner = "aracyla";
+      blurb = "A site that lists the restaurants of Brazil, with filters for category, location and more. For now it covers only the city of Rio de Janeiro.";
+      lang = "TypeScript";
+      licence = "Apache-2.0";
+      pushed = "2026-11-06";
+      site = "aracyla.github.io/onde-comer";
+      state = "live";
+    }
   ];
 
   # The services piabrota2 serves on their own names (README.md, "Addresses", 2026-11-06). The site
