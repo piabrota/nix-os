@@ -194,6 +194,43 @@
             done
             touch $out
           '';
+        # site.nix's skills vhost and the redirect from /skills, read from the evaluated nginx
+        # config of piabrota (nothing is built): the vhost has TLS, ACME, the icon and no-cache; www
+        # redirects /skills and /skills/<page> and has no alias to the store; skillsDomain = null and
+        # skills = null each remove the vhost and the redirect.
+        site-skills =
+          let
+            inherit (pkgs) lib;
+            inherit (self.nixosConfigurations) piabrota;
+            siteCfg = piabrota.config.piabrota.site;
+            vhosts = piabrota.config.services.nginx.virtualHosts;
+            skills = vhosts.${siteCfg.skillsDomain};
+            # The nginx vhosts of piabrota with one more module.
+            variant = module: (piabrota.extendModules { modules = [ module ]; }).config.services.nginx.virtualHosts;
+            # The locations of the www vhost that name /skills.
+            skillsLocations = vh: lib.filterAttrs (n: _: lib.hasInfix "/skills" n) vh.${siteCfg.domain}.locations;
+            removed = vh: !(vh ? ${siteCfg.skillsDomain}) && skillsLocations vh == { };
+            tests = {
+              vhostIsOnItsOwnName = siteCfg.skillsDomain == "skills.piabrota.art" && vhosts ? ${siteCfg.skillsDomain};
+              vhostServesThePages = toString skills.root == toString siteCfg.skills;
+              vhostIsHttpsOnly = skills.forceSSL && !skills.addSSL;
+              vhostHasAcme = skills.enableACME;
+              vhostHasTheIcon = lib.all (l: skills.locations ? ${l}) (lib.attrNames piabrota.config.piabrota.favicon.locations);
+              vhostAsksForPagesAgain = lib.hasInfix "no-cache" skills.locations."/".extraConfig;
+              wwwRedirectsSkills = vhosts.${siteCfg.domain}.locations."= /skills".return == "301 https://${siteCfg.skillsDomain}/";
+              wwwRedirectsPages = lib.any (l: l.return == "301 https://${siteCfg.skillsDomain}/$rest$is_args$args")
+                (lib.attrValues (skillsLocations vhosts));
+              wwwHasNoAliasToSkills = lib.all (l: l.alias == null) (lib.attrValues (skillsLocations vhosts));
+              noDomainNoVhostNoRedirect = removed (variant { piabrota.site.skillsDomain = null; });
+              noPagesNoVhostNoRedirect = removed (variant { piabrota.site.skills = null; });
+            };
+            failed = lib.attrNames (lib.filterAttrs (_: ok: !ok) tests);
+          in
+          pkgs.runCommand "site-skills-check" { } ''
+            ${lib.concatMapStrings (n: "echo 'failed: ${n}' >&2\n") failed}
+            ${lib.optionalString (failed != [ ]) "exit 1"}
+            touch $out
+          '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).
         mockups = pkgs.runCommand "mockups-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}
@@ -250,7 +287,7 @@
         # The site, prerendered from Gleam (site/): the pages and static/, with no runtime. The
         # system's own, so /hermes shows the Hermes that hermes.nix configures.
         site = self.nixosConfigurations.piabrota.config.piabrota.site.root;
-        # The skills website (skills-site/), prerendered from Gleam: served at /skills.
+        # The skills website (skills-site/), prerendered from Gleam: served at skills.piabrota.art.
         skills-site = self.nixosConfigurations.piabrota.config.piabrota.site.skills;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"

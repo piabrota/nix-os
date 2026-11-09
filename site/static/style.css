@@ -135,9 +135,9 @@ span.where { color: var(--muted); }
 /* The tile's link covers the tile; lift the line above it so its tooltip shows. */
 .tile .commits { position: relative; z-index: 1; align-self: flex-start; }
 
-.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.tiles { list-style: none; margin: 0; padding: 0; }
 .tile {
-  position: relative; display: flex; flex-direction: column; gap: 10px; min-height: 230px; padding: 20px 22px;
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 20px 22px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
   transition: transform .15s ease, border-color .15s ease;
 }
@@ -145,7 +145,7 @@ span.where { color: var(--muted); }
 .tile:focus-within { outline: 2px solid var(--accent-text); outline-offset: 3px; }
 .project-logo { flex: none; width: 44px; height: 44px; object-fit: contain; border-radius: 10px; }
 .project-logo.glyph { display: grid; place-items: center; font: 400 15px/1 var(--display); color: var(--muted); background: var(--raised); border: 1px solid var(--border); }
-.tile-top { display: flex; align-items: center; gap: 12px; }
+.tile-top { display: flex; align-items: center; gap: 12px; min-height: 52px; }
 .card-name { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .tile-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tile-tags span:not(.pill) { padding: 4px 10px; font: 600 11px/1 Inter, sans-serif; color: var(--muted); background: var(--raised); border: 1px solid var(--border); border-radius: 999px; }
@@ -153,7 +153,9 @@ span.where { color: var(--muted); }
 .tile-link { color: var(--text); }
 .tile-link:hover { text-decoration: none; }
 .tile-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-.tile .meta { overflow-wrap: anywhere; }
+.tile .blurb { flex: none; }
+/* The footer (meta, then commits) sits at the bottom of the tile, so the rows of a lane line up. */
+.tile .meta { margin-top: auto; overflow-wrap: anywhere; }
 /* The filled tiles: the company chart, and the incubating project. */
 .tile[data-name="mu"], .tile[data-name="proof"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
 .tile[data-name="mu"] h4, .tile[data-name="proof"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
@@ -162,6 +164,34 @@ span.where { color: var(--muted); }
    stroke white in both themes and keeps the background clear, so the red shows through. */
 .tile[data-name="proof"] .tile-top { flex-direction: column; align-items: flex-start; }
 .tile[data-name="proof"] .project-logo { width: min(100%, 520px); height: auto; aspect-ratio: 4 / 1; border-radius: 0; object-fit: contain; filter: brightness(0) invert(1); }
+
+/* The card grids: tiles, services, people and partners. One column; two from 600 px, on 4 tracks;
+   three from 960 px, on 6 tracks. A card spans 2 tracks, so the last row stretches and no cell
+   stays empty: one card left takes the row, two left share it in halves (3 up). The filled tiles
+   (mu, proof) are not counted. A tile that stretches turns to a row: the logo and the tags on the
+   left, the name, the text and the footer on the right. */
+.tiles, .services, .people, .partners { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 600px) and (max-width: 959.98px) {
+  .tiles, .services, .people, .partners { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  :is(.tiles, .services, .people, .partners) > * { grid-column: span 2; }
+  :is(.tiles, .services, .people, .partners) > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) { grid-column: 1 / -1; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 10px 24px; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > .tile-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; align-items: flex-start; align-self: start; min-height: 0; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > :not(.tile-top) { grid-column: 2; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > h4 { margin-top: 0; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > .commits { justify-self: start; }
+}
+@media (min-width: 960px) {
+  .tiles, .services, .people, .partners { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  :is(.tiles, .services, .people, .partners) > * { grid-column: span 2; }
+  :is(.tiles, .services, .people, .partners) > :last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) { grid-column: 1 / -1; }
+  :is(.tiles, .services, .people, .partners) > :is(:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) { grid-column: span 3; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 10px 24px; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > .tile-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; align-items: flex-start; align-self: start; min-height: 0; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > :not(.tile-top) { grid-column: 2; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > h4 { margin-top: 0; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > .commits { justify-self: start; }
+}
 
 .credit {
   display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
@@ -209,21 +239,21 @@ span.where { color: var(--muted); }
 .tile .logo-mark { width: 44px; height: 44px; }
 
 /* A · services: one link card each for what piabrota2 serves on its own name. */
-.services { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
-.service { position: relative; display: flex; gap: 16px; align-items: flex-start; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
+.services { list-style: none; margin: 18px 0 0; padding: 0; }
+.service { position: relative; display: flex; gap: 16px; align-items: stretch; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
 .service:hover { border-color: var(--accent-text); transform: translateY(-2px); }
 .service:focus-within { outline: 2px solid var(--accent-text); outline-offset: 3px; }
-.service .logo-mark { width: 52px; height: 52px; }
+.service .logo-mark { width: 52px; height: 52px; align-self: flex-start; }
 .service-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .service h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 1.45rem; line-height: 1.1; }
 .service .blurb { margin: 0; color: var(--muted); font-size: 14px; }
-.service .host { font: 400 12px/1.4 var(--mono); color: var(--accent-text); overflow-wrap: anywhere; }
+.service .host { margin-top: auto; font: 400 12px/1.4 var(--mono); color: var(--accent-text); overflow-wrap: anywhere; }
 .access { font: 600 11px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
 .access.is-public { color: var(--ok); border-color: var(--ok); }
 .access.is-login { border-style: dashed; }
 
 /* /figures: one card a figure, its PNG on top (figures-site/default.nix writes the page). */
-.figures-grid { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 16px; }
+.figures-grid { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .figure-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .15s ease, transform .15s ease; }
 .figure-card:hover, .figure-card:focus-within { border-color: var(--accent-text); }
 .figure-card:hover { transform: translateY(-2px); }
@@ -234,6 +264,12 @@ span.where { color: var(--muted); }
 .figure-body h3 a { color: var(--text); }
 .figure-body .blurb { flex: 1; overflow-wrap: anywhere; }
 .figure-body .actions { margin-top: 6px; }
+/* 2 columns from 900 px; an odd last card takes the row, with its preview at the side. */
+@media (min-width: 900px) {
+  .figures-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .figure-card:last-child:nth-child(2n+1) { grid-column: 1 / -1; flex-direction: row; }
+  .figure-card:last-child:nth-child(2n+1) .figure-preview { flex: 0 0 50%; align-self: center; border-bottom: 0; border-right: 1px solid var(--border); }
+}
 .figures h1 { text-wrap: balance; }
 
 /* The foot. */
@@ -280,7 +316,10 @@ span.where { color: var(--muted); }
 .anchors a:hover { color: var(--text); }
 main > section.wrap { scroll-margin-top: 44px; }
 
-.layers { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+/* The four layers: 1 column, 2 from 600 px, 4 from 960 px, so no row has a hole. */
+.layers { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 600px) { .layers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 960px) { .layers { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .layer { padding: 18px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .role { font: 400 12px/1.4 var(--mono); color: var(--muted); }
 .layer h3 { font-size: 1.5rem; line-height: 1.2; margin-top: 4px; }
@@ -305,8 +344,9 @@ main > section.wrap { scroll-margin-top: 44px; }
 .links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 10px; font-size: 13px; align-items: baseline; }
 
 /* Board, partners, forks: every design ends with them (community.gleam). */
-.people { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 14px; }
+.people { list-style: none; margin: 18px 0 0; padding: 0; }
 .person { display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+@media (min-width: 960px) { .person { flex-direction: column; } }
 .portrait { flex: none; border-radius: 50%; border: 1px solid var(--border); }
 .person h4 { font-size: 1.4rem; line-height: 1.15; }
 .about { margin: 4px 0 12px; color: var(--muted); font-size: 14px; }
@@ -320,7 +360,7 @@ main > section.wrap { scroll-margin-top: 44px; }
 .gh:hover { text-decoration: none; border-color: var(--accent-text); }
 .face { border-radius: 50%; display: block; }
 
-.partners { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.partners { list-style: none; margin: 18px 0 0; padding: 0; }
 .fabric-figure { margin: 18px 0 0; }
 .fabric-figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); }
 .partners li { display: flex; }

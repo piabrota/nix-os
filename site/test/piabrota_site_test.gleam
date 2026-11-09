@@ -91,6 +91,14 @@ pub fn no_dead_path_test() {
   })
 }
 
+// The skills website is on its own name: every design links it there, and none links the old path.
+pub fn skills_own_name_test() {
+  list.each(pages(), fn(p) {
+    assert string.contains(p.1, "href=\"https://skills.piabrota.art\"")
+    assert !string.contains(p.1, "href=\"/skills")
+  })
+}
+
 // Every page has its buttons: one primary, then GitHub and the sponsor link.
 pub fn buttons_test() {
   list.each(pages(), fn(p) {
@@ -215,7 +223,7 @@ pub fn hermes_no_secret_test() {
 // Design A links each service on its own name, with its drawn mark, and the hermes tile and
 // /hermes show the hermes mark, not the ☤ glyph.
 pub fn services_test() {
-  assert list.length(data.services) == 5
+  assert list.length(data.services) == 6
   let html = page.fabric()
   list.each(data.services, fn(s) {
     assert string.contains(html, "href=\"https://" <> s.host <> "/\"")

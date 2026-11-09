@@ -141,5 +141,6 @@
   "service.metrics": "Processos, memória e vCPU dos dois hosts, lidos a cada 10 segundos.",
   "service.room": "piabrota/room: um quarto em 3D com planos de câmera, um videocassete, uma janela para o Rio e a piabrota RADIO.",
   "service.grid": "A décima vista do quarto, com nome próprio: a costa brasileira em triângulos, com 24 h de mar e a temperatura dele.",
-  "service.proof": "Todas as páginas HTML de h0ffmann/proof e piabrota/pirsig: especificações, relatórios do Z3, diagramas, figuras e notas de vídeo."
+  "service.proof": "Todas as páginas HTML de h0ffmann/proof: especificações, relatórios do Z3 e diagramas.",
+  "service.pirsig": "As notas de vídeo e as figuras de piabrota/pirsig, o segundo cérebro."
 }

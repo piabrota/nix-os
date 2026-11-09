@@ -141,5 +141,6 @@
   "service.metrics": "2台の ホストの プロセス、メモリ、vCPU です。10秒ごとに 読みます。",
   "service.room": "piabrota/room です。3D の 部屋です。カメラの 切り替え、ビデオデッキ、リオが 見える 窓、piabrota RADIO が あります。",
   "service.grid": "部屋の 10番目の ビューです。自分の 名前が あります。三角形の ブラジルの 海岸、24時間の 海と その 温度です。",
-  "service.proof": "h0ffmann/proof と piabrota/pirsig の すべての HTML ページです。仕様、Z3 の レポート、ダイアグラム、図、動画の ノートが あります。"
+  "service.proof": "h0ffmann/proof の すべての HTML ページです。仕様、Z3 の レポート、ダイアグラムが あります。",
+  "service.pirsig": "piabrota/pirsig の 動画の ノートと 図です。第二の 脳です。"
 }
