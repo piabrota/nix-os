@@ -42,7 +42,7 @@ The status is that of the first request on 2026-11-05 (`metrics` and `room` on 2
 |---|---|---|---|---|
 | [`hermes.piabrota.art`](https://hermes.piabrota.art/) | The Hermes dashboard. 401 without the login | KVM 4 | basic auth | `hermes-web.nix`, [`docs/HERMES.md`](docs/HERMES.md) |
 | [`rig.piabrota.art`](https://rig.piabrota.art/) | The OpenRig web UI. 401 without the login. Its terminal can type into the seats | KVM 4 | basic auth, the dashboard's login file | `openrig.nix`, [`docs/OPENRIG.md`](docs/OPENRIG.md) |
-| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | CPU, memory, disk and top processes of both hosts. 401 without the login | KVM 4 | basic auth, the dashboard's login file | `metrics.nix`, [`docs/METRICS.md`](docs/METRICS.md) |
+| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | CPU, memory, disk and top processes of both hosts. Public, with `robots.txt` and bot blocks | KVM 4 | public | `metrics.nix`, [`docs/METRICS.md`](docs/METRICS.md) |
 | [`piabrota.art`](https://piabrota.art) | 301 to `https://www.piabrota.art/`, same path | KVM 1 | public | `site.nix` |
 | [`www.piabrota.art`](https://www.piabrota.art/) | The site, with `/hermes/` (Hermes's configuration as plain YAML, no secret), [`/skills/`](https://www.piabrota.art/skills/), [`/figures/`](https://www.piabrota.art/figures/), `/notes` (one password) and `/nixos` (302 to this repository) | KVM 1 | public | `site.nix`, `apps/notes/`, `skills-site/`, `figures-site/` |
 | [`room.piabrota.art`](https://room.piabrota.art/) | The 3D room, [piabrota/room](https://github.com/piabrota/room) at a pinned commit, with its radio | KVM 4 | public | `room.nix`, `room-site/` |
@@ -50,7 +50,7 @@ The status is that of the first request on 2026-11-05 (`metrics` and `room` on 2
 
 ## Configuration
 
-The three tools share one login: the file `/var/lib/hermes-web-secrets/htpasswd` on KVM 4, one `name:bcrypt-hash` line for each user. It is never in the repository. Each vhost has TLS from Let's Encrypt and HTTP basic auth. Each service listens on 127.0.0.1 only. Every vhost answers `/favicon.ico` with the eye of the org ([`favicon.nix`](favicon.nix)). All options are off by default and `hosts/piabrota2/default.nix` turns them on.
+The Hermes dashboard and the OpenRig UI share one login: the file `/var/lib/hermes-web-secrets/htpasswd` on KVM 4, one `name:bcrypt-hash` line for each user. It is never in the repository. The metrics page is public (it holds no secret). Each vhost has TLS from Let's Encrypt, and the dashboard and the OpenRig UI have HTTP basic auth. Each service listens on 127.0.0.1 only. Every vhost answers `/favicon.ico` with the eye of the org ([`favicon.nix`](favicon.nix)). All options are off by default and `hosts/piabrota2/default.nix` turns them on.
 
 ### hermes.piabrota.art
 
@@ -86,7 +86,7 @@ A page with processes, memory and vCPU of both hosts. No agent and no database: 
 |---|---|---|
 | `piabrota.metrics.name`, `.label` | `piabrota2`, `piabrota2 (KVM 4)` | How the host appears on the page. Set on both hosts. |
 | `piabrota.metrics.collector.enable`, `.interval` | `true`, `10` | The collector timer, in seconds. The page marks a host offline after 30 s. |
-| `piabrota.metrics.web.enable`, `.domain` | `true`, `metrics.piabrota.art` | The page behind nginx, TLS and basic auth. KVM 4 only. |
+| `piabrota.metrics.web.enable`, `.domain` | `true`, `metrics.piabrota.art` | The page behind nginx and TLS, public, with `robots.txt` and bot blocks. `.htpasswdFile` (default `null`) puts a login back. KVM 4 only. |
 | `piabrota.metrics.pull.enable`, `.url` | `true`, `https://www.piabrota.art/_metrics/piabrota.json` | KVM 4 fetches the file of KVM 1. |
 | `piabrota.metrics.publish.enable`, `.allowFrom` | `true`, KVM 4's address | On KVM 1: one location serves its file to that address only. |
 

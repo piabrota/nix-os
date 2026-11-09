@@ -68,15 +68,45 @@ send from piabrota2's address (a process on piabrota2, or a network position tha
 read the file. IPv4 only. If piabrota2's address changes, change `allowFrom` in
 `hosts/piabrota/default.nix`.
 
-## DNS and login
+## DNS and access
 
 - The DNS of `metrics.piabrota.art` already points at piabrota2: nothing to do.
 - nginx on piabrota2 serves the domain with `forceSSL` and ACME.
-- The login is HTTP basic auth against the SAME file as the Hermes dashboard
-  (`piabrota.hermesWeb.htpasswdFile`, `/var/lib/hermes-web-secrets/htpasswd`). So the login is the
-  one of hermes.piabrota.art. There is no new secret.
+- The page is public. A visitor needs no login.
+- A visitor can read the page and the files in `/data/`. These fields are public:
+  - the host name and label, the time of the sample, the uptime, the number of vCPUs and the load;
+  - the CPU use (total and for each vCPU), memory and swap (total, used, available) and the disk
+    use of `/`;
+  - the number of processes;
+  - for the 10 top processes by memory and the 10 top by CPU: pid, process name (`comm`), user
+    name, RSS and CPU percent;
+  - for up to 12 systemd units: unit name, memory now, `MemoryMax` and peak memory.
+- The data holds no secret and no command line. It does show which services run and how busy the
+  host is. That gives no way in, but an attacker can read it.
 - `/data/` is served from `/run/metrics-web/` with `Cache-Control: no-store`.
-- Rate limit of 10 requests a second for each address.
+- Limits for each address: 10 requests a second (burst of 30) and 20 open requests. Over a limit,
+  nginx answers 429.
+- To put the login back, set `piabrota.metrics.web.htpasswdFile` to a path in the host file, for
+  example `"/var/lib/hermes-web-secrets/htpasswd"` (the file of the Hermes dashboard). Then every
+  request, `/robots.txt` included, needs a login, and a missing file gives a 500. The default is
+  `null`: no login.
+
+## robots.txt and bot blocks
+
+- `/robots.txt` comes from one list of named AI and scraper agents, `blockedAgents` in
+  `metrics.nix`. For each agent it says `Disallow: /`. The last group, `User-agent: *`, says
+  `Disallow: /` too. nginx sends it as `text/plain` with `Cache-Control` of one day. The file is in
+  the Nix store.
+- nginx reads the same list. It matches the `User-Agent` header and ignores the case. A listed
+  agent gets a 403 on every path except `/robots.txt`, so it can still read the file that tells it
+  to go away. An empty `User-Agent`, a browser, `curl` and `python-requests` are not blocked.
+- Every response has `X-Robots-Tag: noindex, nofollow, noarchive, noimageindex, noai, noimageai`.
+- To block one more agent, add its name to `blockedAgents`. One edit changes both the file and the
+  nginx rule.
+
+These steps stop well-behaved crawlers only. A scraper can change its `User-Agent` and can ignore
+`robots.txt`. They are not access control. They do not protect the page from a person who wants
+the data. The page is safe to expose because it holds no secret.
 
 ## When a host shows offline
 
@@ -130,7 +160,7 @@ All are off by default. All live under `piabrota.metrics`:
 | `name`, `label` | name of the data file and label on the page |
 | `collector.enable` | turns on the collector and the timer |
 | `collector.interval` | seconds between runs (2 to 300, default 10) |
-| `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the login file |
+| `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the optional login file (`null`, the default, means the page is public) |
 | `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
 | `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
 
@@ -147,7 +177,7 @@ lower, or change that constant too.
 - `sh metrics/test/run.sh`: the collector, with a fixture `/proc` and cgroup tree. It prints
   "N checks, M failed".
 - `sh metrics/test/page.sh`: the static rules of the page and an HTTP fetch with python3.
-- `checks.metrics`: three VMs (hub, edge, client), plain HTTP, needs KVM:
+- `checks.metrics`: four VMs (hub, edge, locked, client), plain HTTP, needs KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Preview of the page with fixtures (healthy, stale, missing, hostile):
 

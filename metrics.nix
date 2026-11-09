@@ -1,8 +1,8 @@
 # Live metrics, home-made (docs/METRICS.md): processes, memory and vCPU of each host on one page at
 # metrics.piabrota.art. No daemon stays resident:
 #   collector  a timer runs metrics/collect.sh every 10 s; it writes /run/metrics-web/<name>.json
-#   web        nginx serves metrics/index.html and /data/ from that folder, behind the basic-auth
-#              file of the Hermes dashboard
+#   web        nginx serves metrics/index.html and /data/ from that folder, public by default, with a
+#              robots.txt and a block of named AI agents (a login file is optional)
 #   publish    (KVM 1) one location on the www vhost serves the host's file to one address
 #   pull       (KVM 4) a timer fetches that file and keeps it beside its own
 # Everything is off by default. The web name must point at its host before `web.enable` is on, or the
@@ -26,11 +26,49 @@ let
     install -D -m 0644 ${./metrics/index.html} $out/index.html
   '';
 
+  # AI and scraper agents that robots.txt names and nginx refuses with a 403. One list feeds both.
+  # This stops crawlers that behave well. A scraper can change its User-Agent (docs/METRICS.md).
+  blockedAgents = [
+    "GPTBot"
+    "ChatGPT-User"
+    "OAI-SearchBot"
+    "ClaudeBot"
+    "Claude-Web"
+    "anthropic-ai"
+    "CCBot"
+    "PerplexityBot"
+    "Perplexity-User"
+    "Bytespider"
+    "Amazonbot"
+    "meta-externalagent"
+    "FacebookBot"
+    "Diffbot"
+    "ImagesiftBot"
+    "Omgilibot"
+    "cohere-ai"
+    "YouBot"
+    "MistralAI-User"
+    "DuckAssistBot"
+    "Timpibot"
+    "AI2Bot"
+    "Google-Extended"
+    "Applebot-Extended"
+    "GoogleOther"
+  ];
+  robotsTxt = pkgs.writeText "metrics-robots.txt" (
+    lib.concatMapStrings (agent: "User-agent: ${agent}\nDisallow: /\n\n") blockedAgents
+    + "User-agent: *\nDisallow: /\n"
+  );
+
+  robotsTag = ''
+    add_header X-Robots-Tag "noindex, nofollow, noarchive, noimageindex, noai, noimageai" always;
+  '';
   headers = ''
     add_header X-Frame-Options DENY always;
     add_header Referrer-Policy no-referrer always;
     add_header X-Content-Type-Options nosniff always;
     add_header Strict-Transport-Security "max-age=31536000" always;
+    ${robotsTag}
   '';
 
   # What both units share: one fixed user, nothing written but the two folders in /run, no way to
@@ -108,7 +146,7 @@ in
     };
 
     web = {
-      enable = mkEnableOption "the page and its data behind nginx, TLS and basic auth";
+      enable = mkEnableOption "the page and its data behind nginx and TLS, public unless htpasswdFile is set";
       domain = mkOption {
         type = types.str;
         default = "metrics.piabrota.art";
@@ -116,12 +154,13 @@ in
       };
       htpasswdFile = mkOption {
         # A string, not a path: a path literal copies the file into the world-readable store.
-        type = types.str;
-        default = config.piabrota.hermesWeb.htpasswdFile;
-        defaultText = lib.literalExpression "config.piabrota.hermesWeb.htpasswdFile";
+        type = types.nullOr types.str;
+        default = null;
+        example = "/var/lib/hermes-web-secrets/htpasswd";
         description = ''
-          The basic-auth users, one `name:bcrypt-hash` line each. The default is the Hermes
-          dashboard's file, so the same login opens both. Without the file every request gets a 500.
+          The basic-auth users, one `name:bcrypt-hash` line each. `null` (the default) leaves the
+          page and its data public. With a path, every request needs a login, and without the file
+          every request gets a 500. The Hermes dashboard's file is `config.piabrota.hermesWeb.htpasswdFile`.
         '';
       };
     };
@@ -244,9 +283,18 @@ in
         enable = true;
         recommendedTlsSettings = true;
         serverTokens = false;
-        # Slows a password guesser; a tab polling two files every 5 s stays far below it.
+        # A public page: this limits a scraper. A tab that polls two files every 5 s stays far below it.
         appendHttpConfig = ''
           limit_req_zone $binary_remote_addr zone=metrics_web:1m rate=10r/s;
+          limit_conn_zone $binary_remote_addr zone=metrics_conn:1m;
+          # The key is the path, a bar and the User-Agent. The first line that matches wins: the
+          # robots.txt path is never blocked, so a blocked agent can read it. The second line
+          # matches a listed agent, whatever the case. An empty or a normal User-Agent stays 0.
+          map "$uri|$http_user_agent" $metrics_blocked_agent {
+            default 0;
+            "~^/robots\.txt\|" 0;
+            "~*\|.*(${lib.concatMapStringsSep "|" lib.escapeRegex blockedAgents})" 1;
+          }
         '';
         virtualHosts.${cfg.web.domain} = {
           forceSSL = true;
@@ -256,12 +304,27 @@ in
           extraConfig = ''
             limit_req zone=metrics_web burst=30 nodelay;
             limit_req_status 429;
+            limit_conn metrics_conn 20;
+            limit_conn_status 429;
+            # Only `return` is inside this if, the one use of `if` that nginx documents as safe.
+            if ($metrics_blocked_agent) { return 403; }
             ${headers}
           '';
-          locations = config.piabrota.favicon.locations // {
+          # add_header in a location drops the server's, so each location repeats the headers. The
+          # icon locations come from favicon.nix with four headers of their own: they get the tag here.
+          locations = lib.mapAttrs
+            (_: location: location // { extraConfig = location.extraConfig + robotsTag; })
+            config.piabrota.favicon.locations // {
+            "= /robots.txt" = {
+              alias = "${robotsTxt}";
+              extraConfig = ''
+                default_type text/plain;
+                add_header Cache-Control "public, max-age=86400" always;
+                ${headers}
+              '';
+            };
             "/data/" = {
               alias = "${outDir}/";
-              # add_header in a location drops the server's, so the headers are repeated.
               extraConfig = ''
                 add_header Cache-Control "no-store" always;
                 ${headers}
