@@ -143,10 +143,11 @@
         assert "User-agent: GPTBot\nDisallow: /\n" in robots, robots
         assert "User-agent: ClaudeBot\nDisallow: /\n" in robots, robots
         assert robots.endswith("User-agent: *\nDisallow: /\n"), robots
-        assert robots.count("User-agent:") == robots.count("Disallow: /\n") >= 26, robots
+        assert robots.count("User-agent:") == robots.count("Disallow: /\n") >= 170, robots
 
     with subtest("Named AI agents get a 403, every other client a 200"):
-        for agent in ("GPTBot", "gptbot/1.1", "Mozilla/5.0 (compatible; ClaudeBot/1.0)", "Google-Extended"):
+        for agent in ("GPTBot", "gptbot/1.1", "Mozilla/5.0 (compatible; ClaudeBot/1.0)", "Google-Extended",
+                      "ChatGPT Agent", "Mozilla/5.0 (compatible; bigsur.ai)", "DeepSeekBot/1.0"):
             assert code(client, f"-A '{agent}' http://hub/") == "403", agent
             assert code(client, f"-A '{agent}' http://hub/data/piabrota2.json") == "403", agent
             assert code(client, f"-A '{agent}' http://hub/favicon.svg") == "403", agent
@@ -156,6 +157,9 @@
         assert code(client, f"{BROWSER} http://hub/data/piabrota2.json") == "200"
         assert code(client, "http://hub/") == "200"  # curl's own User-Agent
         assert code(client, "-A python-requests/2.31.0 http://hub/") == "200"
+        # Link previews: the list leaves out names that would match these.
+        assert code(client, "-A 'LinkedInBot/1.0 (compatible; Mozilla/5.0)' http://hub/") == "200"
+        assert code(client, "-A 'facebookexternalhit/1.1' http://hub/") == "200"
         assert code(client, "-H 'User-Agent:' http://hub/") == "200"  # no User-Agent
 
     with subtest("Every response carries X-Robots-Tag"):

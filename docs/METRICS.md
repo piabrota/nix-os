@@ -103,6 +103,11 @@ read the file. IPv4 only. If piabrota2's address changes, change `allowFrom` in
 - Every response has `X-Robots-Tag: noindex, nofollow, noarchive, noimageindex, noai, noimageai`.
 - To block one more agent, add its name to `blockedAgents`. One edit changes both the file and the
   nginx rule.
+- The names come from [ai-robots-txt/ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt)
+  (`robots.json`; the commit is in the comment above the list). nginx finds a name anywhere in the
+  header, so a name that is a common word (`Code`, `Dot`, `Spider`) is not in the list: it would
+  block browsers and other clients. `facebookexternalhit` is not in the list, so link previews
+  still work.
 
 These steps stop well-behaved crawlers only. A scraper can change its `User-Agent` and can ignore
 `robots.txt`. They are not access control. They do not protect the page from a person who wants
