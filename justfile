@@ -28,6 +28,10 @@ hermes-plugins-test:
 health-test:
     sh hermes/skills/kvm4-health/scripts/kvm4-health.test.sh
 
+# tests of hermes/scripts/refresh-grid.sh with a bare origin and a stub gh (offline; needs bash, git, jq)
+grid-refresh-test:
+    bash hermes/scripts/refresh-grid.test.sh
+
 # tests of scripts/restart-services.sh with stub systemctl, tmux and a fixture /proc (offline)
 restart-test:
     sh scripts/restart-services.test.sh

@@ -462,6 +462,9 @@ in
     # The skills-export no_agent cron job (daily 01:45) runs this: it copies Hermes's skills into a
     # pull request on piabrota/skills. Cron gives it the unit's PATH, so the script adds the system profile.
     hermesHomeFiles."scripts/export-skills.sh" = ./hermes/scripts/export-skills.sh;
+    # The grid-refresh no_agent cron job (daily 02:30) runs this: it refreshes the data of the ▲ grid
+    # in a pull request on piabrota/room. It runs the room's dev shell with nix develop; the script adds the system profile to the PATH.
+    hermesHomeFiles."scripts/refresh-grid.sh" = ./hermes/scripts/refresh-grid.sh;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";
