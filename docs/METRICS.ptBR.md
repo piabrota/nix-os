@@ -104,6 +104,11 @@ que falsifica endereço) consegue ler o arquivo. Só IPv4. Se o endereço da pia
 - Toda resposta leva `X-Robots-Tag: noindex, nofollow, noarchive, noimageindex, noai, noimageai`.
 - Para bloquear mais um agente, ponha o nome em `blockedAgents`. Uma só edição muda o arquivo e a
   regra do nginx.
+- Os nomes vêm do [ai-robots-txt/ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt)
+  (`robots.json`; o commit está no comentário acima da lista). O nginx acha um nome em qualquer
+  ponto do cabeçalho, então um nome que é palavra comum (`Code`, `Dot`, `Spider`) não entra na
+  lista: ele bloquearia navegadores e outros clientes. O `facebookexternalhit` não entra na lista,
+  para as prévias de link continuarem funcionando.
 
 Esses passos só detêm robôs bem-comportados. Um raspador pode trocar o `User-Agent` e ignorar o
 `robots.txt`. Eles não são controle de acesso. Não protegem a página de quem quer os dados. A
