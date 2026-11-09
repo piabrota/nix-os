@@ -110,10 +110,30 @@ that we do not write names its own icon, so nginx answers for that name as well:
 |---|---|---|
 | Hermes dashboard | `/favicon.ico` | serves the eye there |
 | The room | `/favicon.svg` (the same eye) | serves the shared file there |
+| proof.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
 equals `parts.eye`.
+
+## The proof pages at proof.piabrota.art
+
+`proof.nix` serves, on piabrota2, every HTML page of two repositories at pinned commits
+(`proof-site/default.nix`): h0ffmann/proof's own browsable index (its `site/default.nix`, built
+here with this flake's nixpkgs) under `/proof/`, and piabrota/pirsig's `brain/Videos/index.html`
+and its `docs/archify/*.json` figures (drawn by the archify of `figures-site/`) under `/pirsig/`.
+The index at `/` lists every page, dark, in the tokens of `site/DESIGN.md`.
+
+The archify pages open dark, whatever the reader's setting (the owner, 2026-11-09). archify reads
+`?theme=` from the address before localStorage and the system setting; nginx answers a request for
+an archify page without `?theme=dark` with a 302 to that address, and the index links them with it.
+The build fails if an archify page is outside the folders nginx watches, or no longer reads
+`?theme=`.
+
+To move a pin: change `proofRev` or `pirsigRev` and its `hash` in `proof-site/default.nix`. The
+hash is the NAR hash of the tree at that commit (`nix hash path` on `git archive <commit>`).
+`proof.piabrota.art` needs its DNS A record at piabrota2's address before the first deploy
+([DNS on Porkbun](#dns-on-porkbun)).
 
 ## The skills website at /skills
 

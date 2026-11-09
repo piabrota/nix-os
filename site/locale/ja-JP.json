@@ -139,5 +139,6 @@
   "structure.alt": "piabrota の 図です。dojo は 共通の 層です。mu から ルールを 受け取り、下の すべての リポジトリを まとめます。",
   "service.openrig": "OpenRig の Web 画面です。ソフトウェア工場の エンジンです。作る 席と レビューする 席、その ターミナルが あります。",
   "service.metrics": "2台の ホストの プロセス、メモリ、vCPU です。10秒ごとに 読みます。",
-  "service.room": "piabrota/room です。3D の 部屋です。カメラの 切り替え、ビデオデッキ、リオが 見える 窓、piabrota RADIO が あります。"
+  "service.room": "piabrota/room です。3D の 部屋です。カメラの 切り替え、ビデオデッキ、リオが 見える 窓、piabrota RADIO が あります。",
+  "service.proof": "h0ffmann/proof と piabrota/pirsig の すべての HTML ページです。仕様、Z3 の レポート、ダイアグラム、図、動画の ノートが あります。"
 }

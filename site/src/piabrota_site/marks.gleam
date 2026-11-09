@@ -1,5 +1,5 @@
 //// The marks of what piabrota runs but has no repository logo for: Hermes, OpenRig, the metrics
-//// page and the room. Each is the piabrota mark's square (red, radius 22) with one cream drawing,
+//// page, the room and the proof pages. Each is the piabrota mark's square (red, radius 22) with one cream drawing,
 //// in the mark's own colours only (site/DESIGN.md, "Marks"). Inline, so no file is stored.
 
 import gleam/float
@@ -21,6 +21,7 @@ pub fn for(name: String, size: Int) -> Result(Element(msg), Nil) {
     "openrig" -> Ok(openrig(size))
     "metrics" -> Ok(metrics(size))
     "room" -> Ok(room(size))
+    "proof" -> Ok(proof(size))
     _ -> Error(Nil)
   }
 }
@@ -86,6 +87,14 @@ pub fn room(size: Int) -> Element(msg) {
     ]),
     stroke("M39 55 C44 51 48 51 51 54 C54 57 58 57 62 53", 3.0),
     dot(56, 44, 3, cream),
+  ])
+}
+
+/// ∀, for all: the glyph that h0ffmann/proof's README opens with.
+pub fn proof(size: Int) -> Element(msg) {
+  frame("proof", size, [
+    stroke("M24 22 L50 80 L76 22", 7.0),
+    stroke("M34 44 H66", 7.0),
   ])
 }
 

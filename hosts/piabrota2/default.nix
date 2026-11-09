@@ -21,6 +21,9 @@
     ../../openrig.nix
     # The room (piabrota/room) on room.piabrota.art, which must point at this box.
     ../../room.nix
+    # The HTML pages of h0ffmann/proof and piabrota/pirsig on proof.piabrota.art, which must point
+    # at this box.
+    ../../proof.nix
   ];
 
   # piabrota2 is the VPS name in hPanel; Hostinger first named it srv2125808 (srv2125808.hstgr.cloud
@@ -51,6 +54,9 @@
   piabrota.openrig.waveForecaster.enable = false;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
+  # Every HTML page of h0ffmann/proof and piabrota/pirsig at pinned commits, with an index
+  # (proof-site/default.nix), at proof.piabrota.art.
+  piabrota.proof.enable = true;
   # Live metrics (metrics.nix, docs/METRICS.md): the page at metrics.piabrota.art, which must point at
   # this box, this host's own collector, and the pull of piabrota's file.
   piabrota.metrics = {

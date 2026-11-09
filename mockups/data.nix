@@ -280,7 +280,8 @@ rec {
       lang = "Lean, Python, Rust";
       licence = "MPL-2.0";
       pushed = "2026-11-09";
-      state = "none";
+      site = "proof.piabrota.art";
+      state = "live";
     }
   ];
 
@@ -291,6 +292,7 @@ rec {
     { name = "openrig"; label = "OpenRig"; host = "rig.piabrota.art"; access = "login"; blurb = "The web UI of OpenRig, the software factory's engine: the builder and reviewer seats, and their terminals."; }
     { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "public"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
     { name = "room"; label = "room"; host = "room.piabrota.art"; access = "public"; blurb = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; }
+    { name = "proof"; label = "proof"; host = "proof.piabrota.art"; access = "public"; blurb = "Every HTML page of h0ffmann/proof and piabrota/pirsig: specifications, Z3 reports, diagrams, figures and video notes."; }
   ];
 
   # The company's shape, as mu and dojo say it (2026-11-01).
