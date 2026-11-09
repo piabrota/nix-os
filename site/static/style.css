@@ -150,10 +150,14 @@ span.where { color: var(--muted); }
 .tile-link:hover { text-decoration: none; }
 .tile-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .tile .meta { overflow-wrap: anywhere; }
-/* The one filled tile: the company chart. */
-.tile[data-name="mu"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
-.tile[data-name="mu"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
-.tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
+/* The filled tiles: the company chart, and the incubating project. */
+.tile[data-name="mu"], .tile[data-name="proof"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
+.tile[data-name="mu"] h4, .tile[data-name="proof"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
+.tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill, .tile[data-name="proof"] .tile-tags span:not(.pill), .tile[data-name="proof"] .pill { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
+/* proof's logo is a transparent SVG with dark ink (light ink in dark mode). The filter turns every
+   stroke white in both themes and keeps the background clear, so the red shows through. */
+.tile[data-name="proof"] .tile-top { flex-direction: column; align-items: flex-start; }
+.tile[data-name="proof"] .project-logo { width: min(100%, 520px); height: auto; aspect-ratio: 4 / 1; border-radius: 0; object-fit: contain; filter: brightness(0) invert(1); }
 
 .credit {
   display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;

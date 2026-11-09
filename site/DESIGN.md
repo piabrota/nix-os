@@ -59,8 +59,9 @@ font file is stored here.
   the top left corner, as on picasso.
 - Content is at most 1040 px wide, with 20 px gutters; below 760 px the drawing moves above the
   title, and below 420 px the buttons fill the row.
-- A: tiles in a grid of the profile's lanes; mu's is the one filled tile, in `--accent`, across the
-  row. B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
+- A: tiles in a grid of the profile's lanes, the incubating lane last; two tiles are filled, in
+  `--accent`, across the row: mu's (the company chart) and proof's (the incubating project).
+  B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
 - **/hermes** is not a design and has no place in the switcher: its hero carries the hermes mark
   (below, "Marks") where the others carry a drawing, its numbers are facts in mono, and its
   YAML sits in C's terminal, in a `<pre>` that scrolls sideways on a phone. It ends at the foot,
