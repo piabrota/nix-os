@@ -21,6 +21,9 @@
     ../../openrig.nix
     # The room (piabrota/room) on room.piabrota.art, which must point at this box.
     ../../room.nix
+    # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
+    # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
+    ../../tyler-durden-bot.nix
   ];
 
   # piabrota2 is the VPS name in hPanel; Hostinger first named it srv2125808 (srv2125808.hstgr.cloud
@@ -51,6 +54,9 @@
   piabrota.openrig.waveForecaster.enable = false;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
+  # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
+  # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
+  piabrota.tylerDurden.enable = false;
   # Live metrics (metrics.nix, docs/METRICS.md): the page at metrics.piabrota.art, which must point at
   # this box, this host's own collector, and the pull of piabrota's file.
   piabrota.metrics = {
