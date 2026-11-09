@@ -102,7 +102,7 @@
     },
     {
       "title": "Hermes Agent",
-      "purpose": "hermes.nix, hermes-web.nix, docs/HERMES.md, docs/MIGRATION-KVM4.md and wiki/Hermes-EN.md: what Hermes Agent is here and that it runs on piabrota2, the upstream NixOS module from the flake input hermes-agent (pinned to the release v0.23.0), the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills, MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, the dashboard (hermes-web.nix: hermes-backend behind nginx, TLS and basic auth), the move from KVM 1, checking it, updating and turning it off."
+      "purpose": "hermes.nix, hermes-web.nix, docs/HERMES.md, docs/MIGRATION-KVM4.md and wiki/Hermes-EN.md: what Hermes Agent is here and that it runs on piabrota2, the upstream NixOS module from the flake input hermes-agent (pinned to the release v0.23.0), the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills (hermes/skills/, hermes-manim among them), the manim package for it (pkgs.manim with two tests disabled, on piabrota2 only), MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, the dashboard (hermes-web.nix: hermes-backend behind nginx, TLS and basic auth), the move from KVM 1, checking it, updating and turning it off."
     },
     {
       "title": "Hermes runtime and deploys",

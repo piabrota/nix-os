@@ -180,6 +180,8 @@ without approval prompts: the rig sets `permission_policy: builtin:yolo`, the ow
 PR 124. The deny list blocks `rig setup`, `rig host`,
 `rig daemon start|stop|restart` and the commands that change a seat's permissions.
 
+Manim (`manim`) is on your PATH for animations. Load the skill `hermes-manim`; it says how to render.
+
 To look at it, load the `kvm4-health` skill and run `kvm4-health`: memory, swap, pressure, load,
 disk and the journal, and for each unit its memory now and its peak (`MemoryPeak`) against its
 `MemoryMax`, with `WARN` and `CRIT` lines. For more: `systemctl --failed`,
