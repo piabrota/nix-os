@@ -4,6 +4,8 @@
 
 import gleam/int
 import gleam/list
+import gleam/option.{None, Some}
+import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -210,6 +212,45 @@ pub fn address(p: Project) -> Element(msg) {
       html.a([attribute.class("where"), attribute.href(href)], [
         html.text(p.where),
       ])
+  }
+}
+
+/// What the commit counts mean, as the tooltip says it, with the day they were read.
+pub fn commits_tip(lang: String) -> String {
+  string.replace(i18n.t(lang, "commits.tip"), "{date}", data.commits_as_of)
+}
+
+/// "104 human · 63 agent", or nothing for a project with no counts (never a zero).
+pub fn commits_counts(p: Project, lang: String) -> Result(String, Nil) {
+  case p.commits {
+    None -> Error(Nil)
+    Some(c) ->
+      Ok(
+        int.to_string(c.human)
+        <> " "
+        <> i18n.t(lang, "commits.human")
+        <> " · "
+        <> int.to_string(c.agent)
+        <> " "
+        <> i18n.t(lang, "commits.agent"),
+      )
+  }
+}
+
+/// A small line with the commit counts of a project, its label and a tooltip; nothing without counts.
+pub fn commits(p: Project, lang: String) -> Element(msg) {
+  case commits_counts(p, lang) {
+    Error(Nil) -> element.none()
+    Ok(counts) ->
+      html.span(
+        [attribute.class("commits"), attribute.title(commits_tip(lang))],
+        [
+          html.span([attribute.class("commits-label")], [
+            html.text(i18n.t(lang, "commits.label")),
+          ]),
+          html.text(" " <> counts),
+        ],
+      )
   }
 }
 

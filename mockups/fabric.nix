@@ -70,12 +70,13 @@ let
   cardW = (inner - (cols - 1) * gapC) / cols;
   bSize = 14;
   blurb = p: s.wrap (s.fit (cardW - 40) bSize) p.blurb;
-  cardH = 150 + 20 * foldl' max 0 (map (p: length (blurb p)) data.projects) - 20;
+  cardH = 180 + 20 * foldl' max 0 (map (p: length (blurb p)) data.projects) - 20;
   oneCard = x: y: p: s.g { } [
     (s.rect { inherit x y; width = cardW; height = cardH; rx = 10; fill = card; stroke = border; })
     (s.text (x + 20) (y + 38) { fill = fg; font-size = 21; font-family = heading; } p.name)
     (s.text (x + 20) (y + 60) { fill = muted; font-size = 12; } "${p.lang} · ${p.licence}")
     (s.lines (x + 20) (y + 90) 20 { fill = muted; font-size = bSize; } (blurb p))
+    (s.commits data (x + 20) (y + cardH - 52) { fill = muted; font-size = 12; font-family = "'JetBrains Mono', ui-monospace, monospace"; } p)
     (s.leaf "circle" { cx = x + 26; cy = y + cardH - 26; r = 5; fill = stateCol p.state; })
     (s.text (x + 40) (y + cardH - 21) { fill = fg; font-size = 12; font-family = "'JetBrains Mono', ui-monospace, monospace"; } (where p))
   ];

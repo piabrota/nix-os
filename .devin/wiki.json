@@ -73,7 +73,7 @@
     },
     {
       "title": "The site",
-      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, and site/DESIGN.md's look."
+      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix (with the human and agent commit counts of each own repository, refreshed by scripts/commit-counts.sh), the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, and site/DESIGN.md's look."
     },
     {
       "title": "Mockups, figures and drawings",

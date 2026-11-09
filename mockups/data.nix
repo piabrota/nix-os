@@ -23,6 +23,11 @@ rec {
   repo = p: "https://github.com/${owner p}/${p.repository or p.name}";
   origin = p: if owner p == "piabrota" then "own" else "personal";
 
+  # A project's commit counts as the mockups print them (the site's pages say the same in four
+  # languages), and what they mean, for the tooltip.
+  commitsText = p: "${toString p.commits.human} human · ${toString p.commits.agent} agent";
+  commitsTip = "Commits on the default branch, as of ${commitsAsOf}. Agent: a bot account or the claude account. A commit that a person made with an agent's help counts as human.";
+
   org = {
     name = "piabrota";
     kicker = "open software fabric · made in RJ";
@@ -51,6 +56,17 @@ rec {
     { id = "incubating"; label = "incubating"; }
   ];
 
+  # The commits on the default branch of each project that is the org's own repository (`commits`
+  # on a project below; the personal repositories, and hermes, have none). `human` and `agent` are
+  # counted from GitHub's commit list, by the commit's author login: `agent` is a login that ends
+  # with `[bot]`, or is exactly `claude` (the account GitHub maps Claude Code's author to);
+  # `human` is every other commit. A commit that a person made with an agent's help under their own
+  # name counts as human, because the repository's rule is "no agent trail in a commit", so the
+  # count is a floor for agent work. The build has no network, so the numbers are typed here.
+  # Refresh: `just commit-counts`, paste its lines over the `commits` of each project, set
+  # `commitsAsOf` to the day, and open a pull request.
+  commitsAsOf = "2026-11-09";
+
   # logo: the repository's own logo, at a pinned commit, never stored here. glyph: the text mark of a
   # repository that has no logo yet, as the org profile prints it.
   projects = [
@@ -62,6 +78,7 @@ rec {
       lang = "Markdown, Bash";
       licence = "CC BY 4.0, AGPL-3.0, MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 35; agent = 72; };
       state = "none";
     }
     {
@@ -72,6 +89,7 @@ rec {
       lang = "Bash";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 8; agent = 0; };
       state = "none";
     }
     {
@@ -82,6 +100,7 @@ rec {
       lang = "Markdown";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 25; agent = 6; };
       state = "none";
     }
     {
@@ -92,6 +111,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-10-30";
+      commits = { human = 47; agent = 21; };
       path = "/pirsig";
       state = "coming";
     }
@@ -103,6 +123,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-10-30";
+      commits = { human = 142; agent = 0; };
       site = "piabrota.github.io/gramatico";
       state = "live";
     }
@@ -126,6 +147,7 @@ rec {
       lang = "Gleam";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 22; agent = 23; };
       path = "/skills/";
       state = "live";
     }
@@ -163,6 +185,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 48; agent = 0; };
       path = "/alerts";
       state = "coming";
     }
@@ -174,6 +197,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-10-31";
+      commits = { human = 17; agent = 18; };
       state = "none";
     }
     {
@@ -184,6 +208,7 @@ rec {
       lang = "Bash";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 21; agent = 0; };
       state = "none";
     }
     {
@@ -194,6 +219,7 @@ rec {
       lang = "Nix";
       licence = "MPL-2.0";
       pushed = "2026-10-31";
+      commits = { human = 104; agent = 63; };
       path = "/nixos";
       state = "live";
     }
@@ -227,6 +253,7 @@ rec {
       lang = "Rust, planned";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 1; agent = 0; };
       state = "coming";
     }
     {
@@ -262,7 +289,7 @@ rec {
   # dashboard's basic-auth file). Their marks are drawn in site/src/piabrota_site/marks.gleam.
   services = [
     { name = "openrig"; label = "OpenRig"; host = "rig.piabrota.art"; access = "login"; blurb = "The web UI of OpenRig, the software factory's engine: the builder and reviewer seats, and their terminals."; }
-    { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "login"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
+    { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "public"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
     { name = "room"; label = "room"; host = "room.piabrota.art"; access = "public"; blurb = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; }
   ];
 

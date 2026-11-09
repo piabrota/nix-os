@@ -6,6 +6,10 @@ let
   str = s: "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
   state = { live = "Live"; coming = "Coming"; none = "NoSite"; };
   lane = l: "Lane(id: ${str l.id}, label: ${str l.label})";
+  commits = p:
+    if p ? commits
+    then "Some(Commits(human: ${toString p.commits.human}, agent: ${toString p.commits.agent}))"
+    else "None";
   project = p: lib.concatStringsSep ", " [
     "Project(name: ${str p.name}"
     "lane: ${str p.lane}"
@@ -19,6 +23,7 @@ let
     "glyph: ${str (p.glyph or "")}"
     "origin: ${str (data.origin p)}"
     "pushed: ${str p.pushed}"
+    "commits: ${commits p}"
     "state: ${state.${p.state}})"
   ];
   service = s: "Service(name: ${str s.name}, label: ${str s.label}, host: ${str s.host}, access: ${str s.access}, blurb: ${str s.blurb})";
@@ -53,10 +58,17 @@ assert checked;
   //// Written by site/data.nix from mockups/data.nix (the org profile). Do not edit: change
   //// mockups/data.nix and run `just site-data`.
 
+  import gleam/option.{type Option, None, Some}
+
   pub type State {
     Live
     Coming
     NoSite
+  }
+
+  /// Commits on a repository's default branch: `human` and `agent` (a bot login, or `claude`).
+  pub type Commits {
+    Commits(human: Int, agent: Int)
   }
 
   pub type Lane {
@@ -77,6 +89,7 @@ assert checked;
       glyph: String,
       origin: String,
       pushed: String,
+      commits: Option(Commits),
       state: State,
     )
   }
@@ -108,6 +121,9 @@ assert checked;
   pub type Principle {
     Principle(title: String, text: String)
   }
+
+  /// The day the commit counts of mockups/data.nix were read.
+  pub const commits_as_of = ${str data.commitsAsOf}
 
   /// The Google Analytics 4 measurement ID (piabrota.site.analytics.measurementId); "" for none.
   pub const analytics_id = ${str measurementId}

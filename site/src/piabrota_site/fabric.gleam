@@ -133,6 +133,7 @@ fn tile(p: Project, lang: String) -> Element(msg) {
       html.span([attribute.class("meta")], [
         html.text(p.licence <> " · " <> p.where),
       ]),
+      parts.commits(p, lang),
     ],
   )
 }

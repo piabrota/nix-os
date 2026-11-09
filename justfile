@@ -32,6 +32,14 @@ health-test:
 restart-test:
     sh scripts/restart-services.test.sh
 
+# the human and agent commit counts of each own repository, as lines to paste into mockups/data.nix (read-only, needs gh)
+commit-counts:
+    sh scripts/commit-counts.sh
+
+# tests of scripts/commit-counts.sh with a stub gh (offline)
+commit-counts-test:
+    sh scripts/commit-counts.test.sh
+
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
     cd hermes/feeds/tests && python3 -m unittest -v test_build_feed

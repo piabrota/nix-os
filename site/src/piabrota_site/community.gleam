@@ -168,12 +168,31 @@ fn entry(p: Project, lang: String) -> Element(msg) {
       html.p([attribute.class("blurb")], [
         html.text(i18n.fact(lang, "project." <> p.name, p.blurb)),
       ]),
-      html.dl([], [
-        fact(i18n.t(lang, "term.origin"), i18n.t(lang, "origin." <> p.origin)),
-        fact(i18n.t(lang, "term.language"), p.lang),
-        fact(i18n.t(lang, "term.licence"), p.licence),
-        fact(i18n.t(lang, "term.push"), p.pushed),
-      ]),
+      html.dl(
+        [],
+        list.append(
+          [
+            fact(
+              i18n.t(lang, "term.origin"),
+              i18n.t(lang, "origin." <> p.origin),
+            ),
+            fact(i18n.t(lang, "term.language"), p.lang),
+            fact(i18n.t(lang, "term.licence"), p.licence),
+            fact(i18n.t(lang, "term.push"), p.pushed),
+          ],
+          case parts.commits_counts(p, lang) {
+            Error(Nil) -> []
+            Ok(counts) -> [
+              html.div([], [
+                html.dt([], [html.text(i18n.t(lang, "commits.label"))]),
+                html.dd([attribute.title(parts.commits_tip(lang))], [
+                  html.text(counts),
+                ]),
+              ]),
+            ]
+          },
+        ),
+      ),
       html.div([attribute.class("links")], [
         html.a([attribute.href(p.repo), attribute.rel("noopener")], [
           html.text(i18n.t(lang, "link.repository")),
