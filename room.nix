@@ -5,24 +5,13 @@
 # deploy-rs rolls the switch back (docs/SITE.md, "DNS on Porkbun").
 # Beside the files, the radio's live listeners count (room-site/listeners.nix) listens on
 # localhost only, and nginx passes /live/ on the same name to it, unbuffered.
-# grid.piabrota.art (`grid`) is the same room, opened on its ▲ grid view (the shot `grid`, key 0):
-# the room has no address for a shot, so this copy of index.html calls the room's own
-# window.__room.rig.go('grid') once the room has loaded. It must point at the box too.
+# grid.piabrota.art (`grid`) is the same room and the same files: the room opens on its ▲ grid view
+# (the shot `grid`, key 0) by itself when it sees that name (`grid.host` in its src/config.js,
+# piabrota/room#28). It must point at the box too.
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkOption types;
   cfg = config.piabrota.room;
-
-  # The room's files, with one script more in index.html: it waits for the HIFI room (main.js
-  # loads app.js, which sets window.__room last) and lands the camera on the chart, which opens the
-  # map. LOFI has no room, so it gives up after 30 s and the LOFI page stays.
-  gridRoot = pkgs.runCommand "piabrota-room-grid" { allowedReferences = [ ]; } ''
-    cp -R ${cfg.root} $out
-    chmod -R u+w $out
-    grep -q '</body>' $out/index.html
-    substituteInPlace $out/index.html --replace-fail '</body>' \
-      "<script>(function g(n){var r=window.__room;if(r&&r.rig){r.rig.go('grid',true)}else if(n<300){setTimeout(function(){g(n+1)},100)}})(0)</script></body>"
-  '';
 
   # The room's locations, the same on both names.
   locations = config.piabrota.favicon.locations // {
@@ -71,7 +60,7 @@ in
       domain = mkOption {
         type = types.str;
         default = "grid.piabrota.art";
-        description = "The name of the grid view. Its DNS A record must point at the box.";
+        description = "The name of the grid view: the room's `grid.host`. Its DNS A record must point at the box.";
       };
     };
 
@@ -116,7 +105,7 @@ in
         ${cfg.grid.domain} = {
           forceSSL = true;
           enableACME = true;
-          root = gridRoot;
+          inherit (cfg) root;
           inherit locations;
         };
       };
