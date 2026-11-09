@@ -11,12 +11,12 @@
 { stdenvNoCC, callPackage, fetchFromGitHub, nodejs, jq }:
 let
   # h0ffmann/proof's main. Move rev and hash together; its site needs no change here.
-  proofRev = "895d6f9fece8a0827eca4a51e2b95dce0db2a3f9";
+  proofRev = "b863c15e56a22afaab2fa228fe5eb85847c1d6c4";
   proofSrc = fetchFromGitHub {
     owner = "h0ffmann";
     repo = "proof";
     rev = proofRev;
-    hash = "sha256-lcU35HlJ7Y7HKL+KpELwt2lkT6uxQD6pfGPUzwQ7oqQ=";
+    hash = "sha256-1LdrGlHaIPZbO6ZL5JJnHN/XPzGpkYjRYQROfQ4RgQ4=";
   };
   proof = callPackage "${proofSrc}/site" { rev = proofRev; };
 
