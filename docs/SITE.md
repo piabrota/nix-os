@@ -130,8 +130,11 @@ equals `parts.eye`.
 ## The proof pages at proof.piabrota.art and pirsig.piabrota.art
 
 `proof.nix` serves two names on piabrota2, each a static vhost with its own ACME certificate. Both
-are built from pinned commits by `proof-site/`, which shares the index, its dark tokens and the
-archify gate between the two (`proof-site/common.nix`):
+are built from pinned commits by `proof-site/`, which shares the steps and the archify gate between
+the two (`proof-site/common.nix`). The index of each name is made by the design kit
+([DESIGN-KIT.md](DESIGN-KIT.md)) from a list of the pages that the build computes
+(`proof-site/manifest.mjs`, `proof-site/index.mjs`). The brand bar of the kit goes into every other page.
+The two names:
 
 - `proof.piabrota.art` (`proof-site/default.nix`, option `domain`): h0ffmann/proof's own browsable
   index (its `site/default.nix`, built here with this flake's nixpkgs) under `/proof/`, and an
@@ -141,8 +144,8 @@ archify gate between the two (`proof-site/common.nix`):
   archify of `figures-site/`) under `/figures/`, and an index at `/`. The proof name has no
   `/pirsig/` path, and it has no redirect: the old address never answered.
 
-Both indexes are dark, in the tokens of `site/DESIGN.md`. `piabrota.proof.enable` turns both names
-on.
+Both indexes are in the tokens of `site/DESIGN.md`, dark first and light on request. `piabrota.proof.enable`
+turns both names on.
 
 The archify pages open dark, whatever the reader's setting (the owner, 2026-11-09). archify reads
 `?theme=` from the address before localStorage and the system setting; nginx answers a request for

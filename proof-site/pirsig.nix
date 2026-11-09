@@ -1,7 +1,8 @@
 # The pages of pirsig.piabrota.art, built on the builder: the HTML pages of piabrota/pirsig at the
 # commit below (brain/Videos/index.html under /videos/, its archify figures under /figures/) and an
 # index at / that lists them. No HTML is committed here. The pages of h0ffmann/proof are on their
-# own name (default.nix); the index, its look and the dark gate are shared (common.nix).
+# own name (default.nix); the steps and the dark gate are shared (common.nix). The index is made by
+# the design kit (design/kit.mjs), and the kit's brand bar goes into every other page.
 #
 # archify pages open dark, whatever the reader's setting (the owner, 2026-11-09): the index links
 # them with ?theme=dark, and proof.nix sends any other request for one to that address. The build
@@ -9,9 +10,9 @@
 #
 # The output holds only files: allowedReferences = [ ] fails the build if it names a store path, so
 # ffmpeg, node, jq and archify never reach the closure of piabrota2.
-{ stdenvNoCC, fetchFromGitHub, nodejs, jq }:
+{ lib, stdenvNoCC, fetchFromGitHub, nodejs, jq, writeText }:
 let
-  common = import ./common.nix;
+  common = import ./common.nix { inherit lib writeText; };
 
   # piabrota/pirsig's main: brain/Videos/index.html (one page, its images inline) and the figures of
   # docs/archify/, which archify draws here (pirsig's `just figure` draws only their PNGs).
@@ -41,7 +42,9 @@ stdenvNoCC.mkDerivation {
     export ARCHIFY_UPDATE_CHECK_DISABLED=1
     mkdir -p dist/videos dist/figures
 
+    # A copy from the store is read-only; the brand bar goes into it.
     cp ${pirsig}/brain/Videos/index.html dist/videos/index.html
+    chmod u+w dist/videos/index.html
 
     # The figures of pirsig: validate, deliver and check with archify, as figures-site does. Exit 2
     # means the browser check was skipped (no Chrome on the builder); the three other gates must pass.
@@ -63,17 +66,7 @@ stdenvNoCC.mkDerivation {
     done
 
     ${common.darkGate "dist/figures/*.html"}
-    ${common.indexFns}
-    ${common.writeIndex {
-      title = "pirsig";
-      description = "The video notes and the archify figures of piabrota/pirsig.";
-      lead = ''The brain: smart notes, PARA and the track record of decisions, built from a pinned commit. The figures open dark. <a href="https://github.com/piabrota/pirsig/tree/${pirsigRev}">Source at ${builtins.substring 0 7 pirsigRev}</a>.'';
-      drawn = "figures";
-      body = ''
-        list "Video notes" dist/videos -type f
-        list "Figures" dist/figures -type f
-      '';
-    }}
+    ${common.indexSteps { current = "pirsig"; rev = pirsigRev; }}
     runHook postBuild
   '';
 
