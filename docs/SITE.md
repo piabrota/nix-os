@@ -86,10 +86,27 @@ its `A` record has piabrota's address, like `www`. Add it to the table above and
 check. Without the record the ACME order for that name fails on the deploy.
 
 A name whose record is missing or points at the other host does not stop the deploy: the vhost
-starts with a self-signed certificate, and browsers refuse it. After the record is right, the
-unit `acme-order-renew-<name>.service` orders the certificate again once a day
-(`acme-renew-<name>.timer`); to get it at once, a human runs
-`sudo systemctl start acme-order-renew-<name>.service` on the host.
+starts with a self-signed certificate, and browsers refuse it. See "Certificates" below.
+
+## Certificates
+
+Every name under piabrota.art is listed in `scripts/domains.txt`, with the host that serves it.
+A new vhost adds its line in the same PR: CI (`scripts/cert-check.sh --coverage`) fails when a
+`*.nix` file names a piabrota.art name that the list does not have.
+
+`certs.yml` checks the certificate of every live name from outside, as a browser does, every six
+hours and two minutes after each deploy: curl must connect with no warning, and the certificate
+must have more than 14 days left. The run summary has one row per name; a red run mails the
+owner. `just certs` runs the same check from any machine (`just certs proof.piabrota.art` for one).
+
+When an order fails (the name has no record yet, or points at the other host), NixOS keeps its
+self-signed stand-in, issued by `minica`. `acme-retry.nix` makes `acme-order-renew-<name>.service`
+retry every 20 minutes, at most 9 times in 6 hours (3 failed validations an hour, under Let's
+Encrypt's limit of 5); then the daily `acme-renew-<name>.timer` takes over. So once the record is
+right, the real certificate comes within about 20 minutes. To get it at once, a human runs
+`sudo systemctl start acme-order-renew-<name>.service` on the host. Before 2026-11-10 the module
+retried only once a day, so proof and skills showed a warning for a day after their records were
+fixed.
 
 ## What answers where
 

@@ -7,6 +7,10 @@ host := env_var_or_default("DEPLOY_HOST", "piabrota.art")
 default:
     @just --list
 
+# the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; curl, openssl); `just certs www.piabrota.art` checks one
+certs *names:
+    sh scripts/cert-check.sh {{names}}
+
 # build a host's system closure here, without deploying it (piabrota or piabrota2)
 build node="piabrota":
     nix build .#nixosConfigurations.{{node}}.config.system.build.toplevel --print-build-logs
@@ -14,7 +18,7 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
