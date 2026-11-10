@@ -2,7 +2,8 @@
 # `npm ci` and `vite build` from a pinned commit. The output is dist/ and nothing else:
 # allowedReferences = [ ] fails the build if it names a store path, so node and the npm
 # packages never reach the VPS closure. A new commit of piabrota/room shows on the site only
-# after a PR here changes rev, hash and npmDepsHash.
+# after a PR here changes rev, hash and npmDepsHash: `.github/workflows/room-pin.yml` opens that PR
+# by itself when room's main moves (`scripts/room-pin.sh`, `just room-pin`).
 { buildNpmPackage, fetchFromGitHub, nodejs_22 }:
 buildNpmPackage {
   pname = "piabrota-room";

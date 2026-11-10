@@ -74,6 +74,10 @@ cves: build
 deploy user="deploy" node="piabrota":
     nix run .#deploy-rs -- .#{{node}} --hostname {{host}} --ssh-user {{user}} --skip-checks
 
+# move the room pin (room-site/default.nix) to room's main, or to <rev>, with both hashes, and build it
+room-pin rev="":
+    sh scripts/room-pin.sh {{rev}}
+
 # write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:
     art=$(nix build .#mu-art --no-link --print-out-paths) && \
