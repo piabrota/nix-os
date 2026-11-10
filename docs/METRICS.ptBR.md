@@ -19,7 +19,17 @@ Mostra, por host:
 - As unidades do systemd sob `system.slice` que têm `MemoryMax` numérico (hermes-agent 8G,
   hermes-backend 2G, openrig 2G, pgx 256M...), no máximo 12, em ordem de memória sobre o máximo.
   O `memory.peak` aparece quando o kernel tem.
-- O total de processos (conta as threads do kernel).
+- O total de processos (conta as threads do kernel), threads, tarefas rodando e bloqueadas, forks
+  e trocas de contexto por segundo, arquivos abertos e os serviços que rodam agora (cada serviço com um cgroup sob
+  `system.slice`).
+- O detalhe da memória: cache de páginas, buffers, shmem e páginas sujas (dirty).
+- Rede de entrada e de saída por segundo (todas as interfaces menos `lo`), sockets TCP (em uso,
+  TIME-WAIT) e sockets UDP.
+- Leitura e escrita de disco por segundo, somadas sobre os discos inteiros (`sda`, `vda`,
+  `nvme0n1`; sem partições).
+- Pressão (PSI) de CPU, memória e IO: a parte dos últimos 10 s em que tarefas esperaram
+  (`some` / `full`).
+- O que esta geração roda: as contagens de "O inventário", abaixo.
 
 Como ler os números:
 
@@ -29,8 +39,33 @@ Como ler os números:
 - Na primeira rodada depois do boot a página diz `warming` e a CPU é 0.
 
 Não mostra: histórico além das amostras da aba (as amostras vêm por arquivo novo, a cada 10 s, então
-são uns 10 minutos), outros discos além de `/`, rede, disco ou IO por processo, alertas, linhas de
+são uns 10 minutos), uso de outros sistemas de arquivos além de `/`, rede ou IO por processo ou por interface, alertas, linhas de
 comando.
+
+## O inventário
+
+Cada cartão tem um bloco "What this generation runs". O Nix conta isso uma vez, quando constrói o
+sistema, a partir da configuração que o host roda; nada é contado na máquina. Um deploy muda os
+números.
+
+| Chave | Rótulo | O que conta |
+|---|---|---|
+| `apps` | Loco apps | `piabrota.loco.apps` |
+| `sites` | Sites | hosts virtuais do nginx, sem o `_` padrão e sem os nomes que só redirecionam |
+| `rigs` | Rigs | as specs de rig em `/etc/openrig/specs/rigs`, quando o OpenRig está ligado |
+| `agents` | Rig agents | as specs de agente em `/etc/openrig/specs/agents`, sem as pastas `*shared` |
+| `skills` | Skills | os arquivos `SKILL.md` das pastas de skills do Hermes (`skills.external_dirs`) e dos plugins |
+| `skills_bundled` | Bundled skills | os arquivos `SKILL.md` que vêm dentro do Hermes (`piabrota.metrics.inventory.bundledSkillDirs`) |
+| `plugins` | Plugins | `settings.plugins.enabled` do Hermes |
+| `mcp` | MCP servers | `mcpServers` do Hermes |
+| `packages` | Packages | `environment.systemPackages` |
+| `timers` | Timers | os timers do systemd que estão ligados |
+
+Um módulo que o host não importa conta 0: a piabrota não tem Hermes nem OpenRig. São contagens
+declaradas. O Hermes também pode criar skills próprias em tempo de execução, em `/var/lib/hermes`; o
+coletor não lê essa pasta (o usuário dele não está no grupo `hermes`, de propósito), então essas
+skills ficam fora da conta. O `metrics.nix` grava as contagens num arquivo no store e o coletor as
+copia para `inventory` (metrics/SCHEMA.md).
 
 ## Os dois hosts e quem roda o quê
 
@@ -45,7 +80,8 @@ comando.
   `/run/metrics-state/<nome>.state` (não é servida).
 - Os nomes são `piabrota` e `piabrota2` (opção `piabrota.metrics.name`). Nunca o hostname: o da
   piabrota2 ainda é `nixos`.
-- Lê só `/proc`, `/sys/fs/cgroup`, `/etc/passwd` e `df`. Nunca uma linha de comando.
+- Lê só `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df` e o arquivo do inventário no store. Nunca
+  uma linha de comando.
 - O arquivo JSON tem menos de 8 KB (schema v1).
 
 ## O caminho dos dados da KVM 1
@@ -68,15 +104,53 @@ consegue enviar a partir do endereço da piabrota2 (um processo na piabrota2, ou
 que falsifica endereço) consegue ler o arquivo. Só IPv4. Se o endereço da piabrota2 mudar, troque
 `allowFrom` em `hosts/piabrota/default.nix`.
 
-## DNS e login
+## DNS e acesso
 
 - O DNS de `metrics.piabrota.art` já aponta para a piabrota2: nada a fazer.
 - O nginx da piabrota2 atende o domínio com `forceSSL` e ACME.
-- O login é HTTP basic auth contra o MESMO arquivo do painel do Hermes
-  (`piabrota.hermesWeb.htpasswdFile`, `/var/lib/hermes-web-secrets/htpasswd`). Então vale o login do
-  hermes.piabrota.art. Não há segredo novo.
+- A página é pública. Quem visita não precisa de login.
+- Quem visita pode ler a página e os arquivos de `/data/`. Estes campos são públicos:
+  - o nome e o rótulo do host, a hora da amostra, o uptime, o número de vCPUs e a carga;
+  - o uso de CPU (total e de cada vCPU), a memória e o swap (total, usado, disponível) e o uso do
+    disco de `/`;
+  - o número de processos e de serviços rodando;
+  - o inventário: quantos Loco apps, sites, rigs, agentes de rig, skills, plugins, servidores MCP,
+    pacotes e timers a configuração declara;
+  - dos 10 processos que mais usam memória e dos 10 que mais usam CPU: pid, nome do processo
+    (`comm`), nome do usuário, RSS e percentual de CPU;
+  - de até 12 unidades do systemd: nome da unidade, memória agora, `MemoryMax` e pico de memória.
+- Os dados não têm segredo nem linha de comando. Eles mostram quais serviços rodam e o quanto o
+  host está ocupado. Isso não dá acesso a nada, mas um atacante pode ler.
 - `/data/` vem de `/run/metrics-web/` com `Cache-Control: no-store`.
-- Limite de 10 pedidos por segundo para cada endereço.
+- Limites por endereço: 10 pedidos por segundo (rajada de 30) e 20 pedidos abertos. Acima de um
+  limite, o nginx responde 429.
+- Para pôr o login de volta, defina `piabrota.metrics.web.htpasswdFile` com um caminho no arquivo do
+  host, por exemplo `"/var/lib/hermes-web-secrets/htpasswd"` (o arquivo do painel do Hermes). Aí
+  todo pedido, `/robots.txt` inclusive, exige login, e arquivo ausente dá 500. O padrão é `null`:
+  sem login.
+
+## robots.txt e bloqueio de robôs
+
+- O `/robots.txt` sai de uma única lista de agentes de IA e de raspagem, `blockedAgents` em
+  `metrics.nix`. Para cada agente ele diz `Disallow: /`. O último grupo, `User-agent: *`, também diz
+  `Disallow: /`. O nginx o envia como `text/plain` com `Cache-Control` de um dia. O arquivo fica na
+  loja do Nix.
+- O nginx lê a mesma lista. Ele compara o cabeçalho `User-Agent`, sem diferenciar maiúsculas. Um
+  agente da lista recebe 403 em todo caminho, menos em `/robots.txt`, para ainda poder ler o arquivo
+  que manda ele embora. `User-Agent` vazio, navegador, `curl` e `python-requests` não são
+  bloqueados.
+- Toda resposta leva `X-Robots-Tag: noindex, nofollow, noarchive, noimageindex, noai, noimageai`.
+- Para bloquear mais um agente, ponha o nome em `blockedAgents`. Uma só edição muda o arquivo e a
+  regra do nginx.
+- Os nomes vêm do [ai-robots-txt/ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt)
+  (`robots.json`; o commit está no comentário acima da lista). O nginx acha um nome em qualquer
+  ponto do cabeçalho, então um nome que é palavra comum (`Code`, `Dot`, `Spider`) não entra na
+  lista: ele bloquearia navegadores e outros clientes. O `facebookexternalhit` não entra na lista,
+  para as prévias de link continuarem funcionando.
+
+Esses passos só detêm robôs bem-comportados. Um raspador pode trocar o `User-Agent` e ignorar o
+`robots.txt`. Eles não são controle de acesso. Não protegem a página de quem quer os dados. A
+página é segura para expor porque não tem segredo.
 
 ## Quando um host aparece offline
 
@@ -115,7 +189,8 @@ As duas unidades rodam como `metrics` com:
 
 - `ProtectSystem=strict`, com `ReadWritePaths` só das duas pastas em `/run`.
 - `MemoryMax=64M`, `NoNewPrivileges`, conjunto de capabilities vazio e filtro de syscalls.
-- `PrivateNetwork` no coletor.
+- `PrivateNetwork` no coletor. Por isso ele lê a rede do PID 1 (`/proc/1/net/dev` e `sockstat`),
+  que qualquer usuário lê, e não o seu próprio `/proc/net` vazio.
 - `LogLevelMax=warning`, para a rodada não escrever linhas no journal.
 
 NÃO usamos `ProcSubset=pid`, `ProtectProc=invisible` e `PrivateUsers`, porque escondem o que o
@@ -130,9 +205,10 @@ Todas vêm desligadas. Todas ficam sob `piabrota.metrics`:
 | `name`, `label` | nome do arquivo de dados e rótulo na página |
 | `collector.enable` | liga o coletor e o timer |
 | `collector.interval` | segundos entre rodadas (2 a 300, padrão 10) |
-| `web.enable`, `web.domain`, `web.htpasswdFile` | a página no nginx, o domínio e o arquivo de login |
+| `web.enable`, `web.domain`, `web.htpasswdFile` | a página no nginx, o domínio e o arquivo de login opcional (`null`, o padrão, deixa a página pública) |
 | `publish.enable`, `publish.allowFrom` | a location da KVM 1 e o IP que pode ler |
 | `pull.enable`, `pull.url`, `pull.name` | o timer que busca o arquivo do outro host |
+| `inventory.bundledSkillDirs` | pastas de skills que vêm dentro de um agente, contadas como `skills_bundled`; o `hermes.nix` acrescenta as do Hermes |
 
 Hoje: a piabrota2 liga coletor, web e pull. A piabrota liga coletor e publish.
 
@@ -147,7 +223,7 @@ menos, ou mude essa constante também.
 - `sh metrics/test/run.sh`: o coletor, com uma árvore falsa de `/proc` e cgroup. Imprime
   "N checks, M failed".
 - `sh metrics/test/page.sh`: as regras estáticas da página e uma busca HTTP com python3.
-- `checks.metrics`: três VMs (hub, edge, client), HTTP simples, precisa de KVM:
+- `checks.metrics`: quatro VMs (hub, edge, locked, client), HTTP simples, precisa de KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Prévia da página com dados de teste (healthy, stale, missing, hostile):
 

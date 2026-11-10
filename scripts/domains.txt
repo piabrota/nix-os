@@ -1,0 +1,20 @@
+# Every name under piabrota.art that this repository names, and the host that serves it.
+# scripts/cert-check.sh checks the certificate of each name whose host is not "off";
+# `scripts/cert-check.sh --coverage` (in CI) fails when a *.nix file names one that is not here.
+# A new vhost: add its line in the same PR, and point its DNS at the host before the merge.
+#
+# name                    host        what
+piabrota.art              piabrota    redirect to www (site.nix)
+www.piabrota.art          piabrota    the site (site.nix)
+skills.piabrota.art       piabrota    the skills website (site.nix, skills-site/)
+room.piabrota.art         piabrota2   the room (room.nix)
+grid.piabrota.art         piabrota2   the room's grid view (room.nix)
+proof.piabrota.art        piabrota2   h0ffmann/proof (proof.nix)
+pirsig.piabrota.art       piabrota2   piabrota/pirsig (proof.nix)
+hermes.piabrota.art       piabrota2   Hermes's dashboard, basic auth (hermes-web.nix)
+rig.piabrota.art          piabrota2   OpenRig's web UI, basic auth (openrig.nix)
+metrics.piabrota.art      piabrota2   the metrics page (metrics.nix)
+paperclip.piabrota.art    off         Paperclip, off since 2026-11-04 (paperclip.nix)
+tyler.piabrota.art        off         tyler-durden-bot's webhook, off until its DNS record exists (tyler-durden-bot.nix)
+app.piabrota.art          off         an example in an option's description (loco.nix)
+example.piabrota.art      off         an example in an option's description (loco.nix)

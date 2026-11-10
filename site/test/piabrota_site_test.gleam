@@ -1,4 +1,6 @@
+import gleam/int
 import gleam/list
+import gleam/option.{None, Some}
 import gleam/string
 import gleeunit
 import lustre/element
@@ -86,6 +88,14 @@ pub fn no_dead_path_test() {
   list.each(pages(), fn(p) {
     assert !string.contains(p.1, "href=\"/pirsig\"")
     assert !string.contains(p.1, "href=\"/alerts\"")
+  })
+}
+
+// The skills website is on its own name: every design links it there, and none links the old path.
+pub fn skills_own_name_test() {
+  list.each(pages(), fn(p) {
+    assert string.contains(p.1, "href=\"https://skills.piabrota.art\"")
+    assert !string.contains(p.1, "href=\"/skills")
   })
 }
 
@@ -181,6 +191,13 @@ pub fn hermes_page_test() {
   assert string.contains(html, "<pre class=\"yaml\">")
   assert string.contains(html, "model:")
   assert string.contains(html, "hermes-agent.service")
+  // The release tag in the hero, in the YAML and in the link are the same string.
+  let assert Ok(tag) = list.key_find(data.hermes_facts, "version")
+  assert string.starts_with(tag, "v")
+  assert string.contains(data.hermes_service, "  version: " <> tag <> "\n")
+  assert data.hermes_release
+    == "https://github.com/NousResearch/hermes-agent/releases/tag/" <> tag
+  assert string.contains(html, "href=\"" <> data.hermes_release <> "\"")
   assert string.contains(page.fabric(), "href=\"/hermes\"")
 }
 
@@ -206,7 +223,7 @@ pub fn hermes_no_secret_test() {
 // Design A links each service on its own name, with its drawn mark, and the hermes tile and
 // /hermes show the hermes mark, not the ☤ glyph.
 pub fn services_test() {
-  assert list.length(data.services) == 3
+  assert list.length(data.services) == 6
   let html = page.fabric()
   list.each(data.services, fn(s) {
     assert string.contains(html, "href=\"https://" <> s.host <> "/\"")
@@ -215,4 +232,74 @@ pub fn services_test() {
   assert string.contains(html, "logo-mark logo-mark-hermes")
   assert string.contains(page.hermes(), "logo-mark logo-mark-hermes")
   assert !string.contains(page.hermes(), "☤")
+}
+
+// The metrics page has no login, so design A says `public`; the OpenRig UI keeps its login.
+pub fn metrics_public_test() {
+  let assert Ok(metrics) =
+    list.find(data.services, fn(s) { s.name == "metrics" })
+  assert metrics.access == "public"
+  let assert Ok(rig) = list.find(data.services, fn(s) { s.name == "openrig" })
+  assert rig.access == "login"
+}
+
+// Only a project in the org's own repository, named like it, has commit counts: not hermes (a card
+// for nix-os), not a personal repository, not a closed one.
+pub fn commits_belong_to_own_repositories_test() {
+  list.each(data.projects, fn(p) {
+    let own =
+      p.origin == "own" && p.repo == "https://github.com/piabrota/" <> p.name
+    assert { p.commits != None } == own
+  })
+  assert data.commits_as_of != ""
+}
+
+// A card with counts shows both numbers, as data.nix has them; a project without shows none: the
+// page has exactly one count line for each project that has counts, and no zero in its place.
+pub fn commits_test() {
+  let with =
+    list.filter_map(data.projects, fn(p) {
+      case p.commits {
+        Some(c) -> Ok(#(p.name, c))
+        None -> Error(Nil)
+      }
+    })
+  assert list.length(with) == 11
+  let fabric = page.fabric()
+  let paths = page.paths()
+  list.each(pages(), fn(p) {
+    list.each(with, fn(entry) {
+      let #(_, c) = entry
+      assert string.contains(
+        p.1,
+        int.to_string(c.human)
+          <> " human · "
+          <> int.to_string(c.agent)
+          <> " agent",
+      )
+    })
+    // The inventory, on every design, has one fact for each project with counts.
+    assert list.length(string.split(p.1, "<dt>commits</dt>"))
+      == list.length(with) + 1
+  })
+  // Design A's tiles and design C's rows carry the line and the tooltip.
+  list.each([fabric, paths], fn(html) {
+    assert list.length(string.split(html, "class=\"commits\""))
+      == list.length(with) + 1
+    assert string.contains(
+      html,
+      "title=\"Commits on the default branch, as of "
+        <> data.commits_as_of
+        <> ".",
+    )
+  })
+  assert !string.contains(page.index(), "class=\"commits\"")
+}
+
+// The labels come in every language; the numbers are the same in all four.
+pub fn commits_languages_test() {
+  assert string.contains(page.fabric_in("pt-BR"), " humano · ")
+  assert string.contains(page.fabric_in("zh-CN"), " 人类 · ")
+  assert string.contains(page.fabric_in("ja-JP"), " 人間 · ")
+  assert string.contains(page.fabric_in("ja-JP"), "コミット")
 }

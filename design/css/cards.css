@@ -1,0 +1,30 @@
+/* Cards: a grid with no empty cell (site/DESIGN.md). One column below 600 px; two from 600 px, on
+   4 tracks; three from 960 px, on 6 tracks. A card spans 2 tracks, so the last row stretches: at 3 up,
+   one card left takes the row and two share it in halves; at 2 up, one card left takes the row.
+   Needs tokens.css. */
+.pb-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 600px) and (max-width: 959.98px) {
+  .pb-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pb-cards > * { grid-column: span 2; }
+  .pb-cards > :last-child:nth-child(2n+1) { grid-column: 1 / -1; }
+}
+@media (min-width: 960px) {
+  .pb-cards { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .pb-cards > * { grid-column: span 2; }
+  .pb-cards > :last-child:nth-child(3n+1) { grid-column: 1 / -1; }
+  .pb-cards > :nth-child(3n+1):nth-last-child(2), .pb-cards > :last-child:nth-child(3n+2) { grid-column: span 3; }
+}
+.pb-card {
+  position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 18px 20px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.pb-card:hover { border-color: var(--accent-text); transform: translateY(-2px); }
+.pb-card:focus-within { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+.pb-card__pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pb-card__title { margin: 0; font: 400 1.45rem/1.1 var(--display); overflow-wrap: anywhere; }
+.pb-card__title a { color: var(--text); }
+.pb-card__title a:hover { text-decoration: none; }
+.pb-card__title a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.pb-card__line { margin: 0; color: var(--muted); font-size: 14px; }
+.pb-card__foot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); font: 400 12px/1.4 var(--mono); color: var(--muted); overflow-wrap: anywhere; }

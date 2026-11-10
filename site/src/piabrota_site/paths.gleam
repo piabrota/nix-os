@@ -91,6 +91,7 @@ fn block(prompt: String, projects: List(Project)) -> Element(msg) {
         },
         html.span([attribute.class("who")], [html.text(p.name)]),
         parts.pill(p.state, "en"),
+        parts.commits(p, "en"),
       ])
     }),
   ])

@@ -13,6 +13,7 @@
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1682D4?style=flat-square)](https://deepwiki.com/piabrota/nix-os)
 [![Hermes Agent v0.23.0](https://img.shields.io/badge/Hermes_Agent-v0.23.0-1682D4?style=flat-square)](docs/HERMES.md)
 [![hosts: piabrota + piabrota2](https://img.shields.io/badge/hosts-piabrota_%2B_piabrota2-1682D4?style=flat-square)](https://www.piabrota.art/hosts)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/h0ffmann/badge.svg)](https://hub.xerj.org/contributors/h0ffmann)
 
 </div>
 
@@ -42,15 +43,19 @@ The status is that of the first request on 2026-11-05 (`metrics` and `room` on 2
 |---|---|---|---|---|
 | [`hermes.piabrota.art`](https://hermes.piabrota.art/) | The Hermes dashboard. 401 without the login | KVM 4 | basic auth | `hermes-web.nix`, [`docs/HERMES.md`](docs/HERMES.md) |
 | [`rig.piabrota.art`](https://rig.piabrota.art/) | The OpenRig web UI. 401 without the login. Its terminal can type into the seats | KVM 4 | basic auth, the dashboard's login file | `openrig.nix`, [`docs/OPENRIG.md`](docs/OPENRIG.md) |
-| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | CPU, memory, disk and top processes of both hosts. 401 without the login | KVM 4 | basic auth, the dashboard's login file | `metrics.nix`, [`docs/METRICS.md`](docs/METRICS.md) |
+| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | CPU, memory, disk, top processes and running services of both hosts, and what each one runs (apps, sites, rigs, skills, plugins, MCP servers). Public, with `robots.txt` and bot blocks | KVM 4 | public | `metrics.nix`, [`docs/METRICS.md`](docs/METRICS.md) |
 | [`piabrota.art`](https://piabrota.art) | 301 to `https://www.piabrota.art/`, same path | KVM 1 | public | `site.nix` |
-| [`www.piabrota.art`](https://www.piabrota.art/) | The site, with `/hermes/` (Hermes's configuration as plain YAML, no secret), [`/skills/`](https://www.piabrota.art/skills/), [`/figures/`](https://www.piabrota.art/figures/), `/notes` (one password) and `/nixos` (302 to this repository) | KVM 1 | public | `site.nix`, `apps/notes/`, `skills-site/`, `figures-site/` |
+| [`www.piabrota.art`](https://www.piabrota.art/) | The site, with `/hermes/` (Hermes's configuration as plain YAML, no secret), [`/figures/`](https://www.piabrota.art/figures/), [`/llms.txt`](https://www.piabrota.art/llms.txt) (an index for AI agents, from `mockups/data.nix`), `/notes` (one password) and `/nixos` (302 to this repository). `/skills/` answers 301 to `skills.piabrota.art` | KVM 1 | public | `site.nix`, `apps/notes/`, `figures-site/` |
+| [`skills.piabrota.art`](https://skills.piabrota.art/) | The skills website, from [piabrota/skills](https://github.com/piabrota/skills) at a pinned commit. `www.piabrota.art/skills/` redirects to it. Not yet answering: its DNS record comes first | KVM 1 | public | `site.nix`, `skills-site/` |
 | [`room.piabrota.art`](https://room.piabrota.art/) | The 3D room, [piabrota/room](https://github.com/piabrota/room) at a pinned commit, with its radio | KVM 4 | public | `room.nix`, `room-site/` |
+| [`grid.piabrota.art`](https://grid.piabrota.art/) | The same room, opened on its ▲ grid view: the Brazilian coast on triangles. Not yet answering: its DNS record comes first | KVM 4 | public | `room.nix` (`piabrota.room.grid`) |
+| [`proof.piabrota.art`](https://proof.piabrota.art/) | Every HTML page of [h0ffmann/proof](https://github.com/h0ffmann/proof) at a pinned commit, with an index. The archify pages open dark. Not yet answering: its DNS record comes first | KVM 4 | public | `proof.nix`, `proof-site/` |
+| [`pirsig.piabrota.art`](https://pirsig.piabrota.art/) | The video notes and the archify figures of [piabrota/pirsig](https://github.com/piabrota/pirsig) at a pinned commit, with an index. The figures open dark. Not yet answering: its DNS record comes first | KVM 4 | public | `proof.nix`, `proof-site/` |
 | `paperclip.piabrota.art` | Paperclip. Off since 2026-11-04: no answer | KVM 4 | none while off | `paperclip.nix`, [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md) |
 
 ## Configuration
 
-The three tools share one login: the file `/var/lib/hermes-web-secrets/htpasswd` on KVM 4, one `name:bcrypt-hash` line for each user. It is never in the repository. Each vhost has TLS from Let's Encrypt and HTTP basic auth. Each service listens on 127.0.0.1 only. Every vhost answers `/favicon.ico` with the eye of the org ([`favicon.nix`](favicon.nix)). All options are off by default and `hosts/piabrota2/default.nix` turns them on.
+The Hermes dashboard and the OpenRig UI share one login: the file `/var/lib/hermes-web-secrets/htpasswd` on KVM 4, one `name:bcrypt-hash` line for each user. It is never in the repository. The metrics page is public (it holds no secret). Each vhost has TLS from Let's Encrypt, and the dashboard and the OpenRig UI have HTTP basic auth. Each service listens on 127.0.0.1 only. Every vhost answers `/favicon.ico` with the eye of the org ([`favicon.nix`](favicon.nix)). All options are off by default and `hosts/piabrota2/default.nix` turns them on.
 
 ### hermes.piabrota.art
 
@@ -80,13 +85,13 @@ The web UI of OpenRig, the engine of the software factory, served by the unit `o
 
 ### metrics.piabrota.art
 
-A page with processes, memory and vCPU of both hosts. No agent and no database: a timer runs `metrics/collect.sh` (sh and awk) on each host, and one static page reads the files ([`metrics.nix`](metrics.nix), [`metrics/`](metrics/)).
+A page with processes, memory and vCPU of both hosts, and a count of what each generation runs (Loco apps, sites, rigs, skills, plugins, MCP servers, packages, timers), made by Nix at build time. No agent and no database: a timer runs `metrics/collect.sh` (sh and awk) on each host, and one static page reads the files ([`metrics.nix`](metrics.nix), [`metrics/`](metrics/)).
 
 | Option | Value here | Meaning |
 |---|---|---|
 | `piabrota.metrics.name`, `.label` | `piabrota2`, `piabrota2 (KVM 4)` | How the host appears on the page. Set on both hosts. |
 | `piabrota.metrics.collector.enable`, `.interval` | `true`, `10` | The collector timer, in seconds. The page marks a host offline after 30 s. |
-| `piabrota.metrics.web.enable`, `.domain` | `true`, `metrics.piabrota.art` | The page behind nginx, TLS and basic auth. KVM 4 only. |
+| `piabrota.metrics.web.enable`, `.domain` | `true`, `metrics.piabrota.art` | The page behind nginx and TLS, public, with `robots.txt` and bot blocks. `.htpasswdFile` (default `null`) puts a login back. KVM 4 only. |
 | `piabrota.metrics.pull.enable`, `.url` | `true`, `https://www.piabrota.art/_metrics/piabrota.json` | KVM 4 fetches the file of KVM 1. |
 | `piabrota.metrics.publish.enable`, `.allowFrom` | `true`, KVM 4's address | On KVM 1: one location serves its file to that address only. |
 

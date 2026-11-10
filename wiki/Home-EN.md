@@ -31,8 +31,9 @@ Every piabrota.art address that this repository serves. The full table, with the
 in the [README section "Every piabrota.art address"](https://github.com/piabrota/nix-os#every-piabrotaart-address).
 
 - On `piabrota` (KVM 1), open: [www.piabrota.art](https://www.piabrota.art/) (the site, and also
-  `/index/`, `/paths/`, `/hosts/`, `/hermes/` and `/skills/`) and `/nixos` (it leads to the
-  repository). `piabrota.art` redirects to `www`.
+  `/index/`, `/paths/`, `/hosts/` and `/hermes/`) and `/nixos` (it leads to the repository).
+  `piabrota.art` redirects to `www`, and `/skills/` to [skills.piabrota.art](https://skills.piabrota.art/),
+  the skills website, also on `piabrota`.
 - On `piabrota`, with one password: [www.piabrota.art/notes](https://www.piabrota.art/notes), the Loco app `notes`.
 - On `piabrota2` (KVM 4), with a login (basic auth): [hermes.piabrota.art](https://hermes.piabrota.art/),
   the Hermes dashboard, and [rig.piabrota.art](https://rig.piabrota.art/), the OpenRig UI.
