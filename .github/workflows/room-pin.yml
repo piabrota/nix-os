@@ -1,0 +1,129 @@
+name: room pin
+
+# When piabrota/room's main moves: scripts/room-pin.sh moves the pin of room-site/default.nix (rev,
+# the source hash, npmDepsHash), builds the room package, and one pull request labelled room-pin
+# carries it, opened as piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer room
+# commit while that pull request is open moves the same branch and edits the same pull request. It
+# looks every 20 minutes and runs by hand; a `repository_dispatch` of type `room-main` (from room,
+# or a bot, with a token that can dispatch here) runs it at once. Nothing merges by itself: the
+# merge is the owner's, and the merge deploys.
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      rev:
+        description: A commit of piabrota/room (the whole sha); empty for the head of main
+        required: false
+  repository_dispatch:
+    types: [room-main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: room-pin
+  cancel-in-progress: false
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.OPS_BOT_APP_ID }}
+          private-key: ${{ secrets.OPS_BOT_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      # The cheap look first: most runs end here, with no Nix.
+      - name: Is room's main past the pin?
+        id: look
+        env:
+          REV: ${{ inputs.rev || github.event.client_payload.rev }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          new=${REV:-$(git ls-remote https://github.com/piabrota/room.git refs/heads/main | cut -f1)}
+          pinned=$(gh api "repos/$GITHUB_REPOSITORY/contents/room-site/default.nix" --jq .content |
+            base64 -d | sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";$/\1/p')
+          open=$(gh api "repos/$GITHUB_REPOSITORY/contents/room-site/default.nix?ref=agents/room-pin" \
+            --jq .content 2>/dev/null | base64 -d | sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";$/\1/p' || true)
+          echo "room main: $new; pinned on main: $pinned; on agents/room-pin: ${open:-none}"
+          if [ "$new" = "$pinned" ] || [ "$new" = "$open" ]; then
+            echo "Nothing to move."
+            echo "move=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "move=true" >>"$GITHUB_OUTPUT"
+            echo "rev=$new" >>"$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.look.outputs.move == 'true'
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      - if: steps.look.outputs.move == 'true'
+        uses: cachix/install-nix-action@v31
+
+      - name: Move the pin and build the room
+        if: steps.look.outputs.move == 'true'
+        id: pin
+        env:
+          REV: ${{ steps.look.outputs.rev }}
+        run: |
+          sh scripts/room-pin.sh "$REV" | tee pin.log
+          sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
+          echo "size=$(du -sh result-room/ | cut -f1)" >>"$GITHUB_OUTPUT"
+
+      - name: Open or update the pull request as piabrota-ops
+        if: steps.pin.outputs.new != ''
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+          OLD: ${{ steps.pin.outputs.old }}
+          NEW: ${{ steps.pin.outputs.new }}
+          SIZE: ${{ steps.pin.outputs.size }}
+        run: |
+          branch=agents/room-pin
+          id=$(gh api "users/${SLUG}%5Bbot%5D" --jq .id)
+          git config user.name "${SLUG}[bot]"
+          git config user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add room-site/default.nix
+          # The room's merged pull requests between the two pins, by their merge commits' titles.
+          gh api "repos/piabrota/room/compare/$OLD...$NEW" --jq '.commits[] | .commit.message | split("\n")[0]' \
+            | grep -E '\(#[0-9]+\)$|^Merge pull request #' | sed 's/^/- /; s/(#\([0-9]*\))$/(piabrota\/room#\1)/; s/^- Merge pull request #\([0-9]*\).*/- piabrota\/room#\1/' >prs.md || true
+          [ -s prs.md ] || echo "- (no pull request title found; see the compare link)" >prs.md
+          last=$(tail -n 1 prs.md | sed 's/^- //')
+          git commit -m "chore(room): move the room pin to ${NEW:0:7}" -m "$(cat prs.md)"
+          git push --force origin "$branch"
+          gh label create room-pin --repo "$GITHUB_REPOSITORY" --color 0e8a16 \
+            --description "piabrota/room's main, pinned in room-site/ by room-pin.yml" 2>/dev/null || true
+          {
+            echo "## Summary"
+            echo
+            echo "room.piabrota.art should run the head of piabrota/room's \`main\`, \`${NEW:0:7}\`. The pin was \`${OLD:0:7}\`."
+            echo
+            echo "## What changed"
+            echo
+            echo "\`room-site/default.nix\`: \`rev\`, the source \`hash\`, \`npmDepsHash\` and \`version\`, written by \`scripts/room-pin.sh\`. The room between the two pins ([compare](https://github.com/piabrota/room/compare/$OLD...$NEW)):"
+            echo
+            cat prs.md
+            echo
+            echo "## Tested"
+            echo
+            echo "The room package built on the runner with this flake's nixpkgs (\`npm ci\`, \`vite build\`, \`allowedReferences = [ ]\`): \`dist/\`, $SIZE, with \`index.html\`. Not checked: the full system closure (no \`dix\`), and the site in a browser. The merge deploys."
+          } >body.md
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')
+          title="chore(room): move the room pin to ${NEW:0:7} ($last)"
+          title=${title:0:200}
+          if [ -n "$n" ]; then
+            gh pr edit "$n" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file body.md
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --label room-pin \
+              --title "$title" --body-file body.md
+          fi
