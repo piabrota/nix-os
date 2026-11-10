@@ -45,8 +45,9 @@ yet.
 ## DNS on Porkbun
 
 Each name must point at the VPS before the site is turned on: on the first switch, Let's Encrypt
-checks each one over HTTP. If one does not answer from the VPS, the ACME unit fails, deploy-rs
-reports the activation as failed and rolls back. Fix DNS and deploy again.
+checks each one over HTTP. If one does not answer from the VPS, the ACME order fails and the name
+serves a self-signed certificate, which browsers refuse (seen on 2026-11-09; the deploy itself
+went on). Fix DNS, then see the end of this section.
 
 **Manual, Porkbun** (**Domain Management > piabrota.art > DNS**; ⚠ the menu as Porkbun shows it on
 2026-10-29):
@@ -84,6 +85,12 @@ The skills website's name, `skills.piabrota.art` (`piabrota.site.skillsDomain`),
 its `A` record has piabrota's address, like `www`. Add it to the table above and to the `dig`
 check. Without the record the ACME order for that name fails on the deploy.
 
+A name whose record is missing or points at the other host does not stop the deploy: the vhost
+starts with a self-signed certificate, and browsers refuse it. After the record is right, the
+unit `acme-order-renew-<name>.service` orders the certificate again once a day
+(`acme-renew-<name>.timer`); to get it at once, a human runs
+`sudo systemctl start acme-order-renew-<name>.service` on the host.
+
 ## What answers where
 
 | URL | Answer |
@@ -97,6 +104,7 @@ check. Without the record the ACME order for that name fails on the deploy.
 | `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `…/nixos` | 302 to this repository, so the README link keeps working |
+| a name with no vhost on the host its `A` record points at | nothing: HTTP is closed with no answer, the HTTPS handshake is refused (`configuration.nix`) |
 
 `piabrota.site.httpsOnly = true` turns plain HTTP into a redirect to HTTPS. Add redirects in
 `piabrota.site.redirects`, more names in `piabrota.site.redirectFrom`.
