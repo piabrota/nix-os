@@ -70,6 +70,38 @@ The owner, once:
   opened, or below the thresholds); a 202 started the agent.
 - Open a test pull request of more than 1000 lines on `h0ffmann/proof`.
 
+## Stacked pull requests
+
+A stack is many pull requests, each based on the branch of the one below it, opened or pushed within
+seconds. The bot handles it like this:
+
+- The script counts the files of a pull request (`GET /pulls/N/files`). That list is the diff of the
+  pull request against its own base branch. A stacked pull request is counted by its own changes
+  only.
+- The route filter looks at `action: opened` and not at the base branch. Every pull request that
+  opens on a watched repository is considered, in a stack or not.
+
+Two options keep a big stack from losing a pull request:
+
+| Option | Default | Why |
+|---|---|---|
+| `piabrota.tylerDurden.rateLimit` | 300 | Hermes counts every delivery of the route against this limit (30 a minute by default) before it applies the filter. The `synchronize`, `edited` and `labeled` events that the filter ignores count too. A restack of 40 branches sends 40 `synchronize` events at once. Over the limit Hermes answers 429, and GitHub does not send that delivery again on its own: the pull request gets no comment. |
+| `piabrota.tylerDurden.scriptTimeoutSeconds` | 120 | The script lists the files 100 a page, up to 30 pages, one after the other. A very large pull request can need more than the 30 seconds that Hermes allows by default. On a timeout Hermes drops the event. |
+
+To see a lost delivery: GitHub App settings, Advanced, Recent Deliveries. A 429 or a timeout shows
+there. Redeliver sends it again with the same id. Hermes accepts it, because it refused the first
+try before it kept the id.
+
+### Not covered
+
+- The prompt does not name the base branch or the place of the pull request in the stack. The
+  route script builds the payload, and it lives in piabrota/agents (PR 6). That needs a change
+  there.
+- Nothing limits or measures how many agent runs go at the same time.
+- GitHub cuts a delivery that takes more than 10 seconds to answer. The work may go on. Not
+  verified.
+- Not tried: nothing here was run on a real stack.
+
 ## Turning it off
 
 `piabrota.tylerDurden.enable = false`, or uninstall the App from `h0ffmann/proof`.

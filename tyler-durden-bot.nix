@@ -88,6 +88,16 @@ in
         piabrota/agents' tyler-durden-bot/config.toml, and the App is installed there only.
       '';
     };
+    rateLimit = mkOption {
+      type = types.ints.positive;
+      default = 300;
+      description = "Webhook deliveries a minute that Hermes accepts on this route. Hermes's own default is 30.";
+    };
+    scriptTimeoutSeconds = mkOption {
+      type = types.ints.positive;
+      default = 120;
+      description = "Seconds the route script may run. Hermes's own default is 30.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -106,6 +116,13 @@ in
       settings.platforms.webhook = {
         enabled = true;
         extra = {
+          # Hermes counts every delivery of the route against rate_limit before the event filter
+          # runs, also the push, edit and label events it then ignores, and GitHub does not send a
+          # delivery again after a 429. A restack of a big stack sends one event per branch at once,
+          # so the limit is high (Hermes's own is 30). The script reads the pull request's files, 100
+          # a page, up to 30 pages one after the other, so it gets 120 seconds (Hermes's own is 30).
+          rate_limit = cfg.rateLimit;
+          script_timeout_seconds = cfg.scriptTimeoutSeconds;
           host = "127.0.0.1";
           inherit (cfg) port;
           routes.${route} = {
