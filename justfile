@@ -88,6 +88,10 @@ site:
 skills-site:
     nix build .#skills-site --out-link result-skills-site --print-build-logs
 
+# print /llms.txt, the index for AI agents that site/llms.nix writes from mockups/data.nix
+llms:
+    nix eval --raw .#nixosConfigurations.piabrota.config.piabrota.site.llms
+
 # write site/src/piabrota_site/data.gleam from mockups/data.nix (not committed; the build writes its own)
 site-data:
     cat "$(nix build .#site-data --no-link --print-out-paths)" > site/src/piabrota_site/data.gleam

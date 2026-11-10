@@ -231,6 +231,35 @@
             ${lib.optionalString (failed != [ ]) "exit 1"}
             touch $out
           '';
+        # site.nix's /llms.txt, read from the evaluated config of piabrota (nothing is built): the www
+        # vhost answers it as UTF-8 text from the index of site/llms.nix, which names every service
+        # and project of mockups/data.nix; llms = null removes the location.
+        site-llms =
+          let
+            inherit (pkgs) lib;
+            inherit (self.nixosConfigurations) piabrota;
+            siteCfg = piabrota.config.piabrota.site;
+            data = import ./mockups/data.nix;
+            locations = vh: vh.${siteCfg.domain}.locations;
+            llms = (locations piabrota.config.services.nginx.virtualHosts)."= /llms.txt";
+            variant = module: (piabrota.extendModules { modules = [ module ]; }).config.services.nginx.virtualHosts;
+            tests = {
+              startsWithTheName = lib.hasPrefix "# piabrota\n\n> " siteCfg.llms;
+              namesEveryService = lib.all (s: lib.hasInfix "(https://${s.host}/)" siteCfg.llms) data.services;
+              namesEveryProject = lib.all (p: lib.hasInfix "- [${p.name}](" siteCfg.llms) data.projects;
+              namesEveryFork = lib.all (f: lib.hasInfix "[${f.parent}](" siteCfg.llms) data.forks;
+              hasNoRelativeLink = !(lib.hasInfix "](/" siteCfg.llms);
+              servesTheText = lib.hasSuffix "-llms.txt" (toString llms.alias);
+              isUtf8Text = lib.hasInfix "charset utf-8;" llms.extraConfig && lib.hasInfix "text/plain" llms.extraConfig;
+              nullRemovesIt = !((locations (variant { piabrota.site.llms = null; })) ? "= /llms.txt");
+            };
+            failed = lib.attrNames (lib.filterAttrs (_: ok: !ok) tests);
+          in
+          pkgs.runCommand "site-llms-check" { } ''
+            ${lib.concatMapStrings (n: "echo 'failed: ${n}' >&2\n") failed}
+            ${lib.optionalString (failed != [ ]) "exit 1"}
+            touch $out
+          '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).
         mockups = pkgs.runCommand "mockups-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}

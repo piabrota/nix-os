@@ -100,6 +100,7 @@ unit `acme-order-renew-<name>.service` orders the certificate again once a day
 | `https://skills.piabrota.art/` | the skills website, from `skills-site/` (HTTP redirects to HTTPS) |
 | `https://www.piabrota.art/figures/` | the figures as interactive pages, from `figures-site/`; `<slug>/` in English, `pt-BR/<slug>/` in pt-BR |
 | `…/figures` | 301 to `…/figures/` |
+| `…/llms.txt` | the index for AI agents, UTF-8 text (see "llms.txt" below) |
 | `…/skills`, `…/skills/<page>` | 301 to `https://skills.piabrota.art/<page>` |
 | `http://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
 | `https://piabrota.art/<path>` | 301 to `https://www.piabrota.art/<path>` |
@@ -215,6 +216,18 @@ favicon from the root of the name, and the other links are absolute, so nothing 
 path. `piabrota.site.skills = null` removes the pages and the redirect.
 
 To preview, run `just skills-site`. It builds into `./result-skills-site`.
+
+## llms.txt
+
+`https://www.piabrota.art/llms.txt` (and `piabrota.art/llms.txt`, by the redirect) is an index of
+piabrota for an AI agent, in the [llms.txt](https://llmstxt.org) format, in the shape of
+[xerj.org/llms.txt](https://xerj.org/llms.txt): one heading, a quote, a note on how to read it,
+then one line with a link for each page, service, project, part of the company, rule of the dogma,
+partner and fork. `site/llms.nix` writes it from `mockups/data.nix`, so a fact changes there and
+nowhere else; a page that is off (`/hermes/`, `/figures/`, the skills website) is left out.
+`just llms` prints it. `piabrota.site.llms` holds the text; `null` removes the path.
+`checks.site-llms` checks that it names every service, project and fork, has no relative link, and
+is served as `text/plain; charset=utf-8`.
 
 ## The figures
 

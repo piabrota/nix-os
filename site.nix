@@ -78,6 +78,19 @@ in
       example = "G-XXXXXXXXXX";
       description = "Google Analytics 4 measurement ID. Empty: no analytics, and the pages load no script. Set: every page loads Google's tag (gtag.js). It is public: it ends up in every page's source.";
     };
+    llms = mkOption {
+      type = types.nullOr types.str;
+      default = import ./site/llms.nix {
+        inherit lib;
+        data = import ./mockups/data.nix;
+        base = "https://${cfg.domain}";
+        hermes = cfg.hermes != null;
+        figures = cfg.figures != null;
+        skills = if skillsOn then cfg.skillsDomain else null;
+      };
+      defaultText = lib.literalMD "the index that `site/llms.nix` writes from `mockups/data.nix`";
+      description = "What `/llms.txt` answers (https://llmstxt.org): an index of piabrota for AI agents, in Markdown. null: no /llms.txt.";
+    };
     redirects = mkOption {
       type = types.attrsOf types.str;
       # The README has linked piabrota.art/nixos since Porkbun forwarded it; keep the link working.
@@ -108,6 +121,16 @@ in
               # the Location header (gixy's http_splitting). The query stays: the pages filter by ?tag=.
               "= /skills".return = "301 https://${cfg.skillsDomain}/";
               "~ ^/skills/(?<rest>[A-Za-z0-9._/-]*)$".return = "301 https://${cfg.skillsDomain}/$rest$is_args$args";
+            }
+              // lib.optionalAttrs (cfg.llms != null) {
+              # nginx sends no charset by default, and the index has non-ASCII names (道場, ▲).
+              "= /llms.txt" = {
+                alias = pkgs.writeText "llms.txt" cfg.llms;
+                extraConfig = ''
+                  default_type "text/plain";
+                  charset utf-8;
+                '';
+              };
             }
               // lib.optionalAttrs (cfg.figures != null) {
               # The pages use relative links, so the slash matters.
