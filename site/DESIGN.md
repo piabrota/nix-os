@@ -59,8 +59,9 @@ font file is stored here.
   the top left corner, as on picasso.
 - Content is at most 1040 px wide, with 20 px gutters; below 760 px the drawing moves above the
   title, and below 420 px the buttons fill the row.
-- A: tiles in a grid of the profile's lanes; mu's is the one filled tile, in `--accent`, across the
-  row. B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
+- A: tiles in a grid of the profile's lanes, the incubating lane last; two tiles are filled, in
+  `--accent`, across the row: mu's (the company chart) and proof's (the incubating project).
+  B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
 - **/hermes** is not a design and has no place in the switcher: its hero carries the hermes mark
   (below, "Marks") where the others carry a drawing, its numbers are facts in mono, and its
   YAML sits in C's terminal, in a `<pre>` that scrolls sideways on a phone. It ends at the foot,
@@ -68,12 +69,29 @@ font file is stored here.
 - **Services**, on A, the first section: one link card for each name piabrota2 serves on its own
   (`services` in `mockups/data.nix`): the mark, the name in Fjalla One, an uppercase pill that says
   whether it is `public` (green) or needs the `login` (dashed), the line, and the host in mono and
-  `--accent-text`. The name's link covers the card. The mockups do not draw them.
-- **Tiles**, on A: tags (the state pill, the language, own or personal), the name in Fjalla One, the
-  blurb, the licence and the address. The name's link covers the tile. Hover scales it 1.5%.
+  `--accent-text`, pinned to the bottom of the card. The name's link covers the card. The mockups do not draw them.
+- **Tiles**, on A: the logo, the tags (the state pill, the language, own or personal), the name in Fjalla One, the
+  blurb, the licence and the address, then the commit line: the same slots in the same order in every
+  tile. The logo box is 44 px, the tags row keeps room for two lines, and the footer (the licence and
+  address, then the commits) sits at the bottom of the tile, so the footers of a row line up. A tile
+  with no commit line keeps its licence line at the bottom. The name's link covers the tile. Hover
+  scales it 1.5%.
+- **The card grids** (tiles, services, board, partners) have no empty cell. One column below 600 px;
+  two from 600 px, on 4 tracks; three from 960 px, on 6 tracks. A card spans 2 tracks, the cards of
+  a row have one height, and the gap is 14 px both ways. The last row stretches: at 3 up, one card
+  left takes the row and two share it in halves; at 2 up, one card left takes the row. The filled
+  tiles (mu, proof) take a row and are not counted. A plain tile that stretches turns to a row: the
+  logo and the tags on the left, the name, the blurb and the footer on the right. The four layers
+  are 1, 2 and 4 up; on the figures page the cards are 1 and 2 up, and an odd last card takes the
+  row with its preview at the side. At 3 up the board's cards stack the avatar over the text.
+- **Commit counts**, on a tile (A), on a row of C's terminal and in the inventory: one quiet line,
+  the word `commits` in Inter, 11 px, uppercase, then `35 human · 72 agent` in JetBrains Mono, 12 px,
+  both in `--muted`. No new colour. A tooltip says what the count is and the day it was read. A
+  project with no counts shows no line and no zero. On a tile the line sits above the link that
+  covers it, so the tooltip shows; on a phone it wraps, and in C it takes a row of its own.
 - **The numbers** in the hero are `<dl>` pairs, counted from the facts, never typed.
 - **The bar of anchors** stays at the top while the page scrolls, and scrolls sideways on a phone.
-- **/skills/** (`skills-site/`) wears the same look: these tokens, type and shapes, its own CSS in `skills-site/src/www.gleam`, the 技 drawing in `--accent-text` as its hero drawing, and a card for each skill.
+- **skills.piabrota.art** (`skills-site/`) wears the same look: these tokens, type and shapes, its own CSS in `skills-site/src/www.gleam`, the 技 drawing in `--accent-text` as its hero drawing, and a card for each skill.
 
 ## What every design shares
 
@@ -85,7 +103,8 @@ Every design ends with the same sections, in this order (`src/piabrota_site/comm
 - **Dogma**: the ten invariants of piabrota/mu, shortened only where a list or a link would not fit.
   The list numbers them, in `--accent-text`.
 - **FOSS inventory**: one entry a project, closed-source's detail: the name, the state pill, the
-  blurb, four facts in a `<dl>` (origin, language, licence, last push), the repository link and the
+  blurb, four facts in a `<dl>` (origin, language, licence, last push; a fifth, the commit counts,
+  when the project has them), the repository link and the
   address. The state colours the entry's 3 px edge. `own` is the org's; `personal` is a repository
   that dojo pins and a person keeps.
 - **Board**: a card a person, with the avatar, the name (or the `@login`), the line from the org
@@ -117,7 +136,7 @@ piabrota's drawings, not the upstream projects' logos.
 ## The icon
 
 The piabrota mark (the open green eye on red, the drawing of `parts.eye`) is the favicon of every
-site under piabrota.art: the site, `/skills/`, `/figures/`, `/notes`, and the dashboards on the
+site under piabrota.art: the site, `skills.piabrota.art`, `/figures/`, `/notes`, and the dashboards on the
 other names. Its one source is `favicon/favicon.svg`. Change the mark there and in `parts.eye`
 together: `checks.favicon` compares them. No page stores or draws an icon of its own.
 
@@ -127,10 +146,21 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 2 px. No page loads JavaScript, except Google's analytics tag when
 `piabrota.site.analytics.measurementId` is set (`page.analytics`).
 
+## The kit
+
+`design/` owns the tokens for the sites built outside `site/` ([docs/DESIGN-KIT.md](../docs/DESIGN-KIT.md)):
+`design/css/tokens.css` repeats the table above, and `design/test.mjs` fails when it or this table
+differs from `site/static/style.css`. Change a token in all three in one pull request. The kit also holds
+one small CSS module for each part of a page, the list of sites (`design/sites.nix`) and the brand bar
+that goes into pages from other repositories.
+
 ## Where else the look is used
 
-The same tokens and type dress three things that are not the site's Gleam pages:
+The same tokens and type dress four things that are not the site's Gleam pages:
 
+- **proof.piabrota.art and pirsig.piabrota.art**: the indexes are made by the kit (`proof-site/index.mjs`),
+  with the hero, numbered sections and card grids of this file. The pages from h0ffmann/proof and
+  piabrota/pirsig keep their own looks and get the brand bar.
 - **The figures** at `/figures/`: the index is a page frame like `/hosts/` in this `style.css`
   (`.figures-grid`, `.figure-card`), written by `figures-site/default.nix`; each figure page has a bar
   of 44 px with the dark tokens, from the same file.

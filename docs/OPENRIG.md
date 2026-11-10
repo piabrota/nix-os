@@ -330,7 +330,7 @@ pros, cons, a spec line, credentials, permission mapping, state and the status o
 ## wave-forecaster-dev
 
 The block wave-forecaster-dev runs the port of WAVEWATCH III (WW3) from Fortran to Rust in
-[h0ffmann/chaceon](https://github.com/h0ffmann/chaceon) (private) on this box. chaceon defined the
+[h0ffmann/chaceon](https://github.com/h0ffmann/chaceon) on this box. chaceon defined the
 same loop for Claude Code seats on the owner's machine (its `rigs/` folder, PR 20 of
 h0ffmann/chaceon). The port rig `wave-forecaster-dev` now runs its two seats on Claude Code
 (`runtime: claude-code`, `claude-sonnet-5-5`, a pure Claude Code harness). The integrate rig stays on

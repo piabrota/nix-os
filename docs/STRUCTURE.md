@@ -50,6 +50,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── loco.nix                 Loco apps: a sandboxed service each, SQLite, backups, nginx + ACME
 ├── apps.nix, apps/notes/    the Loco apps: a notes CRUD demo at www.piabrota.art/notes (docs/LOCO.md)
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
+├── skills-site/             the skills website at skills.piabrota.art, a vhost of site.nix (docs/SITE.md)
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
 ├── paperclip.nix, paperclip/ Paperclip, its npm package and lock, with Hermes as its agent
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
@@ -57,6 +58,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
 ├── metrics.nix, metrics/    the metrics page at metrics.piabrota.art: collector, page, tests (docs/METRICS.md)
+├── proof.nix, proof-site/   the HTML pages of h0ffmann/proof at proof.piabrota.art and of piabrota/pirsig at pirsig.piabrota.art, each with an index
 ├── favicon.nix, favicon/    the eye as the icon of every vhost under piabrota.art (docs/SITE.md)
 ├── openrig.nix, openrig/    OpenRig, the engine of the software factory: its package, its rig specs and its UI (docs/OPENRIG.md)
 ├── thesis/                  the `thesis` toolkit of the thesis rig: POSIX sh, pandoc, TeX; its tests (docs/THESIS.md)

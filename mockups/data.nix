@@ -23,6 +23,11 @@ rec {
   repo = p: "https://github.com/${owner p}/${p.repository or p.name}";
   origin = p: if owner p == "piabrota" then "own" else "personal";
 
+  # A project's commit counts as the mockups print them (the site's pages say the same in four
+  # languages), and what they mean, for the tooltip.
+  commitsText = p: "${toString p.commits.human} human · ${toString p.commits.agent} agent";
+  commitsTip = "Commits on the default branch, as of ${commitsAsOf}. Agent: a bot account or the claude account. A commit that a person made with an agent's help counts as human.";
+
   org = {
     name = "piabrota";
     kicker = "open software fabric · made in RJ";
@@ -33,22 +38,28 @@ rec {
   };
 
   # Projects that are not FOSS yet. They stay out of `projects`: no repository link, no place in the
-  # FOSS inventory or its counts, and no place in the mockups.
-  closed = [
-    {
-      name = "chaceon";
-      glyph = "🌊";
-      lang = "Rust";
-      blurb = "Rust port of WW3, the wave physics model used by ondaseventos.ufsc.br and NOAA.";
-    }
-  ];
+  # FOSS inventory or its counts, and no place in the mockups. None today: chaceon went public.
+  # An empty list draws no lane.
+  closed = [ ];
 
   lanes = [
     { id = "company"; label = "the company"; }
     { id = "think"; label = "think and write"; }
     { id = "host"; label = "warn and host"; }
     { id = "play"; label = "play"; }
+    { id = "incubating"; label = "incubating"; }
   ];
+
+  # The commits on the default branch of each project that is the org's own repository (`commits`
+  # on a project below; the personal repositories, and hermes, have none). `human` and `agent` are
+  # counted from GitHub's commit list, by the commit's author login: `agent` is a login that ends
+  # with `[bot]`, or is exactly `claude` (the account GitHub maps Claude Code's author to);
+  # `human` is every other commit. A commit that a person made with an agent's help under their own
+  # name counts as human, because the repository's rule is "no agent trail in a commit", so the
+  # count is a floor for agent work. The build has no network, so the numbers are typed here.
+  # Refresh: `just commit-counts`, paste its lines over the `commits` of each project, set
+  # `commitsAsOf` to the day, and open a pull request.
+  commitsAsOf = "2026-11-09";
 
   # logo: the repository's own logo, at a pinned commit, never stored here. glyph: the text mark of a
   # repository that has no logo yet, as the org profile prints it.
@@ -61,6 +72,7 @@ rec {
       lang = "Markdown, Bash";
       licence = "CC BY 4.0, AGPL-3.0, MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 35; agent = 72; };
       state = "none";
     }
     {
@@ -71,6 +83,7 @@ rec {
       lang = "Bash";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 8; agent = 0; };
       state = "none";
     }
     {
@@ -81,6 +94,7 @@ rec {
       lang = "Markdown";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 25; agent = 6; };
       state = "none";
     }
     {
@@ -91,6 +105,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-10-30";
+      commits = { human = 47; agent = 21; };
       path = "/pirsig";
       state = "coming";
     }
@@ -102,6 +117,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-10-30";
+      commits = { human = 142; agent = 0; };
       site = "piabrota.github.io/gramatico";
       state = "live";
     }
@@ -125,7 +141,8 @@ rec {
       lang = "Gleam";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
-      path = "/skills/";
+      commits = { human = 22; agent = 23; };
+      site = "skills.piabrota.art";
       state = "live";
     }
     {
@@ -142,6 +159,19 @@ rec {
       state = "live";
     }
     {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-09. The glyph is the one
+      # its README header opens with; its banner is the logo proof already shows.
+      name = "awesome-neurosymbolic-ai";
+      glyph = "∀";
+      lane = "think";
+      owner = "h0ffmann";
+      blurb = "A curated list of frameworks, reasoners, papers, courses and benchmarks for neurosymbolic AI: neural learning with symbolic reasoning.";
+      lang = "Markdown, Python";
+      licence = "CC0-1.0";
+      pushed = "2026-11-08";
+      state = "none";
+    }
+    {
       name = "alerts";
       logo = "https://raw.githubusercontent.com/piabrota/alerts/40d244f5e83bdb3700493de6612528982509f2a8/desktop/app/icons/icon.png";
       lane = "host";
@@ -149,6 +179,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 48; agent = 0; };
       path = "/alerts";
       state = "coming";
     }
@@ -160,6 +191,7 @@ rec {
       lang = "Rust";
       licence = "MPL-2.0";
       pushed = "2026-10-31";
+      commits = { human = 17; agent = 18; };
       state = "none";
     }
     {
@@ -170,6 +202,7 @@ rec {
       lang = "Bash";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 21; agent = 0; };
       state = "none";
     }
     {
@@ -180,6 +213,7 @@ rec {
       lang = "Nix";
       licence = "MPL-2.0";
       pushed = "2026-10-31";
+      commits = { human = 104; agent = 63; };
       path = "/nixos";
       state = "live";
     }
@@ -213,6 +247,7 @@ rec {
       lang = "Rust, planned";
       licence = "MPL-2.0";
       pushed = "2026-11-01";
+      commits = { human = 1; agent = 0; };
       state = "coming";
     }
     {
@@ -229,6 +264,31 @@ rec {
       site = "aracyla.github.io/onde-comer";
       state = "live";
     }
+    {
+      # Personal repository of h0ffmann, formerly named dogma; facts read from GitHub on 2026-11-09.
+      name = "proof";
+      owner = "h0ffmann";
+      logo = "https://raw.githubusercontent.com/h0ffmann/proof/361e50fb1cea81433d50c941db4f00363af2bd75/docs/logo/logo.svg";
+      lane = "incubating";
+      blurb = "Specifications written and proved in Lean 4, with Haskell and Rust implementations checked against them, and data experiments with papers.";
+      lang = "Lean, Python, Rust";
+      licence = "MPL-2.0";
+      pushed = "2026-11-09";
+      site = "proof.piabrota.art";
+      state = "live";
+    }
+    {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-09.
+      name = "chaceon";
+      owner = "h0ffmann";
+      glyph = "🌊";
+      lane = "incubating";
+      blurb = "Rust port of WW3, the wave physics model used by ondaseventos.ufsc.br and NOAA.";
+      lang = "Rust";
+      licence = "MPL-2.0";
+      pushed = "2026-11-09";
+      state = "none";
+    }
   ];
 
   # The services piabrota2 serves on their own names (README.md, "Addresses", 2026-11-06). The site
@@ -236,8 +296,11 @@ rec {
   # dashboard's basic-auth file). Their marks are drawn in site/src/piabrota_site/marks.gleam.
   services = [
     { name = "openrig"; label = "OpenRig"; host = "rig.piabrota.art"; access = "login"; blurb = "The web UI of OpenRig, the software factory's engine: the builder and reviewer seats, and their terminals."; }
-    { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "login"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
+    { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "public"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
     { name = "room"; label = "room"; host = "room.piabrota.art"; access = "public"; blurb = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; }
+    { name = "grid"; label = "▲ grid"; host = "grid.piabrota.art"; access = "public"; blurb = "The room's tenth view on its own name: the Brazilian coast on triangles, with 24 h of sea and its temperature."; }
+    { name = "proof"; label = "proof"; host = "proof.piabrota.art"; access = "public"; blurb = "Every HTML page of h0ffmann/proof: specifications, Z3 reports and diagrams."; }
+    { name = "pirsig"; label = "pirsig"; host = "pirsig.piabrota.art"; access = "public"; blurb = "The video notes and the figures of piabrota/pirsig, the second brain."; }
   ];
 
   # The company's shape, as mu and dojo say it (2026-11-01).

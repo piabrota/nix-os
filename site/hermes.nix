@@ -3,7 +3,7 @@
 # Nothing secret reaches it: the env files are not read or named, and any key that names a token,
 # a key, a secret, a password or allowed users is dropped. Store paths keep their name and lose
 # their hash, because the site's output must name no store path (allowedReferences = [ ]).
-{ lib, cfg, unit, lock }:
+{ lib, cfg, unit, lock, original }:
 let
   inherit (builtins) isAttrs isList isString isBool isInt isFloat isNull toJSON;
 
@@ -49,6 +49,8 @@ let
   # The flake builds Hermes as 0.0.0: its commit, in `upstream`, is the version.
   version = p: if (p.version or "0.0.0") == "0.0.0" then "" else " ${p.version}";
   short = builtins.substring 0 7 lock.rev;
+  # The release tag that flake.nix pins and flake.lock records (nodes.hermes-agent.original.ref).
+  tag = original.ref;
   # Seconds since 1970 to YYYY-MM-DD (Hinnant's civil_from_days), for the lock's lastModified.
   date = secs:
     let
@@ -74,6 +76,7 @@ let
     unit = "hermes-agent.service";
     upstream = {
       repository = "github.com/NousResearch/hermes-agent";
+      version = tag;
       commit = lock.rev;
       date = date lock.lastModified;
     };
@@ -99,13 +102,19 @@ assert lib.all
   (t: !lib.any (w: lib.hasInfix w t) [ "hermes.env" "OAUTH" "ALLOWED_USERS" "PRIVATE KEY" ]
     || throw "site/hermes.nix: the /hermes page would name a secret")
   (lib.attrValues text);
+# The page names the pinned tag, so hermes.nix's hermesVersion must agree with it. A package that
+# the flake builds as 0.0.0 has no version to compare.
+assert (cfg.package.version or "0.0.0") == "0.0.0" || tag == "v${cfg.package.version}"
+  || throw "site/hermes.nix: flake.lock pins ${tag} but hermes.nix says ${cfg.package.version}: change both in one pull request";
 text // {
   facts = [
     { label = "unit"; value = service.unit; }
+    { label = "version"; value = tag; }
     { label = "model"; value = cfg.settings.model.default or ""; }
     { label = "subagents"; value = cfg.settings.delegation.model or ""; }
     { label = "memory"; value = "${toString service.memory_max} max"; }
     { label = "upstream"; value = "${short} · ${service.upstream.date}"; }
   ];
   upstream = "https://github.com/NousResearch/hermes-agent/commit/${lock.rev}";
+  release = "https://github.com/NousResearch/hermes-agent/releases/tag/${tag}";
 }

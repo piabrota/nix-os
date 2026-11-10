@@ -2,10 +2,16 @@
 # no [group], no [positional-arguments] attribute. CI checks it with that version.
 
 host := env_var_or_default("DEPLOY_HOST", "piabrota.art")
+# piabrota2 (KVM 4), for the recipes that act on both boxes
+kvm4 := env_var_or_default("DEPLOY_HOST_KVM4", "srv2125808.hstgr.cloud")
 
 # list the recipes
 default:
     @just --list
+
+# the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; curl, openssl); `just certs www.piabrota.art` checks one
+certs *names:
+    sh scripts/cert-check.sh {{names}}
 
 # build a host's system closure here, without deploying it (piabrota or piabrota2)
 build node="piabrota":
@@ -14,7 +20,7 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
@@ -24,13 +30,33 @@ check:
 hermes-plugins-test:
     cd hermes/plugins/tests && python3 -m unittest -v test_plugins
 
+# tests of the design kit (design/) and of the proof and pirsig indexes (proof-site/): node only, offline
+design-test:
+    node --test design/test.mjs proof-site/test.mjs
+
 # tests of hermes/skills/kvm4-health/scripts/kvm4-health.sh with a stub journalctl and systemctl (offline)
 health-test:
     sh hermes/skills/kvm4-health/scripts/kvm4-health.test.sh
 
+# tests of hermes/scripts/refresh-grid.sh with a bare origin and a stub gh (offline; needs bash, git, jq)
+grid-refresh-test:
+    bash hermes/scripts/refresh-grid.test.sh
+
 # tests of scripts/restart-services.sh with stub systemctl, tmux and a fixture /proc (offline)
 restart-test:
     sh scripts/restart-services.test.sh
+
+# tests of scripts/cert-renew.sh with a fixture /var/lib/acme and a stub systemctl (offline; needs openssl)
+cert-renew-test:
+    sh scripts/cert-renew.test.sh
+
+# the human and agent commit counts of each own repository, as lines to paste into mockups/data.nix (read-only, needs gh)
+commit-counts:
+    sh scripts/commit-counts.sh
+
+# tests of scripts/commit-counts.sh with a stub gh (offline)
+commit-counts-test:
+    sh scripts/commit-counts.test.sh
 
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
@@ -58,6 +84,10 @@ cves: build
 deploy user="deploy" node="piabrota":
     nix run .#deploy-rs -- .#{{node}} --hostname {{host}} --ssh-user {{user}} --skip-checks
 
+# move the room pin (room-site/default.nix) to room's main, or to <rev>, with both hashes, and build it
+room-pin rev="":
+    sh scripts/room-pin.sh {{rev}}
+
 # write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:
     art=$(nix build .#mu-art --no-link --print-out-paths) && \
@@ -71,6 +101,10 @@ site:
 # build the skills website (skills-site/, Gleam prerendered by Nix) into ./result-skills-site, as the VPS gets it
 skills-site:
     nix build .#skills-site --out-link result-skills-site --print-build-logs
+
+# print /llms.txt, the index for AI agents that site/llms.nix writes from mockups/data.nix
+llms:
+    nix eval --raw .#nixosConfigurations.piabrota.config.piabrota.site.llms
 
 # write site/src/piabrota_site/data.gleam from mockups/data.nix (not committed; the build writes its own)
 site-data:
@@ -172,6 +206,15 @@ remote-health user="h0ffmann" target=host:
 remote-restart what="all" user="h0ffmann" target=host:
     case '{{what}}' in *[!a-z\ -]*) echo "remote-restart: the first argument takes letters, spaces and - only" >&2; exit 2 ;; esac
     b64=$(base64 < scripts/restart-services.sh | tr -d '\n') && ssh -t {{user}}@{{target}} "sudo sh -c \"\$(echo $b64 | base64 -d)\" restart-services {{what}}"
+
+# order again, over SSH through sudo, the certificates of a VPS that a browser refuses (self-signed or ending within 14 days); a human only, never an agent (docs/SITE.md, "Certificates"). `just remote-cert-renew skills.piabrota.art`, `just remote-cert-renew "all --dry-run"`; KVM 4: `just remote-cert-renew all h0ffmann {{kvm4}}`
+remote-cert-renew what="all" user="h0ffmann" target=host:
+    case '{{what}}' in *[!a-z0-9.\ -]*) echo "remote-cert-renew: the first argument takes names, spaces and - only" >&2; exit 2 ;; esac
+    b64=$(base64 < scripts/cert-renew.sh | tr -d '\n') && ssh {{user}}@{{target}} "sudo sh -c \"\$(echo $b64 | base64 -d)\" cert-renew {{what}}"
+
+# fix every refused certificate on both VPSs (remote-cert-renew all on each), then check every name from here; a human only
+certs-fix user="h0ffmann":
+    a=0; b=0; {{just_executable()}} remote-cert-renew all {{user}} {{host}} || a=$?; {{just_executable()}} remote-cert-renew all {{user}} {{kvm4}} || b=$?; {{just_executable()}} certs && [ "$a" = 0 ] && [ "$b" = 0 ]
 
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:

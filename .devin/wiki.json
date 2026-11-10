@@ -73,7 +73,7 @@
     },
     {
       "title": "The site",
-      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix, the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, and site/DESIGN.md's look."
+      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix (with the human and agent commit counts of each own repository, refreshed by scripts/commit-counts.sh), the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, the skills.piabrota.art vhost (skills-site/) with the 301 from /skills, site/DESIGN.md's look, and design/ (the design kit: tokens, CSS modules, design/sites.nix, and the brand bar for pages from other repositories, with the indexes of proof-site/; docs/DESIGN-KIT.md)."
     },
     {
       "title": "Mockups, figures and drawings",
@@ -90,7 +90,7 @@
     },
     {
       "title": "Metrics page",
-      "purpose": "metrics.nix, metrics/collect.sh, metrics/pull.sh, metrics/index.html, metrics/SCHEMA.md, metrics/test/, metrics/test.nix and docs/METRICS.md: the home-made metrics page at metrics.piabrota.art on piabrota2 (static page, nginx with ACME and the Hermes dashboard's basic auth), the POSIX sh collector run by a 10 s timer on both hosts (reads /proc and cgroups only), the KVM 1 data path (an allow-listed /_metrics/piabrota.json location pulled by metrics-pull), the offline rules, the measured cost, the hardening, the piabrota.metrics options, the tests and the preview."
+      "purpose": "metrics.nix, metrics/collect.sh, metrics/pull.sh, metrics/index.html, metrics/SCHEMA.md, metrics/test/, metrics/test.nix and docs/METRICS.md: the home-made metrics page at metrics.piabrota.art on piabrota2 (static page, nginx with ACME, public with a robots.txt and agent blocks, and an optional basic-auth login), the POSIX sh collector run by a 10 s timer on both hosts (reads /proc and cgroups only), the KVM 1 data path (an allow-listed /_metrics/piabrota.json location pulled by metrics-pull), the offline rules, the measured cost, the hardening, the piabrota.metrics options, the tests and the preview."
     },
     {
       "title": "Paperclip",
@@ -102,7 +102,7 @@
     },
     {
       "title": "Hermes Agent",
-      "purpose": "hermes.nix, hermes-web.nix, docs/HERMES.md, docs/MIGRATION-KVM4.md and wiki/Hermes-EN.md: what Hermes Agent is here and that it runs on piabrota2, the upstream NixOS module from the flake input hermes-agent (pinned to the release v0.23.0), the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills, MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, the dashboard (hermes-web.nix: hermes-backend behind nginx, TLS and basic auth), the move from KVM 1, checking it, updating and turning it off."
+      "purpose": "hermes.nix, hermes-web.nix, docs/HERMES.md, docs/MIGRATION-KVM4.md and wiki/Hermes-EN.md: what Hermes Agent is here and that it runs on piabrota2, the upstream NixOS module from the flake input hermes-agent (pinned to the release v0.23.0), the env file on the box and how activation copies it (where each secret lives, never a value), SOUL.md and hermes/AGENTS.md, the skills (hermes/skills/, hermes-manim among them), the manim package for it (pkgs.manim with two tests disabled, on piabrota2 only), MCP servers and the deny-list plugin, hermes-github.nix's GitHub App, the dashboard (hermes-web.nix: hermes-backend behind nginx, TLS and basic auth), the move from KVM 1, checking it, updating and turning it off."
     },
     {
       "title": "Hermes runtime and deploys",

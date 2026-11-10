@@ -8,6 +8,7 @@ let
   cfg = config.piabrota.site;
   # addSSL serves the same files on HTTP and HTTPS; forceSSL answers HTTP with a redirect.
   tls = if cfg.httpsOnly then { forceSSL = true; } else { addSSL = true; };
+  skillsOn = cfg.skills != null && cfg.skillsDomain != null;
 in
 {
   options.piabrota.site = {
@@ -39,7 +40,12 @@ in
       # Gleam and erlang run on the builder; the box gets only the pages (skills-site/default.nix).
       default = pkgs.callPackage ./skills-site { };
       defaultText = lib.literalExpression "pkgs.callPackage ./skills-site { }, the prerendered skills website";
-      description = "The skills website, served at /skills/. Read-only: the store. null: no /skills page.";
+      description = "The skills website, served at the root of `skillsDomain`. Read-only: the store. null: no skills page.";
+    };
+    skillsDomain = mkOption {
+      type = types.nullOr types.str;
+      default = "skills.piabrota.art";
+      description = "The name nginx serves the skills website on, over HTTPS only. Its DNS A record must point at the box. `domain` answers `/skills` and `/skills/<page>` with a 301 to it. null: no skills vhost and no redirect.";
     };
     figures = mkOption {
       type = types.nullOr types.path;
@@ -60,6 +66,7 @@ in
               cfg = config.services.hermes-agent;
               unit = config.systemd.services.hermes-agent.serviceConfig;
               lock = (lib.importJSON ./flake.lock).nodes.hermes-agent.locked;
+              original = (lib.importJSON ./flake.lock).nodes.hermes-agent.original;
             }
         else null;
       defaultText = lib.literalMD "the facts of `site/hermes.nix`, when Hermes is on";
@@ -70,6 +77,19 @@ in
       default = "";
       example = "G-XXXXXXXXXX";
       description = "Google Analytics 4 measurement ID. Empty: no analytics, and the pages load no script. Set: every page loads Google's tag (gtag.js). It is public: it ends up in every page's source.";
+    };
+    llms = mkOption {
+      type = types.nullOr types.str;
+      default = import ./site/llms.nix {
+        inherit lib;
+        data = import ./mockups/data.nix;
+        base = "https://${cfg.domain}";
+        hermes = cfg.hermes != null;
+        figures = cfg.figures != null;
+        skills = if skillsOn then cfg.skillsDomain else null;
+      };
+      defaultText = lib.literalMD "the index that `site/llms.nix` writes from `mockups/data.nix`";
+      description = "What `/llms.txt` answers (https://llmstxt.org): an index of piabrota for AI agents, in Markdown. null: no /llms.txt.";
     };
     redirects = mkOption {
       type = types.attrsOf types.str;
@@ -95,10 +115,22 @@ in
             locations = config.piabrota.favicon.locations // mapAttrs'
               (path: url: nameValuePair "= ${path}" { return = "302 ${url}"; })
               cfg.redirects
-              // lib.optionalAttrs (cfg.skills != null) {
-              # The pages use relative links, so the slash matters.
-              "= /skills".return = "301 /skills/";
-              "/skills/".alias = "${cfg.skills}/";
+              // lib.optionalAttrs skillsOn {
+              # The skills website moved to `skillsDomain`; the old paths redirect to it. The page's
+              # name is captured from a closed set of characters: $uri could carry a newline into
+              # the Location header (gixy's http_splitting). The query stays: the pages filter by ?tag=.
+              "= /skills".return = "301 https://${cfg.skillsDomain}/";
+              "~ ^/skills/(?<rest>[A-Za-z0-9._/-]*)$".return = "301 https://${cfg.skillsDomain}/$rest$is_args$args";
+            }
+              // lib.optionalAttrs (cfg.llms != null) {
+              # nginx sends no charset by default, and the index has non-ASCII names (道場, ▲).
+              "= /llms.txt" = {
+                alias = pkgs.writeText "llms.txt" cfg.llms;
+                extraConfig = ''
+                  default_type "text/plain";
+                  charset utf-8;
+                '';
+              };
             }
               // lib.optionalAttrs (cfg.figures != null) {
               # The pages use relative links, so the slash matters.
@@ -107,6 +139,19 @@ in
             };
           };
         }
+        (mkIf skillsOn {
+          ${cfg.skillsDomain} = {
+            forceSSL = true;
+            enableACME = true;
+            root = cfg.skills;
+            locations = config.piabrota.favicon.locations // {
+              # A new pin is a new store path, and the pages keep their names: ask for them again.
+              "/".extraConfig = ''
+                add_header Cache-Control "no-cache";
+              '';
+            };
+          };
+        })
         (genAttrs cfg.redirectFrom (_: tls // {
           enableACME = true;
           globalRedirect = cfg.domain;

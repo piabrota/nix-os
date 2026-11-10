@@ -38,6 +38,24 @@ terminal, of what answers on piabrota.art and where the rest lives. It is the sm
 |---|---|
 | ![Mockup C, paths, desktop](mockups/paths-desktop.svg) | ![Mockup C, paths, phone](mockups/paths-mobile.svg) |
 
+## Commit counts
+
+Each project that lives in the org's own repository shows two numbers on its card (A), row (B and C)
+and in its inventory entry: the commits on the default branch, human and agent. `commits` of each
+project in `mockups/data.nix` holds them, and `commitsAsOf` holds the day they were read. A project
+with no `commits` (hermes, the personal repositories) shows nothing. The build has no network, so
+the numbers change only when someone refreshes them.
+
+- Rule: a commit is agent when its GitHub author login ends with `[bot]` or is exactly `claude`,
+  the account that GitHub maps Claude Code's author to. Every other commit is human.
+- Limit: a commit that a person made with an agent's help, under their own name, counts as human.
+  The repository's rule is "no agent trail in a commit", so the two cannot be told apart. The agent
+  number is a floor.
+- Refresh: `just commit-counts` reads GitHub (read-only, needs `gh`) and prints one line for each
+  project, such as `nix-os: commits = { human = 104; agent = 63; };`. Paste each line over the
+  `commits` of that project, set `commitsAsOf` to the day, run `just mockups`, and open a pull
+  request. A repository that does not answer prints `no data`, and the run exits with 1.
+
 ## How to change them
 
 Edit `mockups/data.nix` (the facts) or `mockups/<direction>.nix` (the layout) and run

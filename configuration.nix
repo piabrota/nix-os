@@ -2,7 +2,7 @@
 # guest agent, SSH) and the modules below. A host is hosts/<name>/default.nix, which imports this
 # file and adds what is its own: its name, and which roles it runs (the public web, Hermes, PGX).
 # The template is built into a qcow2 by image.nix via nixpkgs' make-disk-image (no nixos-infect).
-{ lib, pkgs, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, ... }:
 {
   imports = [
     # virtio_scsi/virtio_blk etc. in the initrd so the image boots on Proxmox.
@@ -14,6 +14,8 @@
     ./observer.nix
     ./loco.nix
     ./site.nix
+    # A failed ACME order retries every 20 minutes, not once a day (docs/SITE.md, "Certificates").
+    ./acme-retry.nix
     # A Postgres-compatible database (docs/PGX.md), off until a host turns it on.
     ./pgx.nix
     # Live metrics (docs/METRICS.md): a collector, a page and a pull, off until a host turns them on.
@@ -79,6 +81,17 @@
     lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/bin";
 
   # The static site (site.nix) is per host: only the host that DNS points at can get its certificate.
+
+  # A name that points at this box and has no vhost here gets no site. Without this server nginx
+  # answers with its first vhost: on 2026-11-09 skills.piabrota.art pointed at piabrota2, which
+  # does not serve it, and showed the room with the certificate of grid.piabrota.art. Plain HTTP:
+  # the connection is closed with no answer (444). HTTPS: the handshake is refused, so no
+  # certificate of another name is shown. Each real vhost keeps its own ACME challenge location.
+  services.nginx.virtualHosts."_" = lib.mkIf config.services.nginx.enable {
+    default = true;
+    rejectSSL = true;
+    locations."/".return = "444";
+  };
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";

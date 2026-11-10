@@ -194,6 +194,72 @@
             done
             touch $out
           '';
+        # site.nix's skills vhost and the redirect from /skills, read from the evaluated nginx
+        # config of piabrota (nothing is built): the vhost has TLS, ACME, the icon and no-cache; www
+        # redirects /skills and /skills/<page> and has no alias to the store; skillsDomain = null and
+        # skills = null each remove the vhost and the redirect.
+        site-skills =
+          let
+            inherit (pkgs) lib;
+            inherit (self.nixosConfigurations) piabrota;
+            siteCfg = piabrota.config.piabrota.site;
+            vhosts = piabrota.config.services.nginx.virtualHosts;
+            skills = vhosts.${siteCfg.skillsDomain};
+            # The nginx vhosts of piabrota with one more module.
+            variant = module: (piabrota.extendModules { modules = [ module ]; }).config.services.nginx.virtualHosts;
+            # The locations of the www vhost that name /skills.
+            skillsLocations = vh: lib.filterAttrs (n: _: lib.hasInfix "/skills" n) vh.${siteCfg.domain}.locations;
+            removed = vh: !(vh ? ${siteCfg.skillsDomain}) && skillsLocations vh == { };
+            tests = {
+              vhostIsOnItsOwnName = siteCfg.skillsDomain == "skills.piabrota.art" && vhosts ? ${siteCfg.skillsDomain};
+              vhostServesThePages = toString skills.root == toString siteCfg.skills;
+              vhostIsHttpsOnly = skills.forceSSL && !skills.addSSL;
+              vhostHasAcme = skills.enableACME;
+              vhostHasTheIcon = lib.all (l: skills.locations ? ${l}) (lib.attrNames piabrota.config.piabrota.favicon.locations);
+              vhostAsksForPagesAgain = lib.hasInfix "no-cache" skills.locations."/".extraConfig;
+              wwwRedirectsSkills = vhosts.${siteCfg.domain}.locations."= /skills".return == "301 https://${siteCfg.skillsDomain}/";
+              wwwRedirectsPages = lib.any (l: l.return == "301 https://${siteCfg.skillsDomain}/$rest$is_args$args")
+                (lib.attrValues (skillsLocations vhosts));
+              wwwHasNoAliasToSkills = lib.all (l: l.alias == null) (lib.attrValues (skillsLocations vhosts));
+              noDomainNoVhostNoRedirect = removed (variant { piabrota.site.skillsDomain = null; });
+              noPagesNoVhostNoRedirect = removed (variant { piabrota.site.skills = null; });
+            };
+            failed = lib.attrNames (lib.filterAttrs (_: ok: !ok) tests);
+          in
+          pkgs.runCommand "site-skills-check" { } ''
+            ${lib.concatMapStrings (n: "echo 'failed: ${n}' >&2\n") failed}
+            ${lib.optionalString (failed != [ ]) "exit 1"}
+            touch $out
+          '';
+        # site.nix's /llms.txt, read from the evaluated config of piabrota (nothing is built): the www
+        # vhost answers it as UTF-8 text from the index of site/llms.nix, which names every service
+        # and project of mockups/data.nix; llms = null removes the location.
+        site-llms =
+          let
+            inherit (pkgs) lib;
+            inherit (self.nixosConfigurations) piabrota;
+            siteCfg = piabrota.config.piabrota.site;
+            data = import ./mockups/data.nix;
+            locations = vh: vh.${siteCfg.domain}.locations;
+            llms = (locations piabrota.config.services.nginx.virtualHosts)."= /llms.txt";
+            variant = module: (piabrota.extendModules { modules = [ module ]; }).config.services.nginx.virtualHosts;
+            tests = {
+              startsWithTheName = lib.hasPrefix "# piabrota\n\n> " siteCfg.llms;
+              namesEveryService = lib.all (s: lib.hasInfix "(https://${s.host}/)" siteCfg.llms) data.services;
+              namesEveryProject = lib.all (p: lib.hasInfix "- [${p.name}](" siteCfg.llms) data.projects;
+              namesEveryFork = lib.all (f: lib.hasInfix "[${f.parent}](" siteCfg.llms) data.forks;
+              hasNoRelativeLink = !(lib.hasInfix "](/" siteCfg.llms);
+              servesTheText = lib.hasSuffix "-llms.txt" (toString llms.alias);
+              isUtf8Text = lib.hasInfix "charset utf-8;" llms.extraConfig && lib.hasInfix "text/plain" llms.extraConfig;
+              nullRemovesIt = !((locations (variant { piabrota.site.llms = null; })) ? "= /llms.txt");
+            };
+            failed = lib.attrNames (lib.filterAttrs (_: ok: !ok) tests);
+          in
+          pkgs.runCommand "site-llms-check" { } ''
+            ${lib.concatMapStrings (n: "echo 'failed: ${n}' >&2\n") failed}
+            ${lib.optionalString (failed != [ ]) "exit 1"}
+            touch $out
+          '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).
         mockups = pkgs.runCommand "mockups-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}
@@ -204,6 +270,26 @@
           '') (builtins.attrNames mockups.files)}
           touch $out
         '';
+        # Every nginx virtual host under piabrota.art is a site of design/sites.nix or is listed there as
+        # hidden, and every site names a host that a system serves. Evaluation only: no system is built.
+        design-sites =
+          let
+            inherit (pkgs) lib;
+            list = import ./design/sites.nix;
+            served = lib.unique (lib.concatMap
+              (name: lib.attrNames self.nixosConfigurations.${name}.config.services.nginx.virtualHosts)
+              (lib.attrNames self.nixosConfigurations));
+            underPiabrota = lib.filter (h: h == "piabrota.art" || lib.hasSuffix ".piabrota.art" h) served;
+            listed = map (s: s.host) list.sites ++ list.hidden;
+            unlisted = lib.filter (h: !(lib.elem h listed)) underPiabrota;
+            unserved = lib.filter (s: !(lib.elem s.host served)) list.sites;
+          in
+          pkgs.runCommand "design-sites-check" { } ''
+            ${lib.concatMapStrings (h: "echo 'not in design/sites.nix: ${h}' >&2\n") unlisted}
+            ${lib.concatMapStrings (s: "echo 'no system serves ${s.id}: ${s.host}' >&2\n") unserved}
+            ${lib.optionalString (unlisted != [ ] || unserved != [ ]) "exit 1"}
+            touch $out
+          '';
         # The system with one stand-in Loco app, so the module and the hosting stack (nginx,
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {
@@ -231,8 +317,9 @@
         # pgx.nix in a VM: the unit starts in its sandbox, takes a password and keeps its data
         # across a restart (pgx/test.nix).
         pgx = pkgs.testers.runNixOSTest ./pgx/test.nix;
-        # metrics.nix in three VMs: the collector, the page behind basic auth, the pull and the
-        # published location (metrics/test.nix). Needs KVM to run in reasonable time.
+        # metrics.nix in four VMs: the collector, the public page, robots.txt and the agent block,
+        # the optional login, the pull and the published location (metrics/test.nix). Needs KVM to
+        # run in reasonable time.
         metrics = pkgs.testers.runNixOSTest ./metrics/test.nix;
       };
 
@@ -249,7 +336,7 @@
         # The site, prerendered from Gleam (site/): the pages and static/, with no runtime. The
         # system's own, so /hermes shows the Hermes that hermes.nix configures.
         site = self.nixosConfigurations.piabrota.config.piabrota.site.root;
-        # The skills website (skills-site/), prerendered from Gleam: served at /skills.
+        # The skills website (skills-site/), prerendered from Gleam: served at skills.piabrota.art.
         skills-site = self.nixosConfigurations.piabrota.config.piabrota.site.skills;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"

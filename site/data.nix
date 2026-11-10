@@ -6,6 +6,10 @@ let
   str = s: "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
   state = { live = "Live"; coming = "Coming"; none = "NoSite"; };
   lane = l: "Lane(id: ${str l.id}, label: ${str l.label})";
+  commits = p:
+    if p ? commits
+    then "Some(Commits(human: ${toString p.commits.human}, agent: ${toString p.commits.agent}))"
+    else "None";
   project = p: lib.concatStringsSep ", " [
     "Project(name: ${str p.name}"
     "lane: ${str p.lane}"
@@ -19,6 +23,7 @@ let
     "glyph: ${str (p.glyph or "")}"
     "origin: ${str (data.origin p)}"
     "pushed: ${str p.pushed}"
+    "commits: ${commits p}"
     "state: ${state.${p.state}})"
   ];
   service = s: "Service(name: ${str s.name}, label: ${str s.label}, host: ${str s.host}, access: ${str s.access}, blurb: ${str s.blurb})";
@@ -44,7 +49,7 @@ let
   clause = l: k: "    ${str l}, ${str k} -> ${str (locale l).${k}}\n";
   clauses = lib.concatMapStrings (l: lib.concatMapStrings (clause l) (keys l)) languages;
   # site/hermes.nix's facts; with no Hermes, empty, and the page says so.
-  h = if hermes == null then { config = ""; service = ""; upstream = ""; facts = [ ]; } else hermes;
+  h = if hermes == null then { config = ""; service = ""; upstream = ""; release = ""; facts = [ ]; } else hermes;
   fact = f: "#(${str f.label}, ${str f.value})";
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
@@ -53,10 +58,17 @@ assert checked;
   //// Written by site/data.nix from mockups/data.nix (the org profile). Do not edit: change
   //// mockups/data.nix and run `just site-data`.
 
+  import gleam/option.{type Option, None, Some}
+
   pub type State {
     Live
     Coming
     NoSite
+  }
+
+  /// Commits on a repository's default branch: `human` and `agent` (a bot login, or `claude`).
+  pub type Commits {
+    Commits(human: Int, agent: Int)
   }
 
   pub type Lane {
@@ -77,6 +89,7 @@ assert checked;
       glyph: String,
       origin: String,
       pushed: String,
+      commits: Option(Commits),
       state: State,
     )
   }
@@ -109,6 +122,9 @@ assert checked;
     Principle(title: String, text: String)
   }
 
+  /// The day the commit counts of mockups/data.nix were read.
+  pub const commits_as_of = ${str data.commitsAsOf}
+
   /// The Google Analytics 4 measurement ID (piabrota.site.analytics.measurementId); "" for none.
   pub const analytics_id = ${str measurementId}
 
@@ -120,6 +136,9 @@ assert checked;
 
   /// The upstream commit the flake pins.
   pub const hermes_upstream = ${str h.upstream}
+
+  /// The upstream release (tag) the flake pins.
+  pub const hermes_release = ${str h.release}
 
   pub const hermes_facts = ${list fact h.facts}
 

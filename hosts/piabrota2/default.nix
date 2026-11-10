@@ -21,6 +21,9 @@
     ../../openrig.nix
     # The room (piabrota/room) on room.piabrota.art, which must point at this box.
     ../../room.nix
+    # The HTML pages of h0ffmann/proof on proof.piabrota.art and those of piabrota/pirsig on
+    # pirsig.piabrota.art; both names must point at this box.
+    ../../proof.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
     ../../tyler-durden-bot.nix
@@ -54,6 +57,12 @@
   piabrota.openrig.waveForecaster.enable = false;
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
+  # The same room on grid.piabrota.art, opened on its ▲ grid view (room.nix). The name must point
+  # at this box.
+  piabrota.room.grid.enable = true;
+  # The HTML pages of h0ffmann/proof and of piabrota/pirsig at pinned commits, each with an index
+  # (proof-site/), at proof.piabrota.art and pirsig.piabrota.art.
+  piabrota.proof.enable = true;
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
   piabrota.tylerDurden.enable = false;
