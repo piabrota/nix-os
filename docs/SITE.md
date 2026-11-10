@@ -103,10 +103,25 @@ When an order fails (the name has no record yet, or points at the other host), N
 self-signed stand-in, issued by `minica`. `acme-retry.nix` makes `acme-order-renew-<name>.service`
 retry every 20 minutes, at most 9 times in 6 hours (3 failed validations an hour, under Let's
 Encrypt's limit of 5); then the daily `acme-renew-<name>.timer` takes over. So once the record is
-right, the real certificate comes within about 20 minutes. To get it at once, a human runs
-`sudo systemctl start acme-order-renew-<name>.service` on the host. Before 2026-11-10 the module
-retried only once a day, so proof and skills showed a warning for a day after their records were
-fixed.
+right, the real certificate comes within about 20 minutes of the next failed order. The retry
+starts only after an order fails: a certificate that was already a stand-in before a deploy
+waits for its daily timer. To get it at once, a human runs, from their machine:
+
+```console
+just certs-fix                                # both hosts, then `just certs`
+just remote-cert-renew "all --dry-run"        # piabrota: what it would order
+just remote-cert-renew skills.piabrota.art    # piabrota: this name, even if it looks fine
+just remote-cert-renew all h0ffmann srv2125808.hstgr.cloud   # piabrota2
+```
+
+`scripts/cert-renew.sh` runs as root on the box (over SSH and `sudo`). It finds each certificate
+in `/var/lib/acme` that is self-signed (`minica`) or ends within 14 days, starts its
+`acme-order-renew-<name>.service` (no other unit) and prints the new issuer, or `FAIL` with the
+`dig` and `journalctl` commands to run next. An agent never runs it. `DEPLOY_HOST` and
+`DEPLOY_HOST_KVM4` change the two addresses.
+
+Before 2026-11-10 the module retried only once a day, so proof and skills showed a warning for a
+day after their records were fixed.
 
 ## What answers where
 
