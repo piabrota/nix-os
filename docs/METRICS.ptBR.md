@@ -20,7 +20,8 @@ Mostra, por host:
   hermes-backend 2G, openrig 2G, pgx 256M...), no máximo 12, em ordem de memória sobre o máximo.
   O `memory.peak` aparece quando o kernel tem.
 - O total de processos (conta as threads do kernel), threads, tarefas rodando e bloqueadas, forks
-  e trocas de contexto por segundo, e arquivos abertos.
+  e trocas de contexto por segundo, arquivos abertos e os serviços que rodam agora (cada serviço com um cgroup sob
+  `system.slice`).
 - O detalhe da memória: cache de páginas, buffers, shmem e páginas sujas (dirty).
 - Rede de entrada e de saída por segundo (todas as interfaces menos `lo`), sockets TCP (em uso,
   TIME-WAIT) e sockets UDP.
@@ -28,6 +29,7 @@ Mostra, por host:
   `nvme0n1`; sem partições).
 - Pressão (PSI) de CPU, memória e IO: a parte dos últimos 10 s em que tarefas esperaram
   (`some` / `full`).
+- O que esta geração roda: as contagens de "O inventário", abaixo.
 
 Como ler os números:
 
@@ -39,6 +41,31 @@ Como ler os números:
 Não mostra: histórico além das amostras da aba (as amostras vêm por arquivo novo, a cada 10 s, então
 são uns 10 minutos), uso de outros sistemas de arquivos além de `/`, rede ou IO por processo ou por interface, alertas, linhas de
 comando.
+
+## O inventário
+
+Cada cartão tem um bloco "What this generation runs". O Nix conta isso uma vez, quando constrói o
+sistema, a partir da configuração que o host roda; nada é contado na máquina. Um deploy muda os
+números.
+
+| Chave | Rótulo | O que conta |
+|---|---|---|
+| `apps` | Loco apps | `piabrota.loco.apps` |
+| `sites` | Sites | hosts virtuais do nginx, sem o `_` padrão e sem os nomes que só redirecionam |
+| `rigs` | Rigs | as specs de rig em `/etc/openrig/specs/rigs`, quando o OpenRig está ligado |
+| `agents` | Rig agents | as specs de agente em `/etc/openrig/specs/agents`, sem as pastas `*shared` |
+| `skills` | Skills | os arquivos `SKILL.md` das pastas de skills do Hermes (`skills.external_dirs`) e dos plugins |
+| `skills_bundled` | Bundled skills | os arquivos `SKILL.md` que vêm dentro do Hermes (`piabrota.metrics.inventory.bundledSkillDirs`) |
+| `plugins` | Plugins | `settings.plugins.enabled` do Hermes |
+| `mcp` | MCP servers | `mcpServers` do Hermes |
+| `packages` | Packages | `environment.systemPackages` |
+| `timers` | Timers | os timers do systemd que estão ligados |
+
+Um módulo que o host não importa conta 0: a piabrota não tem Hermes nem OpenRig. São contagens
+declaradas. O Hermes também pode criar skills próprias em tempo de execução, em `/var/lib/hermes`; o
+coletor não lê essa pasta (o usuário dele não está no grupo `hermes`, de propósito), então essas
+skills ficam fora da conta. O `metrics.nix` grava as contagens num arquivo no store e o coletor as
+copia para `inventory` (metrics/SCHEMA.md).
 
 ## Os dois hosts e quem roda o quê
 
@@ -53,7 +80,8 @@ comando.
   `/run/metrics-state/<nome>.state` (não é servida).
 - Os nomes são `piabrota` e `piabrota2` (opção `piabrota.metrics.name`). Nunca o hostname: o da
   piabrota2 ainda é `nixos`.
-- Lê só `/proc`, `/sys/fs/cgroup`, `/etc/passwd` e `df`. Nunca uma linha de comando.
+- Lê só `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df` e o arquivo do inventário no store. Nunca
+  uma linha de comando.
 - O arquivo JSON tem menos de 8 KB (schema v1).
 
 ## O caminho dos dados da KVM 1
@@ -85,7 +113,9 @@ que falsifica endereço) consegue ler o arquivo. Só IPv4. Se o endereço da pia
   - o nome e o rótulo do host, a hora da amostra, o uptime, o número de vCPUs e a carga;
   - o uso de CPU (total e de cada vCPU), a memória e o swap (total, usado, disponível) e o uso do
     disco de `/`;
-  - o número de processos;
+  - o número de processos e de serviços rodando;
+  - o inventário: quantos Loco apps, sites, rigs, agentes de rig, skills, plugins, servidores MCP,
+    pacotes e timers a configuração declara;
   - dos 10 processos que mais usam memória e dos 10 que mais usam CPU: pid, nome do processo
     (`comm`), nome do usuário, RSS e percentual de CPU;
   - de até 12 unidades do systemd: nome da unidade, memória agora, `MemoryMax` e pico de memória.
@@ -178,6 +208,7 @@ Todas vêm desligadas. Todas ficam sob `piabrota.metrics`:
 | `web.enable`, `web.domain`, `web.htpasswdFile` | a página no nginx, o domínio e o arquivo de login opcional (`null`, o padrão, deixa a página pública) |
 | `publish.enable`, `publish.allowFrom` | a location da KVM 1 e o IP que pode ler |
 | `pull.enable`, `pull.url`, `pull.name` | o timer que busca o arquivo do outro host |
+| `inventory.bundledSkillDirs` | pastas de skills que vêm dentro de um agente, contadas como `skills_bundled`; o `hermes.nix` acrescenta as do Hermes |
 
 Hoje: a piabrota2 liga coletor, web e pull. A piabrota liga coletor e publish.
 

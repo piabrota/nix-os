@@ -33,7 +33,7 @@ mkdir -p "$out" "$st"
 printf 'root:x:0:0::/root:/bin/sh\nalice:x:1000:100::/home/alice:/bin/sh\n' > "$work/passwd"
 
 run() { # runs the collector as the box does, on the fixture
-  METRICS_NAME=piabrota2 METRICS_LABEL='piabrota2 (KVM 4)' OUT_DIR="$out" STATE_DIR="$st" \
+  METRICS_NAME=piabrota2 METRICS_LABEL='piabrota2 (KVM 4)' OUT_DIR="$out" STATE_DIR="$st" METRICS_INVENTORY="${inv:-}" \
     PROC_ROOT="$proc" CGROUP_ROOT="$cg" PASSWD_FILE="$work/passwd" sh "${1:-$collect}" 2>"$work/err"
 }
 
@@ -158,6 +158,29 @@ check "unit numbers with a peak" "$(val '.units[1]')" '{"unit":"a.service","mem"
 check "unit numbers" "$(val '.units[0]')" '{"unit":"c.service","mem":1950,"max":2000,"peak":1990}'
 check "the file stays under 8 KB" "$([ "$(wc -c < "$out/piabrota2.json")" -lt 8192 ] && echo yes)" yes
 check "no command line in the file" "$(grep -c -e '/bin/' -e cmdline "$out/piabrota2.json")" 0
+check "services running: every unit with a cgroup" "$(val .services_running)" 4
+check "no inventory without the file" "$(val 'has("inventory")')" false
+
+echo "# the inventory"
+inv="$work/inventory"
+printf 'apps 1\nsites 7\nskills 120\n' > "$inv"
+# Lines the collector must drop: a quote, a capital, a negative, a fraction, three fields, a key
+# that is too long, a number that is too long, a repeated key, an empty line.
+printf 'x"y 1\nApps 2\nrigs -1\nmcp 1.5\nplugins 1 2\n%s 1\ntimers 1234567890\napps 9\n\n' \
+  aaaaaaaaaaaaaaaaaaaaaaaaa >> "$inv"
+ok "run with an inventory" run
+ok "the inventory run is valid JSON" jq -e . "$out/piabrota2.json"
+check "inventory keeps the good lines, in order" "$(val .inventory)" '{"apps":1,"sites":7,"skills":120}'
+i=0; : > "$inv"; while [ $i -lt 30 ]; do printf 'k%s 1\n' "$(echo $i | tr 0-9 a-j)" >> "$inv"; i=$((i + 1)); done
+ok "run with a long inventory" run
+check "24 inventory keys at most" "$(val '.inventory | length')" 24
+: > "$inv"
+ok "run with an empty inventory" run
+check "an empty inventory is an empty object" "$(val .inventory)" '{}'
+inv="$work/nope"
+ok "run with an inventory file that is missing" run
+check "a missing inventory file is an empty object" "$(val .inventory)" '{}'
+inv=""
 
 echo "# the caps"
 i=1000

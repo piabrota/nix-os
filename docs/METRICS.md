@@ -21,7 +21,8 @@ It shows, for each host:
   hermes-backend 2G, openrig 2G, pgx 256M...), at most 12, sorted by memory over max. `memory.peak`
   is shown when the kernel has it.
 - The total of processes (it counts kernel threads), threads, tasks running and blocked, forks
-  and context switches per second, and open files.
+  and context switches per second, open files, and the services that run now (each service with a cgroup under
+  `system.slice`).
 - The memory detail: page cache, buffers, shmem and dirty pages.
 - Network in and out per second (every interface but `lo`), TCP sockets (in use, TIME-WAIT) and UDP
   sockets.
@@ -29,6 +30,7 @@ It shows, for each host:
   partitions).
 - Pressure stall (PSI) of CPU, memory and IO: the share of the last 10 s that tasks waited
   (`some` / `full`).
+- What this generation runs: the counts of "The inventory", below.
 
 How to read the numbers:
 
@@ -39,6 +41,30 @@ How to read the numbers:
 
 It does not show: history beyond the samples in the tab (samples come per new file, every 10 s, so
 about 10 minutes), disk usage of filesystems other than `/`, network or IO per process or per interface, alerts, command lines.
+
+## The inventory
+
+Each card has a block "What this generation runs". Nix counts it once, when it builds the system,
+from the configuration that the host runs; nothing is counted on the box. A deploy changes it.
+
+| Key | Label | What it counts |
+|---|---|---|
+| `apps` | Loco apps | `piabrota.loco.apps` |
+| `sites` | Sites | nginx virtual hosts, without the default `_` and the names that only redirect |
+| `rigs` | Rigs | the rig specs in `/etc/openrig/specs/rigs`, when OpenRig is on |
+| `agents` | Rig agents | the agent specs in `/etc/openrig/specs/agents`, without the `*shared` folders |
+| `skills` | Skills | the `SKILL.md` files in Hermes's skill folders (`skills.external_dirs`) and plugins |
+| `skills_bundled` | Bundled skills | the `SKILL.md` files that ship inside Hermes (`piabrota.metrics.inventory.bundledSkillDirs`) |
+| `plugins` | Plugins | `settings.plugins.enabled` of Hermes |
+| `mcp` | MCP servers | `mcpServers` of Hermes |
+| `packages` | Packages | `environment.systemPackages` |
+| `timers` | Timers | the systemd timers that are on |
+
+A module that a host does not import counts 0: piabrota has no Hermes and no OpenRig. These are
+declared counts. Hermes can also make skills of its own at run time, in `/var/lib/hermes`; the
+collector cannot read that folder (its user is not in the `hermes` group, on purpose), so those
+skills are not in the count. `metrics.nix` writes the counts to a file in the store and the collector
+copies them into `inventory` (metrics/SCHEMA.md).
 
 ## The two hosts and who runs what
 
@@ -53,7 +79,8 @@ about 10 minutes), disk usage of filesystems other than `/`, network or IO per p
   `/run/metrics-state/<name>.state` (not served).
 - The names are `piabrota` and `piabrota2` (option `piabrota.metrics.name`). Never the hostname:
   piabrota2's hostname is still `nixos`.
-- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd` and `df`. Never a command line.
+- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df` and the inventory file in the store.
+  Never a command line.
 - The JSON file is under 8 KB (schema v1).
 
 ## The data path of KVM 1
@@ -85,7 +112,9 @@ read the file. IPv4 only. If piabrota2's address changes, change `allowFrom` in
   - the host name and label, the time of the sample, the uptime, the number of vCPUs and the load;
   - the CPU use (total and for each vCPU), memory and swap (total, used, available) and the disk
     use of `/`;
-  - the number of processes;
+  - the number of processes and of running services;
+  - the inventory: how many Loco apps, sites, rigs, rig agents, skills, plugins, MCP servers,
+    packages and timers the configuration declares;
   - for the 10 top processes by memory and the 10 top by CPU: pid, process name (`comm`), user
     name, RSS and CPU percent;
   - for up to 12 systemd units: unit name, memory now, `MemoryMax` and peak memory.
@@ -177,6 +206,7 @@ All are off by default. All live under `piabrota.metrics`:
 | `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the optional login file (`null`, the default, means the page is public) |
 | `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
 | `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
+| `inventory.bundledSkillDirs` | folders of skills that ship inside an agent, counted as `skills_bundled`; `hermes.nix` adds Hermes's own |
 
 Today: piabrota2 turns on collector, web and pull. piabrota turns on collector and publish.
 

@@ -110,6 +110,8 @@
             node.wait_until_succeeds(f"jq -e '.host == \"{name}\" and .v == 1' /run/metrics-web/{name}.json")
             node.succeed(f"jq -e '(now - .ts) < 20 and .vcpus >= 1 and .mem.total > 0 and .procs_total > 10 and (.top_mem | length) == 10' /run/metrics-web/{name}.json")
             node.succeed(f"jq -e '[.top_mem[].user] | index(\"root\")' /run/metrics-web/{name}.json")
+            # The inventory: what the node's config declares; no Hermes, no OpenRig, one vhost or more.
+            node.succeed(f"jq -e '.services_running > 5 and .inventory.sites >= 1 and .inventory.skills == 0 and .inventory.rigs == 0 and .inventory.packages > 0' /run/metrics-web/{name}.json")
             assert node.succeed(f"stat -c %a /run/metrics-web/{name}.json").strip() == "644"
             node.succeed("systemctl is-active metrics-collect.timer")
             node.fail("systemctl is-failed metrics-collect.service")

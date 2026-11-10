@@ -8,6 +8,8 @@
 #   METRICS_INTERVAL  seconds between runs, written to the file (default 10)
 #   OUT_DIR           where <name>.json goes (default /run/metrics-web)
 #   STATE_DIR         where the previous sample is kept (default /run/metrics-state)
+#   METRICS_INVENTORY a file of "<key> <count>" lines that Nix wrote: what this generation runs
+#                     (metrics.nix). Optional; without it the file has no "inventory".
 #   PROC_ROOT, CGROUP_ROOT, PASSWD_FILE, DF_PATH: the sources; the tests point them at a fixture.
 set -eu
 umask 022
@@ -23,6 +25,7 @@ proc=${PROC_ROOT:-/proc}
 cgroup=${CGROUP_ROOT:-/sys/fs/cgroup}
 passwd=${PASSWD_FILE:-/etc/passwd}
 df_path=${DF_PATH:-/}
+inventory=${METRICS_INVENTORY:-}
 
 hz=$(getconf CLK_TCK 2>/dev/null || echo 100)
 page=$(getconf PAGESIZE 2>/dev/null || echo 4096)
@@ -44,7 +47,7 @@ done
 
 awk -v NAME="$name" -v LABEL="$label" -v INTERVAL="$interval" -v TS="$ts" \
   -v PROC="$proc" -v PASSWD="$passwd" -v DFPATH="$df_path" -v HZ="$hz" -v PAGE="$page" \
-  -v STATE="$state" -v STATE_TMP="$tmp_state" '
+  -v STATE="$state" -v STATE_TMP="$tmp_state" -v INVENTORY="$inventory" '
 # The whole file as one string, lines joined by a newline; RDN is the number of lines.
 # A file that is gone or unreadable gives RDN 0: getline returns -1 and the loop ends.
 function rd(f,   l, s) {
@@ -189,11 +192,13 @@ BEGIN {
   nl = split(rd(PASSWD), L, "\n")
   for (i = 1; i <= nl; i++) { split(L[i], f, ":"); if (f[1] != "" && !(f[3] in pw)) pw[f[3]] = f[1] }
 
-  np = 0; nu = 0
+  np = 0; nu = 0; nsvc = 0
   for (a = 1; a < ARGC; a++) {
     d = ARGV[a]
     base = d; sub(/.*\//, "", base)
     if (d ~ /\.service$/) {
+      # A unit has a cgroup under system.slice while it runs.
+      nsvc++
       mx = rd(d "/memory.max")
       if (RDN == 0 || mx !~ /^[0-9]+$/ || mx + 0 == 0) continue
       cur = rd(d "/memory.current") + 0
@@ -248,6 +253,19 @@ BEGIN {
   if ((cmd | getline hdr) > 0 && (cmd | getline line) > 0) { split(line, f, " "); dtot = f[2] * 1024; dused = f[3] * 1024 }
   close(cmd)
 
+  # The counts of what this generation runs. Nix wrote the file, but each line is still checked:
+  # a short lowercase key and a whole number, 24 lines at most, the first of a key wins.
+  inv_json = ""; ninv = 0
+  if (INVENTORY != "") {
+    nl = split(rd(INVENTORY), L, "\n")
+    for (i = 1; i <= nl && ninv < 24; i++) {
+      if (split(L[i], f, " ") != 2 || f[1] !~ /^[a-z][a-z_]*$/ || length(f[1]) > 24 || f[2] !~ /^[0-9]+$/ || length(f[2]) > 9) continue
+      if (f[1] in seen) continue
+      seen[f[1]] = 1; ninv++
+      inv_json = inv_json (ninv > 1 ? "," : "") sprintf("\"%s\":%d", f[1], f[2])
+    }
+  }
+
   top_mem = plist(pmem, np)
   top_cpu = plist(pcpu, np)
 
@@ -263,7 +281,9 @@ BEGIN {
   if (sock != "") printf "\"sockets\":{%s},", sock
   if (has_dio) printf "\"disk_io\":{\"read_bps\":%.0f,\"write_bps\":%.0f,\"read_total\":%.0f,\"write_total\":%.0f},", rate(drd, pd_rd, has_pd), rate(dwr, pd_wr, has_pd), drd, dwr
   if (psi != "") printf "\"pressure\":{%s},", psi
-  printf "\"procs_total\":%d,\"top_mem\":[%s],\"top_cpu\":[%s],\"units\":[%s]}\n", np, top_mem, top_cpu, unit_json
+  printf "\"procs_total\":%d,\"services_running\":%d,", np, nsvc
+  if (INVENTORY != "") printf "\"inventory\":{%s},", inv_json
+  printf "\"top_mem\":[%s],\"top_cpu\":[%s],\"units\":[%s]}\n", top_mem, top_cpu, unit_json
 }
 ' "$@" > "$tmp_out"
 

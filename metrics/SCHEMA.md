@@ -30,6 +30,9 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
   "pressure": { "cpu": { "some": 1.2, "full": 0 }, "memory": { "some": 0, "full": 0 },
                 "io": { "some": 0.4, "full": 0.3 } },
   "procs_total": 127,
+  "services_running": 58,
+  "inventory": { "agents": 9, "apps": 0, "mcp": 2, "packages": 161, "plugins": 20, "rigs": 4,
+                 "sites": 7, "timers": 14, "skills": 60, "skills_bundled": 44 },
   "top_mem": [ { "pid": 826708, "name": "hermes", "user": "hermes", "rss": 431386624, "cpu_pct": 0.3 } ],
   "top_cpu": [ { "pid": 826708, "name": "hermes", "user": "hermes", "rss": 431386624, "cpu_pct": 0.3 } ],
   "units": [ { "unit": "hermes-agent.service", "mem": 432435200, "max": 8589934592, "peak": 448835584 } ]
@@ -65,6 +68,8 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
 | `disk_io.read_total`, `disk_io.write_total` | The same since boot. `disk_io` is absent when no whole disk is listed. |
 | `pressure.cpu`, `.memory`, `.io` | Pressure stall information: `some` (and `full`) is the `avg10` of `/proc/pressure/<name>`, the percent of the last 10 s that some (all) tasks waited for it. Absent when the kernel has no PSI. |
 | `procs_total` | Processes read this run. It counts kernel threads. |
+| `services_running` | Services that have a cgroup under `system.slice`, that is, that run now. |
+| `inventory` | What the deployed configuration declares, counted by Nix at build time (docs/METRICS.md, "The inventory"): an object of whole numbers, at most 24 keys. Absent when `METRICS_INVENTORY` is not set; `{}` when its file is empty or missing. The collector keeps a line only when its key is lowercase letters and `_` (24 characters at most) and its count is a whole number of 9 digits at most. |
 | `top_mem` | The 10 processes with the largest resident memory, biggest first; a tie goes to the lower pid. |
 | `top_cpu` | The 10 processes with the largest `cpu_pct`, same order rule. |
 | `top_*[].pid` | Process id. |

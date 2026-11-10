@@ -22,6 +22,37 @@ let
   '';
   collect = script "metrics-collect" ./metrics/collect.sh;
   pull = script "metrics-pull" ./metrics/pull.sh;
+  # What this generation runs, counted once at build time (docs/METRICS.md, "The inventory"). The
+  # names come from the evaluated config; a module that this host does not import counts 0. The
+  # skills are the SKILL.md files in Hermes's skill folders and plugins, so they need a build.
+  hermes = config.services.hermes-agent or { };
+  hermesOn = hermes.enable or false;
+  rigSpecs = config.environment.etc."openrig/specs".source or null;
+  dirsIn = path: lib.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir path));
+  counts = {
+    apps = lib.length (lib.attrNames config.piabrota.loco.apps);
+    sites = lib.length (lib.attrNames (lib.filterAttrs (name: vhost: name != "_" && vhost.globalRedirect == null)
+      (lib.optionalAttrs config.services.nginx.enable config.services.nginx.virtualHosts)));
+    rigs = if (config.piabrota.openrig.enable or false) && rigSpecs != null then lib.length (dirsIn (rigSpecs + "/rigs")) else 0;
+    agents =
+      if (config.piabrota.openrig.enable or false) && rigSpecs != null
+      then lib.length (lib.filter (n: !(lib.hasSuffix "shared" n)) (dirsIn (rigSpecs + "/agents"))) else 0;
+    plugins = if hermesOn then lib.length hermes.settings.plugins.enabled else 0;
+    mcp = if hermesOn then lib.length (lib.attrNames hermes.mcpServers) else 0;
+    packages = lib.length config.environment.systemPackages;
+    timers = lib.length (lib.attrNames (lib.filterAttrs (_: timer: timer.enable) config.systemd.timers));
+  };
+  skillDirs = lib.optionals hermesOn (map toString (hermes.settings.skills.external_dirs ++ hermes.extraPlugins));
+  countSkills = dirs: ''$(for d in ${lib.escapeShellArgs dirs}; do find -L "$d" -name SKILL.md -type f; done | sort -u | wc -l)'';
+  inventory = pkgs.runCommand "metrics-inventory" { allowedReferences = [ ]; } ''
+        {
+          ${lib.concatStrings (lib.mapAttrsToList (key: n: "echo ${key} ${toString n}
+    ") counts)}
+          echo skills ${countSkills skillDirs}
+          echo skills_bundled ${countSkills cfg.inventory.bundledSkillDirs}
+        } > $out
+  '';
+
   page = pkgs.runCommand "metrics-page" { } ''
     install -D -m 0644 ${./metrics/index.html} $out/index.html
   '';
@@ -314,6 +345,16 @@ in
       description = "What the page calls the host. Empty: the name.";
     };
 
+    inventory.bundledSkillDirs = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = lib.literalExpression ''[ "''${hermes-agent}/skills" ]'';
+      description = ''
+        Folders of skills that ship inside an agent, counted apart as `skills_bundled`. hermes.nix
+        adds Hermes's own. The skills of Hermes's skill folders and plugins are counted by themselves.
+      '';
+    };
+
     collector = {
       enable = mkEnableOption "the collector timer: metrics/collect.sh writes this host's file";
       interval = mkOption {
@@ -398,6 +439,7 @@ in
           METRICS_INTERVAL = toString cfg.collector.interval;
           OUT_DIR = outDir;
           STATE_DIR = stateDir;
+          METRICS_INVENTORY = "${inventory}";
         };
         serviceConfig = sandbox // {
           ExecStart = "${collect}/bin/metrics-collect";
