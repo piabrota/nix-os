@@ -20,7 +20,15 @@ It shows, for each host:
 - The systemd units under `system.slice` that have a numeric `MemoryMax` (hermes-agent 8G,
   hermes-backend 2G, openrig 2G, pgx 256M...), at most 12, sorted by memory over max. `memory.peak`
   is shown when the kernel has it.
-- The total of processes (it counts kernel threads).
+- The total of processes (it counts kernel threads), threads, tasks running and blocked, forks
+  and context switches per second, and open files.
+- The memory detail: page cache, buffers, shmem and dirty pages.
+- Network in and out per second (every interface but `lo`), TCP sockets (in use, TIME-WAIT) and UDP
+  sockets.
+- Disk read and write per second, summed over whole disks (`sda`, `vda`, `nvme0n1`; no
+  partitions).
+- Pressure stall (PSI) of CPU, memory and IO: the share of the last 10 s that tasks waited
+  (`some` / `full`).
 
 How to read the numbers:
 
@@ -30,7 +38,7 @@ How to read the numbers:
 - On the first run after boot the page says `warming` and CPU is 0.
 
 It does not show: history beyond the samples in the tab (samples come per new file, every 10 s, so
-about 10 minutes), disks other than `/`, network, disk or IO per process, alerts, command lines.
+about 10 minutes), disk usage of filesystems other than `/`, network or IO per process or per interface, alerts, command lines.
 
 ## The two hosts and who runs what
 
@@ -150,7 +158,8 @@ Both units run as `metrics` with:
 
 - `ProtectSystem=strict`, with `ReadWritePaths` of the two `/run` folders only.
 - `MemoryMax=64M`, `NoNewPrivileges`, an empty capability set and a syscall filter.
-- `PrivateNetwork` on the collector.
+- `PrivateNetwork` on the collector. So it reads the network of PID 1 (`/proc/1/net/dev` and
+  `sockstat`), readable by any user, not its own empty `/proc/net`.
 - `LogLevelMax=warning`, so a run does not write journal lines.
 
 NOT used: `ProcSubset=pid`, `ProtectProc=invisible` and `PrivateUsers`, because they hide what the

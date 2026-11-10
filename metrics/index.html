@@ -78,7 +78,7 @@ footer{margin-top:24px;color:var(--muted);font-size:13px}
 </header>
 <noscript><p class="none">This page needs JavaScript to draw the numbers.</p></noscript>
 <div class="grid" id="grid"></div>
-<footer id="foot">CPU % of a process is a share of one vCPU, averaged over the last interval. The lists show 10 processes. A limit shows only for units that have a MemoryMax.</footer>
+<footer id="foot">CPU % of a process is a share of one vCPU, averaged over the last interval. The lists show 10 processes. A limit shows only for units that have a MemoryMax. Rates are averages over the last interval; pressure is the share of the last 10 s that tasks stalled (some / full).</footer>
 </main>
 <script>
 "use strict";
@@ -133,15 +133,21 @@ function build(host) {
   head.appendChild(h); head.appendChild(pill); card.appendChild(head);
   var age = el("p", "age", "no data yet"); card.appendChild(age);
   var body = el("div", "body"); card.appendChild(body);
-  var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"), disk: fact("Disk /") };
+  var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"),
+    threads: fact("Threads"), run: fact("Running / blocked"), forks: fact("Forks / s"), ctxt: fact("Ctx switches / s"), fds: fact("Open files"), disk: fact("Disk /") };
   for (var k in f) facts.appendChild(f[k].root);
   body.appendChild(facts);
   var cpu = meter("CPU"), mem = meter("Memory"), cores = el("div", "cores"), swap = el("p", "note");
   body.appendChild(cpu.root); body.appendChild(cores); body.appendChild(mem.root); body.appendChild(swap);
+  body.appendChild(el("h3", "", "Network, disk I/O, pressure"));
+  var io = el("dl", "facts"), g = { rx: fact("Net in"), tx: fact("Net out"), rd: fact("Disk read"), wr: fact("Disk write"),
+    tcp: fact("TCP / TIME-WAIT"), udp: fact("UDP sockets"), pcpu: fact("CPU pressure"), pmem: fact("Mem pressure"), pio: fact("IO pressure") };
+  for (var q in g) io.appendChild(g[q].root);
+  body.appendChild(io);
   body.appendChild(el("h3", "", "Top by memory")); var tm = el("div"); body.appendChild(tm);
   body.appendChild(el("h3", "", "Top by CPU")); var tc = el("div"); body.appendChild(tc);
   body.appendChild(el("h3", "", "Units against their limit")); var tu = el("div"); body.appendChild(tu);
-  return { card: card, h: h, pill: pill, age: age, f: f, cpu: cpu, mem: mem, cores: cores, swap: swap, tm: tm, tc: tc, tu: tu,
+  return { card: card, h: h, pill: pill, age: age, f: f, g: g, cpu: cpu, mem: mem, cores: cores, swap: swap, tm: tm, tc: tc, tu: tu,
            hist: { cpu: [], mem: [] }, data: null, offset: 0, lastTs: null, error: "no data yet" };
 }
 
@@ -202,8 +208,25 @@ function draw(v) {
     var s = el("i"), b = el("b"); b.style.height = Math.max(0, Math.min(100, num(c) || 0)) + "%";
     s.title = "vCPU " + i + ": " + pct(c, 1); s.appendChild(b); v.cores.appendChild(s);
   });
-  var st = num(mem.swap_total);
-  v.swap.textContent = st ? "Swap " + bytes(mem.swap_used) + " of " + bytes(st) : "No swap.";
+  var st = num(mem.swap_total), md = obj(d.mem_detail);
+  v.swap.textContent = (st ? "Swap " + bytes(mem.swap_used) + " of " + bytes(st) + "." : "No swap.") +
+    (num(md.cached) !== null ? " Cache " + bytes(md.cached) + ", buffers " + bytes(md.buffers) + ", shmem " + bytes(md.shmem) + ", dirty " + bytes(md.dirty) + "." : "");
+
+  var tk = obj(d.tasks), net = obj(d.net), dio = obj(d.disk_io), so = obj(d.sockets), ps = obj(d.pressure);
+  var n0 = function (x, dg) { x = num(x); return x === null ? "–" : x.toFixed(dg || 0); };
+  var rate = function (x) { return num(x) === null ? "–" : bytes(x) + "/s"; };
+  var psi = function (p) { p = obj(p); return num(p.some) === null ? "–" : pct(p.some, 1) + (num(p.full) !== null ? " / " + pct(p.full, 1) : ""); };
+  v.f.threads.dd.textContent = n0(tk.threads);
+  v.f.run.dd.textContent = n0(tk.running) + " / " + n0(tk.blocked);
+  v.f.forks.dd.textContent = n0(tk.forks_per_s, 1);
+  v.f.ctxt.dd.textContent = n0(tk.ctxt_per_s);
+  v.f.fds.dd.textContent = n0(d.fds_open);
+  v.g.rx.dd.textContent = rate(net.rx_bps); v.g.tx.dd.textContent = rate(net.tx_bps);
+  v.g.rx.dd.title = "since boot " + bytes(net.rx_total); v.g.tx.dd.title = "since boot " + bytes(net.tx_total);
+  v.g.rd.dd.textContent = rate(dio.read_bps); v.g.wr.dd.textContent = rate(dio.write_bps);
+  v.g.tcp.dd.textContent = n0(so.tcp) + " / " + n0(so.tcp_tw);
+  v.g.udp.dd.textContent = n0(so.udp);
+  v.g.pcpu.dd.textContent = psi(ps.cpu); v.g.pmem.dd.textContent = psi(ps.memory); v.g.pio.dd.textContent = psi(ps.io);
 
   table(v.tm, PROC_COLS, procs(d.top_mem), "No process list in the data.");
   table(v.tc, PROC_COLS, procs(d.top_cpu), "No process list in the data.");

@@ -19,7 +19,15 @@ Mostra, por host:
 - As unidades do systemd sob `system.slice` que têm `MemoryMax` numérico (hermes-agent 8G,
   hermes-backend 2G, openrig 2G, pgx 256M...), no máximo 12, em ordem de memória sobre o máximo.
   O `memory.peak` aparece quando o kernel tem.
-- O total de processos (conta as threads do kernel).
+- O total de processos (conta as threads do kernel), threads, tarefas rodando e bloqueadas, forks
+  e trocas de contexto por segundo, e arquivos abertos.
+- O detalhe da memória: cache de páginas, buffers, shmem e páginas sujas (dirty).
+- Rede de entrada e de saída por segundo (todas as interfaces menos `lo`), sockets TCP (em uso,
+  TIME-WAIT) e sockets UDP.
+- Leitura e escrita de disco por segundo, somadas sobre os discos inteiros (`sda`, `vda`,
+  `nvme0n1`; sem partições).
+- Pressão (PSI) de CPU, memória e IO: a parte dos últimos 10 s em que tarefas esperaram
+  (`some` / `full`).
 
 Como ler os números:
 
@@ -29,7 +37,7 @@ Como ler os números:
 - Na primeira rodada depois do boot a página diz `warming` e a CPU é 0.
 
 Não mostra: histórico além das amostras da aba (as amostras vêm por arquivo novo, a cada 10 s, então
-são uns 10 minutos), outros discos além de `/`, rede, disco ou IO por processo, alertas, linhas de
+são uns 10 minutos), uso de outros sistemas de arquivos além de `/`, rede ou IO por processo ou por interface, alertas, linhas de
 comando.
 
 ## Os dois hosts e quem roda o quê
@@ -151,7 +159,8 @@ As duas unidades rodam como `metrics` com:
 
 - `ProtectSystem=strict`, com `ReadWritePaths` só das duas pastas em `/run`.
 - `MemoryMax=64M`, `NoNewPrivileges`, conjunto de capabilities vazio e filtro de syscalls.
-- `PrivateNetwork` no coletor.
+- `PrivateNetwork` no coletor. Por isso ele lê a rede do PID 1 (`/proc/1/net/dev` e `sockstat`),
+  que qualquer usuário lê, e não o seu próprio `/proc/net` vazio.
 - `LogLevelMax=warning`, para a rodada não escrever linhas no journal.
 
 NÃO usamos `ProcSubset=pid`, `ProtectProc=invisible` e `PrivateUsers`, porque escondem o que o
