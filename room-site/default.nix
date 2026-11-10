@@ -6,15 +6,15 @@
 { buildNpmPackage, fetchFromGitHub, nodejs_22 }:
 buildNpmPackage {
   pname = "piabrota-room";
-  version = "0-unstable-2026-11-09";
+  version = "0-unstable-2026-11-10";
   src = fetchFromGitHub {
     owner = "piabrota";
     repo = "room";
-    rev = "780a289c5e14e61ce62f93dcd4070b434f9a3ae7";
-    hash = "sha256-QUAcZg8IJVwUKCdTfhthuYSCyu4Zwk4mmrygclZbzwI=";
+    rev = "385da0c57331dc51817edbe88110ba2c3b5fe76f";
+    hash = "sha256-KFLhTfvenw3cTvbio87DHIuaSf1JuOZ941VwsErylWg=";
   };
   # The hash of package-lock.json's packages: `nix run nixpkgs#prefetch-npm-deps -- package-lock.json`.
-  npmDepsHash = "sha256-jDpvclK84fuO9jmN5/ehHmWjLID/bgsGHW3nGBfVifk=";
+  npmDepsHash = "sha256-/uqbxk0gN7bIosBtSKr8xF6XG4H3TaJf9LGADFd2muQ=";
   # The room's flake gives Node 22 to its developers; build with the same.
   nodejs = nodejs_22;
 
