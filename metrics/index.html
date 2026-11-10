@@ -78,7 +78,7 @@ footer{margin-top:24px;color:var(--muted);font-size:13px}
 </header>
 <noscript><p class="none">This page needs JavaScript to draw the numbers.</p></noscript>
 <div class="grid" id="grid"></div>
-<footer id="foot">CPU % of a process is a share of one vCPU, averaged over the last interval. The lists show 10 processes. A limit shows only for units that have a MemoryMax. Rates are averages over the last interval; pressure is the share of the last 10 s that tasks stalled (some / full).</footer>
+<footer id="foot">CPU % of a process is a share of one vCPU, averaged over the last interval. The lists show 10 processes. A limit shows only for units that have a MemoryMax. Rates are averages over the last interval; pressure is the share of the last 10 s that tasks stalled (some / full). The inventory is what the deployed configuration declares, counted when it was built.</footer>
 </main>
 <script>
 "use strict";
@@ -133,7 +133,7 @@ function build(host) {
   head.appendChild(h); head.appendChild(pill); card.appendChild(head);
   var age = el("p", "age", "no data yet"); card.appendChild(age);
   var body = el("div", "body"); card.appendChild(body);
-  var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"),
+  var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"), svcs: fact("Services up"),
     threads: fact("Threads"), run: fact("Running / blocked"), forks: fact("Forks / s"), ctxt: fact("Ctx switches / s"), fds: fact("Open files"), disk: fact("Disk /") };
   for (var k in f) facts.appendChild(f[k].root);
   body.appendChild(facts);
@@ -144,10 +144,11 @@ function build(host) {
     tcp: fact("TCP / TIME-WAIT"), udp: fact("UDP sockets"), pcpu: fact("CPU pressure"), pmem: fact("Mem pressure"), pio: fact("IO pressure") };
   for (var q in g) io.appendChild(g[q].root);
   body.appendChild(io);
+  body.appendChild(el("h3", "", "What this generation runs")); var inv = el("dl", "facts"); body.appendChild(inv);
   body.appendChild(el("h3", "", "Top by memory")); var tm = el("div"); body.appendChild(tm);
   body.appendChild(el("h3", "", "Top by CPU")); var tc = el("div"); body.appendChild(tc);
   body.appendChild(el("h3", "", "Units against their limit")); var tu = el("div"); body.appendChild(tu);
-  return { card: card, h: h, pill: pill, age: age, f: f, g: g, cpu: cpu, mem: mem, cores: cores, swap: swap, tm: tm, tc: tc, tu: tu,
+  return { card: card, h: h, pill: pill, age: age, f: f, g: g, cpu: cpu, mem: mem, cores: cores, swap: swap, inv: inv, tm: tm, tc: tc, tu: tu,
            hist: { cpu: [], mem: [] }, data: null, offset: 0, lastTs: null, error: "no data yet" };
 }
 
@@ -184,6 +185,18 @@ function procs(list) {
     return [str(p.name) + " " + str(p.pid), str(p.user), bytes(p.rss), pct(p.cpu_pct, 1)];
   });
 }
+// The inventory keys the page names, in its order; a key it does not know is not shown.
+var INV = [["apps", "Loco apps"], ["sites", "Sites"], ["rigs", "Rigs"], ["agents", "Rig agents"], ["skills", "Skills"],
+  ["skills_bundled", "Bundled skills"], ["plugins", "Plugins"], ["mcp", "MCP servers"], ["packages", "Packages"], ["timers", "Timers"]];
+function inventory(into, d) {
+  var o = obj(d), n = 0;
+  into.replaceChildren();
+  INV.forEach(function (k) {
+    if (num(o[k[0]]) === null) return;
+    var f = fact(k[1]); f.dd.textContent = String(o[k[0]]); into.appendChild(f.root); n++;
+  });
+  if (!n) into.appendChild(el("p", "none", "No inventory in the data."));
+}
 var PROC_COLS = [{ title: "Process", cls: "" }, { title: "User", cls: "u" }, { title: "RSS", cls: "n" }, { title: "CPU", cls: "n" }];
 var UNIT_COLS = [{ title: "Unit", cls: "" }, { title: "Mem", cls: "n" }, { title: "Limit", cls: "n" }, { title: "Use", cls: "u" }];
 
@@ -194,6 +207,7 @@ function draw(v) {
   v.f.up.dd.textContent = dur(d.uptime_s);
   v.f.load.dd.textContent = [0, 1, 2].map(function (i) { return num(load[i]) !== null ? load[i].toFixed(2) : "–"; }).join(" ");
   v.f.procs.dd.textContent = num(d.procs_total) !== null ? String(d.procs_total) : "–";
+  v.f.svcs.dd.textContent = num(d.services_running) !== null ? String(d.services_running) : "–";
   v.f.disk.dd.textContent = bytes(disk.root_used) + " / " + bytes(disk.root_total);
 
   var cp = num(cpu.total_pct), mp = ratio(mem.used, mem.total);
@@ -228,6 +242,7 @@ function draw(v) {
   v.g.udp.dd.textContent = n0(so.udp);
   v.g.pcpu.dd.textContent = psi(ps.cpu); v.g.pmem.dd.textContent = psi(ps.memory); v.g.pio.dd.textContent = psi(ps.io);
 
+  inventory(v.inv, d.inventory);
   table(v.tm, PROC_COLS, procs(d.top_mem), "No process list in the data.");
   table(v.tc, PROC_COLS, procs(d.top_cpu), "No process list in the data.");
   table(v.tu, UNIT_COLS, arr(d.units).slice(0, 12).map(function (u) {

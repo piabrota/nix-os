@@ -42,7 +42,7 @@ The status is that of the first request on 2026-11-05 (`metrics` and `room` on 2
 |---|---|---|---|---|
 | [`hermes.piabrota.art`](https://hermes.piabrota.art/) | The Hermes dashboard. 401 without the login | KVM 4 | basic auth | `hermes-web.nix`, [`docs/HERMES.md`](docs/HERMES.md) |
 | [`rig.piabrota.art`](https://rig.piabrota.art/) | The OpenRig web UI. 401 without the login. Its terminal can type into the seats | KVM 4 | basic auth, the dashboard's login file | `openrig.nix`, [`docs/OPENRIG.md`](docs/OPENRIG.md) |
-| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | CPU, memory, disk and top processes of both hosts. Public, with `robots.txt` and bot blocks | KVM 4 | public | `metrics.nix`, [`docs/METRICS.md`](docs/METRICS.md) |
+| [`metrics.piabrota.art`](https://metrics.piabrota.art/) | CPU, memory, disk, top processes and running services of both hosts, and what each one runs (apps, sites, rigs, skills, plugins, MCP servers). Public, with `robots.txt` and bot blocks | KVM 4 | public | `metrics.nix`, [`docs/METRICS.md`](docs/METRICS.md) |
 | [`piabrota.art`](https://piabrota.art) | 301 to `https://www.piabrota.art/`, same path | KVM 1 | public | `site.nix` |
 | [`www.piabrota.art`](https://www.piabrota.art/) | The site, with `/hermes/` (Hermes's configuration as plain YAML, no secret), [`/figures/`](https://www.piabrota.art/figures/), [`/llms.txt`](https://www.piabrota.art/llms.txt) (an index for AI agents, from `mockups/data.nix`), `/notes` (one password) and `/nixos` (302 to this repository). `/skills/` answers 301 to `skills.piabrota.art` | KVM 1 | public | `site.nix`, `apps/notes/`, `figures-site/` |
 | [`skills.piabrota.art`](https://skills.piabrota.art/) | The skills website, from [piabrota/skills](https://github.com/piabrota/skills) at a pinned commit. `www.piabrota.art/skills/` redirects to it. Not yet answering: its DNS record comes first | KVM 1 | public | `site.nix`, `skills-site/` |
@@ -84,7 +84,7 @@ The web UI of OpenRig, the engine of the software factory, served by the unit `o
 
 ### metrics.piabrota.art
 
-A page with processes, memory and vCPU of both hosts. No agent and no database: a timer runs `metrics/collect.sh` (sh and awk) on each host, and one static page reads the files ([`metrics.nix`](metrics.nix), [`metrics/`](metrics/)).
+A page with processes, memory and vCPU of both hosts, and a count of what each generation runs (Loco apps, sites, rigs, skills, plugins, MCP servers, packages, timers), made by Nix at build time. No agent and no database: a timer runs `metrics/collect.sh` (sh and awk) on each host, and one static page reads the files ([`metrics.nix`](metrics.nix), [`metrics/`](metrics/)).
 
 | Option | Value here | Meaning |
 |---|---|---|

@@ -474,6 +474,10 @@ in
     addToSystemPackages = true;
   };
 
+  # The metrics page counts the skills that ship inside Hermes apart from the ones chosen here
+  # (metrics.nix, "inventory"): the skills/ folder of its source, which its package ships.
+  piabrota.metrics.inventory.bundledSkillDirs = [ "${hermes-agent}/skills" ];
+
   # omp-tasks: the task files of the hermes-omp skill. feeds: activation's `install -D` of
   # feeds/feeds.toml makes the directory as root, 2755, and feeds is not a state directory of the
   # module, so the feed script could not write out/ or state.json. `d` also fixes the owner and the
