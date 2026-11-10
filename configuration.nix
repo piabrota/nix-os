@@ -14,6 +14,8 @@
     ./observer.nix
     ./loco.nix
     ./site.nix
+    # A failed ACME order retries every 20 minutes, not once a day (docs/SITE.md, "Certificates").
+    ./acme-retry.nix
     # A Postgres-compatible database (docs/PGX.md), off until a host turns it on.
     ./pgx.nix
     # Live metrics (docs/METRICS.md): a collector, a page and a pull, off until a host turns them on.
