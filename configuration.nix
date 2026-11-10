@@ -76,6 +76,7 @@
     curl
     wget
     nano
+    openssl    # openssl x509: scripts/cert-renew.sh reads the certificates with it
   ];
   systemd.services.qemu-guest-agent.environment.PATH =
     lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/bin";

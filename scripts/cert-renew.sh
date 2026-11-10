@@ -32,6 +32,10 @@ done
 if [ "$dry" = 0 ] && [ "$(id -u)" != 0 ]; then
   echo "cert-renew: run it as root (sudo), or with --dry-run" >&2; exit 2
 fi
+# Without openssl every check below would fail and read as "expires": stop instead.
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "cert-renew: openssl is not on this box's PATH (configuration.nix installs it)" >&2; exit 2
+fi
 if [ -z "$names" ]; then
   for d in "$acme"/*/; do
     n=$(basename "$d")
