@@ -4,7 +4,7 @@ description: Work with Figma .fig design files and the running OpenPencil editor
 ---
 
 > Vendored from [open-pencil/open-pencil](https://github.com/open-pencil/open-pencil/blob/24461adec7073312d460d76f08f069de18e4fb78/skills/open-pencil/SKILL.md) at `24461adec707` (MIT, see
-> `.claude/skills/LICENSES/`), with its other files. Only this note was added; the text below is the upstream's.
+> `.agents/skills/LICENSES/`), with its other files. Only this note was added; the text below is the upstream's.
 >
 > In this repo: `.mcp.json` declares the `open-pencil` server (`@open-pencil/mcp@0.16.0` through `npx`, on the machine
 > where the agent runs, never on the VPS), limited to `site/design/`. Draft or inspect a design there, then write it in

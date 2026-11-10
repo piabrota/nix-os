@@ -7,7 +7,7 @@ description: >-
 ---
 
 > Vendored from [ryan4yin/nix-config](https://github.com/ryan4yin/nix-config/blob/497fabbf9206d8befe2cd70aeaefb71aea332b96/.agents/skills/nix-config-update/SKILL.md) at `497fabbf9206` (MIT, see
-> `.claude/skills/LICENSES/`). Only this note was added; the text below is the upstream's.
+> `.agents/skills/LICENSES/`). Only this note was added; the text below is the upstream's.
 >
 > In this repo: one host, `piabrota`, a live Hostinger VPS, and no `just eval-host` / `build-host` / `test` recipes. Eval: `nix flake check --no-build --no-update-lock-file`; one option: `nix eval .#nixosConfigurations.piabrota.config.<path>`; build: `just build`; compare: `nix run nixpkgs#dix -- <old> <new>`. The deploy is the merge to `main` (deploy-rs, magic rollback); an agent never deploys and never runs `nixos-rebuild` or `just deploy` (AGENTS.md). Recipes and paths below that do not exist here (mihomo, Colmena, MicroVM, WORKAROUNDS.md, mysecrets) are the upstream repo's. `nix flake update` goes in its own PR (AGENTS.md, "Build").
 

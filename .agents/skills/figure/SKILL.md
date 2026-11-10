@@ -22,7 +22,7 @@ pt-BR in the pt-BR wiki pages.
    [`archify` skill](../archify/SKILL.md) for the schema of each `diagram_type`), and its pt-BR
    mirror as `docs/archify/pt/<slug>.json`: the same ids and layout, the labels translated,
    `meta.locale` `pt-BR`. At most about 10 boxes, short labels, no jargon.
-3. **Run `just figure`.** The vendored archify (`.claude/skills/archify`, the pinned submodule
+3. **Run `just figure`.** The vendored archify (`.agents/skills/archify`, the pinned submodule
    `vendor/archify`) validates and checks each source (`finalize`: schema, layout, routes, real
    browser); piabrota's look (`docs/archify/piabrota.css`, from piabrota/.github) is set over it;
    headless Chrome takes `docs/img/<slug>.png` (`docs/img/pt/<slug>.png`); the same PNG is copied

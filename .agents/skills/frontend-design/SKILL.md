@@ -5,7 +5,7 @@ license: Complete terms in LICENSE.txt
 ---
 
 > Vendored from [anthropics/skills](https://github.com/anthropics/skills/blob/ca45fc496a3436251f191354091d557da31c15b5/skills/frontend-design/SKILL.md) at `ca45fc496a34` (Apache-2.0, see
-> `.claude/skills/LICENSES/`). Only this note was added; the text below is the upstream's.
+> `.agents/skills/LICENSES/`). Only this note was added; the text below is the upstream's.
 >
 > In this repo: the page is `site/` (`site.nix`, docs/SITE.md), Gleam and Lustre prerendered at build time to static
 > HTML and CSS served from the store. No JavaScript on the page. The look is picasso's, in piabrota's colours, and its

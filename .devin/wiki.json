@@ -130,7 +130,7 @@
     },
     {
       "title": "Claude and MCP setup",
-      "purpose": ".claude/skills (the vendored skills and their licences), .mcp.json (mcp-nixos, OpenPencil, DeepWiki) and docs/CLAUDE_PROJECT.md.",
+      "purpose": ".agents/skills (the vendored skills and their licences), .mcp.json (mcp-nixos, OpenPencil, DeepWiki) and docs/CLAUDE_PROJECT.md.",
       "parent": "Working on this repository"
     },
     {

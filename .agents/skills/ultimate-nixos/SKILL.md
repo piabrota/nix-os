@@ -4,7 +4,7 @@ description: "Comprehensive Nix ecosystem guidance covering NixOS system configu
 ---
 
 > Vendored from [kaynetik/skills](https://github.com/kaynetik/skills/blob/3ecbe1424cd5357bbb171e19cf27e2fc8dd83994/ultimate-nixos/SKILL.md) at `3ecbe1424cd5` (MIT, see
-> `.claude/skills/LICENSES/`), with its `reference/` folder. Only this note was added; the text below is the upstream's.
+> `.agents/skills/LICENSES/`), with its `reference/` folder. Only this note was added; the text below is the upstream's.
 >
 > In this repo: one NixOS 26.05 host, `nixosConfigurations.piabrota`, a small VPS; prefer that release's option names, and judge every change by its closure size (AGENTS.md, "Resource budget").
 

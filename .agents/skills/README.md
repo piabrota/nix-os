@@ -1,7 +1,8 @@
 # Vendored agent skills
 
-Community skills for agentic Nix work and for the static site in `site/` (Gleam, prerendered), copied so Claude Code (and any tool that reads
-`.claude/skills/*/SKILL.md`) uses them here. They are the ones
+Community skills for agentic Nix work and for the static site in `site/` (Gleam, prerendered), copied so any agent that reads
+`.agents/skills/*/SKILL.md` uses them here. `.claude/skills` is a link to this folder, because
+Claude Code reads skills only from `.claude/skills`. They are the ones
 [picasso](https://github.com/h0ffmann/picasso/tree/main/.claude/skills) already vets that fit a
 single small VPS. Each `SKILL.md` is the upstream file with one added note under its front matter:
 where it came from, and what differs in this repo. AGENTS.md wins wherever a skill disagrees with it.

@@ -10,7 +10,7 @@ metadata:
 > Vendored from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/blob/1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62/skills/web-design-guidelines/SKILL.md) at `1a2c79d4e6c4` (MIT), with the
 > guidelines it fetches copied to `references/command.md` from
 > [vercel-labs/web-interface-guidelines](https://github.com/vercel-labs/web-interface-guidelines/blob/434b7f91364665f2f733b310ec54809bf8f37937/command.md) at `434b7f913646` (MIT, see
-> `.claude/skills/LICENSES/`). Only this note was added; the text below is the upstream's.
+> `.agents/skills/LICENSES/`). Only this note was added; the text below is the upstream's.
 >
 > In this repo: read `references/command.md` instead of fetching the URL below. Everything here is pinned, and a rule
 > list that changes on `main` between two reviews is not. The rules about React, hydration and forms do not apply to
