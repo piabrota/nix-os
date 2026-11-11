@@ -88,6 +88,14 @@ deploy user="deploy" node="piabrota":
 room-pin rev="":
     sh scripts/room-pin.sh {{rev}}
 
+# merge open PRs, in this order, onto origin/main in git's object store only, and name each that conflicts (the pr-stack skill); `just pr-stack-plan 221 222 223`
+pr-stack-plan +prs:
+    sh scripts/pr-stack.sh plan {{prs}}
+
+# a stack branch is ready for one merge commit: it contains origin/main and every PR head (the pr-stack skill); `just pr-stack-check claude/nix-os-pr-stack 221 222 223`
+pr-stack-check branch +prs:
+    sh scripts/pr-stack.sh check {{branch}} {{prs}}
+
 # write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:
     art=$(nix build .#mu-art --no-link --print-out-paths) && \
