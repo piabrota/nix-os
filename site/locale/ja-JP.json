@@ -59,6 +59,7 @@
   "commits.tip": "既定（きてい）ブランチの コミットの 数です。{date} の 時点です。エージェントは ボットの アカウントか claude の アカウントです。人が エージェントの 助けで 作った コミットは 人間に 数えます。",
   "origin.own": "自分たち",
   "origin.personal": "個人",
+  "paper.title": "aiXiv の 論文",
   "work.title": "いっしょに 仕事を しましょう。",
   "work.text": "パートナーの 相談は こちらへ：",
   "fork.forked": "フォーク ",

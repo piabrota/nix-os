@@ -135,6 +135,9 @@ span.where { color: var(--muted); }
 .commits-label { margin-right: 4px; font: 600 11px/1.4 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
 /* The tile's link covers the tile; lift the line above it so its tooltip shows. */
 .tile .commits { position: relative; z-index: 1; align-self: flex-start; }
+.paper { position: relative; z-index: 1; align-self: flex-start; display: inline-flex; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font: 400 12px/1.4 var(--mono); color: var(--text); }
+.paper:hover { text-decoration: none; border-color: var(--text); }
+.paper-label { font: 600 12px/1.4 Inter, sans-serif; }
 
 .tiles { list-style: none; margin: 0; padding: 0; }
 .tile {
@@ -160,7 +163,7 @@ span.where { color: var(--muted); }
 /* The filled tiles: the wave model (in blue), the company chart, and the incubating project. */
 .tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
 .tile[data-name="ww3-gpu"] h4, .tile[data-name="mu"] h4, .tile[data-name="proof"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
-.tile[data-name="ww3-gpu"] .tile-tags span:not(.pill), .tile[data-name="ww3-gpu"] .pill, .tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill, .tile[data-name="proof"] .tile-tags span:not(.pill), .tile[data-name="proof"] .pill { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
+.tile[data-name="ww3-gpu"] .tile-tags span:not(.pill), .tile[data-name="ww3-gpu"] .pill, .tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill, .tile[data-name="proof"] .tile-tags span:not(.pill), .tile[data-name="proof"] .pill, .tile[data-name="ww3-gpu"] .paper, .tile[data-name="proof"] .paper { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
 .tile[data-name="ww3-gpu"] { background: var(--sea); border-color: var(--sea); }
 /* proof's logo is a transparent SVG with dark ink (light ink in dark mode). The filter turns every
    stroke white in both themes and keeps the background clear, so the red shows through. */

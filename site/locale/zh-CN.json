@@ -59,6 +59,7 @@
   "commits.tip": "默认分支上的提交数，截至 {date}。智能体：机器人账号或 claude 账号。人在智能体帮助下做的提交，算作人类。",
   "origin.own": "自有",
   "origin.personal": "个人",
+  "paper.title": "aiXiv 上的论文",
   "work.title": "与我们合作。",
   "work.text": "合作或贴牌请求：",
   "fork.forked": "fork 于 ",

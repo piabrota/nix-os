@@ -77,6 +77,8 @@ rec {
       licence = "MIT";
       pushed = "2026-11-11";
       site = "wave.piabrota.art";
+      # Its paper on aiXiv, "Wave models on GPUs" (aixiv.online/abs/2611.01104, read 2026-11-11).
+      paper = "https://aixiv.online/abs/2611.01104";
       state = "live";
     }
     {
@@ -290,6 +292,9 @@ rec {
       licence = "MPL-2.0";
       pushed = "2026-11-09";
       site = "proof.piabrota.art";
+      # Its paper on aiXiv, "A decision layer for contextual bandits, proved in Agda"
+      # (aixiv.online/abs/2611.01105, read 2026-11-11).
+      paper = "https://aixiv.online/abs/2611.01105";
       state = "live";
     }
     {
