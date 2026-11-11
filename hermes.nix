@@ -7,8 +7,8 @@
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
 { config, lib, pkgs, utils, hermes-agent, ... }:
 let
-  # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.0 is 2bd378e.
-  hermesVersion = "0.23.0";
+  # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.1 is 3b42157.
+  hermesVersion = "0.23.1";
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
   # Copied, not linked: a link into the input keeps its whole source (234 MiB) in the closure, and
@@ -524,7 +524,7 @@ in
   # The wrapper also hides systemd from the gateway: the gateway is a child of a shell, not of
   # systemd. Without --external-supervisor, Hermes v0.22.7 treated a reload as a graceful restart
   # and started a detached gateway, and the unit then looped (2026-11-04). The flag makes the
-  # gateway exit back to this wrapper instead. v0.23.0 still reads it (gateway/restart.py) and
+  # gateway exit back to this wrapper instead. v0.23.1 still reads it (gateway/restart.py) and
   # exits 75 on a reload and when another gateway serves the host.
   systemd.services.hermes-agent.serviceConfig = {
     ExecStart = lib.mkForce (

@@ -13,7 +13,7 @@
     # `nix flake update hermes-agent` and changes hermesVersion in hermes.nix. It keeps its own
     # nixpkgs (unstable): its build patches tools, patchelf among them, for that version, and
     # the patches fail on nixos-26.05's (2026-11-02).
-    hermes-agent.url = "github:NousResearch/hermes-agent/v0.23.0";
+    hermes-agent.url = "github:NousResearch/hermes-agent/v0.23.1";
   };
 
   outputs = { self, nixpkgs, deploy-rs, hermes-agent }:

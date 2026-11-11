@@ -11,7 +11,7 @@
 [![NixOS 26.05](https://img.shields.io/badge/NixOS-26.05-1682D4?style=flat-square&logo=nixos&logoColor=white)](docs/STRUCTURE.md#what-it-pins)
 [![license: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-1682D4?style=flat-square)](#license)
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1682D4?style=flat-square)](https://deepwiki.com/piabrota/nix-os)
-[![Hermes Agent v0.23.0](https://img.shields.io/badge/Hermes_Agent-v0.23.0-1682D4?style=flat-square)](docs/HERMES.md)
+[![Hermes Agent v0.23.1](https://img.shields.io/badge/Hermes_Agent-v0.23.1-1682D4?style=flat-square)](docs/HERMES.md)
 [![hosts: piabrota + piabrota2](https://img.shields.io/badge/hosts-piabrota_%2B_piabrota2-1682D4?style=flat-square)](https://www.piabrota.art/hosts)
 [![llms.txt: all the work of h0ffmann](https://img.shields.io/badge/llms.txt-all_the_work_of_h0ffmann-1682D4?style=flat-square)](llms.txt)
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/h0ffmann/badge.svg)](https://hub.xerj.org/contributors/h0ffmann)

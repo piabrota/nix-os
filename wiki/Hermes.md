@@ -23,7 +23,7 @@ muda o `hermes.nix`. Este wiki não copia esse YAML: leia lá.
 | | |
 |---|---|
 | Unidade | `hermes-agent`, um serviço systemd do módulo NixOS do flake do Hermes (o input `hermes-agent`, fixado no `flake.lock`). Modo nativo, sem contêiner. |
-| Versão | A release v0.23.0 (commit `2bd378e`, de 2026-11-05), fixada por tag no `flake.nix` e por commit no `flake.lock`. |
+| Versão | A release v0.23.1 (commit `3b42157`, de 2026-11-09), fixada por tag no `flake.nix` e por commit no `flake.lock`. |
 | Host | `piabrota2`, a VPS KVM 4 (`hosts/piabrota2/default.nix`). |
 | Pacote | `full`, o padrão do flake do Hermes, mais os extras `anthropic`, `messaging`, `mcp` e `ddgs`. |
 | Limites | `MemoryMax=8G` (metade da RAM) e `CPUWeight=50`: com os quatro núcleos ocupados, o sshd e as outras unidades têm o dobro da parcela de CPU do Hermes. |
