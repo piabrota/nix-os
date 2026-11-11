@@ -4,7 +4,7 @@
 
 # nix-os
 
-<sub>无 · <i>mu</i> · the piabrota VPSs · <a href="#contents">contents</a> · <a href="#every-piabrotaart-address">addresses</a> · <a href="#configuration">configuration</a> · <a href="#reproduce-it">reproduce</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="docs/STRUCTURE.md">structure</a> · <a href="#related-repositories">related</a> · <a href="#license">license</a></sub>
+<sub>无 · <i>mu</i> · the piabrota VPSs · <a href="#contents">contents</a> · <a href="#every-piabrotaart-address">addresses</a> · <a href="#configuration">configuration</a> · <a href="#reproduce-it">reproduce</a> · <a href="docs/DEPLOY.md">deploy</a> · <a href="docs/STRUCTURE.md">structure</a> · <a href="#related-repositories">related</a> · <a href="llms.txt">llms.txt</a> · <a href="#license">license</a></sub>
 
 [![ci](https://github.com/piabrota/nix-os/actions/workflows/ci.yml/badge.svg)](https://github.com/piabrota/nix-os/actions/workflows/ci.yml)
 [![deploy](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/piabrota/nix-os/actions/workflows/deploy.yml)
@@ -13,6 +13,7 @@
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1682D4?style=flat-square)](https://deepwiki.com/piabrota/nix-os)
 [![Hermes Agent v0.23.0](https://img.shields.io/badge/Hermes_Agent-v0.23.0-1682D4?style=flat-square)](docs/HERMES.md)
 [![hosts: piabrota + piabrota2](https://img.shields.io/badge/hosts-piabrota_%2B_piabrota2-1682D4?style=flat-square)](https://www.piabrota.art/hosts)
+[![llms.txt: all the work of h0ffmann](https://img.shields.io/badge/llms.txt-all_the_work_of_h0ffmann-1682D4?style=flat-square)](llms.txt)
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/h0ffmann/badge.svg)](https://hub.xerj.org/contributors/h0ffmann)
 
 </div>
@@ -20,6 +21,8 @@
 > The NixOS configuration of two live Hostinger VPSs, and of three web tools on one of them: the Hermes dashboard, the OpenRig UI and the metrics page.
 
 One flake, one system per host. **KVM 1** (`piabrota`, 1 vCPU, 4 GB) serves the public web at [piabrota.art](https://piabrota.art). **KVM 4** (`piabrota2`, 4 vCPU, 16 GB) runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) and [OpenRig](https://github.com/mvschwarz/openrig). Every change is a pull request: a merge to `main` builds both systems on GitHub and deploys each one with [deploy-rs](https://github.com/serokell/deploy-rs), and a host rolls back by itself if SSH stops answering.
+
+**For AI agents and visitors:** [`llms.txt`](llms.txt) is an index of all the public work of [h0ffmann](https://github.com/h0ffmann): research, marola, Piabrota, Ouroboric and the books. The site's [`/llms.txt`](https://www.piabrota.art/llms.txt) is the index of Piabrota only.
 
 ## Contents
 
@@ -144,6 +147,7 @@ How to read each figure, and what it leaves out: [`docs/FIGURES.md`](docs/FIGURE
 | [`docs/STRUCTURE.md`](docs/STRUCTURE.md) | The pins, the file tree, the flake outputs and every `just` recipe. |
 | [`docs/FIGURES.md`](docs/FIGURES.md) | The figures, how to read them, and the software factory status. |
 | [`docs/PGX.md`](docs/PGX.md), [`docs/LOCO.md`](docs/LOCO.md), [`docs/SITE.md`](docs/SITE.md), [`docs/PAPERCLIP.md`](docs/PAPERCLIP.md), [`docs/THESIS.md`](docs/THESIS.md) | PGX, Loco apps, the static site, Paperclip (off) and the thesis rig. |
+| [`llms.txt`](llms.txt) | An index of all the public work of h0ffmann, for language models ([llmstxt.org](https://llmstxt.org)). |
 | [`AGENTS.md`](AGENTS.md) | The rules for AI agents that work here, and the resource budget. |
 
 ## Related repositories

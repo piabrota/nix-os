@@ -260,6 +260,26 @@
             ${lib.optionalString (failed != [ ]) "exit 1"}
             touch $out
           '';
+        # The root llms.txt, the index of all the work of h0ffmann (README.md links it): it has the
+        # llmstxt.org shape, links the site's index of piabrota, and carries no DOI (the owner, 2026-11-11).
+        repo-llms =
+          let
+            inherit (pkgs) lib;
+            text = builtins.readFile ./llms.txt;
+            tests = {
+              startsWithTheName = lib.hasPrefix "# Matheus Hoffmann (h0ffmann)\n\n> " text;
+              linksTheSiteIndex = lib.hasInfix "https://www.piabrota.art/llms.txt" text;
+              hasNoDoi = !(lib.hasInfix "doi.org" text) && !(lib.hasInfix "10.5281" text);
+              hasNoRelativeLink = !(lib.hasInfix "](/" text);
+              readmeLinksIt = lib.hasInfix "(llms.txt)" (builtins.readFile ./README.md);
+            };
+            failed = lib.attrNames (lib.filterAttrs (_: ok: !ok) tests);
+          in
+          pkgs.runCommand "repo-llms-check" { } ''
+            ${lib.concatMapStrings (n: "echo 'failed: ${n}' >&2\n") failed}
+            ${lib.optionalString (failed != [ ]) "exit 1"}
+            touch $out
+          '';
         # The mockups' tests pass and the committed files are their output (`just mockups`).
         mockups = pkgs.runCommand "mockups-check" { } ''
           ${pkgs.lib.concatMapStrings (f: "echo 'failed: ${f.name}' >&2\n") mockups.failures}

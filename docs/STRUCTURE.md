@@ -16,6 +16,7 @@ just remote-restart  # restart the services the box has, after a prompt: `just r
 just restart-test  # the offline test of scripts/restart-services.sh
 just metrics-test   # the tests of the metrics collector and page (docs/METRICS.md)
 just cves           # CVE report of the system closure (vulnix; a report, not a gate)
+just security       # the security review of security.yml: gitleaks on the history (fails on a finding), zizmor on the workflows
 just freeze         # every package of the running system with its size, like pip freeze
 just remote-freeze  # the same, of the VPS, over SSH
 just drawing        # write docs/drawings/ again from drawings/
@@ -92,12 +93,13 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── docs/THESIS.ptBR.md    the thesis rig: parts, gates, UFRJ rules, deployment notes, in Portuguese
 ├── docs/THESIS.md         the same, in English
 ├── docs/drawings/           the README drawing and its Desmos state
-├── .github/workflows/       ci.yml (every PR beyond Markdown: lints and the justfile parse; the full flake check by hand), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff)
+├── .github/workflows/       ci.yml (every PR beyond Markdown: lints and the justfile parse; the full flake check by hand), cves.yml (push to main beyond Markdown, and weekly), deploy.yml (push to main beyond Markdown), freeze.yml (after each deploy), wiki.yml (copies wiki/ to the GitHub wiki), code-smell-report.yml (every PR and push to main: a code smell score, not a gate), flake-update.yml (weekly: a nix flake update PR with its closure diff), security.yml (by hand: gitleaks on the history, zizmor on the workflows; .gitleaksignore holds the findings read and cleared)
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
 ├── .agents/skills/          vendored skills for agents (.claude/skills links here), four Nix, three frontend, figure and archify (their README); .mcp.json: mcp-nixos, OpenPencil, DeepWiki
 ├── .devin/wiki.json         how DeepWiki writes this repository's wiki (deepwiki.com/piabrota/nix-os); scripts/deepwiki-check.jq checks it in CI
 ├── justfile
+├── llms.txt                 the index of all the public work of h0ffmann, for agents and visitors (no DOI); the README links it
 └── AGENTS.md                the rules for AI agents working here
 ```
 

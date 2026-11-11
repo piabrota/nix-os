@@ -1,0 +1,16 @@
+# Findings of `just security` (gitleaks) that were read and are not secrets (2026-11-11).
+# A line is a fingerprint: commit:file:rule:line. Add one only after you read the finding.
+# metrics/test.nix: the made-up basic-auth login of the NixOS VM test (metrics:s3cret).
+5aaa6b3a670ed2d08ef39b287aa44769eb66fdcb:metrics/test.nix:curl-auth-user:115
+5aaa6b3a670ed2d08ef39b287aa44769eb66fdcb:metrics/test.nix:curl-auth-user:128
+5aaa6b3a670ed2d08ef39b287aa44769eb66fdcb:metrics/test.nix:curl-auth-user:158
+09459aba0766ad0a4c6e0c40077e715c5ec304b2:metrics/test.nix:curl-auth-user:115
+09459aba0766ad0a4c6e0c40077e715c5ec304b2:metrics/test.nix:curl-auth-user:128
+09459aba0766ad0a4c6e0c40077e715c5ec304b2:metrics/test.nix:curl-auth-user:158
+# lofi/Cargo.lock: a crate name (libcrux-secrets), not a key.
+ec9638fe38b0b5643e57368de0cb34f4cad4b40b:lofi/Cargo.lock:generic-api-key:1598
+# apps/notes: the Loco scaffold's development and test JWT secret and the fixtures' API keys; production reads NOTES_SECRET from the box.
+0b5ff0ca2ddaa58281597c66a3ff33fa7c39bb20:apps/notes/config/development.yaml:generic-api-key:105
+0b5ff0ca2ddaa58281597c66a3ff33fa7c39bb20:apps/notes/config/test.yaml:generic-api-key:94
+0b5ff0ca2ddaa58281597c66a3ff33fa7c39bb20:apps/notes/src/fixtures/users.yaml:generic-api-key:6
+0b5ff0ca2ddaa58281597c66a3ff33fa7c39bb20:apps/notes/src/fixtures/users.yaml:generic-api-key:14
