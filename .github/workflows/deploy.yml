@@ -141,6 +141,29 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
+      # A merge that changes hermes-agent.service makes the switch reload or restart Hermes. Before
+      # that, copy the system to the host (deploy-rs then finds it there, so the switch follows in
+      # seconds) and ask Hermes for its own graceful restart: it finishes the work in flight, closes
+      # its state and comes back (scripts/hermes-checkpoint.sh). A host without Hermes, or a merge
+      # that leaves its unit as it is, does nothing. This step never stops the deploy.
+      - name: Prepare Hermes for the switch
+        if: steps.host.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
+          NODE: ${{ matrix.node }}
+        run: |
+          profile=$(nix build ".#deploy.nodes.$NODE.profiles.system.path" --no-link --print-out-paths --no-update-lock-file)
+          unit="$profile/etc/systemd/system/hermes-agent.service"
+          if [ ! -e "$unit" ]; then
+            echo "$NODE runs no Hermes: nothing to prepare"
+            exit 0
+          fi
+          sha=$(sha256sum < "$unit" | cut -d' ' -f1)
+          NIX_SSHOPTS="-o StrictHostKeyChecking=yes -o BatchMode=yes" \
+            nix copy --substitute-on-destination --to "ssh://$SSH_USER@$DEPLOY_HOST" "$profile"
+          ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" "sudo sh -s -- $sha" < scripts/hermes-checkpoint.sh
+
       - name: Build and deploy
         if: steps.host.outputs.ready == 'true'
         env:

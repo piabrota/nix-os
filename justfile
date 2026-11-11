@@ -42,6 +42,10 @@ health-test:
 grid-refresh-test:
     bash hermes/scripts/refresh-grid.test.sh
 
+# tests of scripts/hermes-checkpoint.sh with a stub systemctl and a fixture gateway.pid (offline)
+hermes-checkpoint-test:
+    sh scripts/hermes-checkpoint.test.sh
+
 # tests of scripts/restart-services.sh with stub systemctl, tmux and a fixture /proc (offline)
 restart-test:
     sh scripts/restart-services.test.sh

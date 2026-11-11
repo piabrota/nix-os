@@ -31,6 +31,8 @@ jobs:
       - run: nix run nixpkgs#statix -- check .
       - run: nix run nixpkgs#deadnix -- --fail .
       - run: nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh
+      - name: hermes-checkpoint passes its tests (a stub systemctl, no network)
+        run: sh scripts/hermes-checkpoint.test.sh
       - name: cert-renew passes its tests (a stub systemctl, no network)
         run: sh scripts/cert-renew.test.sh
       - name: every piabrota.art name of the *.nix files is in scripts/domains.txt
