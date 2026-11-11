@@ -335,7 +335,8 @@ rights of contents, pull requests and issues (not workflows). `git` gets the tok
 credential helper that picks the account by the repository's owner, and `gh` gets it too. Hermes
 pushes only `hermes/*` branches: `hermes/dangerous-patterns.yaml` blocks merges and every other
 push, and a ruleset on each default branch blocks a push to it at GitHub. Without the key file the
-unit does nothing.
+unit does nothing. For two marola repositories Hermes acts as marola-pr-bot[bot] when
+`piabrota.openrig.marola.enable` is on (`marola-bot.nix`, [OPENRIG.md](OPENRIG.md)).
 
 1. **Create the App** (once): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
    Name `piabrota-hermes`, any homepage (piabrota.art), **Webhook** off. Repository permissions:

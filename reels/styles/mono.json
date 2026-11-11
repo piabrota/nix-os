@@ -1,0 +1,59 @@
+{
+  "schema": "reels.style/1",
+  "name": "mono",
+  "summary": "Black, white and one signal yellow: a hard, fast reel with big type.",
+  "colors": {
+    "bg": "#000000",
+    "surface": "#111111",
+    "border": "#333333",
+    "fg": "#FFFFFF",
+    "muted": "#B0B0B0",
+    "accent": "#FFD400",
+    "accent_text": "#FFD400"
+  },
+  "fonts": {
+    "title": {
+      "family": "Fjalla One",
+      "bold": false,
+      "lh": 0.80,
+      "w": {
+        "upper": 0.325,
+        "lower": 0.27,
+        "digit": 0.295,
+        "space": 0.11,
+        "other": 0.16
+      }
+    },
+    "text": {
+      "family": "Inter Variable",
+      "bold": false,
+      "lh": 1.02,
+      "w": {
+        "upper": 0.62,
+        "lower": 0.46,
+        "digit": 0.49,
+        "space": 0.25,
+        "other": 0.3
+      }
+    }
+  },
+  "motion": {
+    "ease": "out_quart",
+    "stagger": 0.10,
+    "enter_s": 0.35,
+    "pop": 1.10,
+    "blur": 0,
+    "bg_zoom": [
+      1.0,
+      1.0
+    ],
+    "grain": 0
+  },
+  "background": {
+    "glow_color": "accent",
+    "glow_opacity": 0.0,
+    "glow_x": 0.5,
+    "glow_y": 0.5,
+    "glow_r": 0.5
+  }
+}

@@ -7,7 +7,7 @@ comparison (features, pros, cons, auth, permission mapping, state) is in
 |Runtime|What it is|On this box|
 |---|---|---|
 |`omp`|Oh My Pi, the coding agent that Hermes already uses (`hermes-omp`), run by OpenRig's RPC runner.|**Works.** The runtime of `piabrota-dev` and `wave-forecaster-dev-integrate`.|
-|`claude-code`|Claude Code (`claude`, unfree: `unfree.nix`).|**Only the port rig `wave-forecaster-dev`**, and only when `piabrota.openrig.waveForecaster.enable` is on (off today). Not run: no live Claude seat.|
+|`claude-code`|Claude Code (`claude`, unfree: `unfree.nix`).|**Only the port rig `wave-forecaster-dev`**, and only when `piabrota.openrig.waveForecaster.enable` is on (on today). Not run: no live Claude seat.|
 |`terminal`|A shell for a server, a log tail or a build watcher. No agent, no profile (`agent_ref: "builtin:terminal"`, `profile: none`).|**Works.** Tested in a scratch daemon. `rig send` types the exact text, with no From and To lines.|
 |`stub`|A scripted test harness. It calls no model.|Present; from the docs, not run.|
 |`codex`|OpenAI Codex.|**Not here.** Not installed. It would need an OpenAI login.|
@@ -84,13 +84,15 @@ Every seat lives in the cgroup of the `openrig` unit. The limits come from `open
 
 |Item|Value|
 |---|---|
-|`MemoryMax`|2G (2048 MiB), for the daemon, tmux and every seat|
-|`MemoryHigh`|1536M. Above it the kernel slows the unit down. Treat it as the working limit.|
+|`MemoryMax`|4G at piabrota2 (`piabrota.openrig.memoryMax`, default 2G), for the daemon, tmux and every seat|
+|`MemoryHigh`|3G at piabrota2 (`piabrota.openrig.memoryHigh`, default 1536M). Above it the kernel slows the unit down. Treat it as the working limit.|
 
 The memory of the daemon and of one seat is in
 [the reference](../../hermes-omp/references/openrig-seats.md). The plan is **two seats at the same
-time**, the builder and the reviewer. That leaves room for growth and for the page cache of a git
-clone, which counts against the unit. Start a third only when the owner says so.
+time**, the builder and the reviewer, except in `piabrota-dev` and `piabrota-dev-claude`: there
+`front-builder` and `builder` build marola-front and marola-back at the same time, with one
+`reviewer` (three seats). That leaves room for growth and for the page cache of a git clone, which
+counts against the unit. Start another seat only when the owner says so.
 
 Before you start a rig or add a seat:
 

@@ -23,6 +23,7 @@ here points to them.
 - [Factory](Factory): the open software factory, with OpenRig as its engine (the stages, who does each, the status today and the guardrails).
 - [Runtimes](Runtimes-EN): the OpenRig runtimes (Claude Code, Codex, Pi, omp, terminal, stub and the community harnesses): pros, cons, and which ones the box runs.
 - [Thesis](Thesis-EN): the rig that writes a UFRJ final-year project in Portuguese, one section at a time, with four gates and a PDF (no seat has run it yet).
+- [Reels](Reels-EN): the Reels Fabric, the OpenRig rig that makes 15 s and 30 s Instagram videos, with the screenplay as the source and Claude only (no media API).
 - [Mockups](Mockups): three directions for the piabrota.art homepage, generated in Nix.
 
 ## Addresses

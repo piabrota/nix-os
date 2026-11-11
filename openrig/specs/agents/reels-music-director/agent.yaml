@@ -1,0 +1,35 @@
+# The music-director seat of reels-fabric: the sound of the reel, made with reel music and reel mix.
+name: reels-music-director
+version: "1.0"
+description: Makes the music and the mix of one reel to its timeline
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../reels-shared
+
+profiles:
+  default:
+    summary: Makes the procedural music and the mix, and checks the loudness
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, reels-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

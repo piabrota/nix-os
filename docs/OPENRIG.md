@@ -31,14 +31,15 @@ The rig has not yet done a task: see "Status today".
 
 ### Status today
 
-- OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=2G`. Its web UI
+- OpenRig 0.7.7 runs on piabrota2 as the unit `openrig`: loopback only, `MemoryMax=4G`. Its web UI
   is at https://rig.piabrota.art behind basic auth (see "The web UI").
-- Four rigs are specified. `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`) has two seats on
-  `omp`, `dev-builder` and `dev-reviewer`. Both run without approval prompts
+- Six rigs are specified. `piabrota-dev` (`openrig/specs/rigs/piabrota-dev/rig.yaml`) has three seats on
+  `omp`, `dev-builder`, `dev-front-builder` and `dev-reviewer`. All run without approval prompts
   (`permission_policy: builtin:yolo`, the owner's decision in PR 124). They use the owner's Claude
   subscription (see "The token of the seats").
-  The other three are the two rigs of wave-forecaster-dev and `wave-forecaster-thesis` (below). The
-  options that turn them on are off.
+  `piabrota-dev-claude` has the same three seats on Claude Code. The other four are the two rigs of
+  wave-forecaster-dev, `wave-forecaster-thesis` and `reels-fabric` (below). A keeper keeps the port
+  rig up. Nobody starts the integrate rig. The options of the thesis and reels rigs are off.
 - Hermes operates the rig with the `rig` CLI and the skill `hermes-rig`. Hermes does not start seats
   from cron.
 - **The seats are idle.** No task has gone through the builder to reviewer loop yet.
@@ -78,7 +79,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 - The deny list of Hermes and `hermes/omp.yml` stay in force. A seat cannot push: `omp.yml` denies
   `git push`, `gh` and `sudo`.
 - No secret in a spec, a task or a message.
-- At most two seats at the same time (`MemoryHigh=1536M`).
+- At most three seats at the same time, in one rig (`MemoryHigh=3G` at piabrota2).
 - The UI is behind basic auth and TLS. It has a terminal for each seat: see "The web UI".
 
 ### What is next, and what is not proved
@@ -92,7 +93,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 
 |Part|What it is|
 |---|---|
-|Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module. `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.thesis.enable` turn on the rigs of the two blocks below. Both are off.|
+|Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module. `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.thesis.enable` turn on the rigs of the two blocks below. The first is on at piabrota2, the second is off. `piabrota.openrig.waveForecaster.alwaysOn.enable` adds the keeper of the port rig: it is on.|
 |User|The system user and group `openrig`, no login shell. State in `/var/lib/openrig` (`HOME`, and `OPENRIG_HOME` is `.openrig` in it). Seats work in `/var/lib/openrig/work`.|
 |Unit|`openrig` runs `node .../daemon/dist/index.js` in the foreground, as `openrig`.|
 |Network|The daemon listens on `127.0.0.1:7433` (`OPENRIG_BIND_HOST`) and serves the web UI there. No firewall port, no ACME. The option `piabrota.openrig.web` adds an nginx vhost at `rig.piabrota.art` with basic auth: it is on.|
@@ -100,6 +101,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 |Seat `omp`|`omp/wrapper.nix` with `ceiling = null` and `hermes/omp-seat-append-system.md`: the one wrapper of the repository, as PR 124 decided. Its rules (`hermes/omp.yml`) are the guard of a seat.|
 |Permissions|The rig sets `permission_policy: builtin:yolo`: the seats run without approval prompts. This is the owner's decision in PR 124. `OPENRIG_YOLO=1` in the unit does not do it: a rig with no policy gets the floor, and a policy wins over the variable. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
 |Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`: the name only. The value stays in the root-only `EnvironmentFile`. A seat whose model is `anthropic/<id>` gets the key. A Claude Code seat gets it too, as every seat does, and its `claude` (`seatClaude`) turns it into `CLAUDE_CODE_OAUTH_TOKEN`, because Claude Code ranks `ANTHROPIC_API_KEY` above that token. No other variable reaches a seat.|
+|Marola bots|With `piabrota.openrig.marola.enable` (on at piabrota2), the rig `piabrota-dev` also serves marola-front and marola-back, and Hermes acts as `marola-pr-bot[bot]` on those two repositories only. `marola-bot.nix` mints the tokens. The merge bot of MIP-0086 is not used. See "marola-front and marola-back".|
 |Hermes|A `rig` command in the packages of `hermes-agent`. It sets `OPENRIG_URL=http://127.0.0.1:7433` and runs the real `rig`.|
 |Sandbox|`NoNewPrivileges`, `CapabilityBoundingSet=""`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ProtectKernel*`, `ProtectProc=invisible`, `RestrictNamespaces`, `LockPersonality`, `SystemCallFilter=@system-service ~@privileged` with `EPERM`, and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`.|
 |Restart|`Restart=on-failure`, `RestartSec=10s`, at most 5 starts in 600 s. After that the unit stays down.|
@@ -201,8 +203,8 @@ the built daemon on a scratch port.
 
 |Setting|Value|
 |---|---|
-|`MemoryMax`|2G for the whole unit|
-|`MemoryHigh`|1536M|
+|`MemoryMax`|4G for the whole unit at piabrota2 (`piabrota.openrig.memoryMax`, default 2G)|
+|`MemoryHigh`|3G at piabrota2 (`piabrota.openrig.memoryHigh`, default 1536M)|
 |`CPUWeight`|50|
 |`TasksMax`|2048|
 |`OOMPolicy`|`continue`: an OOM kill takes one process, not the unit|
@@ -210,15 +212,18 @@ the built daemon on a scratch port.
 Tmux and every seat run in the cgroup of the unit. `MemoryMax` is one budget for the daemon, tmux
 and all seats. The kernel slows the unit above `MemoryHigh`, so that is the working limit. The
 figures for the daemon and for one seat are in
-[the reference](../hermes/skills/hermes-omp/references/openrig-seats.md). The plan is **two seats at the
-same time**, the builder and the reviewer. That leaves room under `MemoryHigh` for a seat that
-grows during a large edit and for the page cache of a git clone, which counts against the unit. A
-third seat leaves little room. Add it only after `kvm4-health` shows that the peak of `openrig`
-stays well under `MemoryHigh`. The wrapper runs `omp` under `choom -n 500`, so the kernel picks a
+[the reference](../hermes/skills/hermes-omp/references/openrig-seats.md). With the
+defaults, the plan is **two seats at the same time**, the builder and the reviewer. That leaves room
+under `MemoryHigh` for a seat that grows during a large edit and for the page cache of a git clone,
+which counts against the unit. At piabrota2 the owner raised the unit to 4G and 3G (7 November
+2026) so that `piabrota-dev` and `piabrota-dev-claude` run **three seats**: `builder` on marola-back
+and `front-builder` on marola-front build at the same time and share `reviewer`. Check with
+`kvm4-health` that the peak of `openrig` stays under `MemoryHigh`; if it does not, lower the load
+before you raise the limit. The wrapper runs `omp` under `choom -n 500`, so the kernel picks a
 seat before the daemon.
 
-The `MemoryMax` values on piabrota2 sum to **12.25 GiB**: `hermes-agent` 8G, `hermes-backend` 2G,
-`openrig` 2G, `pgx` 256M (`nix eval` of `systemd.services.*.serviceConfig.MemoryMax`). The machine
+The `MemoryMax` values on piabrota2 sum to **14.25 GiB**: `hermes-agent` 8G, `hermes-backend` 2G,
+`openrig` 4G, `pgx` 256M (`nix eval` of `systemd.services.*.serviceConfig.MemoryMax`). The machine
 has 15.6 GiB. A cap is a ceiling, not a use. Run `kvm4-health` before you start a large rig: it
 lists the unit `openrig`.
 
@@ -251,6 +256,7 @@ openrig/specs/
     reviewer/guidance/role.md
     reviewer/startup/context.md
   rigs/piabrota-dev/rig.yaml           # pod "dev": builder and reviewer, runtime omp
+  rigs/piabrota-dev-claude/rig.yaml    # pod "dev": the same two agents, runtime claude-code
 ```
 
 The block wave-forecaster-dev adds two rigs and four agents to the same folders (see
@@ -281,9 +287,24 @@ openrig/specs/
   rigs/wave-forecaster-thesis/rig.yaml # pods "plan", "writing", "review": six Claude Code seats
 ```
 
-- `rig.yaml` has one pod, `dev`, with the members `builder` and `reviewer`. Both use the runtime
-  `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`. An edge
-  `delegates_to` goes from `builder` to `reviewer`. The rig sets `permission_policy: builtin:yolo`
+The block reels-fabric adds one rig and six agents (see "reels-fabric" below):
+
+```text
+openrig/specs/
+  agents/
+    reels-shared/agent.yaml            # one guidance resource: the norms of every reels seat
+    reels-shared/guidance/norms.md
+    reels-creative-director/...        # agent.yaml, guidance/role.md, startup/context.md
+    reels-producer-editor/...
+    reels-artist-3d/...
+    reels-music-director/...
+    reels-qa/...
+  rigs/reels-fabric/rig.yaml           # pod "crew": creative-director, producer-editor, artist-3d, music-director, qa
+```
+- `rig.yaml` has one pod, `dev`, with the members `builder`, `front-builder` and `reviewer`. All use
+  the runtime `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`.
+  `front-builder` uses the agent `builder`. An edge `delegates_to` goes from each builder to
+  `reviewer`. The rig sets `permission_policy: builtin:yolo`
   (see "Design").
 - Each `agent.yaml` imports `shared`, selects `shared:norms` as guidance, and sends `role.md` and
   `startup/context.md` to the seat as text. The norms land in the `AGENTS.md` of the working folder.
@@ -323,9 +344,11 @@ pros, cons, a spec line, credentials, permission mapping, state and the status o
 |Rig|Runtime|
 |---|---|
 |`piabrota-dev`|`omp`|
-|`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (off)|
+|`piabrota-dev-claude`|`claude-code`, when `piabrota.openrig.marola.claude.enable` is on (on at piabrota2)|
+|`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (on at piabrota2)|
 |`wave-forecaster-dev-integrate`|`omp`|
 |`wave-forecaster-thesis`|`claude-code`, when `piabrota.openrig.thesis.enable` is on (off)|
+|`reels-fabric`|`omp`, five seats|
 
 ## wave-forecaster-dev
 
@@ -357,14 +380,40 @@ of them, and adds none: Docker would give the seats root. So a seat runs `just c
 other gates on the owner's machine and moves the status. The norms say this, and they win over
 chaceon's rule that a missing tool must be installed.
 
-**Off at the start.** `piabrota.openrig.waveForecaster.enable` is off at piabrota2. The specs are
-in `/etc/openrig/specs` as a definition only: no tools, folders, outbox or token, no `claude` and no
-managed settings, and no one starts the rigs. The owner turns the option on in
-`hosts/piabrota2/default.nix` to use them. A rig keeps the spec that made it, so after the deploy
-run `rig archive wave-forecaster-dev` and
-`rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only` (it makes the
-rig and its seats and starts nothing), then `rig up`. Claude Code asks once to accept its
-bypass-permissions warning: `rig seat continue` answers it (docs/RUNTIMES.md, "Claude Code on this box").
+**Always on.** `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.waveForecaster.alwaysOn.enable`
+are on at piabrota2 (the owner's order of 2026-11-07: the port rig runs 24/7). A restart of the unit
+`openrig` ends the seats: a deploy, a crash or a reboot. So a keeper brings the port rig back. The
+option `alwaysOn` needs `waveForecaster.enable`. The integrate rig stays manual. A rig keeps the spec
+that made it: if the spec of the port rig changes, run `rig archive wave-forecaster-dev` and
+`rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only`.
+
+**The keeper.** The unit `openrig-wf-keeper` (`openrig.nix`, `wfKeeper`) runs 2 minutes after boot and
+then every 2 minutes. It asks the daemon only (`rig` with `OPENRIG_URL`):
+
+|Case|The keeper|
+|---|---|
+|The daemon does not answer|Prints a line and exits 0. It never starts a daemon, and it does not start `openrig.service`.|
+|Another rig runs|Skips: one rig at a time ("Limits").|
+|The port rig runs|Exits 0. With `attentionCount > 0` it logs a warning.|
+|The port rig is `partial`|Logs a warning with the seats that do not run. It changes nothing.|
+|The port rig is stopped, and every seat has `intentionallyStopped`|Someone ran `rig down`. It does nothing.|
+|The port rig is stopped|Runs `rig up wave-forecaster-dev --existing`. If that fails, it runs `rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml`. With no rig of that name, it runs the spec at once.|
+|3 starts in the last hour|Does not try. The unit exits 1, so it shows in `systemctl --failed`. The attempts are in `/var/lib/openrig-wf-keeper/attempts` (an epoch second a line).|
+
+The unit is a oneshot with its own sandbox: `DynamicUser`, `MemoryMax=256M`, `CPUQuota=25%`,
+`IPAddressAllow=localhost`, no secret. It reads `/etc/openrig/specs`, which is world-readable. The
+script does not print the output of `rig up`.
+
+**To stop the port rig on purpose:** `rig down wave-forecaster-dev`. `rig down` marks every seat as
+stopped on purpose, and the keeper leaves such a rig down, even after another rig ends. **To run
+another rig:** run `rig down wave-forecaster-dev` first. When the other rig ends, bring the port rig
+back with `rig up wave-forecaster-dev --existing`. The keeper does not do this step. A rig that
+stops without `rig down` (a deploy, a crash, a reboot) it restores 2 minutes later.
+
+**What the keeper does not do.** It sends no task: an idle rig does no work. It does not answer
+Claude Code's one-time bypass-permissions warning. The owner answers it once with `rig seat continue`
+or attaches (docs/RUNTIMES.md, "Claude Code on this box"). It does not fix a `partial` rig. It does
+not look at memory: the budget is the unit `openrig` (`MemoryMax=2G`).
 
 **What `piabrota.openrig.waveForecaster.enable` adds** (when on):
 
@@ -391,7 +440,7 @@ to a branch other than `hermes/*`, `rig` with `--host` or `--policy`), the path 
 asks for an agent `Co-Authored-By` trailer; Hermes's commits carry none. The owner decides whether
 chaceon's `AGENTS.md` accepts both.
 
-To start the port rig, after `rig status` says "Daemon running" and `kvm4-health` shows room:
+To start the port rig by hand (the keeper does it when the rig is stopped), after `rig status` says "Daemon running" and `kvm4-health` shows room:
 
 ```console
 rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --plan
@@ -404,6 +453,140 @@ When the porter reports a bundle, Hermes fetches it into its own clone of chaceo
 ```console
 git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:hermes/wf-<slug>
 ```
+
+## marola-front and marola-back
+
+MIP-0092 (status Draft, [marola-dev/marola](https://github.com/marola-dev/marola), PR 929) asks for a
+code factory on OpenRig that builds two new repositories: `marola-dev/marola-front` (Vite,
+TypeScript, MapLibre) and `marola-dev/marola-back` (Rust, Loco). The MIP proposes a new rig of four
+seats, `code-factory`. The owner decided otherwise: `piabrota-dev` serves it. The rig `code-factory` is
+not built. Front and back changes are made in parallel (the owner, 7 November 2026), so the rig has
+two builders and one reviewer: `builder` works on marola-back (and on every other task),
+`front-builder` on marola-front only. Both use the agent `builder` and delegate to `reviewer`, which
+reviews one diff at a time.
+
+The owner also decided that the rig uses the marola bots of MIP-0086. `marola-pr-bot` proposes: it
+pushes branches, opens pull requests and comments, and never lands on `main`. `marola-merge-bot`
+merges. This change uses only `marola-pr-bot`: nothing here mints, reads or names a token of the
+merge bot. Humans merge.
+
+**What `piabrota.openrig.marola.enable` adds** (on at piabrota2). Everything is off without it, and
+the generated Hermes git config, token unit and `openrig` unit are then as before.
+
+|Part|Setting|
+|---|---|
+|Tools|`rustup`, `gcc`, `just`, `shellcheck`, `openrig-git-credential` and `marola-clone` in the profile of the user `openrig` and in the unit's `path` (`marolaTools`). The Rust part is shared with the chaceon rigs (`rustTools`). A host with both options on has no duplicate. `marola-clone <marola-front\|marola-back\|owner/name> [dir]` clones with the credential helper and refuses a name that is not in `piabrota.openrig.marola.repos`.|
+|Folders|The outbox `/var/lib/rig-outbox/marola` (owner `openrig`, group `hermes`, 0750, a default ACL that gives the group read access, files older than 14 days removed). The unit has it in `ReadWritePaths`. The folder `/run/openrig-github` for the read tokens exists too.|
+|Read tokens|`marola-bot.nix` (unit `marola-bot-token`, every 45 minutes) mints one token per repository with `contents: read` on that repository only, into `/run/openrig-github/marola-dev--<name>` (root, group `openrig`, 0640). The repositories are not in `piabrota.openrig.githubRead`: `hermes-github.nix` would write the same files with the other App.|
+|Operator token and identity|The same unit mints one token for Hermes: `contents`, `pull_requests` and `issues` (write) on the two repositories. It goes to `/run/hermes-github/marola-pr-bot` (root, group `hermes`, 0640). The unit also writes `/var/lib/hermes/.gitconfig-marola-bot` with the name and the noreply email of the bot.|
+|`marola-gh`|A command in the packages of `hermes-agent`. It runs `gh` with the operator token. It allows only `pr create\|view\|list\|diff\|checks\|status\|comment\|edit` and `issue view\|list\|comment`. Everything else, and a global flag before the subcommand, exits 2.|
+|Git credential helper|`hermes-github.nix` makes the helper of Hermes answer for the two repositories with the token of `marola-pr-bot`. If that file is missing, the helper prints nothing: the push fails, and never falls back to the token of piabrota-hermes. An `includeIf` block in `.gitconfig` gives the bot's identity to these two repositories only. Every other repository stays on piabrota-hermes[bot].|
+
+**How the tokens are scoped.** The App `marola-pr-bot` has one installation, on `marola-dev`, so
+`piabrota.openrig.marola.repos` takes only `marola-dev/<name>` (an assertion checks it). The
+operator token has `contents`, `pull_requests` and `issues` (write) on the two repositories. A seat
+token has `contents: read` on one repository. No token has `workflows` (GitHub then refuses a push
+that changes `.github/workflows`) or `administration`. No token is of the merge bot.
+
+**The flow for Hermes.** The seats never push.
+
+1. `rig status` says "Daemon running", and `kvm4-health` shows room. Nothing else runs in the rig.
+2. `rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml` (see "A rig keeps the spec that made it").
+3. Send a back task to `builder` and a front task to `front-builder`. Both can run at the same time:
+   `rig send dev-builder@piabrota-dev "<marola-dev/marola-back, the issue, done means, checks, no push>" --verify`
+   and `rig send dev-front-builder@piabrota-dev "<marola-dev/marola-front, ...>" --verify`.
+   The guidance `shared:marola` is in the seat's `AGENTS.md`.
+4. Each builder clones with `marola-clone`, works on `hermes/<issue>-<slug>`, asks the reviewer, and
+   leaves `/var/lib/rig-outbox/marola/<repo>-<issue>-<slug>.bundle` and a `.md` report.
+5. Hermes reads the report and the diff. It makes its own clone with
+   `git clone https://github.com/marola-dev/<repo>.git` (the credential helper gives the token),
+   then `git fetch <bundle> HEAD:hermes/<issue>-<slug>`.
+6. Reset the authors, so that the commits show the bot:
+   `git rebase --exec 'git commit --amend --no-edit --reset-author' origin/main`.
+7. `git push origin hermes/<issue>-<slug>`, then `marola-gh pr create --base main --head hermes/<issue>-<slug> --title ... --body-file ...`.
+   The PR is in English and in ASD-STE100, as every PR of Hermes. Humans merge.
+
+**What the seats cannot check.** Playwright with a browser, `oasdiff`, the Cloudflare deploy and
+the live API do not run on this box. The guidance tells a seat to write each one as "runs in CI"
+with `⚠` and not to install it.
+
+**The risk.** The private key of `marola-pr-bot` is on the box, in `/var/lib/hermes-secrets/`, as
+the key of piabrota-hermes is. Make a SECOND private key of the App for the box, so that the owner
+can revoke it alone. The App has no merge permission, so it can push branches and open pull
+requests, and nothing more. Keep a ruleset on `main` of each repository, so that a push to it fails
+at GitHub. A seat holds a
+read token that ends after one hour. The seats run without approval prompts, as in the other rigs,
+and `hermes/omp.yml` still denies `git push`, `gh` and secrets.
+
+**A rig keeps the spec that made it.** `piabrota-dev` exists since an earlier deploy, so the new
+guidance does not reach its seats by itself. After the deploy, ask the owner and run:
+
+```console
+rig archive piabrota-dev
+rig import /etc/openrig/specs/rigs/piabrota-dev/rig.yaml --materialize-only
+rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
+```
+
+**The key file.** Without `/var/lib/hermes-secrets/marola-pr-bot.env` (`GH_APP_ID=` and
+`GH_APP_PRIVATE_KEY_B64=`, the `.pem` in base64 on one line), `marola-bot-token` does not run: no
+token exists, `marola-clone` clones only a public repository, and a push to the two repositories
+fails.
+
+**Not tested.** None of this ran on the box: the deploy with the option on, the App's installation on
+`marola-dev`, a token for the two repositories, the bot's identity in a commit, `marola-gh` against
+GitHub, the credential helper on a push, the `includeIf` block (it needs git 2.36 or later), the
+outbox ACL with the unit's `UMask`, and a seat that runs the guidance. Only the Nix evaluation ran.
+
+### Comparing omp and Claude Code
+
+The owner wants two setups for marola-front and marola-back, run on the same issue. Only the runtime
+changes. The agents, the guidance, the bot tokens and the outbox are the same.
+
+|Setup|Rig|Seats|Runtime|
+|---|---|---|---|
+|A|`piabrota-dev` (exists)|builder, front-builder, reviewer|`omp`, `anthropic/claude-sonnet-5-5`|
+|B|`piabrota-dev-claude` (new)|builder, front-builder, reviewer|`claude-code`, `claude-sonnet-5-5`|
+
+Setup B needs `piabrota.openrig.marola.claude.enable` (on at piabrota2). It adds `claude`,
+`/etc/claude-code/managed-settings.json` and the folders `/var/lib/openrig/work/piabrota-dev-claude/builder`,
+`.../front-builder` and `.../reviewer`. It costs about 280 MiB of closure (see [`RUNTIMES.md`](RUNTIMES.md)). The member
+of the rig names `runtime: claude-code` and a plain Claude id, and these win over the omp default of
+the agents. A Claude seat reads its guidance in the `CLAUDE.md` of its own folder, so the two folders
+differ. The deny rules of `managed-settings.json` cover the same secret folders as for the other
+Claude rigs, among them `/var/lib/hermes-secrets`, where the key of `marola-pr-bot` is.
+
+Never run A and B at the same time: the unit has one memory budget for one rig. Do not run B when
+A is up.
+
+**The protocol,** in order:
+
+1. Pick one `agent-ready` issue. Write ONE task text: the issue URL, the repository, the branch
+   `hermes/<issue>-<slug>-omp` or `hermes/<issue>-<slug>-claude`, what done means, the checks, and
+   "no push". Use the same text for both runs. Only the branch suffix changes.
+2. Run A to the end. Read its outbox. Then `rig snapshot piabrota-dev` and `rig down piabrota-dev`.
+   Then run `kvm4-health`. Then `rig up` B with the same text.
+3. Record these values for each run, from commands only:
+   - the wall time: from the first `rig send` to the time of the outbox file (`stat -c %y`);
+   - the number of reviewer rejections (the reviewer's verdicts in `rig transcript`);
+   - the checks that each seat says it ran, and the checks that Hermes ran again;
+   - the files and lines changed (`git diff --stat` of the bundle);
+   - the cost or the turns, where the runtime prints them (omp: the `omp: done` line of
+     `rig transcript`; Claude Code: write "not printed" if it prints none);
+   - the memory of the unit: `systemctl show openrig -p MemoryCurrent -p MemoryPeak`, before and
+     after each run. `MemoryPeak` is for the whole unit since its start.
+4. Judge by the diff and the checks, not by what a seat says about its own work. The operator posts
+   the table as a comment on the issue under test, never in this document. Never invent a number.
+5. Hermes opens ONE pull request, from the better branch. The other bundle stays in the outbox
+   (14 days).
+
+Seat names of B are `dev-builder@piabrota-dev-claude`, `dev-front-builder@piabrota-dev-claude` and
+`dev-reviewer@piabrota-dev-claude`. The reviewer of B reads a builder's clone at
+`/var/lib/openrig/work/piabrota-dev-claude/<builder or front-builder>/<repo>`.
+A rig keeps the spec that made it: after a change to its `rig.yaml`, `rig archive` it and import it
+again.
+
+**Not tested.** Neither setup has run a live task on this box. Setup B has not started a seat:
+the first run of Claude Code in bypass mode asks once to accept its warning (see `RUNTIMES.md`).
 
 ## wave-forecaster-thesis
 
@@ -429,6 +612,36 @@ Claude Code seat is not measured: [`THESIS.md`](THESIS.md), "Deployment notes", 
 measure it. **Not run:** no seat has run this rig. The proof so far is `thesis` on a sample thesis
 (60 checks, 0 failed).
 
+## reels-fabric
+
+The rig `reels-fabric` makes one 15 s or 30 s vertical video (1080x1920) for Instagram Reels. Claude
+is the only model: no image, video, voice or music service, no network. The screenplay
+(`screenplay.json`) is the one source, and a hash gate stops every stage after it until the
+screenplay is approved. The guide is [`REELS.md`](REELS.md), and the wiki's `Reels` pages summarise it.
+
+|Part|Setting|
+|---|---|
+|Rig|`openrig/specs/rigs/reels-fabric/rig.yaml`: one pod, `crew`, a film crew of five seats (`creative-director`, `producer-editor`, `artist-3d`, `music-director`, `qa`), all on `omp`, `anthropic/claude-sonnet-5-5`, `builtin:yolo`. The edges form a chain with no cycle: creative director to producer-editor and to artist-3d, producer-editor to music director and to QA. The executive producer is the owner, a human, not a seat.|
+|Option|`piabrota.openrig.reels.enable`. Off at piabrota2. The specs are in `/etc/openrig/specs` as a definition only. `piabrota.openrig.reels.blender.enable` (off) adds `pkgs.blender`, headless, for the 3D shots: the owner's exception to "no GUI" (2026-11-08). It needs the first option. Cycles on the CPU only: EEVEE crashes on this box.|
+|Tools|The toolkit `reel` (`reels/`, built by `reels/default.nix`) with `ffmpeg-headless` and `jq`, in the profile of the user `openrig` and in the unit's `path`. Two font files (Inter and Fjalla One) are the owner's exception to "no fonts".|
+|Folders|`/var/lib/openrig/work/reels-fabric/{creative-director,producer-editor,artist-3d,music-director,qa}` (the seats' own folders), `projects` (shared, one folder for each slug) and `out` (the renders), all `StateDirectory`.|
+|Outbox|`/var/lib/rig-outbox/reels-fabric` (owner `openrig`, group `hermes`, 2750 with setgid, a default ACL for the group, files older than 14 days removed). `reel publish` writes `reel.mp4`, `qa.json`, `screenplay.json` and `review/` to `<slug>/` and gives the group read access to them. The unit has it in `ReadWritePaths`. The parent is shared with the wave and thesis rigs.|
+|Env|The rig sets `REELS_HOME=/var/lib/openrig/work/reels-fabric` and `REELS_OUTBOX=/var/lib/rig-outbox/reels-fabric`.|
+
+**Five phases, two seats at a time.** The rig has five seats, and a render adds an `ffmpeg` of up to
+540 MiB (a Blender render adds 536 MiB). So the operator starts the seats in phases, and never more
+than two at once: story and look (creative director and producer-editor, until `reel approve`),
+picture (the same two seats, until the shotlist, the storyboard and the flat clips exist), 3D shots
+(`artist-3d` with the producer-editor, skipped without a `3d` shot or without Blender), sound
+(`music-director` with the producer-editor, until the cut has its audio) and check and publish (`qa`
+with the producer-editor still up, until `reel publish`). The exact commands are in
+[`REELS.md`](REELS.md), "The phases". The executive producer, the owner, decides the brief, the start
+of each phase and what to do with the published reel. A human approves or the producer-editor does:
+Hermes never approves.
+
+**Not proved.** A live run of the rig, a Blender render inside the unit `openrig`, and Instagram's
+acceptance of the file. `rig spec validate` and `rig agent validate` passed on the specs without a
+daemon. The toolkit ran on this box: the numbers are in [`REELS.md`](REELS.md), "Measured numbers".
 ## What is not done
 
 - **No public web page without auth.** The daemon runs on loopback only. The public vhost (`rig.piabrota.art`) has TLS and basic auth (see "The web UI").
@@ -436,7 +649,7 @@ measure it. **Not run:** no seat has run this rig. The proof so far is `thesis` 
 - **No herdr, no remote hosts.** `rig host`, `rig up --host` and pairing are blocked.
 - **No Codex seat.** Codex is not installed. A Claude Code seat exists only in the port rig and the
   thesis rig, and only with `piabrota.openrig.waveForecaster.enable` or `piabrota.openrig.thesis.enable`
-  on (both off today): `claude` is unfree, allowed by name
+  on (the first is on at piabrota2, the second is off): `claude` is unfree, allowed by name
   in `unfree.nix`. See [`RUNTIMES.md`](RUNTIMES.md).
 - **No `PrivateDevices`.** In a test with a user unit, tmux could not start a pane with a private
   `/dev`. A pane needs a pseudo terminal. The test used a user manager, not the system manager, so
@@ -454,11 +667,20 @@ it for NixOS: not checked here), the read token (the App's installation may not 
 h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and Hermes's read of the outbox under the
 `hermes-agent` sandbox.
 
+The keeper `openrig-wf-keeper` did not run on the box either: a deploy with the option on is needed
+first. Its script ran against a fake `rig` (`scripts/test-wf-keeper.sh`: stopped rig, `--existing`
+failing, `rig down`, another rig, partial rig, daemon down, back-off), and its `jq` filters ran
+against the output of the live `rig ps`. `rig up` from the keeper (a stopped rig with no usable
+snapshot, a spec that the daemon refuses) never ran.
+
 For wave-forecaster-thesis, no seat ran. Not tested: a deploy with the option on, the closure growth
 of the system (`dix`), a Claude Code seat (the memory of one, the bypass dialog, the tool `deny`
 rules), `rig spec validate` on the new spec, the outbox ACL with the unit's `UMask`, and Hermes's
 read of the outbox. Tested: the `thesis` command, in [`THESIS.md`](THESIS.md), "What is proved and
 what is not".
+
+For marola-front and marola-back, no seat ran: see the end of that section. Not tested: also
+`rig spec validate` on the changed `shared` agent and the two agents that use it.
 
 For the rest:
 

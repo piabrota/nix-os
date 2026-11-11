@@ -1,0 +1,137 @@
+# The Reels Fabric: a film crew of five seats that make one 15 s or 30 s vertical reel (1080x1920),
+# screenplay first. The seats follow the credits of a film:
+#   Executive producer: the owner (a human). He is not a seat. He gives the brief, starts each
+#                       phase and decides what happens to the published reel.
+#   Creative director:  the look and the words. Writes the screenplay, then the shotlist and stills.
+#   Producer and editor: the schedule and the final file. Approves the screenplay hash, builds the
+#                       scenes and the cut, publishes after QA.
+#   3D artist:          the 3D shots, with Blender, headless, on the CPU (useful only when
+#                       piabrota.openrig.reels.blender.enable is on; see docs/REELS.md).
+#   Music director:     the procedural music and the mix.
+#   QA:                 checks the file against the screenplay. A seat that made the work never checks it.
+# The toolkit is `reel` (reels/, docs/REELS.md). Claude is the only model: no image, video, voice or
+# music service, no network. Every seat runs omp, as in piabrota-dev; a member can switch to
+# `runtime: claude-code` with one line (docs/RUNTIMES.md). The rig can also merge producer-editor and
+# music-director into one seat, if memory allows: one member with both roles, and no edge between them.
+#
+# Start it BY PHASES, TWO SEATS AT A TIME. The unit `openrig` has MemoryMax=2G and an omp seat costs
+# about 300 MiB. Neither the owner nor Hermes may run more than two seats at the same time, and no
+# seat may start another one. Do not run it at the same time as another rig (docs/OPENRIG.md).
+#   rig import /etc/openrig/specs/rigs/reels-fabric/rig.yaml --materialize-only
+# That records the five seats and starts none. A seat that never started starts with
+# `rig launch <rig> <pod>.<member>` (docs/reference/rig-spec.md, "Starting one materialized seat").
+# `rig seat launch <seat> --fresh --reason "<why>"` is for a seat that has run before: it starts a
+# blank conversation.
+#   phase 1, story and look: rig launch reels-fabric crew.creative-director
+#                     rig launch reels-fabric crew.producer-editor
+#                     rig send crew-creative-director@reels-fabric "<slug>, <15|30>, <the owner's brief>" --verify
+#                     The creative director writes the screenplay. The producer-editor reviews it and
+#                     approves the hash. At most 3 rounds. Done when `reel approve` has written
+#                     screenplay.approved. Both seats stay up. The owner may read
+#                     `reel screenplay-view <slug>` before phase 2 starts.
+#   phase 2, picture: the same two seats. The creative director makes the shotlist and the storyboard
+#                     (`reel shotlist`, `reel still`) and marks each 3D shot. The producer-editor
+#                     builds the scene clips (`reel scene`). Done when the shotlist and the
+#                     storyboard exist and every flat beat has its clip (the silent picture). Then:
+#                     rig seat stop crew-creative-director@reels-fabric --reason "phase 2 done"
+#   phase 3, 3D shots (skip it if the shotlist has no 3d shot, or the Blender option is off):
+#                     rig launch reels-fabric crew.artist-3d
+#                     rig send crew-artist-3d@reels-fabric "<slug>, <project path>, the 3d shots" --verify
+#                     The artist-3d writes a Blender scene for each 3d shot and renders it with
+#                     `reel blender`. The producer-editor must NOT run `reel render` or `reel scene`
+#                     while a `reel blender` render runs: the unit has 2G. Done when each 3d shot
+#                     has its PNG sequence. Then:
+#                     rig seat stop crew-artist-3d@reels-fabric --reason "phase 3 done"
+#   phase 4, sound:   rig launch reels-fabric crew.music-director
+#                     rig send crew-music-director@reels-fabric "<slug>, <project path>, make the sound" --verify
+#                     The music director runs `reel music` and `reel mix`. Then the producer-editor
+#                     runs `reel render`: it builds the clip of each 3d beat and makes the cut with its
+#                     audio. Done when the mix is made and out/<slug>/reel.mp4 exists. Then:
+#                     rig seat stop crew-music-director@reels-fabric --reason "phase 4 done"
+#   phase 5, check and publish:
+#                     rig launch reels-fabric crew.qa     (with the producer-editor still up: two seats)
+#                     rig send crew-qa@reels-fabric "<slug>, <out path>, check it" --verify
+#                     A QA fail goes back to the producer-editor, which is still up and routes each
+#                     fault. On a pass the producer-editor runs `reel publish`. Done when
+#                     `reel publish` has run. Then stop both seats.
+# A seat that has nobody to send to ends with a final answer: the operator starts the next seat and
+# sends it the task. A fault that needs a stopped seat (the creative director, the artist-3d or the
+# music director): start it in place of the seat that is not needed, so that two seats run.
+# The owner decides the brief, the start of each phase and what to do with the published reel;
+# nothing here posts to Instagram.
+# The seat names are <pod>-<member>@reels-fabric: crew-creative-director@reels-fabric,
+# crew-producer-editor@reels-fabric, crew-artist-3d@reels-fabric, crew-music-director@reels-fabric,
+# crew-qa@reels-fabric. Hermes talks to a seat with `rig send <seat> "<task>" --verify`.
+# The gate is in the toolkit: every stage after the screenplay refuses to run unless
+# screenplay.approved holds the hash of screenplay.json.
+# A rig keeps the spec it was made from: after a change here, `rig archive` it and import it again.
+version: "0.2"
+name: reels-fabric
+summary: A film crew of five seats that writes, builds, scores, checks and publishes one reel; the owner is the executive producer
+
+# See rigs/wave-forecaster-dev/rig.yaml and rigs/piabrota-dev/rig.yaml: the seats run without
+# approval prompts, and the deny rules of hermes/omp.yml stay the guard.
+permission_policy: builtin:yolo
+
+# OpenRig starts each pane with a clean environment. NixOS builds the pane's PATH from the profile of
+# $USER (users.users.openrig.packages in openrig.nix). REELS_HOME and REELS_OUTBOX tell `reel`
+# where the projects and the finished reels go; they match its own defaults. Values are not secret.
+env:
+  USER: openrig
+  LOGNAME: openrig
+  HOME: /var/lib/openrig
+  REELS_HOME: /var/lib/openrig/work/reels-fabric
+  REELS_OUTBOX: /var/lib/rig-outbox/reels-fabric
+
+pods:
+  - id: crew
+    label: Crew
+    summary: The creative director owns the look and the words. The producer-editor owns the schedule and the file. The artist-3d, the music director and QA each own one part.
+    members:
+      - id: creative-director
+        agent_ref: "local:../../agents/reels-creative-director"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        # Its own folder (StateDirectory in openrig.nix): the norms land in its AGENTS.md.
+        cwd: /var/lib/openrig/work/reels-fabric/creative-director
+      - id: producer-editor
+        agent_ref: "local:../../agents/reels-producer-editor"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/producer-editor
+      - id: artist-3d
+        agent_ref: "local:../../agents/reels-artist-3d"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/artist-3d
+      - id: music-director
+        agent_ref: "local:../../agents/reels-music-director"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/music-director
+      - id: qa
+        agent_ref: "local:../../agents/reels-qa"
+        profile: default
+        runtime: omp
+        model: anthropic/claude-sonnet-5-5
+        cwd: /var/lib/openrig/work/reels-fabric/qa
+    # A chain with no cycle. Returns are `rig send`, not edges.
+    edges:
+      # The creative director hands the screenplay to the producer-editor, and the 3D shots to the artist-3d.
+      - kind: delegates_to
+        from: creative-director
+        to: producer-editor
+      - kind: delegates_to
+        from: creative-director
+        to: artist-3d
+      # The producer-editor hands the sound to the music director, and the cut to QA.
+      - kind: delegates_to
+        from: producer-editor
+        to: music-director
+      - kind: delegates_to
+        from: producer-editor
+        to: qa

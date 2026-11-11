@@ -56,7 +56,7 @@ owner's order.
 
 Paperclip is a control plane for a "company" of AI agents: goals, an org chart, tasks, budgets
 and a heartbeat that wakes the agents. It is not an agent itself. Its agents here run in the Hermes
-that already runs on the box, or in omp.
+that already runs on the box, in omp, or in Claude Code.
 
 ## What is installed
 
@@ -79,12 +79,14 @@ into `/var/lib/paperclip/backups` and keeps it for 7 days.
 |---|---|---|
 | `hermes_gateway` | Works. Needs the key of `paperclip-hermes-key`. | The task runs in the Hermes of `hermes.nix`: its subscription, deny list, skills and memory. |
 | `pi_local` | Works through omp. | Runs omp with the same Claude subscription token as Hermes. A shim (`paperclip/pi-to-omp.sh`, command `paperclip-pi`) turns Paperclip's call for `pi` into a call for omp. The shim uses `--no-session`, so a run has no memory of the run before. Claude models only. Tools: `read`, `bash`, `edit`, `write`, `grep`. |
-| `claude_local` and the other `*_local` adapters | Do not work here. | `claude_local` needs the `claude` CLI, which is unfree, and `allowUnfree` is off. The other adapters need CLIs that the box does not have. |
+| `claude_local` | Works. | Runs Claude Code (`claude` 2.1.303, from nixpkgs) with the same Claude subscription token as Hermes. Claude Code is unfree: `unfree.nix` lets in this one package by name (`allowUnfreePredicate`), and nothing else. Leave the agent's filesystem and network scopes off: they need `bwrap`, and the unit forbids namespaces. |
+| The other `*_local` adapters | Do not work here. | They need CLIs that the box does not have. |
 
 ```text
 hermes_gateway: Paperclip (127.0.0.1:3100) --POST /v1/runs, Bearer API_SERVER_KEY--> Hermes API server (127.0.0.1:8642)
                 Hermes terminal (curl)  --Bearer PAPERCLIP_API_KEY------------------> Paperclip API (127.0.0.1:3100/api)
 pi_local:       Paperclip --paperclip-pi--> omp wrapper (omp/wrapper.nix, hermes/omp.yml) --> Claude
+claude_local:   Paperclip --claude (Claude Code, on the unit's PATH)----------------------> Claude
 ```
 
 No traffic between Paperclip and Hermes leaves the box. `piabrota.paperclip.hermes.enable` (on when
@@ -96,6 +98,10 @@ to every `hermes_gateway` run.
 
 `piabrota.paperclip.omp.enable` (on when Hermes is on) sets `PAPERCLIP_PI_COMMAND` to the shim and
 adds the token step (see "The token"). The rules of `hermes/omp.yml` apply to every `pi_local` run.
+
+`piabrota.paperclip.claude.enable` (on when Hermes is on) puts Claude Code on the unit's PATH,
+allows that one unfree package, and adds the same token step. Hermes's deny list and `hermes/omp.yml`
+do not apply to `claude_local` runs: Paperclip passes Claude Code its own permission settings.
 
 ## Setup
 
@@ -137,17 +143,27 @@ adds the token step (see "The token"). The rules of `hermes/omp.yml` apply to ev
 
    Then open the agent's configuration, and in the heartbeat settings set **Max concurrent runs** to
    `1` (see "Limits").
+7. **Agent with `claude_local`.** In the UI, add an agent with the adapter **Claude Code** (or keep
+   one made with it):
+   - Command: empty (`claude` is on the unit's PATH)
+   - Model: `claude-sonnet-5-5` or `claude-haiku-4-5`
+   - Working directory: a folder under `/var/lib/paperclip`, the only place the unit may write
+   - Filesystem and network scope: off (see "Adapters")
+
+   The environment test must pass its hello probe. Set **Max concurrent runs** to `1`, then resume
+   the agent if it is paused.
 
 ## The token
 
-`pi_local` uses the same Claude subscription token as Hermes. At each start, `paperclip` runs a
-root step (`ExecStartPre=+`) that copies one line, `CLAUDE_CODE_OAUTH_TOKEN`, from Hermes's
-secrets file into `/var/lib/paperclip-secrets/claude.env`. Only the `paperclip` user reads that file.
+`pi_local` and `claude_local` use the same Claude subscription token as Hermes. At each start,
+`paperclip` runs a root step (`ExecStartPre=+`) that copies one line, `CLAUDE_CODE_OAUTH_TOKEN`,
+from Hermes's secrets file into `/var/lib/paperclip-secrets/claude.env`. Only the `paperclip` user reads that file.
 The repository holds no copy. To rotate the token, change it in Hermes's secrets file and run
 `sudo systemctl restart paperclip`. One subscription means that Hermes and Paperclip share its
 limits. An agent that has a shell could read its own environment. So `hermes/omp.yml` denies
 `/proc/*/environ` and `/proc/self/*` in omp's bash tool. This is a guardrail and not a boundary.
-Give `pi_local` agents only work that you accept with this token.
+Claude Code has no such rule here. Give `pi_local` and `claude_local` agents only work that you
+accept with this token.
 
 ## Limits
 
@@ -155,10 +171,16 @@ Give `pi_local` agents only work that you accept with this token.
   agent at a time. Paperclip's default is 20 concurrent runs for each agent. In the agent's
   configuration, heartbeat settings, set **Max concurrent runs** to `1`. The field is for one
   agent. If you add a second `pi_local` agent, the owner decides how to share the memory.
+- A Claude Code child is in the same `MemoryMax=2G`. Set **Max concurrent runs** to `1` for a
+  `claude_local` agent too.
 - Every omp run stops after 35 minutes (the wrapper's `timeout`).
 - A run has no session memory.
 
 ## Cost
+
+Claude Code adds 283.4 MiB to piabrota2's system (measured on the box on 2026-11-04: the binary is
+273 MiB; alsa-lib, ripgrep, bubblewrap, socat and libcap are the rest). Hydra does not build
+unfree packages, so CI downloads its release from downloads.claude.ai; nothing is compiled.
 
 Measured on 2026-11-04, not on the box. The package is 564 MiB in the store (815 MiB with
 Node.js 24). The build downloads 113 MiB of npm tarballs. The idle server holds about 590 MiB RSS.
@@ -169,7 +191,7 @@ how often agents wake.
 
 ## Not included
 
-- `hermes_local` and the other `*_local` adapters (see "Adapters").
+- `hermes_local` and the `*_local` adapters other than `pi_local` and `claude_local` (see "Adapters").
 - The embedded PostgreSQL (Paperclip refuses it in public mode), the Docker image,
   `paperclip-runnerd` and the remote runners.
 

@@ -9,8 +9,10 @@
 # MemoryMax is one budget for all of them, and a restart of the unit ends them all. The seats run
 # `omp` from omp/wrapper.nix. With piabrota.openrig.waveForecaster.enable the seats of the port rig
 # run Claude Code (`claude`, unfree: unfree.nix) and Codex is not installed. The specs of the first
-# rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
-# runs `rig up`.
+# rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig except the keeper
+# of the port rig (waveForecaster.alwaysOn): a human or Hermes runs `rig up` for the others. With
+# piabrota.openrig.marola.enable the seats of piabrota-dev also work on the two marola repositories,
+# with read tokens of marola-pr-bot (marola-bot.nix, docs/OPENRIG.md).
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkOption types;
@@ -72,7 +74,9 @@ let
   th = cfg.thesis;
   thesisPkg = pkgs.callPackage ./thesis/default.nix { };
   # `claude` and its deny rules serve every rig that runs Claude Code seats.
-  claudeSeats = wf.enable || th.enable;
+  claudeSeats = wf.enable || th.enable || (marola.enable && marola.claude.enable);
+  # marola-front and marola-back on the rig piabrota-dev (docs/OPENRIG.md, "marola-front and marola-back").
+  inherit (cfg) marola;
   # One read-only token per repository of cfg.githubRead, written by hermes-github.nix.
   seatTokens = "/run/openrig-github";
   # Where a seat leaves a git bundle for Hermes. Not under /var/lib/openrig: Hermes may not read
@@ -80,8 +84,18 @@ let
   outbox = "/var/lib/rig-outbox";
   wfFolders = [ "openrig/work/wave-forecaster-dev" ]
     ++ map (seat: "openrig/work/wave-forecaster-dev/${seat}") [ "porter" "auditor" "integrator" ];
+  # The rig piabrota-dev-claude (setup B of the comparison, docs/OPENRIG.md): one folder per seat.
+  marolaClaudeFolders = [ "openrig/work/piabrota-dev-claude" ]
+    ++ map (seat: "openrig/work/piabrota-dev-claude/${seat}") [ "builder" "front-builder" "reviewer" ];
   thFolders = [ "openrig/work/wave-forecaster-thesis" "openrig/work/wave-forecaster-thesis/projects" "openrig/work/wave-forecaster-thesis/out" ]
     ++ map (seat: "openrig/work/wave-forecaster-thesis/${seat}") [ "editor" "writer-a" "writer-b" "writer-c" "librarian" "reviewer" ];
+
+  # The rig reels-fabric (openrig/specs/rigs/reels-fabric, reels/): a film crew of five seats that make
+  # 15 s and 30 s reels from code only, with the toolkit `reel`. docs/REELS.md. A folder per seat, the
+  # shared projects, the renders, and an outbox under the same parent as the wave rig's.
+  rf = cfg.reels;
+  reelsFolders = [ "openrig/work/reels-fabric" ]
+    ++ map (d: "openrig/work/reels-fabric/${d}") [ "creative-director" "producer-editor" "artist-3d" "music-director" "qa" "projects" "out" ];
 
   # git credential helper of the seats: the read-only token of the repository, from the path git
   # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
@@ -112,6 +126,26 @@ let
         --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
         https://github.com/h0ffmann/chaceon.git "$dir"
       git -C "$dir" submodule update --init --depth 1 WW3 || git -C "$dir" submodule update --init WW3
+    '';
+  };
+
+  # A seat's clone of a marola repository (marola.repos): the pattern of chaceonClone. The token
+  # comes from seatCredential, which reads the file of marola-bot.nix; with no file git goes on
+  # with no password, which is enough for a public repository. Any other name is refused.
+  marolaClone = pkgs.writeShellApplication {
+    name = "marola-clone";
+    runtimeInputs = [ pkgs.git ];
+    text = ''
+      [ $# -ge 1 ] || { echo "usage: marola-clone <marola-front|marola-back|owner/name> [dir]" >&2; exit 2; }
+      name=''${1#marola-dev/}
+      case "$name" in
+        ${lib.concatMapStringsSep "|" (r: lib.escapeShellArg (lib.removePrefix "marola-dev/" r)) marola.repos}) ;;
+        *) echo "marola-clone: $1 is not one of: ${toString marola.repos}" >&2; exit 2 ;;
+      esac
+      dir=''${2:-$name}
+      git clone --filter=blob:none \
+        --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
+        "https://github.com/marola-dev/$name.git" "$dir"
     '';
   };
 
@@ -228,14 +262,140 @@ let
   # What a chaceon seat runs: `just check` (rustup's toolchain, gcc as the linker of build
   # scripts) and `just lint-sh`. Claude Code is in claudeTools. No Docker, no Vulkan, no CUDA:
   # those gates stay with the owner.
-  wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone ];
+  # Shared by the chaceon rigs and the marola repositories; marolaClone is the marola one.
+  rustTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential ];
+  wfTools = rustTools ++ [ chaceonClone ];
+  marolaTools = rustTools ++ [ marolaClone ];
   claudeTools = [ seatClaude ];
   thTools = [ thesisPkg ];
+  # What a reels seat runs: the toolkit (it carries its own ffmpeg-headless, resvg and two fonts) and
+  # the same ffmpeg and jq for what a seat scripts itself. Blender, headless, for the artist-3d seat:
+  # the owner's exception to no GUI (2026-11-08), behind its own option and only that package.
+  reelsTools = [ (pkgs.callPackage ./reels { }) pkgs.ffmpeg-headless pkgs.jq ] ++ lib.optionals rf.blender.enable [ pkgs.blender ];
+
+  # The keeper of the port rig, run by the unit openrig-wf-keeper. Every `rig` call goes to the
+  # daemon at OPENRIG_URL (rigCli sets it). It never starts a daemon, sends no task and answers no
+  # prompt. The rig's output is not printed: it is not needed, and `rig ps --full` shows tokens.
+  # The only state is $STATE_DIRECTORY/attempts: the epoch second of each start, one per line.
+  # A line starting with <3> or <4> is logged by journald as an error or a warning.
+  wfKeeper = pkgs.writeShellApplication {
+    name = "openrig-wf-keeper";
+    runtimeInputs = [ rigCli pkgs.jq pkgs.coreutils ];
+    text = ''
+      rig_name=wave-forecaster-dev
+      spec=/etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml
+      attempts="$STATE_DIRECTORY/attempts"
+      window=3600
+      max_attempts=3
+
+      # A rig list or a node list is a bare array; an envelope has it in `.entries`.
+      list() { jq -c 'if type == "object" then .entries else . end'; }
+
+      if ! out=$(rig status 2>&1); then
+        echo "rig status failed, the daemon does not answer: nothing done"
+        exit 0
+      fi
+      case $out in
+        *"Daemon running"*) ;;
+        *)
+          echo "daemon not running: nothing done"
+          exit 0
+          ;;
+      esac
+
+      if ! rigs=$(rig ps --json | list); then
+        echo "<4>rig ps failed: nothing done"
+        exit 0
+      fi
+
+      other=$(jq -r --arg n "$rig_name" \
+        '[.[] | select(.isArchived != true and .name != $n and (.runningCount // 0) > 0) | .name] | first // empty' <<<"$rigs")
+      if [ -n "$other" ]; then
+        echo "another rig runs: $other, skipped"
+        exit 0
+      fi
+
+      state=$(jq -r --arg n "$rig_name" \
+        '[.[] | select(.name == $n and .isArchived != true)] | first | .status // "missing"' <<<"$rigs")
+
+      case $state in
+        running)
+          attention=$(jq -r --arg n "$rig_name" \
+            '[.[] | select(.name == $n and .isArchived != true)] | first | .attentionCount // 0' <<<"$rigs")
+          if [ "$attention" -gt 0 ]; then
+            echo "<4>$rig_name runs, $attention seat(s) need attention: rig ps --nodes --rig $rig_name"
+          else
+            echo "$rig_name runs"
+          fi
+          exit 0
+          ;;
+        partial)
+          if ! nodes=$(rig ps --nodes --rig "$rig_name" --json | list); then
+            echo "<4>$rig_name is partial and rig ps --nodes failed: nothing done"
+            exit 0
+          fi
+          down=$(jq -r '[.[] | select(.lifecycleState != "running") | "\(.logicalId)=\(.lifecycleState)"] | join(", ")' <<<"$nodes")
+          echo "<4>$rig_name is partial, seats not running: $down. Nothing changed."
+          exit 0
+          ;;
+        stopped)
+          if ! nodes=$(rig ps --nodes --rig "$rig_name" --json | list); then
+            echo "<4>rig ps --nodes failed: nothing done"
+            exit 0
+          fi
+          if jq -e 'length > 0 and all(.[]; .intentionallyStopped == true)' <<<"$nodes" >/dev/null; then
+            echo "$rig_name was stopped on purpose (rig down): not started"
+            exit 0
+          fi
+          ;;
+        missing) ;;
+        *)
+          echo "<4>$rig_name has the status '$state': nothing done"
+          exit 0
+          ;;
+      esac
+
+      # Back-off: keep the attempts of the last hour, and stop at max_attempts of them.
+      now=$(date +%s)
+      count=0
+      kept=""
+      if [ -f "$attempts" ]; then
+        while read -r t || [ -n "$t" ]; do
+          case $t in
+            "" | *[!0-9]*) continue ;;
+          esac
+          if [ $((now - t)) -le "$window" ]; then
+            count=$((count + 1))
+            kept="$kept$t"$'\n'
+          fi
+        done <"$attempts"
+      fi
+      if [ "$count" -ge "$max_attempts" ]; then
+        echo "<3>$rig_name is $state and $count start attempts failed or ended in the last hour: not trying. Read: journalctl -u openrig; rig ps --nodes --rig $rig_name"
+        exit 1
+      fi
+      printf '%s%s\n' "$kept" "$now" >"$attempts"
+
+      echo "$rig_name is $state: starting it"
+      if [ "$state" = stopped ] && rig up "$rig_name" --existing >/dev/null 2>&1; then
+        echo "$rig_name restored from its snapshot (--existing)"
+        exit 0
+      fi
+      if rig up "$spec" >/dev/null 2>&1; then
+        echo "$rig_name started from $spec"
+        exit 0
+      else
+        code=$?
+      fi
+      echo "<3>$rig_name did not start: rig up exited with $code. Read: rig up $rig_name --existing"
+      exit 1
+    '';
+  };
 in
 {
   # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
   # not in the host, so that a host which turns waveForecaster on can evaluate it.
-  imports = [ ./unfree.nix ];
+  imports = [ ./unfree.nix ./marola-bot.nix ];
 
   options.piabrota.openrig = {
     enable = mkEnableOption "OpenRig, run by Hermes (docs/OPENRIG.md)";
@@ -254,8 +414,16 @@ in
       type = types.str;
       default = "2G";
       description = ''
-        systemd MemoryMax of the unit: the budget of the daemon, tmux and every seat. MemoryHigh is
-        1536M, below it. Two seats fit (docs/OPENRIG.md, "Limits").
+        systemd MemoryMax of the unit: the budget of the daemon, tmux and every seat. Keep
+        `memoryHigh` below it. Two seats fit in 2G (docs/OPENRIG.md, "Limits").
+      '';
+    };
+    memoryHigh = mkOption {
+      type = types.str;
+      default = "1536M";
+      description = ''
+        systemd MemoryHigh of the unit: above it the kernel slows the unit, so it is the working
+        limit. Keep it below `memoryMax`.
       '';
     };
     githubRead = mkOption {
@@ -269,12 +437,42 @@ in
         repository.
       '';
     };
-    waveForecaster.enable = mkEnableOption ''
-      the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
-      outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
+    waveForecaster = {
+      enable = mkEnableOption ''
+        the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
+        outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
+      alwaysOn.enable = mkEnableOption ''
+        the keeper of the port rig: the unit and timer openrig-wf-keeper restore the rig
+        wave-forecaster-dev when it is stopped (docs/OPENRIG.md, "wave-forecaster-dev")'';
+    };
+    marola = {
+      enable = mkEnableOption ''
+        marola-front and marola-back on the rig piabrota-dev: the seats' Rust tools and `marola-clone`,
+        the outbox for Hermes and read-only tokens of marola-pr-bot (marola-bot.nix). Hermes pushes
+        and opens the pull requests of these two repositories as marola-pr-bot (docs/OPENRIG.md)'';
+      repos = mkOption {
+        type = types.listOf types.str;
+        default = [ "marola-dev/marola-front" "marola-dev/marola-back" ];
+        description = ''
+          The marola repositories (`marola-dev/<name>`) that the seats may read and that Hermes may
+          push to as marola-pr-bot. marola-bot.nix mints their tokens, so they do not go in `githubRead`.
+        '';
+      };
+      claude.enable = mkEnableOption ''
+        the Claude Code setup B of marola-front and marola-back, the rig piabrota-dev-claude: adds
+        `claude`, `managed-settings.json` and the two seat folders. It costs about 280 MiB of closure
+        (docs/RUNTIMES.md). Needs marola.enable'';
+    };
     thesis.enable = mkEnableOption ''
       the rig wave-forecaster-thesis: the `thesis` toolkit with pandoc and a small TeX set in the seats'
       profile, a folder per seat, the outbox for Hermes and Claude Code seats (docs/THESIS.md)'';
+    reels.enable = mkEnableOption ''
+      the rig reels-fabric: the toolkit `reel` (ffmpeg, jq, two font files) in the seats' profile, a
+      folder per seat, the projects and renders, and the outbox for Hermes (docs/REELS.md)'';
+    reels.blender.enable = mkEnableOption ''
+      Blender (pkgs.blender, GPL-2.0-or-later) in the reels seats' profile, for the `reel blender` command
+      and the artist-3d seat: 3D shots rendered headless with Cycles on the CPU. About 3 GiB more
+      closure; a render peaks near 0.5 GiB of memory (docs/REELS.md). Needs reels.enable'';
     web = {
       enable = mkEnableOption "the web UI of OpenRig behind nginx, TLS and basic auth (docs/OPENRIG.md, \"The web UI\")";
       domain = mkOption {
@@ -297,10 +495,28 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = config.services.hermes-agent.enable;
-      message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
-    }];
+    assertions = [
+      {
+        assertion = config.services.hermes-agent.enable;
+        message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
+      }
+      {
+        assertion = rf.blender.enable -> rf.enable;
+        message = "piabrota.openrig.reels.blender.enable needs piabrota.openrig.reels.enable: Blender is for the artist-3d seat of the reels-fabric rig.";
+      }
+      {
+        assertion = !marola.enable || (marola.repos != [ ] && lib.all (lib.hasPrefix "marola-dev/") marola.repos);
+        message = "piabrota.openrig.marola.repos needs at least one entry, and every entry must start with marola-dev/: marola-pr-bot has one installation, and one installation belongs to one owner.";
+      }
+      {
+        assertion = !marola.claude.enable || marola.enable;
+        message = "piabrota.openrig.marola.claude.enable needs piabrota.openrig.marola.enable: the rig piabrota-dev-claude uses the same agents, tokens and outbox.";
+      }
+      {
+        assertion = !wf.alwaysOn.enable || wf.enable;
+        message = "piabrota.openrig.waveForecaster.alwaysOn needs piabrota.openrig.waveForecaster.enable: the keeper restores the port rig, which that option defines.";
+      }
+    ];
 
     users.users.openrig = {
       isSystemUser = true;
@@ -309,16 +525,17 @@ in
       # OpenRig starts a pane shell with a clean environment, so the unit's `path` does not reach
       # it. NixOS builds the pane's PATH from the per-user profile of $USER (the RigSpec `env:` sets
       # USER, see openrig/specs/rigs/piabrota-dev/rig.yaml).
-      packages = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
+      packages = lib.unique (seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals marola.enable marolaTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools ++ lib.optionals rf.enable reelsTools);
     };
     users.groups.openrig = { };
 
     # Only the openrig user reads this directory. The token file in it is made by the unit.
     systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ]
-      ++ lib.optionals (cfg.githubRead != [ ]) [ "d ${seatTokens} 0750 root openrig -" ]
+      ++ lib.optionals (cfg.githubRead != [ ] || marola.enable) [ "d ${seatTokens} 0750 root openrig -" ]
       # The outbox: the seats write, Hermes (group hermes) reads. The default ACL gives the group
-      # read access to new files in spite of the unit's UMask. Bundles older than 14 days go.
-      ++ lib.optionals claudeSeats [ "d ${outbox} 0750 openrig hermes -" ]
+      # read access to new files in spite of the unit's UMask. Files older than 14 days go. The
+      # parent is shared by the rigs that use it.
+      ++ lib.optionals (claudeSeats || marola.enable || rf.enable) [ "d ${outbox} 0750 openrig hermes -" ]
       ++ lib.optionals wf.enable [
       "d ${outbox}/wave-forecaster-dev 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-dev - - - - default:group::r-X"
@@ -326,6 +543,17 @@ in
       ++ lib.optionals th.enable [
       "d ${outbox}/wave-forecaster-thesis 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-thesis - - - - default:group::r-X"
+    ]
+      # The reels outbox is setgid (2750): a file made in it takes the group hermes, and `reel publish`
+      # gives that group its read bit. On this box's ext4 a default ACL did not lift the unit's UMask
+      # 077 in a test, so the ACL line below is no more than the wave rig's, kept alongside.
+      ++ lib.optionals rf.enable [
+      "d ${outbox}/reels-fabric 2750 openrig hermes 14d"
+      "a+ ${outbox}/reels-fabric - - - - default:group::r-X"
+    ]
+      ++ lib.optionals marola.enable [
+      "d ${outbox}/marola 0750 openrig hermes 14d"
+      "a+ ${outbox}/marola - - - - default:group::r-X"
     ];
 
     piabrota.openrig.githubRead = lib.optionals wf.enable [ "h0ffmann/chaceon" ];
@@ -336,7 +564,7 @@ in
     # The specs of openrig/specs, read-only: rig up /etc/openrig/specs/rigs/piabrota-dev/rig.yaml
     environment.etc."openrig/specs".source = ./openrig/specs;
 
-    # The rules of a Claude seat (the port rig and the thesis rig: waveForecaster or thesis on): Claude Code reads this file
+    # The rules of a Claude seat (the port rig, the thesis rig and piabrota-dev-claude: waveForecaster, thesis or marola.claude on): Claude Code reads this file
     # first, and no setting of a cloned repository can override it.
     environment.etc."claude-code/managed-settings.json" = mkIf claudeSeats {
       text = builtins.toJSON claudeManagedSettings;
@@ -469,7 +697,7 @@ in
       # the seats work on clones. The NixOS default adds coreutils, findutils, grep, sed and systemd.
       # The tools of the chaceon rigs are in this path too, so that a Claude seat that OpenRig starts
       # with a clean environment (a permission mode set by `rig seat set-permissions`) finds `claude`.
-      path = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
+      path = lib.unique (seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals marola.enable marolaTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools ++ lib.optionals rf.enable reelsTools);
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
@@ -479,12 +707,12 @@ in
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
-        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals th.enable thFolders;
+        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals (marola.enable && marola.claude.enable) marolaClaudeFolders ++ lib.optionals th.enable thFolders ++ lib.optionals rf.enable reelsFolders;
         StateDirectoryMode = "0700";
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = work;
-        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ];
+        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ] ++ lib.optionals rf.enable [ "${outbox}/reels-fabric" ] ++ lib.optionals marola.enable [ "${outbox}/marola" ];
         UMask = "0077";
         Restart = "on-failure";
         RestartSec = "10s";
@@ -494,7 +722,7 @@ in
         # An OOM kill takes one seat (choom aims at it), not the daemon and the other seats.
         OOMPolicy = "continue";
         MemoryMax = cfg.memoryMax;
-        MemoryHigh = "1536M";
+        MemoryHigh = cfg.memoryHigh;
         CPUWeight = 50;
         TasksMax = 2048;
         NoNewPrivileges = true;
@@ -522,6 +750,58 @@ in
         SystemCallArchitectures = "native";
         SystemCallFilter = [ "@system-service" "~@privileged" ];
         SystemCallErrorNumber = "EPERM";
+      };
+    };
+
+    # The keeper of the port rig (docs/OPENRIG.md, "wave-forecaster-dev"): every 2 minutes it brings
+    # the rig back when it is stopped. A oneshot with its own sandbox, no secret, loopback only. It
+    # does not start openrig.service: with the daemon down it does nothing (a stray daemon would
+    # live outside the unit's budget).
+    systemd.services.openrig-wf-keeper = mkIf wf.alwaysOn.enable {
+      description = "Keep the OpenRig rig wave-forecaster-dev up";
+      after = [ "openrig.service" ];
+      environment.HOME = "/var/lib/openrig-wf-keeper";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = lib.getExe wfKeeper;
+        DynamicUser = true;
+        StateDirectory = "openrig-wf-keeper";
+        UMask = "0077";
+        TimeoutStartSec = 300;
+        MemoryMax = "256M";
+        CPUQuota = "25%";
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectKernelLogs = true;
+        ProtectControlGroups = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        ProtectProc = "invisible";
+        CapabilityBoundingSet = "";
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        # Only the daemon on the loopback. AF_NETLINK: the rig CLI runs on Node (see the unit openrig).
+        IPAddressAllow = "localhost";
+        IPAddressDeny = "any";
+        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [ "@system-service" "~@privileged" ];
+        SystemCallErrorNumber = "EPERM";
+      };
+    };
+
+    systemd.timers.openrig-wf-keeper = mkIf wf.alwaysOn.enable {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "2min";
       };
     };
   };

@@ -208,7 +208,7 @@ address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)).
 
 The website of h0ffmann/ww3-gpu, which GitHub Pages served at h0ffmann.github.io/ww3-gpu until
 2026-11-11. Its Gleam code lives here, in `ww3-site/` (the front page, the lineage page, the
-pt-BR translations, the CSS), and its facts stay in ww3-gpu: `ww3-site/default.nix` copies
+locales, the CSS), and its facts stay in ww3-gpu: `ww3-site/default.nix` copies
 ww3-gpu at a pinned commit, puts this code in its `site/`, runs the content generator
 (`ww3-site/content`, which reads `docs/ADRs.md`, `docs/WFIPs/`, `notes/`, `kokkos/ports.tsv`,
 `.zenodo.json`, `CITATION.cff`, `RELEASES.md`, `VERSIONS.md`, `docs/archify/` and `site/data/*.tsv`
@@ -225,22 +225,35 @@ figures, port reports and `site/data/port_score.tsv`), the tools of the referenc
 cite it. The figures are the PNGs ww3-gpu commits for each drawing of `docs/archify/dark.tsv`,
 copied byte for byte into `archify/` and shown at the size they were drawn at: half the PNG's
 pixels, read from its header by the content generator and set as the image's `width` and `height`.
-A figure is not shrunk to the text column; it passes the column's edges, and scrolls sideways in
-its frame when the screen is narrower than the drawing. A click on a figure opens its interactive
+A figure is not shrunk to the text column; it passes the column's edges, and is scaled down only
+when it is wider than the room beside the side column, open or folded, so it always fits. A click on a figure opens its interactive
 Archify page at `https://h0ffmann.github.io/ww3-gpu/figures/<slug>/`, which ww3-gpu's `pages.yml`
 publishes. The pages are not built here: Archify checks each drawing against the Git history of
 ww3-gpu, and the fetched source has none. The side column also lists five repositories of
 piabrota, marola-dev and ouroboric-dev, the rows of `ww3-site/data/orgs.tsv` (the most stars, the
-most recent push first on a tie; the file names its date). The look follows
+most recent push first on a tie; the file names its date), each under its logo. A logo is a
+trademark and never a file here: it loads from its owner's repository at a pinned commit
+(`logos` in `app.gleam`), and piabrota's is its GitHub picture. The look follows
 [reasonablypolymorphic.com](https://reasonablypolymorphic.com/) by Sandy Maguire
-([@isovector](https://github.com/isovector)), a serif text column and a dark side column, written
+([@isovector](https://github.com/isovector)), a serif text column and a dark side column, here on the left, written
 anew in `ww3-site/static/style.css`; the foot of every page credits it.
+
+The side column is on the left and the reader can fold it: a checkbox before it holds the state
+and the ☰ label at its top is the button, with no JavaScript. On a wide screen it is open until
+the reader folds it to a strip; on a phone it is a bar at the top until the reader opens it.
+
+The site has the four languages of the homepage: English at `/`, and `/pt-BR/`, `/zh-CN/` and
+`/ja-JP/`, each with its lineage page. The sentences are in `ww3-site/locales/<lang>.json`, a flat
+object from a key to the sentence, and the page asks for one with `t(l, "key")`. `en.json` is the
+source. The content generator stops the build when a language lacks a key of `en.json`, or a file
+has a key the page does not ask for. The zh-CN and ja-JP pages keep their banner (the key `banner`)
+until a native reader checks them. A fact read from ww3-gpu keeps its own language.
 
 `ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
 (`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
 pin. The site changes when the owner merges it.
 A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
-needs its row in `ww3-site/data/translations/pt-BR.tsv`, or the content generator stops the build.
+needs its key in each file of `ww3-site/locales/`, or the content generator stops the build.
 `just ww3-site` builds it into `./result-ww3-site`; `nix develop .#site` has gleam and node for
 `gleam test` in `ww3-site/` and `ww3-site/content`, run inside a checkout of ww3-gpu's layout.
 
@@ -250,17 +263,31 @@ serving them.
 
 ## The closed-source site at closed.piabrota.art
 
-The site of h0ffmann/closed-source, the book *The god that failed*. That repository builds it
-(PDFs with TeX Live, the content with its Gleam generator, the page with Lustre) and publishes it
-to GitHub Pages at h0ffmann.github.io/closed-source on each push to its `main`. `closed.nix` gives
-it the name `closed.piabrota.art` on piabrota2: nginx passes each request to Pages, so a merge
-there shows here at once, the box keeps no copy and its closure does not change. Pages caches for
-ten minutes. Only `Host` goes to Pages; the visitor's address does not.
+The website of h0ffmann/closed-source, the book *The god that failed*, which GitHub Pages also
+serves at h0ffmann.github.io/closed-source. `closed-site/default.nix` builds it on the builder at a
+pinned commit, with that repository's own steps (`just site-build` and `site/justfile`): its content
+generator (`tools/fabric content`, Gleam on Erlang, with pandoc and pdfinfo) writes the content
+module from the paper, then the Gleam tests, the esbuild bundle and the prerender run on node. The
+output is the page, `app.js`, `style.css`, the drawings, the icon and the three PDFs, with no store
+reference. nginx (`closed.nix`) serves it as static files on piabrota2.
 
-The name needs its DNS `A` record at piabrota2's address before the first deploy
-([DNS on Porkbun](#dns-on-porkbun)). Do not give the Pages site a custom domain: Pages would then
-send h0ffmann.github.io/closed-source to that name, and a request from nginx would come back to
-nginx.
+Three things differ from the Pages build, because the sandbox has no network and the source has no
+`.git`:
+
+- The three PDFs are the release assets of the tag at the pinned commit (`release` in
+  `default.nix`, each with its hash), not built again with XeLaTeX.
+- The version DOIs come from `closed-site/zenodo.json`, Zenodo's reply cut to the fields the
+  generator reads, not from Zenodo at build time. Fetch it again when the pin passes a release.
+- The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
+  stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
+
+To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
+on `git archive <rev>`), and `release` with the PDF hashes when a new tag has them. `just
+closed-site` builds it into `./result-closed-site`.
+
+The first version of this vhost (#217) passed each request to Pages, but piabrota2 timed out on
+every connection to Pages (the 502 that `certs.yml` saw on 2026-11-11), so the box now keeps its
+own copy. The name needs its DNS `A` record at piabrota2's address ([DNS on Porkbun](#dns-on-porkbun)).
 
 ## The ▲ grid at grid.piabrota.art
 

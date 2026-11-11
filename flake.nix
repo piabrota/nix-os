@@ -349,6 +349,8 @@
         pgx = pkgs.callPackage ./pgx/package.nix { };
         # The eye as favicon.svg, favicon.ico and apple-touch-icon.png (favicon/): served on every vhost.
         favicon = pkgs.callPackage ./favicon { };
+        # The lofi Discord bot (lofi/, lofi.nix).
+        lofi = pkgs.callPackage ./lofi { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })
@@ -360,6 +362,8 @@
         skills-site = self.nixosConfigurations.piabrota.config.piabrota.site.skills;
         # The website of h0ffmann/ww3-gpu (ww3-site/), prerendered from Gleam: served at wave.piabrota.art.
         ww3-site = self.nixosConfigurations.piabrota2.config.piabrota.ww3.root;
+        # The website of h0ffmann/closed-source (closed-site/), at a pinned commit: served at closed.piabrota.art.
+        closed-site = self.nixosConfigurations.piabrota2.config.piabrota.closedSource.root;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"
           (import ./site/data.nix {

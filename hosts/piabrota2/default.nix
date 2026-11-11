@@ -26,8 +26,7 @@
     ../../proof.nix
     # The website of h0ffmann/ww3-gpu on wave.piabrota.art, which must point at this box.
     ../../ww3.nix
-    # The site of h0ffmann/closed-source, from GitHub Pages, on closed.piabrota.art, which must point
-    # at this box.
+    # The website of h0ffmann/closed-source on closed.piabrota.art, which must point at this box.
     ../../closed.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
@@ -49,6 +48,8 @@
 
   piabrota.hermesWeb.enable = true;
   piabrota.pgx.enable = true;
+  # The lofi bot (lofi.nix, docs/LOFI.md). Idle until its token and IDs are on the box.
+  piabrota.lofi.enable = true;
   # Off since 2026-11-04 by the owner's order; docs/PAPERCLIP.md says how to turn it on.
   piabrota.paperclip.enable = false;
   # Hermes operates it with `rig` and the skill hermes-rig; docs/OPENRIG.md.
@@ -57,9 +58,23 @@
   piabrota.openrig.web.enable = true;
   piabrota.openrig.web.domain = "rig.piabrota.art";
   # The rigs wave-forecaster-dev and wave-forecaster-dev-integrate: the seats' Rust tools, their
-  # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md). Off: the
-  # specs are in /etc/openrig/specs as a definition only. The owner turns this on to use them.
-  piabrota.openrig.waveForecaster.enable = false;
+  # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md). On since
+  # 2026-11-07, when the owner asked for the port rig to run 24/7: the keeper openrig-wf-keeper
+  # restores it when it stops. The integrate rig stays manual.
+  piabrota.openrig.waveForecaster.enable = true;
+  piabrota.openrig.waveForecaster.alwaysOn.enable = true;
+  # marola-front and marola-back on the rig piabrota-dev: two builders in parallel, read tokens of
+  # marola-pr-bot, and Hermes pushes and opens these pull requests as marola-pr-bot (docs/OPENRIG.md).
+  # Without the App's key file on the box (marola-bot.nix) it mints nothing and the seats clone no
+  # private repository.
+  piabrota.openrig.marola.enable = true;
+  # Setup B of the same two repositories on Claude Code (rig piabrota-dev-claude), to compare with omp.
+  piabrota.openrig.marola.claude.enable = true;
+  # Three seats of one rig at a time: `builder` on marola-back and `front-builder` on marola-front
+  # build in parallel, and share the reviewer (docs/OPENRIG.md, "Limits"). The MemoryMax values of
+  # the box then sum to 14.25 GiB of 15.6 GiB; a cap is a ceiling, not a use.
+  piabrota.openrig.memoryMax = "4G";
+  piabrota.openrig.memoryHigh = "3G";
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
   # The same room on grid.piabrota.art, opened on its ▲ grid view (room.nix). The name must point
@@ -70,8 +85,7 @@
   piabrota.proof.enable = true;
   # The website of h0ffmann/ww3-gpu at a pinned commit (ww3-site/), at wave.piabrota.art.
   piabrota.ww3.enable = true;
-  # The site of h0ffmann/closed-source, passed through from GitHub Pages (closed.nix), at
-  # closed.piabrota.art.
+  # The website of h0ffmann/closed-source at a pinned commit (closed-site/), at closed.piabrota.art.
   piabrota.closedSource.enable = true;
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).

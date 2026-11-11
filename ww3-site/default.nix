@@ -42,12 +42,12 @@ stdenvNoCC.mkDerivation {
   version = "0-unstable-${builtins.substring 0 7 rev}";
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [ ./gleam.toml ./manifest.toml ./src ./test ./static ./content ./data ];
+    fileset = lib.fileset.unions [ ./gleam.toml ./manifest.toml ./src ./test ./static ./content ./data ./locales ];
   };
   nativeBuildInputs = [ gleam nodejs ];
 
   # The programs read ../../ from site/content, so they run in site/ of a copy of ww3-gpu whose own
-  # site code is replaced by this one; ww3-gpu's site/data/*.tsv stay, the translations are ours.
+  # site code is replaced by this one; ww3-gpu's site/data/*.tsv stay, the locales (locales/<lang>.json) are ours.
   configurePhase = ''
     runHook preConfigure
     export HOME=$TMPDIR
@@ -66,15 +66,20 @@ stdenvNoCC.mkDerivation {
     export WW3_GPU_REV=${builtins.substring 0 7 rev}
     export WW3_GPU_COMMITS=${toString commits}
     out_dir=$TMPDIR/out
-    mkdir -p $out_dir/pt-BR $out_dir/lineage $out_dir/pt-BR/lineage
+    mkdir -p $out_dir/lineage
+    for lang in pt-BR zh-CN ja-JP; do mkdir -p $out_dir/$lang/lineage; done
     (cd $tree/site/content && gleam test && gleam run --no-print-progress)
     cd $tree/site
     gleam format src/ww3_gpu_site/content.gleam
     gleam test
     gleam run -m ww3_gpu_site/prerender --no-print-progress > $out_dir/index.html
     gleam run -m ww3_gpu_site/prerender_pt_br --no-print-progress > $out_dir/pt-BR/index.html
+    gleam run -m ww3_gpu_site/prerender_zh_cn --no-print-progress > $out_dir/zh-CN/index.html
+    gleam run -m ww3_gpu_site/prerender_ja_jp --no-print-progress > $out_dir/ja-JP/index.html
     gleam run -m ww3_gpu_site/prerender_lineage --no-print-progress > $out_dir/lineage/index.html
     gleam run -m ww3_gpu_site/prerender_lineage_pt_br --no-print-progress > $out_dir/pt-BR/lineage/index.html
+    gleam run -m ww3_gpu_site/prerender_lineage_zh_cn --no-print-progress > $out_dir/zh-CN/lineage/index.html
+    gleam run -m ww3_gpu_site/prerender_lineage_ja_jp --no-print-progress > $out_dir/ja-JP/lineage/index.html
     cp -R static/. $out_dir/
     # ww3-gpu's llms.txt (https://llmstxt.org), byte for byte, at /llms.txt; a pin before the
     # commit that added it has none.
@@ -87,12 +92,12 @@ stdenvNoCC.mkDerivation {
     for img in $(grep -o 'src="archify/[^"]*"' $out_dir/index.html | cut -d'"' -f2); do
       [ -f "$out_dir/$img" ] || { echo "ww3-site: no $img" >&2; exit 1; }
     done
-    for page in index.html pt-BR/index.html; do
+    for page in index.html pt-BR/index.html zh-CN/index.html ja-JP/index.html; do
       for id in research numbers tools figures port decisions designs cite; do
         grep -q "id=\"$id\"" "$out_dir/$page" || { echo "ww3-site: no #$id in $page" >&2; exit 1; }
       done
     done
-    for page in lineage/index.html pt-BR/lineage/index.html; do
+    for page in lineage/index.html pt-BR/lineage/index.html zh-CN/lineage/index.html ja-JP/lineage/index.html; do
       grep -q 'id="lineage"' "$out_dir/$page" || { echo "ww3-site: no #lineage in $page" >&2; exit 1; }
     done
     runHook postBuild

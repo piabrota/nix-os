@@ -339,7 +339,9 @@ h0ffmann, com os direitos de contents, pull requests e issues (não workflows). 
 token por um credential helper que escolhe a conta pelo dono do repositório, e o `gh` também.
 O Hermes só dá push em branches `hermes/*`: o `hermes/dangerous-patterns.yaml` bloqueia merges e
 todo outro push, e um ruleset em cada branch padrão bloqueia o push nele no próprio GitHub. Sem o
-arquivo da chave, a unit não faz nada.
+arquivo da chave, a unit não faz nada. Em dois repositórios do marola o Hermes age como
+marola-pr-bot[bot] quando `piabrota.openrig.marola.enable` está ligado (`marola-bot.nix`,
+[OPENRIG.md](OPENRIG.md), em inglês).
 
 1. **Crie o App** (uma vez): github.com/organizations/piabrota/settings/apps → **New GitHub App**.
    Nome `piabrota-hermes`, qualquer homepage (piabrota.art), **Webhook** desligado. Permissões de

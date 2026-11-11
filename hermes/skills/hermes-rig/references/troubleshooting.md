@@ -103,13 +103,13 @@ or `WARN` or `CRIT` for `openrig`; a seat's process died mid-task.
 
 1. Check: `kvm4-health`; `systemctl show openrig -p MemoryCurrent -p MemoryPeak`; `journalctl -k
    --since -24h | grep -i -A3 'killed process'`.
-2. All seats share the unit's 2 GiB cgroup (`MemoryHigh` 1536 MiB). `OOMPolicy=continue` keeps
+2. All seats share the unit's cgroup (at piabrota2 `MemoryMax` 4 GiB, `MemoryHigh` 3 GiB). `OOMPolicy=continue` keeps
    the unit up, and the `choom` setting makes the kernel pick a seat before the daemon.
 3. Fix, yours: `rig seat clean <seat> --reason "<why>"`, then
    `rig seat launch <seat> --fresh --plan`, or restore with `rig up piabrota-dev --existing` if the
    rig is stopped. Run one seat until the cause is known.
 4. Fix, the owner's: a higher `memoryMax` (it changes the sum of limits in `docs/OPENRIG.md`), or lighter
-   tasks. Do not start a third seat.
+   tasks. Do not start an extra seat.
 
 ## A deploy ended the seats
 

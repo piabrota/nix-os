@@ -16,7 +16,7 @@ ainda. Créditos: OpenRig, de mvschwarz (Apache-2.0), [Pi](https://pi.dev), de M
 
 |Runtime|O que é|Prós|Contras|Na `piabrota2`|
 |---|---|---|---|---|
-|`claude-code`|O Claude Code da Anthropic num painel tmux|O mais bem suportado pelo OpenRig. Usa a assinatura do Claude. As configurações gerenciadas põem regras que um repositório não sobrescreve|Unfree. Cerca de +280 MiB. Pede uma vez para aceitar o aviso do bypass. Põe `ANTHROPIC_API_KEY` acima do token OAuth|A rig de port `wave-forecaster-dev`, depois desta mudança e com `waveForecaster.enable` ligado (desligado). Precisa do `unfree.nix`|
+|`claude-code`|O Claude Code da Anthropic num painel tmux|O mais bem suportado pelo OpenRig. Usa a assinatura do Claude. As configurações gerenciadas põem regras que um repositório não sobrescreve|Unfree. Cerca de +280 MiB. Pede uma vez para aceitar o aviso do bypass. Põe `ANTHROPIC_API_KEY` acima do token OAuth|A rig de port `wave-forecaster-dev`, com `waveForecaster.enable` ligado (ligado no piabrota2). Precisa do `unfree.nix`|
 |`codex`|O CLI Codex da OpenAI|Sandbox nativo. Outra família de modelos|Precisa de um login da OpenAI e de um binário|Não instalado|
 |`pi`|O harness Pi, pelo runner do OpenRig|Pequeno. Muitos provedores. Atividade precisa|Sem subagentes nem modo de plano por padrão. Sem rota da assinatura do Claude. Sem política de permissão|Não instalado. Nenhuma spec|
 |`omp`|O oh-my-pi, um fork do Pi, por um runner|Funciona aqui com o token da assinatura. Regras próprias que um repositório não afrouxa|Só recebe chave com modelo escrito `provedor/id`. O restore de um seat novo pede `--fresh`|Funciona: `piabrota-dev` e a rig de integração|

@@ -139,6 +139,10 @@ Git signs you in by the repository's owner (piabrota, marola-dev, h0ffmann: wher
 installed); `gh` uses the first of those. Tokens last an hour and renew on their own. If a push is
 refused, say so; do not look for another way.
 
+- For `marola-dev/marola-front` and `marola-dev/marola-back`, use `marola-gh` (not `gh`) and a normal
+  `git push origin hermes/<branch>`. These two go out as marola-pr-bot[bot]. The rules above do not
+  change: English, ASD-STE100, `hermes/*` only, humans merge.
+
 ### Pull request language
 
 **Hard rule.** Write every pull request 100% in English, in ASD-STE100 Simplified Technical

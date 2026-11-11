@@ -1,0 +1,35 @@
+# The artist-3d seat of reels-fabric: builds the shots that the shotlist marks as 3d, with reel blender. Useful only when piabrota.openrig.reels.blender.enable is on.
+name: reels-artist-3d
+version: "1.0"
+description: Makes the 3D shots of one reel with Blender, headless, on the CPU
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../reels-shared
+
+profiles:
+  default:
+    summary: Writes one Blender scene for each 3d shot and renders it to a PNG sequence
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, reels-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []
