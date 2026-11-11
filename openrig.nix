@@ -83,6 +83,13 @@ let
   thFolders = [ "openrig/work/wave-forecaster-thesis" "openrig/work/wave-forecaster-thesis/projects" "openrig/work/wave-forecaster-thesis/out" ]
     ++ map (seat: "openrig/work/wave-forecaster-thesis/${seat}") [ "editor" "writer-a" "writer-b" "writer-c" "librarian" "reviewer" ];
 
+  # The rig reels-fabric (openrig/specs/rigs/reels-fabric, reels/): a film crew of five seats that make
+  # 15 s and 30 s reels from code only, with the toolkit `reel`. docs/REELS.md. A folder per seat, the
+  # shared projects, the renders, and an outbox under the same parent as the wave rig's.
+  rf = cfg.reels;
+  reelsFolders = [ "openrig/work/reels-fabric" ]
+    ++ map (d: "openrig/work/reels-fabric/${d}") [ "creative-director" "producer-editor" "artist-3d" "music-director" "qa" "projects" "out" ];
+
   # git credential helper of the seats: the read-only token of the repository, from the path git
   # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
   # password, which is enough for a public one. A clone names it by its profile path, not its store
@@ -231,6 +238,10 @@ let
   wfTools = [ pkgs.rustup pkgs.gcc pkgs.just pkgs.shellcheck seatCredential chaceonClone ];
   claudeTools = [ seatClaude ];
   thTools = [ thesisPkg ];
+  # What a reels seat runs: the toolkit (it carries its own ffmpeg-headless, resvg and two fonts) and
+  # the same ffmpeg and jq for what a seat scripts itself. Blender, headless, for the artist-3d seat:
+  # the owner's exception to no GUI (2026-11-08), behind its own option and only that package.
+  reelsTools = [ (pkgs.callPackage ./reels { }) pkgs.ffmpeg-headless pkgs.jq ] ++ lib.optionals rf.blender.enable [ pkgs.blender ];
 in
 {
   # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
@@ -275,6 +286,13 @@ in
     thesis.enable = mkEnableOption ''
       the rig wave-forecaster-thesis: the `thesis` toolkit with pandoc and a small TeX set in the seats'
       profile, a folder per seat, the outbox for Hermes and Claude Code seats (docs/THESIS.md)'';
+    reels.enable = mkEnableOption ''
+      the rig reels-fabric: the toolkit `reel` (ffmpeg, jq, two font files) in the seats' profile, a
+      folder per seat, the projects and renders, and the outbox for Hermes (docs/REELS.md)'';
+    reels.blender.enable = mkEnableOption ''
+      Blender (pkgs.blender, GPL-2.0-or-later) in the reels seats' profile, for the `reel blender` command
+      and the artist-3d seat: 3D shots rendered headless with Cycles on the CPU. About 3 GiB more
+      closure; a render peaks near 0.5 GiB of memory (docs/REELS.md). Needs reels.enable'';
     web = {
       enable = mkEnableOption "the web UI of OpenRig behind nginx, TLS and basic auth (docs/OPENRIG.md, \"The web UI\")";
       domain = mkOption {
@@ -297,10 +315,16 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = config.services.hermes-agent.enable;
-      message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
-    }];
+    assertions = [
+      {
+        assertion = config.services.hermes-agent.enable;
+        message = "piabrota.openrig needs services.hermes-agent (hermes.nix) on the same host: Hermes operates it, and the seats use Hermes's Claude subscription token.";
+      }
+      {
+        assertion = rf.blender.enable -> rf.enable;
+        message = "piabrota.openrig.reels.blender.enable needs piabrota.openrig.reels.enable: Blender is for the artist-3d seat of the reels-fabric rig.";
+      }
+    ];
 
     users.users.openrig = {
       isSystemUser = true;
@@ -309,7 +333,7 @@ in
       # OpenRig starts a pane shell with a clean environment, so the unit's `path` does not reach
       # it. NixOS builds the pane's PATH from the per-user profile of $USER (the RigSpec `env:` sets
       # USER, see openrig/specs/rigs/piabrota-dev/rig.yaml).
-      packages = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
+      packages = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools ++ lib.optionals rf.enable reelsTools;
     };
     users.groups.openrig = { };
 
@@ -317,8 +341,9 @@ in
     systemd.tmpfiles.rules = [ "d ${secretsDir} 0700 openrig openrig -" ]
       ++ lib.optionals (cfg.githubRead != [ ]) [ "d ${seatTokens} 0750 root openrig -" ]
       # The outbox: the seats write, Hermes (group hermes) reads. The default ACL gives the group
-      # read access to new files in spite of the unit's UMask. Bundles older than 14 days go.
-      ++ lib.optionals claudeSeats [ "d ${outbox} 0750 openrig hermes -" ]
+      # read access to new files in spite of the unit's UMask. Files older than 14 days go. The
+      # parent is shared by the rigs that use it.
+      ++ lib.optionals (claudeSeats || rf.enable) [ "d ${outbox} 0750 openrig hermes -" ]
       ++ lib.optionals wf.enable [
       "d ${outbox}/wave-forecaster-dev 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-dev - - - - default:group::r-X"
@@ -326,6 +351,13 @@ in
       ++ lib.optionals th.enable [
       "d ${outbox}/wave-forecaster-thesis 0750 openrig hermes 14d"
       "a+ ${outbox}/wave-forecaster-thesis - - - - default:group::r-X"
+    ]
+      # The reels outbox is setgid (2750): a file made in it takes the group hermes, and `reel publish`
+      # gives that group its read bit. On this box's ext4 a default ACL did not lift the unit's UMask
+      # 077 in a test, so the ACL line below is no more than the wave rig's, kept alongside.
+      ++ lib.optionals rf.enable [
+      "d ${outbox}/reels-fabric 2750 openrig hermes 14d"
+      "a+ ${outbox}/reels-fabric - - - - default:group::r-X"
     ];
 
     piabrota.openrig.githubRead = lib.optionals wf.enable [ "h0ffmann/chaceon" ];
@@ -469,7 +501,7 @@ in
       # the seats work on clones. The NixOS default adds coreutils, findutils, grep, sed and systemd.
       # The tools of the chaceon rigs are in this path too, so that a Claude seat that OpenRig starts
       # with a clean environment (a permission mode set by `rig seat set-permissions`) finds `claude`.
-      path = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools;
+      path = seatTools ++ lib.optionals wf.enable wfTools ++ lib.optionals claudeSeats claudeTools ++ lib.optionals th.enable thTools ++ lib.optionals rf.enable reelsTools;
       serviceConfig = {
         ExecStart = "${lib.getExe pkg.nodejs} ${pkg}/${pkg.daemon}/dist/index.js";
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
@@ -479,12 +511,12 @@ in
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
-        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals th.enable thFolders;
+        StateDirectory = [ "openrig" "openrig/work" ] ++ lib.optionals wf.enable wfFolders ++ lib.optionals th.enable thFolders ++ lib.optionals rf.enable reelsFolders;
         StateDirectoryMode = "0700";
         RuntimeDirectory = "openrig";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = work;
-        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ];
+        ReadWritePaths = lib.optionals wf.enable [ outbox ] ++ lib.optionals th.enable [ "${outbox}/wave-forecaster-thesis" ] ++ lib.optionals rf.enable [ "${outbox}/reels-fabric" ];
         UMask = "0077";
         Restart = "on-failure";
         RestartSec = "10s";

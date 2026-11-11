@@ -1,0 +1,84 @@
+{
+  "schema": "reels.screenplay/1",
+  "slug": "marola-praia-30",
+  "title": "A praia boa hoje? Ou sem dados.",
+  "format": 30,
+  "logline": "A marola diz se a praia está boa para nadar hoje e, quando não sabe, diz sem dados.",
+  "audience": "Quem nada ou entra no mar em Florianópolis, Rio de Janeiro e Salvador",
+  "language": "pt-BR",
+  "loop": true,
+  "claims": [
+    { "id": "c1", "text": "A marola mostra sem dados quando não sabe", "source": "marola.dev, página inicial (resumo do dono, 2026-11-03)", "status": "sourced" },
+    { "id": "c2", "text": "A marola está no ar em Florianópolis, Rio de Janeiro e Salvador", "source": "marola.dev, página inicial (resumo do dono, 2026-11-03)", "status": "sourced" },
+    { "id": "c3", "text": "A nota vem de dados públicos e passa por um veto de segurança", "source": "marola-dev/marola-app: o score e o veto de segurança (resumo do dono, 2026-11-03)", "status": "sourced" },
+    { "id": "c4", "text": "Dizer sem dados é melhor do que inventar um dado", "source": "own", "status": "own" },
+    { "id": "c5", "text": "A marola diz que praia está boa para nadar hoje e a melhor hora de amanhã", "source": "marola.dev, página inicial (resumo do dono, 2026-11-03)", "status": "sourced" }
+  ],
+  "look": { "style": "piabrota" },
+  "music": { "preset": "pulse", "bpm": 96 },
+  "beats": [
+    {
+      "id": "b01", "t_in": 0, "t_out": 2.8, "role": "hook",
+      "visual": { "describe": "Dark sheet. The question lands word by word in big type, one word in red.", "scene": "kinetic_text", "params": {} },
+      "text": ["Essa praia está boa", "pra *nadar* hoje?"],
+      "sound": { "music": "on", "sfx": [{ "name": "hit", "at": 0.0 }] },
+      "transition": "cut",
+      "claims": ["c5"],
+      "note": "The hook asks the viewer's own question. No logo yet."
+    },
+    {
+      "id": "b02", "t_in": 2.8, "t_out": 6.8, "role": "setup",
+      "visual": { "describe": "A title card: the sea changes every day, and so does the data.", "scene": "title_card", "params": { "subtitle": true } },
+      "text": ["O mar muda todo dia.", "Os dados também."],
+      "sound": { "music": "on", "sfx": [{ "name": "whoosh", "at": 0.0 }] },
+      "transition": "fade", "transition_s": 0.4
+    },
+    {
+      "id": "b03", "t_in": 6.8, "t_out": 11.3, "role": "setup",
+      "visual": { "describe": "Three things the app tells you, one under the other, each with a red marker.", "scene": "bullet_reveal", "params": {} },
+      "text": ["Qualidade da água", "Ondas e vento", "A melhor hora"],
+      "sound": { "music": "on", "sfx": [{ "name": "pop", "at": 0.3 }, { "name": "pop", "at": 1.0 }, { "name": "pop", "at": 1.7 }] },
+      "transition": "slideleft", "transition_s": 0.35,
+      "claims": ["c5"]
+    },
+    {
+      "id": "b04", "t_in": 11.3, "t_out": 15.3, "role": "turn",
+      "visual": { "describe": "Two halves. The top half is quiet: no measurement today. The bottom half answers in red.", "scene": "split_compare", "params": { "split": 1 } },
+      "text": ["Sem medição hoje?", "A marola diz *sem dados*."],
+      "sound": { "music": "low", "sfx": [{ "name": "whoosh", "at": 0.0 }, { "name": "hit", "at": 1.1 }] },
+      "transition": "wipeleft", "transition_s": 0.4,
+      "claims": ["c1"]
+    },
+    {
+      "id": "b05", "t_in": 15.3, "t_out": 19.8, "role": "proof",
+      "visual": { "describe": "A vertical timeline with three cities, each with a red dot.", "scene": "timeline", "params": {} },
+      "text": ["Floripa: ao vivo", "Rio: ao vivo", "Salvador: ao vivo"],
+      "sound": { "music": "on", "sfx": [{ "name": "tick", "at": 0.3 }, { "name": "tick", "at": 0.9 }, { "name": "tick", "at": 1.5 }] },
+      "transition": "fade", "transition_s": 0.4,
+      "claims": ["c2"]
+    },
+    {
+      "id": "b06", "t_in": 19.8, "t_out": 23.8, "role": "proof",
+      "visual": { "describe": "A drawing in three steps: a stack of data, a gauge, a shield. A caption comes in with each.", "scene": "diagram_reveal", "params": { "layers": ["direction/svg/dados.svg", "direction/svg/nota.svg", "direction/svg/veto.svg"] } },
+      "text": ["Dados públicos", "Uma nota clara", "Veto de segurança"],
+      "sound": { "music": "on", "sfx": [{ "name": "pop", "at": 0.3 }, { "name": "pop", "at": 1.0 }, { "name": "hit", "at": 1.7 }] },
+      "transition": "slideup", "transition_s": 0.4,
+      "claims": ["c3"]
+    },
+    {
+      "id": "b07", "t_in": 23.8, "t_out": 27.3, "role": "payoff",
+      "visual": { "describe": "A big red quotation mark and the line that sums it up.", "scene": "quote", "params": {} },
+      "text": ["Melhor *sem dados*", "do que dado inventado."],
+      "sound": { "music": "low", "sfx": [{ "name": "riser", "at": 0.0 }] },
+      "transition": "fadeblack", "transition_s": 0.4,
+      "claims": ["c4"]
+    },
+    {
+      "id": "b08", "t_in": 27.3, "t_out": 30, "role": "cta",
+      "visual": { "describe": "The slogan and the address. At the end the picture fades to the empty sheet the video started from.", "scene": "outro_loop", "params": {} },
+      "text": ["Mar sem chute.", "marola.dev"],
+      "sound": { "music": "on", "sfx": [{ "name": "pop", "at": 0.3 }] },
+      "transition": "fade", "transition_s": 0.4
+    }
+  ]
+}

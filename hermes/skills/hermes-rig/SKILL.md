@@ -17,10 +17,11 @@ metadata:
 agents. A daemon keeps the state. Each agent is a **seat**: a program in a tmux pane. The command
 is the systemd unit `openrig` on `127.0.0.1:7433` (the web UI is on at that address, for the
 owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp` or
-Claude Code, with the same Claude subscription as you. Four rigs
+Claude Code, with the same Claude subscription as you. Five rigs
 are specified: `piabrota-dev`, with a builder seat and a reviewer seat, the two rigs of the
-block wave-forecaster-dev (see "wave-forecaster-dev" below) and `wave-forecaster-thesis`
-(`references/thesis-rig.md`). This skill and its `references/` are
+block wave-forecaster-dev (see "wave-forecaster-dev" below), `wave-forecaster-thesis`
+(`references/thesis-rig.md`) and `reels-fabric`, five seats that make a reel
+(`references/reels-fabric.md`). This skill and its `references/` are
 enough to run them: you do not need the web.
 
 Your `rig` command is a wrapper that already points at the daemon. Your deny list blocks the
@@ -48,7 +49,7 @@ write the task that a seat gets, and both for a code task on a seat.
    `rig start`, `rig host`, or any `--host`.
 2. **Run `rig status` before every `rig up`.** Go on only if it says "Daemon running". With the
    daemon down, `rig up` starts a stray daemon of its own, outside the unit's memory budget (tested).
-3. **Two seats at the same time, no more.** So one rig at a time: each rig has two seats. The unit has `MemoryMax=2G`, `MemoryHigh=1536M`
+3. **Two seats at the same time, no more.** So one rig at a time: each rig has two seats, and `reels-fabric` has five, started by phases, two at a time. The unit has `MemoryMax=2G`, `MemoryHigh=1536M`
    (the memory of one seat: the [reference](../hermes-omp/references/openrig-seats.md)). Run
    `kvm4-health` before you start. A third seat needs the owner.
 4. **Seats run without approval prompts, and you never change that.** The rig sets
@@ -164,6 +165,7 @@ git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:
 |Which runtime works, the token, the memory rule, why no Hermes seat|`references/runtimes.md`|
 |The step by step runbook: health, start, read, send, prompts, stop, deploy, logs|`references/operations.md`|
 |What you never do, and why|`references/safety.md`|
+|Run the rig `reels-fabric` phase by phase: the seats, the approval gate, what to show the owner|`references/reels-fabric.md`|
 |A symptom: daemon down, port, tmux, OOM, restart loop, disk, deploy|`references/troubleshooting.md`|
 |The thesis rig `wave-forecaster-thesis`: the phases, what to show the owner, the outbox|`references/thesis-rig.md`|
 

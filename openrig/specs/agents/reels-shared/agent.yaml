@@ -1,0 +1,11 @@
+# What every seat of reels-fabric shares, on top of agents/shared: the rules for making one reel
+# with the `reel` toolkit on this box. A spec that imports this one selects the file with
+# `guidance: [reels-shared:norms]`. The box norms (`shared:norms`) come first and win.
+name: reels-shared
+version: "1.0"
+description: The rules of every reels-fabric seat for making one 15 s or 30 s reel
+
+resources:
+  guidance:
+    - id: norms
+      path: guidance/norms.md

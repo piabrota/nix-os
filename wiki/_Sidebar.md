@@ -7,6 +7,7 @@
 - [Fábrica](Fabrica)
 - [Runtimes](Runtimes)
 - [A tese](Thesis)
+- [Reels](Reels)
 - [Maquetes](Maquetes)
 
 **English**
@@ -18,4 +19,5 @@
 - [Factory](Factory)
 - [Runtimes](Runtimes-EN)
 - [Thesis](Thesis-EN)
+- [Reels](Reels-EN)
 - [Mockups](Mockups)
