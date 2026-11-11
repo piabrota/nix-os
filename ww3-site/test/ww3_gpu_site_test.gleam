@@ -112,6 +112,14 @@ pub fn every_figure_test() {
   list.each(content.figures, fn(f) {
     assert string.contains(page, "src=\"archify/" <> f.slug <> ".png\"")
     assert string.contains(page, "docs/archify/" <> f.slug <> ".pdf")
+    // A click on the picture opens its HTML page.
+    assert string.contains(
+      page,
+      "<a href=\"" <> app.figures_site <> f.slug <> "/\"><img",
+    )
+    // Its drawn size, so the page never shrinks it to the text column.
+    assert f.width != "" && f.height != ""
+    assert string.contains(page, "width=\"" <> f.width <> "\"")
     // A drawing with no row in docs/archify/README.md is captioned with its name.
     let caption = case f.question {
       "" -> f.slug
@@ -195,4 +203,19 @@ pub fn the_lineage_test() {
   assert string.contains(pt, "href=\"../../style.css\"")
   assert string.contains(pt, "href=\"../../lineage/\" hreflang=\"en\"")
   assert string.contains(pt, "https://wave.piabrota.art/pt-BR/lineage/")
+}
+
+// The side column lists five repositories of each of the three organizations.
+pub fn the_repositories_test() {
+  let page = html()
+  list.each(["piabrota", "marola-dev", "ouroboric-dev"], fn(org) {
+    let rows = list.filter(content.repos, fn(r) { r.org == org })
+    assert list.length(rows) == 5
+    list.each(rows, fn(r) {
+      assert string.contains(
+        page,
+        "href=\"https://github.com/" <> org <> "/" <> r.name <> "\"",
+      )
+    })
+  })
 }

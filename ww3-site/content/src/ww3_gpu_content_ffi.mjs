@@ -71,3 +71,12 @@ export function commits() {
     return "";
   }
 }
+
+// The size a PNG was drawn at, "width height" in CSS pixels: half its pixels, since the drawings
+// are taken at twice their size (ww3-gpu's scripts/archify_shot.py). "" when it is not a PNG.
+export function png_size(path) {
+  if (!existsSync(path)) return "";
+  const head = readFileSync(path).subarray(0, 24);
+  if (head.length < 24 || head.toString("latin1", 12, 16) !== "IHDR") return "";
+  return `${Math.round(head.readUInt32BE(16) / 2)} ${Math.round(head.readUInt32BE(20) / 2)}`;
+}

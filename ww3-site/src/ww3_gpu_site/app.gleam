@@ -29,6 +29,11 @@ const blob = "https://github.com/h0ffmann/ww3-gpu/blob/main/"
 /// The site whose look this one follows, and its author's GitHub.
 pub const template = "https://reasonablypolymorphic.com/"
 
+/// Where ww3-gpu publishes each drawing as an interactive Archify page (its pages.yml). Archify
+/// checks a drawing against the Git history of ww3-gpu, which the build here does not have, so
+/// the pages are linked there and not built again.
+pub const figures_site = "https://h0ffmann.github.io/ww3-gpu/figures/"
+
 pub const template_author = "https://github.com/isovector"
 
 /// A sentence of the page in language `l`, "en" or "pt-BR". The key is the English sentence
@@ -136,6 +141,19 @@ fn side(l: String, home: String) -> Element(msg) {
       item(home <> "#designs", t(l, "the designs")),
       item(home <> "#cite", t(l, "how to cite")),
     ]),
+    ..list.flat_map(["piabrota", "marola-dev", "ouroboric-dev"], fn(org) {
+      [
+        html.h2([], [a("https://github.com/" <> org, org)]),
+        html.ul(
+          [],
+          content.repos
+            |> list.filter(fn(r) { r.org == org })
+            |> list.map(fn(r) {
+              item("https://github.com/" <> r.org <> "/" <> r.name, r.name)
+            }),
+        ),
+      ]
+    })
   ])
 }
 
@@ -296,24 +314,34 @@ fn tools(l: String) -> Element(msg) {
   ])
 }
 
-/// One Archify figure: the PNG as it is, at its own size up to the width of the column, linked to
-/// itself, and under it the question it answers and its PDF.
+/// One Archify figure: the PNG as it is, at the size it was drawn at (its `width` and `height`),
+/// never shrunk to the text column; the frame around it scrolls sideways when the screen is
+/// narrower than the drawing. It links to itself, and under it are its question and its PDF.
 fn figure(l: String, f: Figure) -> Element(msg) {
   let png = up(l) <> "archify/" <> f.slug <> ".png"
   let caption = case f.question {
     "" -> f.slug
     q -> q
   }
+  let page = figures_site <> f.slug <> "/"
   html.figure([attribute.id(f.slug)], [
-    html.a([attribute.href(png)], [
-      html.img([
-        attribute.src(png),
-        attribute.alt(caption),
-        attribute.attribute("loading", "lazy"),
+    html.div([attribute.class("drawing")], [
+      html.a([attribute.href(page)], [
+        html.img([
+          attribute.src(png),
+          attribute.alt(caption),
+          attribute.attribute("width", f.width),
+          attribute.attribute("height", f.height),
+          attribute.attribute("loading", "lazy"),
+        ]),
       ]),
     ]),
     html.figcaption([], [
       html.text(caption <> " "),
+      a(page, t(l, "interactive page")),
+      html.text(" · "),
+      a(png, "png"),
+      html.text(" · "),
       a(blob <> "docs/archify/" <> f.slug <> ".pdf", "pdf"),
     ]),
   ])
@@ -323,7 +351,7 @@ fn figures(l: String) -> Element(msg) {
   section("figures", t(l, "figures"), [
     p(t(
       l,
-      "drawn with Archify. each picture is the PNG committed in the repository, shown as it is.",
+      "drawn with Archify. each picture is the PNG committed in the repository, at the size it was drawn. a click opens its HTML page, where you can hover and zoom.",
     )),
     ..list.map(content.figures, figure(l, _))
   ])

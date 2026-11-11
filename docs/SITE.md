@@ -221,8 +221,15 @@ The page is plain and about the research only: what it is, the numbers (commits,
 figures, port reports and `site/data/port_score.tsv`), the tools of the reference toolchain
 (`VERSIONS.md`), the Archify figures, the port's benchmarks, the decisions and designs, and how to
 cite it. The figures are the PNGs ww3-gpu commits for each drawing of `docs/archify/dark.tsv`,
-copied byte for byte into `archify/` and shown as they are: no class, no style, no filter, only
-scaled down to the width of the column. The look follows
+copied byte for byte into `archify/` and shown at the size they were drawn at: half the PNG's
+pixels, read from its header by the content generator and set as the image's `width` and `height`.
+A figure is not shrunk to the text column; it passes the column's edges, and scrolls sideways in
+its frame when the screen is narrower than the drawing. A click on a figure opens its interactive
+Archify page at `https://h0ffmann.github.io/ww3-gpu/figures/<slug>/`, which ww3-gpu's `pages.yml`
+publishes. The pages are not built here: Archify checks each drawing against the Git history of
+ww3-gpu, and the fetched source has none. The side column also lists five repositories of
+piabrota, marola-dev and ouroboric-dev, the rows of `ww3-site/data/orgs.tsv` (the most stars, the
+most recent push first on a tie; the file names its date). The look follows
 [reasonablypolymorphic.com](https://reasonablypolymorphic.com/) by Sandy Maguire
 ([@isovector](https://github.com/isovector)), a serif text column and a dark side column, written
 anew in `ww3-site/static/style.css`; the foot of every page credits it.
