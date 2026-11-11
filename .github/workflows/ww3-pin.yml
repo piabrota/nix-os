@@ -5,7 +5,7 @@ name: ww3 pin
 # piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer ww3-gpu commit while that pull
 # request is open moves the same branch and edits the same pull request. It looks every hour and runs
 # by hand; a `repository_dispatch` of type `ww3-main` runs it at once. Nothing merges by itself: the
-# merge is the owner's, and the merge deploys ww3.piabrota.art. Copied from room-pin.yml.
+# merge is the owner's, and the merge deploys wave.piabrota.art. Copied from room-pin.yml.
 on:
   schedule:
     - cron: "37 * * * *"
@@ -99,7 +99,7 @@ jobs:
           {
             echo "## Summary"
             echo
-            echo "ww3.piabrota.art should show the head of h0ffmann/ww3-gpu's \`main\`, \`${NEW:0:7}\`. The pin was \`${OLD:0:7}\`."
+            echo "wave.piabrota.art should show the head of h0ffmann/ww3-gpu's \`main\`, \`${NEW:0:7}\`. The pin was \`${OLD:0:7}\`."
             echo
             echo "## What changed"
             echo

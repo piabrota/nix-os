@@ -77,7 +77,7 @@ went on). Fix DNS, then see the end of this section.
 Then merge the PR that turns the site on, or run the `deploy` workflow again if it already
 failed.
 
-The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `ww3` and the others under `piabrota.art`)
+The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave` and the others under `piabrota.art`)
 each need one `A` record on their host name, with piabrota2's address, before the deploy that
 turns them on.
 
@@ -163,7 +163,7 @@ as well:
 | Hermes dashboard | `/favicon.ico` | serves the eye there |
 | The room | `/favicon.svg` (the same eye) | serves the shared file there |
 | proof.piabrota.art, pirsig.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
-| ww3.piabrota.art | `/favicon.svg`, ww3-gpu's own (`ww3-site/static/`) | nothing: the site keeps its icon |
+| wave.piabrota.art | `/favicon.svg`, ww3-gpu's own (`ww3-site/static/`) | nothing: the site keeps its icon |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
@@ -200,7 +200,7 @@ To move a pin: change `proofRev` in `proof-site/default.nix`, or `pirsigRev` in
 (`nix hash path` on `git archive <commit>`). Each name needs its DNS A record at piabrota2's
 address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)).
 
-## The ww3-gpu website at ww3.piabrota.art
+## The ww3-gpu website at wave.piabrota.art
 
 The website of h0ffmann/ww3-gpu, which GitHub Pages served at h0ffmann.github.io/ww3-gpu until
 2026-11-11. Its Gleam code lives here, in `ww3-site/` (the front page, the lineage page, the

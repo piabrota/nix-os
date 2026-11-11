@@ -10,7 +10,7 @@
     { id = "figures"; label = "figures"; url = "https://www.piabrota.art/figures/"; host = "www.piabrota.art"; line = "How piabrota works, drawn with archify, in English and pt-BR."; access = "public"; }
     { id = "proof"; label = "proof"; url = "https://proof.piabrota.art/"; host = "proof.piabrota.art"; line = "Every HTML page of h0ffmann/proof: specifications, Z3 reports and diagrams."; access = "public"; }
     { id = "pirsig"; label = "pirsig"; url = "https://pirsig.piabrota.art/"; host = "pirsig.piabrota.art"; line = "The video notes and the figures of piabrota/pirsig, the second brain."; access = "public"; }
-    { id = "ww3"; label = "ww3"; url = "https://ww3.piabrota.art/"; host = "ww3.piabrota.art"; line = "The WW3 GPU Lab: WAVEWATCH III on Kokkos and CUDA, its decisions, designs and lineage."; access = "public"; }
+    { id = "wave"; label = "wave"; url = "https://wave.piabrota.art/"; host = "wave.piabrota.art"; line = "The WW3 GPU Lab: WAVEWATCH III on Kokkos and CUDA, its decisions, designs and lineage."; access = "public"; }
     { id = "room"; label = "room"; url = "https://room.piabrota.art/"; host = "room.piabrota.art"; line = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; access = "public"; }
     { id = "grid"; label = "grid"; url = "https://grid.piabrota.art/"; host = "grid.piabrota.art"; line = "The room on its own name, opened on the grid: the Brazilian coast on triangles."; access = "public"; }
     { id = "metrics"; label = "metrics"; url = "https://metrics.piabrota.art/"; host = "metrics.piabrota.art"; line = "Processes, memory and vCPU of both hosts, read every 10 seconds."; access = "public"; }

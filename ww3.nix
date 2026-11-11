@@ -1,4 +1,4 @@
-# ww3.piabrota.art: the website of the WW3 GPU Lab (h0ffmann/ww3-gpu), the front page and the
+# wave.piabrota.art: the website of the WW3 GPU Lab (h0ffmann/ww3-gpu), the front page and the
 # lineage page prerendered from Gleam by ww3-site/ at a pinned ww3-gpu commit. Static files served by
 # nginx with Let's Encrypt on their own name, HTTPS only. On piabrota2 (hosts/piabrota2), like proof.
 # The name must point at the box before this is on, or the ACME order fails on the deploy and
@@ -10,10 +10,10 @@ let
 in
 {
   options.piabrota.ww3 = {
-    enable = mkEnableOption "ww3.piabrota.art, the website of h0ffmann/ww3-gpu";
+    enable = mkEnableOption "wave.piabrota.art, the website of h0ffmann/ww3-gpu";
     domain = mkOption {
       type = types.str;
-      default = "ww3.piabrota.art";
+      default = "wave.piabrota.art";
       description = "The name nginx serves the ww3-gpu website on. Its DNS A record must point at the box.";
     };
     root = mkOption {

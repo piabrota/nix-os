@@ -24,7 +24,7 @@
     # The HTML pages of h0ffmann/proof on proof.piabrota.art and those of piabrota/pirsig on
     # pirsig.piabrota.art; both names must point at this box.
     ../../proof.nix
-    # The website of h0ffmann/ww3-gpu on ww3.piabrota.art, which must point at this box.
+    # The website of h0ffmann/ww3-gpu on wave.piabrota.art, which must point at this box.
     ../../ww3.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
@@ -65,7 +65,7 @@
   # The HTML pages of h0ffmann/proof and of piabrota/pirsig at pinned commits, each with an index
   # (proof-site/), at proof.piabrota.art and pirsig.piabrota.art.
   piabrota.proof.enable = true;
-  # The website of h0ffmann/ww3-gpu at a pinned commit (ww3-site/), at ww3.piabrota.art.
+  # The website of h0ffmann/ww3-gpu at a pinned commit (ww3-site/), at wave.piabrota.art.
   piabrota.ww3.enable = true;
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
