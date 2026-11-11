@@ -43,6 +43,11 @@ in
           "/".extraConfig = ''
             add_header Cache-Control "no-cache";
           '';
+          # nginx sends no charset by default; say UTF-8, as site.nix does for its own /llms.txt.
+          "= /llms.txt".extraConfig = ''
+            add_header Cache-Control "no-cache";
+            charset utf-8;
+          '';
         };
       };
     };

@@ -214,8 +214,10 @@ ww3-gpu at a pinned commit, puts this code in its `site/`, runs the content gene
 `.zenodo.json`, `CITATION.cff`, `RELEASES.md`, `VERSIONS.md`, `docs/archify/` and `site/data/*.tsv`
 there), both test suites and the four prerenders on node, and fails unless each page holds every
 section. The output is the pages, `style.css`, `favicon.svg` and `archify/`, with no store
-reference. The commit and the number of commits shown on the page are the pin's (`WW3_GPU_REV`,
-`WW3_GPU_COMMITS` from `commits` in `default.nix`), since the source has no `.git`.
+reference, and `llms.txt`: ww3-gpu's own index for AI agents (its root, in the
+[llms.txt](https://llmstxt.org) format), copied byte for byte when the pin has one and answered
+at `/llms.txt` as UTF-8 text. The commit and the number of commits shown on the page are the
+pin's (`WW3_GPU_REV`, `WW3_GPU_COMMITS` from `commits` in `default.nix`), since the source has no `.git`.
 
 The page is plain and about the research only: what it is, the numbers (commits, records, notes,
 figures, port reports and `site/data/port_score.tsv`), the tools of the reference toolchain
