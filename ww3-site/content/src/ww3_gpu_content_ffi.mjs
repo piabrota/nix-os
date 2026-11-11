@@ -30,6 +30,17 @@ export function zenodo_people(path) {
   ].join("\n");
 }
 
+// The preprints that document the work in .zenodo.json (relation isDocumentedBy, resource type
+// publication-preprint), one identifier per line.
+export function zenodo_preprints(path) {
+  if (!existsSync(path)) return "";
+  const meta = JSON.parse(readFileSync(path, "utf8"));
+  return (meta.related_identifiers || [])
+    .filter((r) => r.relation === "isDocumentedBy" && r.resource_type === "publication-preprint")
+    .map((r) => r.identifier)
+    .join("\n");
+}
+
 // The keys a source file of the page asks for: the literal of each `t(l, "...")`,
 // unescaped. Comment lines are skipped, so a doc comment that shows the call is not a sentence.
 export function sentences(code) {

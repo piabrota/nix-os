@@ -229,7 +229,7 @@ A figure is not shrunk to the text column; it passes the column's edges, and is 
 when it is wider than the room beside the side column, open or folded, so it always fits. A click on a figure opens its interactive
 Archify page at `https://h0ffmann.github.io/ww3-gpu/figures/<slug>/`, which ww3-gpu's `pages.yml`
 publishes. The pages are not built here: Archify checks each drawing against the Git history of
-ww3-gpu, and the fetched source has none. The side column also lists five repositories of
+ww3-gpu, and the fetched source has none. The side column has a publishers list, which the "how to cite" section repeats: the Zenodo record by its concept DOI, then the preprint's aiXiv and arXiv records, read from the `isDocumentedBy` preprints of `.zenodo.json`; a record it does not list yet is shown as pending, with no link. The side column also lists five repositories of
 piabrota, marola-dev and ouroboric-dev, the rows of `ww3-site/data/orgs.tsv` (the most stars, the
 most recent push first on a tie; the file names its date), each under its logo. A logo is a
 trademark and never a file here: it loads from its owner's repository at a pinned commit

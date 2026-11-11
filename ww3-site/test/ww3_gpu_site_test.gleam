@@ -110,6 +110,28 @@ pub fn the_doi_test() {
   assert string.contains(html(), "https://doi.org/10.5281/zenodo.23221351")
 }
 
+// The publishers: Zenodo by its DOI, the aiXiv record, and arXiv as pending until .zenodo.json
+// lists one.
+pub fn the_publishers_test() {
+  let page = html()
+  assert string.contains(page, app.t("en", "side.publishers"))
+  assert content.aixiv == "https://aixiv.online/abs/2611.01104"
+  assert string.contains(page, "href=\"https://aixiv.online/abs/2611.01104\"")
+  case content.arxiv {
+    "" -> {
+      assert string.contains(
+        page,
+        "arXiv: " <> app.t("en", "publishers.pending"),
+      )
+      Nil
+    }
+    url -> {
+      assert string.contains(page, "href=\"" <> url <> "\"")
+      Nil
+    }
+  }
+}
+
 pub fn no_script_test() {
   assert !string.contains(html(), "<script")
 }

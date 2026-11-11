@@ -106,6 +106,18 @@ fn list_dir(dir: String) -> List(String)
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "zenodo_people")
 fn zenodo_people(path: String) -> String
 
+@external(javascript, "./ww3_gpu_content_ffi.mjs", "zenodo_preprints")
+fn zenodo_preprints(path: String) -> String
+
+/// The first of `ids` on `host`, or "": an arXiv or aiXiv record is on the page only once
+/// .zenodo.json lists it, so a record not yet submitted is never guessed.
+pub fn on_host(ids: List(String), host: String) -> String {
+  case list.find(ids, fn(id) { string.contains(id, "://" <> host <> "/") }) {
+    Ok(id) -> id
+    Error(Nil) -> ""
+  }
+}
+
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "revision")
 fn revision() -> String
 
@@ -633,6 +645,7 @@ pub type Repo {
 pub fn render(
   site: #(String, String),
   doi: String,
+  preprints: #(String, String),
   record_title: String,
   release: String,
   rev: String,
@@ -661,6 +674,9 @@ pub fn render(
       "pub const site_title = " <> lit(site.0) <> "\n",
       "pub const site_subtitle = " <> lit(site.1) <> "\n",
       "pub const doi = " <> lit(doi) <> "\n",
+      "/// The aiXiv and arXiv records of the preprint (.zenodo.json), \"\" when it has none.\n",
+      "pub const aixiv = " <> lit(preprints.0) <> "\n",
+      "pub const arxiv = " <> lit(preprints.1) <> "\n",
       "pub const record_title = " <> lit(record_title) <> "\n",
       "pub const latest_release = " <> lit(release) <> "\n",
       "pub const revision = " <> lit(rev) <> "\n",
@@ -879,6 +895,7 @@ pub fn main() -> Nil {
     zenodo_people(root <> ".zenodo.json")
     |> string.split("\n")
     |> list.filter_map(person)
+  let preprints = zenodo_preprints(root <> ".zenodo.json") |> string.split("\n")
   let links =
     read("../data/related.tsv")
     |> string.split("\n")
@@ -914,6 +931,7 @@ pub fn main() -> Nil {
     render(
       #(yaml(meta, "title"), yaml(meta, "subtitle")),
       yaml(cff, "doi"),
+      #(on_host(preprints, "aixiv.online"), on_host(preprints, "arxiv.org")),
       yaml(cff, "title"),
       latest_release(read(root <> "RELEASES.md")),
       revision(),
