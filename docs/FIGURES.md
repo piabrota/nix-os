@@ -105,4 +105,4 @@ Interactive page: <https://www.piabrota.art/figures/piabrota-art/>
 
 `just figure` draws them again with the pinned [archify](https://github.com/tt-a1i/archify)
 (`vendor/archify`), the same way as piabrota/pirsig and piabrota/gramatico; `just figure-check` says
-whether a PNG is stale. The `figure` skill (`.claude/skills/figure/`) has the rules.
+whether a PNG is stale. The `figure` skill (`.agents/skills/figure/`) has the rules.

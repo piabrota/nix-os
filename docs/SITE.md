@@ -30,8 +30,8 @@ for it; the rules are [`site/DESIGN.md`](../site/DESIGN.md). The pages load the 
 fonts (Fjalla One, Inter, JetBrains Mono) from Google Fonts, and the avatars and partner logos from
 GitHub (`avatars.githubusercontent.com`), so a visit asks Google and GitHub for them; the system
 fonts stand in until they load. None of them is stored here. To change a design, the agent skills `frontend-design`,
-`web-design-guidelines` and `open-pencil` are in `.claude/skills/`
-([their README](../.claude/skills/README.md)), and `site/DESIGN.md` changes in the same PR.
+`web-design-guidelines` and `open-pencil` are in `.agents/skills/`
+([their README](../.agents/skills/README.md)), and `site/DESIGN.md` changes in the same PR.
 
 ## Analytics
 

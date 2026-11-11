@@ -4,7 +4,7 @@ description: Hardens systemd services against security issues using sandboxing, 
 ---
 
 > Vendored from [daracci/nix-config](https://github.com/daracci/nix-config/blob/6e5c465f66b23896a77512d37e4cf148e87d1cd0/modules/home-manager/purpose/development/editors/ai/skills/systemd-hardening/SKILL.md) at `6e5c465f66b2` (MIT, see
-> `.claude/skills/LICENSES/`), with its other files. Only this note was added; the text below is the upstream's.
+> `.agents/skills/LICENSES/`), with its other files. Only this note was added; the text below is the upstream's.
 >
 > In this repo: never tighten `qemu-guest-agent`, `cloud-init` or `sshd` (AGENTS.md, "Do not break the machine"); a bad sandbox there locks Hostinger's panel or everyone out. `loco.nix` is the one service module written here.
 

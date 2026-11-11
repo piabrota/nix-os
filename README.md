@@ -168,4 +168,4 @@ Stars and commits on 2026-11-07.
 |---|---|
 | Everything in this repository, the drawing included | [MPL-2.0](LICENSE) |
 | `drawings/pen.nix` | MPL-2.0, ported from [h0ffmann/pirsig](https://github.com/h0ffmann/pirsig)'s Rust pen at `450e4da` |
-| `.claude/skills/*/` | MIT, or Apache-2.0 for `frontend-design`, each from its upstream at a pinned commit ([`.claude/skills/README.md`](.claude/skills/README.md)); texts in `.claude/skills/LICENSES/` |
+| `.agents/skills/*/` | MIT, or Apache-2.0 for `frontend-design`, each from its upstream at a pinned commit ([`.agents/skills/README.md`](.agents/skills/README.md)); texts in `.agents/skills/LICENSES/` |
