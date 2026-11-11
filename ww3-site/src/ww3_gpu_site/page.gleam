@@ -6,7 +6,7 @@ import lustre/element/html
 import ww3_gpu_site/app
 
 /// Where the site is published. A link preview needs whole addresses.
-pub const address = "https://h0ffmann.github.io/ww3-gpu/"
+pub const address = "https://wave.piabrota.art/"
 
 /// The address of the page in language `l`: the English one at the root, the other under its
 /// language's name.
@@ -85,7 +85,7 @@ pub fn document_at(
         attribute.crossorigin(""),
       ]),
       stylesheet(
-        "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap",
+        "https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Mulish:wght@400;700&display=swap",
       ),
       stylesheet(root <> "style.css"),
     ]),

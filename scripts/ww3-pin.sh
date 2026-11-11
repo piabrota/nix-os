@@ -1,7 +1,8 @@
 #!/bin/sh
-# Moves the ww3-gpu pin (ww3-site/default.nix) to a commit of h0ffmann/ww3-gpu: rev and the source
-# hash, then builds the site with this flake's nixpkgs, so a pin that does not build never reaches a
-# pull request.
+# Moves the ww3-gpu pin (ww3-site/default.nix) to a commit of h0ffmann/ww3-gpu: rev, the source
+# hash and the number of commits up to rev (the page shows it; the source has no .git), then
+# builds the site with this flake's nixpkgs, so a pin that does not build never reaches a pull
+# request.
 #
 #   sh scripts/ww3-pin.sh             (or: just ww3-pin)   the head of ww3-gpu's main
 #   sh scripts/ww3-pin.sh <sha>       that commit
@@ -39,10 +40,19 @@ src_hash=$(sed -n 's/.*"hash":"\(sha256-[^"]*\)".*/\1/p' "$work/src.json")
 path=$(sed -n 's/.*"storePath":"\([^"]*\)".*/\1/p' "$work/src.json")
 if [ -z "$src_hash" ] || [ ! -f "$path/docs/ADRs.md" ]; then echo "prefetch failed" >&2; exit 1; fi
 
+# A clone with no blobs is enough to count the commits, and stays small.
+git clone --quiet --bare --filter=blob:none "https://github.com/$repo.git" "$work/repo.git"
+commits=$(git -C "$work/repo.git" rev-list --count "$new")
+case $commits in
+  "" | *[!0-9]*) echo "could not count the commits of $new" >&2; exit 1 ;;
+esac
+
 sed -e "s|^\( *rev = \"\)$old\";|\1$new\";|" \
   -e "/^ *hash = \"sha256-/s|^\( *hash = \"\)[^\"]*\";|\1$src_hash\";|" \
+  -e "s|^\( *commits = \)[0-9]*;|\1$commits;|" \
   "$file" >"$work/default.nix"
-if ! grep -q "rev = \"$new\"" "$work/default.nix" || ! grep -q "$src_hash" "$work/default.nix"; then
+if ! grep -q "rev = \"$new\"" "$work/default.nix" || ! grep -q "$src_hash" "$work/default.nix" ||
+  ! grep -q "commits = $commits;" "$work/default.nix"; then
   echo "could not rewrite $file" >&2
   exit 1
 fi
