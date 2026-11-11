@@ -204,7 +204,7 @@ pub const logos = [
   #("piabrota", "https://avatars.githubusercontent.com/piabrota?s=128"),
   #(
     "marola-dev",
-    "https://raw.githubusercontent.com/marola-dev/marola/d0d576ea014335acbc190a09ce9fcbe0f89a391d/docs/assets/logo.svg",
+    "https://raw.githubusercontent.com/marola-dev/marola/19fdf0df9533aa22f25ae3024ab2abf61de73dab/docs/assets/logo-v2/marola-logo-v2.svg",
   ),
   #(
     "ouroboric-dev",
