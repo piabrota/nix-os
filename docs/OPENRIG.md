@@ -38,9 +38,8 @@ The rig has not yet done a task: see "Status today".
   (`permission_policy: builtin:yolo`, the owner's decision in PR 124). They use the owner's Claude
   subscription (see "The token of the seats").
   `piabrota-dev-claude` has the same three seats on Claude Code. The other four are the two rigs of
-  wave-forecaster-dev, `wave-forecaster-thesis` and `reels-fabric` (below). The options that turn
-  them on are off, except `piabrota.openrig.marola.claude.enable` (on at piabrota2, for
-  `piabrota-dev-claude`).
+  wave-forecaster-dev, `wave-forecaster-thesis` and `reels-fabric` (below). A keeper keeps the port
+  rig up. Nobody starts the integrate rig. The options of the thesis and reels rigs are off.
 - Hermes operates the rig with the `rig` CLI and the skill `hermes-rig`. Hermes does not start seats
   from cron.
 - **The seats are idle.** No task has gone through the builder to reviewer loop yet.
@@ -94,7 +93,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 
 |Part|What it is|
 |---|---|
-|Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module. `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.thesis.enable` turn on the rigs of the two blocks below. Both are off.|
+|Option|`piabrota.openrig.enable`. Off by default. `hosts/piabrota2/default.nix` turns it on. `piabrota` does not import the module. `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.thesis.enable` turn on the rigs of the two blocks below. The first is on at piabrota2, the second is off. `piabrota.openrig.waveForecaster.alwaysOn.enable` adds the keeper of the port rig: it is on.|
 |User|The system user and group `openrig`, no login shell. State in `/var/lib/openrig` (`HOME`, and `OPENRIG_HOME` is `.openrig` in it). Seats work in `/var/lib/openrig/work`.|
 |Unit|`openrig` runs `node .../daemon/dist/index.js` in the foreground, as `openrig`.|
 |Network|The daemon listens on `127.0.0.1:7433` (`OPENRIG_BIND_HOST`) and serves the web UI there. No firewall port, no ACME. The option `piabrota.openrig.web` adds an nginx vhost at `rig.piabrota.art` with basic auth: it is on.|
@@ -346,7 +345,7 @@ pros, cons, a spec line, credentials, permission mapping, state and the status o
 |---|---|
 |`piabrota-dev`|`omp`|
 |`piabrota-dev-claude`|`claude-code`, when `piabrota.openrig.marola.claude.enable` is on (on at piabrota2)|
-|`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (off)|
+|`wave-forecaster-dev` (port)|`claude-code`, when `piabrota.openrig.waveForecaster.enable` is on (on at piabrota2)|
 |`wave-forecaster-dev-integrate`|`omp`|
 |`wave-forecaster-thesis`|`claude-code`, when `piabrota.openrig.thesis.enable` is on (off)|
 |`reels-fabric`|`omp`, five seats|
@@ -381,14 +380,40 @@ of them, and adds none: Docker would give the seats root. So a seat runs `just c
 other gates on the owner's machine and moves the status. The norms say this, and they win over
 chaceon's rule that a missing tool must be installed.
 
-**Off at the start.** `piabrota.openrig.waveForecaster.enable` is off at piabrota2. The specs are
-in `/etc/openrig/specs` as a definition only: no tools, folders, outbox or token, no `claude` and no
-managed settings, and no one starts the rigs. The owner turns the option on in
-`hosts/piabrota2/default.nix` to use them. A rig keeps the spec that made it, so after the deploy
-run `rig archive wave-forecaster-dev` and
-`rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only` (it makes the
-rig and its seats and starts nothing), then `rig up`. Claude Code asks once to accept its
-bypass-permissions warning: `rig seat continue` answers it (docs/RUNTIMES.md, "Claude Code on this box").
+**Always on.** `piabrota.openrig.waveForecaster.enable` and `piabrota.openrig.waveForecaster.alwaysOn.enable`
+are on at piabrota2 (the owner's order of 2026-11-07: the port rig runs 24/7). A restart of the unit
+`openrig` ends the seats: a deploy, a crash or a reboot. So a keeper brings the port rig back. The
+option `alwaysOn` needs `waveForecaster.enable`. The integrate rig stays manual. A rig keeps the spec
+that made it: if the spec of the port rig changes, run `rig archive wave-forecaster-dev` and
+`rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only`.
+
+**The keeper.** The unit `openrig-wf-keeper` (`openrig.nix`, `wfKeeper`) runs 2 minutes after boot and
+then every 2 minutes. It asks the daemon only (`rig` with `OPENRIG_URL`):
+
+|Case|The keeper|
+|---|---|
+|The daemon does not answer|Prints a line and exits 0. It never starts a daemon, and it does not start `openrig.service`.|
+|Another rig runs|Skips: one rig at a time ("Limits").|
+|The port rig runs|Exits 0. With `attentionCount > 0` it logs a warning.|
+|The port rig is `partial`|Logs a warning with the seats that do not run. It changes nothing.|
+|The port rig is stopped, and every seat has `intentionallyStopped`|Someone ran `rig down`. It does nothing.|
+|The port rig is stopped|Runs `rig up wave-forecaster-dev --existing`. If that fails, it runs `rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml`. With no rig of that name, it runs the spec at once.|
+|3 starts in the last hour|Does not try. The unit exits 1, so it shows in `systemctl --failed`. The attempts are in `/var/lib/openrig-wf-keeper/attempts` (an epoch second a line).|
+
+The unit is a oneshot with its own sandbox: `DynamicUser`, `MemoryMax=256M`, `CPUQuota=25%`,
+`IPAddressAllow=localhost`, no secret. It reads `/etc/openrig/specs`, which is world-readable. The
+script does not print the output of `rig up`.
+
+**To stop the port rig on purpose:** `rig down wave-forecaster-dev`. `rig down` marks every seat as
+stopped on purpose, and the keeper leaves such a rig down, even after another rig ends. **To run
+another rig:** run `rig down wave-forecaster-dev` first. When the other rig ends, bring the port rig
+back with `rig up wave-forecaster-dev --existing`. The keeper does not do this step. A rig that
+stops without `rig down` (a deploy, a crash, a reboot) it restores 2 minutes later.
+
+**What the keeper does not do.** It sends no task: an idle rig does no work. It does not answer
+Claude Code's one-time bypass-permissions warning. The owner answers it once with `rig seat continue`
+or attaches (docs/RUNTIMES.md, "Claude Code on this box"). It does not fix a `partial` rig. It does
+not look at memory: the budget is the unit `openrig` (`MemoryMax=2G`).
 
 **What `piabrota.openrig.waveForecaster.enable` adds** (when on):
 
@@ -415,7 +440,7 @@ to a branch other than `hermes/*`, `rig` with `--host` or `--policy`), the path 
 asks for an agent `Co-Authored-By` trailer; Hermes's commits carry none. The owner decides whether
 chaceon's `AGENTS.md` accepts both.
 
-To start the port rig, after `rig status` says "Daemon running" and `kvm4-health` shows room:
+To start the port rig by hand (the keeper does it when the rig is stopped), after `rig status` says "Daemon running" and `kvm4-health` shows room:
 
 ```console
 rig up /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --plan
@@ -624,7 +649,7 @@ daemon. The toolkit ran on this box: the numbers are in [`REELS.md`](REELS.md), 
 - **No herdr, no remote hosts.** `rig host`, `rig up --host` and pairing are blocked.
 - **No Codex seat.** Codex is not installed. A Claude Code seat exists only in the port rig and the
   thesis rig, and only with `piabrota.openrig.waveForecaster.enable` or `piabrota.openrig.thesis.enable`
-  on (both off today): `claude` is unfree, allowed by name
+  on (the first is on at piabrota2, the second is off): `claude` is unfree, allowed by name
   in `unfree.nix`. See [`RUNTIMES.md`](RUNTIMES.md).
 - **No `PrivateDevices`.** In a test with a user unit, tmux could not start a pane with a private
   `/dev`. A pane needs a pseudo terminal. The test used a user manager, not the system manager, so
@@ -641,6 +666,12 @@ that OpenRig finds the process behind `seatClaude`), rustup's toolchain on NixOS
 it for NixOS: not checked here), the read token (the App's installation may not include
 h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and Hermes's read of the outbox under the
 `hermes-agent` sandbox.
+
+The keeper `openrig-wf-keeper` did not run on the box either: a deploy with the option on is needed
+first. Its script ran against a fake `rig` (`scripts/test-wf-keeper.sh`: stopped rig, `--existing`
+failing, `rig down`, another rig, partial rig, daemon down, back-off), and its `jq` filters ran
+against the output of the live `rig ps`. `rig up` from the keeper (a stopped rig with no usable
+snapshot, a spec that the daemon refuses) never ran.
 
 For wave-forecaster-thesis, no seat ran. Not tested: a deploy with the option on, the closure growth
 of the system (`dix`), a Claude Code seat (the memory of one, the bypass dialog, the tool `deny`

@@ -96,9 +96,9 @@ A name reaches a seat only if the daemon holds it and the operator names it in
 **State.** `~/.claude` and `~/.claude.json` (here `HOME` is `/var/lib/openrig`), and
 `<cwd>/.claude/settings.local.json`, where OpenRig puts its hooks and its status-line collector.
 
-**On this box.** The port rig `wave-forecaster-dev` (porter and auditor) runs it after this PR, and
-only when `piabrota.openrig.waveForecaster.enable` is on, which it is not. Details are in "Claude
-Code on this box" below. **Not run:** no live Claude seat.
+**On this box.** The port rig `wave-forecaster-dev` (porter and auditor) runs it, when
+`piabrota.openrig.waveForecaster.enable` is on, which it is at piabrota2 since 2026-11-07. Details
+are in "Claude Code on this box" below. **Not run:** no live Claude seat.
 
 ## `codex`
 
@@ -312,7 +312,7 @@ On this box the choice is also a memory choice: the daemon and every seat share 
 
 This PR gives the port rig `runtime: claude-code` (porter and auditor, `model: claude-sonnet-5-5`).
 `piabrota-dev` and `wave-forecaster-dev-integrate` stay on omp. All of it is behind
-`piabrota.openrig.waveForecaster.enable`, which stays off.
+`piabrota.openrig.waveForecaster.enable`, which is on at piabrota2 since 2026-11-07.
 
 **What the option adds for Claude.**
 - `unfree.nix` allows `claude-code` by name and nothing else. `allowUnfree` stays off. A name is
@@ -350,7 +350,7 @@ builds it (nothing is in `cache.nixos.org`), and the deploy copies it to the box
 
 **What a person must do.**
 1. Set `piabrota.openrig.waveForecaster.enable = true` in `hosts/piabrota2/default.nix`, merge, and
-   let the deploy run.
+   let the deploy run (done on 2026-11-07, with the keeper of docs/OPENRIG.md).
 2. A rig keeps the spec that made it. The two wave rigs were made from the old spec, so run
    `rig archive wave-forecaster-dev`, then
    `rig import /etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml --materialize-only`. That makes

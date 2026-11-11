@@ -329,7 +329,7 @@ Estas notas valem para quem faz o deploy: o dono, com o Hermes quando o dono ped
    `managed-settings.json`. Não foi medido se o unit `openrig` reinicia nesse deploy. Antes do merge,
    confira que nenhum seat trabalha: `rig ps --nodes --active`.
 2. **Ligar a opção, num PR pequeno.** Em `hosts/piabrota2/default.nix`, ao lado de
-   `piabrota.openrig.waveForecaster.enable = false;`, ponha
+   `piabrota.openrig.waveForecaster.enable = true;`, ponha
    `piabrota.openrig.thesis.enable = true;`. A exceção unfree de `claude-code` já está em
    `unfree.nix`. As peças do Claude (o `claude` do `seatClaude` e `managed-settings.json`) ligam
    quando a rig do port **ou** a da tese está ligada. No PR, meça o crescimento com

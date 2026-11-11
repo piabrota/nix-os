@@ -9,9 +9,10 @@
 # MemoryMax is one budget for all of them, and a restart of the unit ends them all. The seats run
 # `omp` from omp/wrapper.nix. With piabrota.openrig.waveForecaster.enable the seats of the port rig
 # run Claude Code (`claude`, unfree: unfree.nix) and Codex is not installed. The specs of the first
-# rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig: a human or Hermes
-# runs `rig up`. With piabrota.openrig.marola.enable the seats of piabrota-dev also work on
-# the two marola repositories, with read tokens of marola-pr-bot (marola-bot.nix, docs/OPENRIG.md).
+# rig are in openrig/specs, installed at /etc/openrig/specs. Nothing starts a rig except the keeper
+# of the port rig (waveForecaster.alwaysOn): a human or Hermes runs `rig up` for the others. With
+# piabrota.openrig.marola.enable the seats of piabrota-dev also work on the two marola repositories,
+# with read tokens of marola-pr-bot (marola-bot.nix, docs/OPENRIG.md).
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkOption types;
@@ -271,6 +272,125 @@ let
   # the same ffmpeg and jq for what a seat scripts itself. Blender, headless, for the artist-3d seat:
   # the owner's exception to no GUI (2026-11-08), behind its own option and only that package.
   reelsTools = [ (pkgs.callPackage ./reels { }) pkgs.ffmpeg-headless pkgs.jq ] ++ lib.optionals rf.blender.enable [ pkgs.blender ];
+
+  # The keeper of the port rig, run by the unit openrig-wf-keeper. Every `rig` call goes to the
+  # daemon at OPENRIG_URL (rigCli sets it). It never starts a daemon, sends no task and answers no
+  # prompt. The rig's output is not printed: it is not needed, and `rig ps --full` shows tokens.
+  # The only state is $STATE_DIRECTORY/attempts: the epoch second of each start, one per line.
+  # A line starting with <3> or <4> is logged by journald as an error or a warning.
+  wfKeeper = pkgs.writeShellApplication {
+    name = "openrig-wf-keeper";
+    runtimeInputs = [ rigCli pkgs.jq pkgs.coreutils ];
+    text = ''
+      rig_name=wave-forecaster-dev
+      spec=/etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml
+      attempts="$STATE_DIRECTORY/attempts"
+      window=3600
+      max_attempts=3
+
+      # A rig list or a node list is a bare array; an envelope has it in `.entries`.
+      list() { jq -c 'if type == "object" then .entries else . end'; }
+
+      if ! out=$(rig status 2>&1); then
+        echo "rig status failed, the daemon does not answer: nothing done"
+        exit 0
+      fi
+      case $out in
+        *"Daemon running"*) ;;
+        *)
+          echo "daemon not running: nothing done"
+          exit 0
+          ;;
+      esac
+
+      if ! rigs=$(rig ps --json | list); then
+        echo "<4>rig ps failed: nothing done"
+        exit 0
+      fi
+
+      other=$(jq -r --arg n "$rig_name" \
+        '[.[] | select(.isArchived != true and .name != $n and (.runningCount // 0) > 0) | .name] | first // empty' <<<"$rigs")
+      if [ -n "$other" ]; then
+        echo "another rig runs: $other, skipped"
+        exit 0
+      fi
+
+      state=$(jq -r --arg n "$rig_name" \
+        '[.[] | select(.name == $n and .isArchived != true)] | first | .status // "missing"' <<<"$rigs")
+
+      case $state in
+        running)
+          attention=$(jq -r --arg n "$rig_name" \
+            '[.[] | select(.name == $n and .isArchived != true)] | first | .attentionCount // 0' <<<"$rigs")
+          if [ "$attention" -gt 0 ]; then
+            echo "<4>$rig_name runs, $attention seat(s) need attention: rig ps --nodes --rig $rig_name"
+          else
+            echo "$rig_name runs"
+          fi
+          exit 0
+          ;;
+        partial)
+          if ! nodes=$(rig ps --nodes --rig "$rig_name" --json | list); then
+            echo "<4>$rig_name is partial and rig ps --nodes failed: nothing done"
+            exit 0
+          fi
+          down=$(jq -r '[.[] | select(.lifecycleState != "running") | "\(.logicalId)=\(.lifecycleState)"] | join(", ")' <<<"$nodes")
+          echo "<4>$rig_name is partial, seats not running: $down. Nothing changed."
+          exit 0
+          ;;
+        stopped)
+          if ! nodes=$(rig ps --nodes --rig "$rig_name" --json | list); then
+            echo "<4>rig ps --nodes failed: nothing done"
+            exit 0
+          fi
+          if jq -e 'length > 0 and all(.[]; .intentionallyStopped == true)' <<<"$nodes" >/dev/null; then
+            echo "$rig_name was stopped on purpose (rig down): not started"
+            exit 0
+          fi
+          ;;
+        missing) ;;
+        *)
+          echo "<4>$rig_name has the status '$state': nothing done"
+          exit 0
+          ;;
+      esac
+
+      # Back-off: keep the attempts of the last hour, and stop at max_attempts of them.
+      now=$(date +%s)
+      count=0
+      kept=""
+      if [ -f "$attempts" ]; then
+        while read -r t || [ -n "$t" ]; do
+          case $t in
+            "" | *[!0-9]*) continue ;;
+          esac
+          if [ $((now - t)) -le "$window" ]; then
+            count=$((count + 1))
+            kept="$kept$t"$'\n'
+          fi
+        done <"$attempts"
+      fi
+      if [ "$count" -ge "$max_attempts" ]; then
+        echo "<3>$rig_name is $state and $count start attempts failed or ended in the last hour: not trying. Read: journalctl -u openrig; rig ps --nodes --rig $rig_name"
+        exit 1
+      fi
+      printf '%s%s\n' "$kept" "$now" >"$attempts"
+
+      echo "$rig_name is $state: starting it"
+      if [ "$state" = stopped ] && rig up "$rig_name" --existing >/dev/null 2>&1; then
+        echo "$rig_name restored from its snapshot (--existing)"
+        exit 0
+      fi
+      if rig up "$spec" >/dev/null 2>&1; then
+        echo "$rig_name started from $spec"
+        exit 0
+      else
+        code=$?
+      fi
+      echo "<3>$rig_name did not start: rig up exited with $code. Read: rig up $rig_name --existing"
+      exit 1
+    '';
+  };
 in
 {
   # The one unfree package, by name: the `claude` of the port rig's seats (docs/RUNTIMES.md). Here and
@@ -317,9 +437,14 @@ in
         repository.
       '';
     };
-    waveForecaster.enable = mkEnableOption ''
-      the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
-      outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
+    waveForecaster = {
+      enable = mkEnableOption ''
+        the rigs of wave-forecaster-dev: Rust tools in the seats' profile, a folder per seat, the
+        outbox for Hermes and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md)'';
+      alwaysOn.enable = mkEnableOption ''
+        the keeper of the port rig: the unit and timer openrig-wf-keeper restore the rig
+        wave-forecaster-dev when it is stopped (docs/OPENRIG.md, "wave-forecaster-dev")'';
+    };
     marola = {
       enable = mkEnableOption ''
         marola-front and marola-back on the rig piabrota-dev: the seats' Rust tools and `marola-clone`,
@@ -386,6 +511,10 @@ in
       {
         assertion = !marola.claude.enable || marola.enable;
         message = "piabrota.openrig.marola.claude.enable needs piabrota.openrig.marola.enable: the rig piabrota-dev-claude uses the same agents, tokens and outbox.";
+      }
+      {
+        assertion = !wf.alwaysOn.enable || wf.enable;
+        message = "piabrota.openrig.waveForecaster.alwaysOn needs piabrota.openrig.waveForecaster.enable: the keeper restores the port rig, which that option defines.";
       }
     ];
 
@@ -621,6 +750,58 @@ in
         SystemCallArchitectures = "native";
         SystemCallFilter = [ "@system-service" "~@privileged" ];
         SystemCallErrorNumber = "EPERM";
+      };
+    };
+
+    # The keeper of the port rig (docs/OPENRIG.md, "wave-forecaster-dev"): every 2 minutes it brings
+    # the rig back when it is stopped. A oneshot with its own sandbox, no secret, loopback only. It
+    # does not start openrig.service: with the daemon down it does nothing (a stray daemon would
+    # live outside the unit's budget).
+    systemd.services.openrig-wf-keeper = mkIf wf.alwaysOn.enable {
+      description = "Keep the OpenRig rig wave-forecaster-dev up";
+      after = [ "openrig.service" ];
+      environment.HOME = "/var/lib/openrig-wf-keeper";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = lib.getExe wfKeeper;
+        DynamicUser = true;
+        StateDirectory = "openrig-wf-keeper";
+        UMask = "0077";
+        TimeoutStartSec = 300;
+        MemoryMax = "256M";
+        CPUQuota = "25%";
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectKernelLogs = true;
+        ProtectControlGroups = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        ProtectProc = "invisible";
+        CapabilityBoundingSet = "";
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        # Only the daemon on the loopback. AF_NETLINK: the rig CLI runs on Node (see the unit openrig).
+        IPAddressAllow = "localhost";
+        IPAddressDeny = "any";
+        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [ "@system-service" "~@privileged" ];
+        SystemCallErrorNumber = "EPERM";
+      };
+    };
+
+    systemd.timers.openrig-wf-keeper = mkIf wf.alwaysOn.enable {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "2min";
       };
     };
   };

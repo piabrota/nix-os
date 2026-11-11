@@ -141,9 +141,13 @@ piabrota/nix-os, "wave-forecaster-dev"):
 |`wave-forecaster-dev`|`port-porter@wave-forecaster-dev`, `port-auditor@wave-forecaster-dev`|
 |`wave-forecaster-dev-integrate`|`wire-integrator@wave-forecaster-dev-integrate`, `wire-auditor@wave-forecaster-dev-integrate`|
 
-These rigs are a definition only. Do not start them while `piabrota.openrig.waveForecaster.enable`
-is off (`/var/lib/rig-outbox` then does not exist), and never without the owner's request. When the
-owner turns it on, start them as in the fast path, with their spec path in `/etc/openrig/specs/rigs/`. A task names
+The port rig is kept up by a keeper (the timer `openrig-wf-keeper`, every 2 minutes): it restores
+a rig that a deploy, a crash or a reboot stopped, so you do not `rig up` it. It leaves a rig that
+`rig down` stopped. The integrate rig stays manual: start it only at the owner's request, with its
+spec path in `/etc/openrig/specs/rigs/`. One rig at a time: run `rig down wave-forecaster-dev` before
+`rig up` of another rig, and `rig up wave-forecaster-dev --existing` after that rig ends. Never run
+`rig down` or `rig archive` on the port rig without the owner's request. A consent or bypass prompt
+in a seat goes to the owner. A task names
 the routine (or the package), its switch file and a template commit, and says that done means
 `just check` passes and the auditor found nothing that blocks. The seats cannot run chaceon's
 Docker, Vulkan or CUDA gates: their work leaves the box at the status `translated`. Tell the owner

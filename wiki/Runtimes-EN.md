@@ -16,7 +16,7 @@ OpenRig by mvschwarz (Apache-2.0), [Pi](https://pi.dev) by Mario Zechner
 
 |Runtime|What it is|Pro|Con|On `piabrota2`|
 |---|---|---|---|---|
-|`claude-code`|Anthropic's Claude Code in a tmux pane|The best supported by OpenRig. Uses the Claude subscription. Managed settings add rules that a repository cannot override|Unfree. About +280 MiB. Asks once to accept its bypass warning. Ranks `ANTHROPIC_API_KEY` above the OAuth token|The port rig `wave-forecaster-dev`, after this change and with `waveForecaster.enable` on (off). Needs `unfree.nix`|
+|`claude-code`|Anthropic's Claude Code in a tmux pane|The best supported by OpenRig. Uses the Claude subscription. Managed settings add rules that a repository cannot override|Unfree. About +280 MiB. Asks once to accept its bypass warning. Ranks `ANTHROPIC_API_KEY` above the OAuth token|The port rig `wave-forecaster-dev`, with `waveForecaster.enable` on (on at piabrota2). Needs `unfree.nix`|
 |`codex`|OpenAI's Codex CLI|A native sandbox. Another model family|Needs an OpenAI login and a binary|Not installed|
 |`pi`|The Pi harness, through OpenRig's runner|Small. Many providers. Precise activity|No sub-agents or plan mode by default. No Claude subscription route. No permission policy|Not installed. No spec|
 |`omp`|oh-my-pi, a fork of Pi, through a runner|Works with the subscription token here. Rules of its own that a repository cannot loosen|A key only for a model written `provider/id`. A restore of a new seat needs `--fresh`|Works: `piabrota-dev` and the integrate rig|
