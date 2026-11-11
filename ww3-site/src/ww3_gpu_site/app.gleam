@@ -362,8 +362,8 @@ fn tools(l: String) -> Element(msg) {
 }
 
 /// One Archify figure: the PNG as it is, at the size it was drawn at (its `width` and `height`),
-/// never shrunk to the text column; the frame around it scrolls sideways when the screen is
-/// narrower than the drawing. It links to itself, and under it are its question and its PDF.
+/// never shrunk to the text column; the style sheet scales it down only to the room beside the
+/// side column. It links to itself, and under it are its question and its PDF.
 fn figure(l: String, f: Figure) -> Element(msg) {
   let png = up(l) <> "archify/" <> f.slug <> ".png"
   let caption = case f.question {

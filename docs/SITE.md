@@ -225,8 +225,8 @@ figures, port reports and `site/data/port_score.tsv`), the tools of the referenc
 cite it. The figures are the PNGs ww3-gpu commits for each drawing of `docs/archify/dark.tsv`,
 copied byte for byte into `archify/` and shown at the size they were drawn at: half the PNG's
 pixels, read from its header by the content generator and set as the image's `width` and `height`.
-A figure is not shrunk to the text column; it passes the column's edges, and scrolls sideways in
-its frame when the screen is narrower than the drawing. A click on a figure opens its interactive
+A figure is not shrunk to the text column; it passes the column's edges, and is scaled down only
+when it is wider than the room beside the side column, open or folded, so it always fits. A click on a figure opens its interactive
 Archify page at `https://h0ffmann.github.io/ww3-gpu/figures/<slug>/`, which ww3-gpu's `pages.yml`
 publishes. The pages are not built here: Archify checks each drawing against the Git history of
 ww3-gpu, and the fetched source has none. The side column also lists five repositories of
