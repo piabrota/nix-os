@@ -28,36 +28,67 @@ const sections = [
   "cite",
 ]
 
-// One source, two pages: the Portuguese one is the same page, every sentence looked up by its
-// English in site/data/translations/pt-BR.tsv (h0ffmann/h0ffmann#86).
-pub fn a_sentence_is_translated_by_its_source_test() {
-  assert app.t("pt-BR", "the repository") == "o repositório"
-  assert app.t("en", "the repository") == "the repository"
-  assert app.t("pt-BR", "a sentence with no row") == "a sentence with no row"
+// One source, four pages: each sentence is a key of site/locales/<lang>.json.
+pub fn a_sentence_is_read_by_its_key_test() {
+  assert app.t("en", "links.repository") == "the repository"
+  assert app.t("pt-BR", "links.repository") == "o repositório"
+  assert app.t("ja-JP", "lineage.title") == "系譜"
+  assert app.t("zh-CN", "lineage.title") == "谱系"
+  assert app.t("pt-BR", "no.such.key") == "no.such.key"
 }
 
-pub fn the_page_in_portuguese_test() {
+pub fn the_page_in_each_language_test() {
+  list.each(app.languages, fn(language) {
+    let #(code, name, folder) = language
+    let page = prerender.render(code)
+    assert string.contains(page, "<html lang=\"" <> code <> "\">")
+    assert string.contains(page, "https://wave.piabrota.art/" <> folder)
+    // The language of the page is named and is not a link; the others are links.
+    assert string.contains(
+      page,
+      "<strong lang=\"" <> code <> "\">" <> name <> "</strong>",
+    )
+    list.each(sections, fn(id) {
+      assert string.contains(page, "id=\"" <> id <> "\"")
+    })
+  })
   let pt = prerender.render("pt-BR")
-  assert string.contains(pt, "<html lang=\"pt-BR\">")
   assert string.contains(pt, "ferramentas usadas")
   // The files of the site are one level up from /pt-BR/; the anchors stay on the page.
   assert string.contains(pt, "href=\"../style.css\"")
   assert string.contains(pt, "src=\"../archify/")
   assert string.contains(pt, "href=\"#research\"")
-  assert string.contains(pt, "https://wave.piabrota.art/pt-BR/")
-  list.each(sections, fn(id) {
-    assert string.contains(pt, "id=\"" <> id <> "\"")
-  })
 }
 
-// Each page links to the other, named in the other's language.
-pub fn the_two_pages_link_each_other_test() {
-  assert string.contains(html(), "href=\"pt-BR/\" hreflang=\"pt-BR\"")
+// Each page links to the three others, named in their own languages.
+pub fn the_pages_link_each_other_test() {
+  let en = html()
+  assert string.contains(en, "href=\"pt-BR/\" hreflang=\"pt-BR\"")
+  assert string.contains(en, "href=\"zh-CN/\" hreflang=\"zh-CN\"")
+  assert string.contains(en, "href=\"ja-JP/\" hreflang=\"ja-JP\"")
+  let ja = prerender.render("ja-JP")
+  assert string.contains(ja, "href=\"../\" hreflang=\"en\"")
+  assert string.contains(ja, "href=\"../pt-BR/\" hreflang=\"pt-BR\"")
+}
+
+// A page no native reader has checked says so; the English and Portuguese pages do not.
+pub fn the_banner_test() {
+  assert string.contains(prerender.render("zh-CN"), "class=\"banner\"")
+  assert string.contains(prerender.render("ja-JP"), "class=\"banner\"")
+  assert !string.contains(html(), "class=\"banner\"")
+  assert !string.contains(prerender.render("pt-BR"), "class=\"banner\"")
+}
+
+// The side column comes before the text, so it is on the left, and a checkbox folds it.
+pub fn the_side_column_is_on_the_left_and_folds_test() {
+  let page = html()
+  let assert Ok(#(before, _)) = string.split_once(page, "<div class=\"main\">")
+  assert string.contains(before, "id=\"side-toggle\"")
   assert string.contains(
-    prerender.render("pt-BR"),
-    "href=\"../\" hreflang=\"en\"",
+    before,
+    "<label class=\"toggle-label\" for=\"side-toggle\"",
   )
-  assert string.contains(html(), "<html lang=\"en\">")
+  assert string.contains(before, "<nav>")
 }
 
 pub fn every_section_test() {
@@ -196,6 +227,7 @@ pub fn the_lineage_test() {
   assert string.contains(page, "href=\"../style.css\"")
   assert string.contains(page, "https://wave.piabrota.art/lineage/")
   assert string.contains(page, "href=\"../pt-BR/lineage/\" hreflang=\"pt-BR\"")
+  assert string.contains(page, "href=\"../ja-JP/lineage/\" hreflang=\"ja-JP\"")
   assert string.contains(html(), "href=\"lineage/\"")
   let pt = prerender_lineage.render("pt-BR")
   assert string.contains(pt, "<html lang=\"pt-BR\">")
@@ -217,5 +249,25 @@ pub fn the_repositories_test() {
         "href=\"https://github.com/" <> org <> "/" <> r.name <> "\"",
       )
     })
+  })
+}
+
+// Each organization has its logo, loaded from its owner and never a file of this site.
+pub fn the_logos_test() {
+  let page = html()
+  assert list.length(app.logos) == 3
+  list.each(app.logos, fn(logo) {
+    let #(org, picture) = logo
+    assert string.starts_with(picture, "https://")
+    assert string.contains(
+      page,
+      "<a href=\"https://github.com/"
+        <> org
+        <> "\"><img alt height=\"28\" src=\""
+        <> escaped(picture)
+        <> "\">"
+        <> org
+        <> "</a>",
+    )
   })
 }

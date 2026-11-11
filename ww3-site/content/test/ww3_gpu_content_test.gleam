@@ -111,9 +111,7 @@ pub fn empty_list_test() {
       [],
       [],
       [],
-      [
-        #("the book", "o livro"),
-      ],
+      [#("pt-BR", [#("the book", "o livro")])],
       [],
       [],
       [],
@@ -121,7 +119,7 @@ pub fn empty_list_test() {
     )
   assert text |> contains("pub const notes: List(Note) = []")
   assert text |> contains("pub const events: List(Event) = []")
-  assert text |> contains("#(\"the book\", \"o livro\")")
+  assert text |> contains("#(\"pt-BR\", [#(\"the book\", \"o livro\")])")
   assert text |> contains("pub const commits = \"852\"")
   assert text |> contains("pub const figures: List(Figure) = []")
 }
@@ -203,41 +201,29 @@ pub fn sentences_test() {
   assert c.sentences(code) == ["the book", "a \"quoted\" word", "the PDF"]
 }
 
-pub fn a_whole_table_passes_test() {
-  let table =
-    "# source\tpt-BR\tstatus\tnote (optional)
-the book\to livro\tdraft
-the PDF\to PDF\treviewed\ta note"
-  assert c.translation_errors(table, ["the book", "the PDF", "the book"]) == []
-  assert c.translations(table)
-    == [#("the book", "o livro"), #("the PDF", "o PDF")]
+pub fn a_whole_locale_passes_test() {
+  let en = ["book.title", "book.pdf"]
+  let used = ["book.title", "book.pdf", "book.title"]
+  assert c.locale_errors("en", en, en, used) == []
+  assert c.locale_errors("ja-JP", ["book.pdf", "book.title"], en, used) == []
 }
 
-// The judge is judged: a table with one fault of each kind is refused for each.
-pub fn a_bad_table_is_refused_test() {
-  let table =
-    "the book\to livro\tdraft
-the book\to livro\tdraft
-the PDF\t\tdraft
-an old sentence\tuma frase velha\tdraft
-the repository\to repositório\tdone
-three cells\tonly"
+// The judge is judged: a locale with one fault of each kind is refused for each.
+pub fn a_bad_locale_is_refused_test() {
+  let en = ["book.title", "book.pdf", "old.key"]
+  let used = ["book.title", "book.pdf", "new.key"]
   let errors =
-    c.translation_errors(table, [
-      "the book",
-      "the PDF",
-      "the repository",
-      "a new sentence",
-    ])
+    list.append(
+      c.locale_errors("en", en, en, used),
+      c.locale_errors("pt-BR", ["book.title", "old.key", "stray"], en, used),
+    )
     |> string.join("\n")
   list.each(
     [
-      "\"the book\" is there twice",
-      "\"the PDF\" has no translation",
-      "\"an old sentence\" is an orphan",
-      "status is \"done\"",
-      "a row has 2 cells",
-      "the sentence \"a new sentence\" has no translation",
+      "en.json: the page asks for \"new.key\"",
+      "en.json: the key \"old.key\" is an orphan",
+      "pt-BR.json: the key \"book.pdf\" is missing",
+      "pt-BR.json: the key \"stray\" is an orphan",
     ],
     fn(fault) {
       assert contains(errors, fault)

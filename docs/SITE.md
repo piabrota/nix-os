@@ -208,7 +208,7 @@ address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)).
 
 The website of h0ffmann/ww3-gpu, which GitHub Pages served at h0ffmann.github.io/ww3-gpu until
 2026-11-11. Its Gleam code lives here, in `ww3-site/` (the front page, the lineage page, the
-pt-BR translations, the CSS), and its facts stay in ww3-gpu: `ww3-site/default.nix` copies
+locales, the CSS), and its facts stay in ww3-gpu: `ww3-site/default.nix` copies
 ww3-gpu at a pinned commit, puts this code in its `site/`, runs the content generator
 (`ww3-site/content`, which reads `docs/ADRs.md`, `docs/WFIPs/`, `notes/`, `kokkos/ports.tsv`,
 `.zenodo.json`, `CITATION.cff`, `RELEASES.md`, `VERSIONS.md`, `docs/archify/` and `site/data/*.tsv`
@@ -231,16 +231,29 @@ Archify page at `https://h0ffmann.github.io/ww3-gpu/figures/<slug>/`, which ww3-
 publishes. The pages are not built here: Archify checks each drawing against the Git history of
 ww3-gpu, and the fetched source has none. The side column also lists five repositories of
 piabrota, marola-dev and ouroboric-dev, the rows of `ww3-site/data/orgs.tsv` (the most stars, the
-most recent push first on a tie; the file names its date). The look follows
+most recent push first on a tie; the file names its date), each under its logo. A logo is a
+trademark and never a file here: it loads from its owner's repository at a pinned commit
+(`logos` in `app.gleam`), and piabrota's is its GitHub picture. The look follows
 [reasonablypolymorphic.com](https://reasonablypolymorphic.com/) by Sandy Maguire
-([@isovector](https://github.com/isovector)), a serif text column and a dark side column, written
+([@isovector](https://github.com/isovector)), a serif text column and a dark side column, here on the left, written
 anew in `ww3-site/static/style.css`; the foot of every page credits it.
+
+The side column is on the left and the reader can fold it: a checkbox before it holds the state
+and the ☰ label at its top is the button, with no JavaScript. On a wide screen it is open until
+the reader folds it to a strip; on a phone it is a bar at the top until the reader opens it.
+
+The site has the four languages of the homepage: English at `/`, and `/pt-BR/`, `/zh-CN/` and
+`/ja-JP/`, each with its lineage page. The sentences are in `ww3-site/locales/<lang>.json`, a flat
+object from a key to the sentence, and the page asks for one with `t(l, "key")`. `en.json` is the
+source. The content generator stops the build when a language lacks a key of `en.json`, or a file
+has a key the page does not ask for. The zh-CN and ja-JP pages keep their banner (the key `banner`)
+until a native reader checks them. A fact read from ww3-gpu keeps its own language.
 
 `ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
 (`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
 pin. The site changes when the owner merges it.
 A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
-needs its row in `ww3-site/data/translations/pt-BR.tsv`, or the content generator stops the build.
+needs its key in each file of `ww3-site/locales/`, or the content generator stops the build.
 `just ww3-site` builds it into `./result-ww3-site`; `nix develop .#site` has gleam and node for
 `gleam test` in `ww3-site/` and `ww3-site/content`, run inside a checkout of ww3-gpu's layout.
 

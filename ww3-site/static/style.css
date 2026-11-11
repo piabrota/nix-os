@@ -1,6 +1,6 @@
 /* ww3-gpu at wave.piabrota.art: a plain page. The look follows reasonablypolymorphic.com by Sandy
    Maguire (github.com/isovector): a serif text column on white and a dark side column with the
-   name and the links. Written here, not copied. The Archify figures are shown as they are: no
+   name and the links, here on the left. Written here, not copied. The Archify figures are shown as they are: no
    border, no filter, no background, only scaled down to the width of the column. */
 * { box-sizing: border-box; }
 html { background: #fff; }
@@ -42,7 +42,8 @@ th { font-size: 0.85em; text-transform: uppercase; }
 /* A figure is as wide as its drawing, centred on the text column and free to pass its edges: the
    drawing keeps the size it was drawn at. --room is the width of the screen left of the side
    column; a drawing wider than that scrolls sideways in its frame and is never shrunk. */
-:root { --room: calc(100vw - 312px - 48px); }
+.page { --room: calc(100vw - 312px - 48px); }
+.page:has(> .toggle:checked) { --room: calc(100vw - 44px - 48px); }
 figure {
   position: relative;
   left: 50%;
@@ -57,6 +58,9 @@ figure img { display: block; max-width: none; }
 figcaption { width: 0; min-width: 100%; }
 figcaption { margin-top: 0.8em; font-size: 0.7em; line-height: 1.6; text-transform: uppercase; text-align: center; }
 .foot { margin-top: 3em; padding-top: 12px; border-top: 1px dashed #11212e; font-size: 0.75em; color: #444; }
+/* The side column, on the left. The checkbox before it (.toggle) is its state and the ☰ label
+   at its top is the button: on a wide screen the column is open and a click folds it to a strip;
+   on a phone it is a bar at the top and a click opens it. No JavaScript. */
 nav {
   flex: 0 0 312px;
   width: 312px;
@@ -66,17 +70,30 @@ nav {
   font-size: 14px;
   line-height: 1.15;
 }
+.toggle { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.toggle-label { display: block; width: 44px; margin: 0 0 0 -20px; padding: 10px 0; text-align: center; font-size: 20px; line-height: 1; cursor: pointer; user-select: none; }
+.toggle:focus-visible + nav .toggle-label { outline: 2px solid #fff; outline-offset: -4px; }
+.toggle:checked + nav { flex-basis: 44px; width: 44px; padding: 0; }
+.toggle:checked + nav > :not(.toggle-label) { display: none; }
+.toggle:checked + nav .toggle-label { margin: 0; }
+.banner { margin: 16px 0 0; padding: 8px 12px; border: 1px solid #000; font-family: "Mulish", system-ui, sans-serif; font-size: 0.8em; }
 nav a { color: #d0d; }
-nav .brand { margin: 60px 0 80px; text-align: center; font-size: 1.86em; line-height: 1.23; font-weight: 700; text-transform: uppercase; }
+nav .brand { margin: 16px 0 80px; text-align: center; font-size: 1.86em; line-height: 1.23; font-weight: 700; text-transform: uppercase; }
 nav .brand a { color: #fff; }
 nav p { margin: 0 0 1.15em; text-align: justify; }
 nav h2 { font-size: 1em; margin: 0; text-transform: uppercase; }
 nav h2 a { color: #fff; }
+nav h2.org a { display: flex; align-items: center; gap: 8px; }
+nav h2.org img { height: 28px; width: auto; max-width: 150px; border-radius: 4px; }
 nav ul { margin: 0 0 1.15em; padding-left: 24px; }
 @media (max-width: 1000px) {
-  :root { --room: calc(100vw - 32px); }
+  .page, .page:has(> .toggle:checked) { --room: calc(100vw - 32px); }
   .page { flex-direction: column; }
-  nav { flex: none; width: auto; min-height: 0; padding: 16px; }
+  nav, .toggle:checked + nav { flex: none; width: auto; min-height: 0; padding: 0 16px; }
+  nav > :not(.toggle-label) { display: none; }
+  .toggle:checked + nav { padding-bottom: 16px; }
+  .toggle:checked + nav > :not(.toggle-label) { display: block; }
+  .toggle-label, .toggle:checked + nav .toggle-label { margin: 0 0 0 -16px; }
   nav .brand { margin: 8px 0 16px; }
 }
 @media (max-width: 720px) {

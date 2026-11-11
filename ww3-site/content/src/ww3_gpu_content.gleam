@@ -112,6 +112,9 @@ fn revision() -> String
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "png_size")
 fn png_size(path: String) -> String
 
+@external(javascript, "./ww3_gpu_content_ffi.mjs", "locale")
+fn locale(path: String) -> List(#(String, String))
+
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "commits")
 fn commits() -> String
 
@@ -121,73 +124,50 @@ pub fn sentences(code: String) -> List(String)
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "exit")
 fn exit(code: Int) -> Nil
 
-// ---- the translations --------------------------------------------------------------------------
-// One source, the English sentences of site/src, and a table for each other language,
-// site/data/translations/<lang>.tsv, keyed by the English sentence itself (h0ffmann/h0ffmann#86).
+// ---- the locales -------------------------------------------------------------------------------
+// One file for each language, site/locales/<lang>.json: a flat object from a key to the sentence
+// in that language. en.json is the source. The page asks for a sentence with `t(l, "key")`.
 
-/// What is wrong with a translation table, given the sentences the page translates: a row that
-/// is not `source, translation, status[, note]`, a status other than draft or reviewed, a source
-/// twice, a row whose sentence the page no longer has (an orphan), and a sentence with no row.
-/// The page is not built while this is not empty.
-pub fn translation_errors(
-  table: String,
-  sentences: List(String),
+/// The languages of the site, en first. Each has its file in site/locales/.
+pub const languages = ["en", "pt-BR", "zh-CN", "ja-JP"]
+
+/// What is wrong with the locale of `lang`, given its keys, the keys of en.json and the keys the
+/// page asks for: a key the page asks for that en.json lacks, a key of en.json that this locale
+/// lacks, and a key that en.json or the page no longer has (an orphan). The page is not built
+/// while this is not empty.
+pub fn locale_errors(
+  lang: String,
+  keys: List(String),
+  en_keys: List(String),
+  used: List(String),
 ) -> List(String) {
-  let rows = tsv_rows(table, "source")
-  let row_errors =
-    list.flat_map(rows, fn(cells) {
-      case cells {
-        [source, target, status] | [source, target, status, _] -> {
-          let where = "the row " <> lit(source)
-          list.flatten([
-            case string.trim(target) {
-              "" -> [where <> " has no translation"]
-              _ -> []
-            },
-            case status {
-              "draft" | "reviewed" -> []
-              _ -> [where <> ": status is " <> lit(status)]
-            },
-            case list.contains(sentences, source) {
-              True -> []
-              False -> [
-                where
-                <> " is an orphan: the page has no such sentence now. Translate the new sentence and delete this row",
-              ]
-            },
-          ])
-        }
-        _ -> [
-          "a row has "
-          <> int.to_string(list.length(cells))
-          <> " cells, and it needs source, translation, status and an optional note: "
-          <> string.join(cells, " | "),
-        ]
-      }
+  let file = lang <> ".json"
+  let unknown =
+    used
+    |> list.unique
+    |> list.filter(fn(k) { !list.contains(en_keys, k) })
+    |> list.map(fn(k) {
+      "en.json: the page asks for " <> lit(k) <> ", and it has no such key"
     })
-  let sources = list.filter_map(rows, list.first)
-  let twice =
-    sources
-    |> list.unique
-    |> list.filter(fn(s) { list.count(sources, fn(x) { x == s }) > 1 })
-    |> list.map(fn(s) { "the row " <> lit(s) <> " is there twice" })
   let missing =
-    sentences
-    |> list.unique
-    |> list.filter(fn(s) { !list.contains(sources, s) })
-    |> list.map(fn(s) { "the sentence " <> lit(s) <> " has no translation" })
-  list.flatten([row_errors, twice, missing])
-}
-
-/// The pairs `#(source, translation)` of a table that passed `translation_errors`.
-pub fn translations(table: String) -> List(#(String, String)) {
-  tsv_rows(table, "source")
-  |> list.filter_map(fn(cells) {
-    case cells {
-      [source, target, ..] -> Ok(#(source, target))
-      _ -> Error(Nil)
-    }
-  })
+    en_keys
+    |> list.filter(fn(k) { !list.contains(keys, k) })
+    |> list.map(fn(k) { file <> ": the key " <> lit(k) <> " is missing" })
+  let orphans =
+    keys
+    |> list.filter(fn(k) {
+      !list.contains(en_keys, k) || !list.contains(used, k)
+    })
+    |> list.map(fn(k) {
+      file
+      <> ": the key "
+      <> lit(k)
+      <> " is an orphan: the page or en.json has no such key now"
+    })
+  case lang {
+    "en" -> list.flatten([unknown, orphans])
+    _ -> list.flatten([missing, orphans])
+  }
 }
 
 // ---- parsing, pure and tested ------------------------------------------------------------------
@@ -665,7 +645,7 @@ pub fn render(
   reports: List(Report),
   bench_rows: List(Bench),
   stats: List(Stat),
-  pt_br: List(#(String, String)),
+  locales: List(#(String, List(#(String, String)))),
   events: List(Event),
   tool_rows: List(Tool),
   figure_rows: List(Figure),
@@ -702,11 +682,22 @@ pub fn render(
           call("Figure", [f.slug, f.question, f.width, f.height])
         }),
       ),
-      "/// The page in Brazilian Portuguese: each English sentence with its translation\n/// (site/data/translations/pt-BR.tsv).\n"
+      "/// Each language with its sentences, key and text (site/locales/<lang>.json).\n"
         <> items(
-        "pt_br",
-        "#(String, String)",
-        list.map(pt_br, fn(p) { "#(" <> lit(p.0) <> ", " <> lit(p.1) <> ")" }),
+        "locales",
+        "#(String, List(#(String, String)))",
+        list.map(locales, fn(entry) {
+          "#("
+          <> lit(entry.0)
+          <> ", ["
+          <> string.join(
+            list.map(entry.1, fn(p) {
+              "#(" <> lit(p.0) <> ", " <> lit(p.1) <> ")"
+            }),
+            ", ",
+          )
+          <> "])"
+        }),
       ),
       items("adrs", "Record", list.map(adrs, record)),
       items("wfips", "Record", list.map(wfips, record)),
@@ -837,11 +828,25 @@ pub fn main() -> Nil {
       string.ends_with(name, ".gleam") && name != "content.gleam"
     })
     |> list.flat_map(fn(name) { sentences(read(site <> name)) })
-  let table = read("../data/translations/pt-BR.tsv")
-  case translation_errors(table, page_sentences) {
+  let locales =
+    list.map(languages, fn(lang) {
+      #(lang, locale("../locales/" <> lang <> ".json"))
+    })
+  let keys_of = fn(entry: #(String, List(#(String, String)))) {
+    list.map(entry.1, fn(p) { p.0 })
+  }
+  let en_keys = case locales {
+    [en, ..] -> keys_of(en)
+    [] -> []
+  }
+  case
+    list.flat_map(locales, fn(entry) {
+      locale_errors(entry.0, keys_of(entry), en_keys, page_sentences)
+    })
+  {
     [] -> Nil
     errors -> {
-      list.each(errors, fn(e) { io.println_error("pt-BR.tsv: " <> e) })
+      list.each(errors, io.println_error)
       exit(1)
     }
   }
@@ -921,7 +926,7 @@ pub fn main() -> Nil {
       reports,
       bench_rows,
       stats,
-      translations(table),
+      locales,
       lineage(lineage_table),
       tools(read(root <> "VERSIONS.md"), "The reference toolchain"),
       figures(

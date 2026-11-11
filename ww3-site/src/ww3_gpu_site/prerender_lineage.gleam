@@ -12,11 +12,8 @@ pub fn render(l: String) -> String {
   |> page.document_at(
     l,
     "lineage/",
-    "ww3-gpu: " <> app.t(l, "lineage"),
-    app.t(
-      l,
-      "the works ww3-gpu descends from or runs beside, and its releases, on one line of time.",
-    ),
+    "ww3-gpu: " <> app.t(l, "lineage.title"),
+    app.t(l, "lineage.description"),
     _,
   )
   |> element.to_document_string

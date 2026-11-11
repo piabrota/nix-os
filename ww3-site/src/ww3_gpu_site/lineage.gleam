@@ -13,21 +13,15 @@ import ww3_gpu_site/content.{type Event}
 
 pub fn view(l: String) -> Element(msg) {
   app.frame(l, "../", [
-    html.header([], [html.h1([], [html.text(t(l, "lineage"))])]),
+    html.header([], [html.h1([], [html.text(t(l, "lineage.title"))])]),
     html.div([attribute.class("content")], [
       html.p([], [
-        html.text(t(
-          l,
-          "the works this one descends from or runs beside, on one line of time: the wave models, the ocean model, the weather models, the ports of models to other machines, and the releases of this work and its sister port in rust.",
-        )),
+        html.text(t(l, "lineage.about")),
       ]),
       html.section([attribute.id("lineage")], [
-        html.h2([], [html.text(t(l, "the timeline"))]),
+        html.h2([], [html.text(t(l, "lineage.timeline"))]),
         html.p([], [
-          html.text(t(
-            l,
-            "each date is only as precise as its source; a planned event is marked so.",
-          )),
+          html.text(t(l, "lineage.dates")),
         ]),
         html.ul(
           [attribute.class("records")],
@@ -37,9 +31,7 @@ pub fn view(l: String) -> Element(msg) {
     ]),
     html.footer([attribute.class("foot")], [
       html.p([], [
-        html.text(
-          t(l, "every fact on this page was read from the repository at") <> " ",
-        ),
+        html.text(t(l, "foot.read_at") <> " "),
         html.a([attribute.href(app.repo <> "/commit/" <> content.revision)], [
           html.text(content.revision),
         ]),
@@ -52,7 +44,7 @@ pub fn view(l: String) -> Element(msg) {
 
 fn event(l: String, e: Event) -> Element(msg) {
   let planned = case e.status {
-    "planned" -> " (" <> t(l, "planned") <> ")"
+    "planned" -> " (" <> t(l, "lineage.planned") <> ")"
     _ -> ""
   }
   html.li([], [
