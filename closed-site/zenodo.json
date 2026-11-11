@@ -1,0 +1,48 @@
+{
+ "hits": {
+  "hits": [
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.23679470",
+    "metadata": {
+     "version": "v0.3.4"
+    }
+   },
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.23460477",
+    "metadata": {
+     "version": "v0.3.3"
+    }
+   },
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.23381675",
+    "metadata": {
+     "version": "v0.3.1"
+    }
+   },
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.23349831",
+    "metadata": {
+     "version": "v0.3.0"
+    }
+   },
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.23335204",
+    "metadata": {
+     "version": "v0.2.0"
+    }
+   },
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.23333657",
+    "metadata": {
+     "version": "v0.1.0"
+    }
+   }
+  ]
+ }
+}

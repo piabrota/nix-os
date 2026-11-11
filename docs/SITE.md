@@ -250,17 +250,31 @@ serving them.
 
 ## The closed-source site at closed.piabrota.art
 
-The site of h0ffmann/closed-source, the book *The god that failed*. That repository builds it
-(PDFs with TeX Live, the content with its Gleam generator, the page with Lustre) and publishes it
-to GitHub Pages at h0ffmann.github.io/closed-source on each push to its `main`. `closed.nix` gives
-it the name `closed.piabrota.art` on piabrota2: nginx passes each request to Pages, so a merge
-there shows here at once, the box keeps no copy and its closure does not change. Pages caches for
-ten minutes. Only `Host` goes to Pages; the visitor's address does not.
+The website of h0ffmann/closed-source, the book *The god that failed*, which GitHub Pages also
+serves at h0ffmann.github.io/closed-source. `closed-site/default.nix` builds it on the builder at a
+pinned commit, with that repository's own steps (`just site-build` and `site/justfile`): its content
+generator (`tools/fabric content`, Gleam on Erlang, with pandoc and pdfinfo) writes the content
+module from the paper, then the Gleam tests, the esbuild bundle and the prerender run on node. The
+output is the page, `app.js`, `style.css`, the drawings, the icon and the three PDFs, with no store
+reference. nginx (`closed.nix`) serves it as static files on piabrota2.
 
-The name needs its DNS `A` record at piabrota2's address before the first deploy
-([DNS on Porkbun](#dns-on-porkbun)). Do not give the Pages site a custom domain: Pages would then
-send h0ffmann.github.io/closed-source to that name, and a request from nginx would come back to
-nginx.
+Three things differ from the Pages build, because the sandbox has no network and the source has no
+`.git`:
+
+- The three PDFs are the release assets of the tag at the pinned commit (`release` in
+  `default.nix`, each with its hash), not built again with XeLaTeX.
+- The version DOIs come from `closed-site/zenodo.json`, Zenodo's reply cut to the fields the
+  generator reads, not from Zenodo at build time. Fetch it again when the pin passes a release.
+- The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
+  stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
+
+To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
+on `git archive <rev>`), and `release` with the PDF hashes when a new tag has them. `just
+closed-site` builds it into `./result-closed-site`.
+
+The first version of this vhost (#217) passed each request to Pages, but piabrota2 timed out on
+every connection to Pages (the 502 that `certs.yml` saw on 2026-11-11), so the box now keeps its
+own copy. The name needs its DNS `A` record at piabrota2's address ([DNS on Porkbun](#dns-on-porkbun)).
 
 ## The ▲ grid at grid.piabrota.art
 
