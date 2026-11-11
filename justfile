@@ -102,6 +102,11 @@ site:
 skills-site:
     nix build .#skills-site --out-link result-skills-site --print-build-logs
 
+# the security review of security.yml, here: gitleaks on the whole history (fails on a finding not in .gitleaksignore) and zizmor on the workflows (a report)
+security:
+    nix run --inputs-from . nixpkgs#gitleaks -- git --no-banner --redact .
+    -nix run --inputs-from . nixpkgs#zizmor -- --offline --min-severity medium .github/workflows
+
 # print /llms.txt, the index for AI agents that site/llms.nix writes from mockups/data.nix
 llms:
     nix eval --raw .#nixosConfigurations.piabrota.config.piabrota.site.llms

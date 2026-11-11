@@ -1,0 +1,48 @@
+name: security review
+
+# Started by hand only (Actions > security review > Run workflow), on the branch you pick.
+# Two tools, from the nixpkgs that flake.lock pins, the same as `just security`:
+# - gitleaks reads every commit of the history for secrets. A finding fails the run. A finding that
+#   is read and is not a secret goes in .gitleaksignore, with its reason.
+# - zizmor audits .github/workflows/ (unpinned actions, template injection, broad permissions).
+#   A report, not a gate: its findings go in the run summary.
+# The CVEs of the system closure are cves.yml's job, not this one.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: secrets and workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31
+      - name: gitleaks on the whole history (a finding fails the run)
+        run: |
+          status=0
+          nix run --inputs-from . nixpkgs#gitleaks -- git --no-banner --redact --no-color . > gitleaks.txt 2>&1 || status=$?
+          {
+            echo '### gitleaks'
+            echo '```'
+            cat gitleaks.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat gitleaks.txt
+          exit "$status"
+      - name: zizmor on the workflows (a report)
+        if: always()
+        run: |
+          nix run --inputs-from . nixpkgs#zizmor -- --offline --no-progress --min-severity medium --format plain .github/workflows > zizmor.txt 2>&1 || true
+          {
+            echo '### zizmor (medium and above)'
+            echo '```'
+            cat zizmor.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          tail -5 zizmor.txt

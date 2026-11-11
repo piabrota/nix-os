@@ -1,0 +1,72 @@
+# Matheus Hoffmann (h0ffmann)
+
+> Staff software engineer and forward deployed engineer in Florianópolis, Brazil. He runs Piabrota AI Studio, leads the marola open-source organization, and ports the WAVEWATCH III ocean wave model to GPUs at UFSC. This repository, piabrota/nix-os, is the NixOS configuration of the servers of Piabrota.
+
+This file is an index of all his public work, for language models and for persons. It follows https://llmstxt.org and it is in ASD-STE100 Simplified Technical English. Each link has one short note; the detail is behind the link. When this file and a linked repository do not agree, the repository is correct. The facts come from h0ffmann/h0ffmann (its llms.txt and `site/data/works.tsv` at commit 80504b5, 2026-11-10) and from `mockups/data.nix` of this repository.
+
+For Piabrota only, read the index of the site: https://www.piabrota.art/llms.txt. The build makes it from `mockups/data.nix`, so it lists every service, project and fork of Piabrota.
+
+## Profile
+
+- [GitHub profile](https://github.com/h0ffmann): the profile page. Its source is https://github.com/h0ffmann/h0ffmann.
+- [Website](https://h0ffmann.github.io/h0ffmann/): the timeline, the works and how they connect.
+- [Short CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/cv.pdf): one page.
+- [Long CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/cv.full.pdf): made from the profile README.
+- [LinkedIn](https://www.linkedin.com/in/mhoffmannbr/): the professional profile.
+- [Medium](https://medium.com/@mhoffmann): his articles.
+- [ORCID](https://orcid.org/0009-0009-1056-7661): the researcher identifier.
+- Topics: ML, ocean applications, agentic software factories.
+
+## Research: wave models at UFSC
+
+- [ww3-gpu](https://github.com/h0ffmann/ww3-gpu): a port of WAVEWATCH III (WW3) from Fortran to C++ with Kokkos and CUDA. The goal: WW3 runs faster on GPUs and gives the same results as the Fortran, bit for bit.
+- [ww3-dia-gpu-v2](https://github.com/h0ffmann/ww3-dia-gpu-v2): the whole W3SNL1 routine, inside WW3, bit for bit.
+- [chaceon](https://github.com/h0ffmann/chaceon): CPU and GPU wave modelling in Rust.
+- [marola-bench](https://marola-dev.github.io/marola-research/marola-bench/): a proposal for a weather benchmark for Brazil, scored against buoys.
+- [ondaseventos.ufsc.br](https://ondaseventos.ufsc.br): the research team, 5 persons. The research continues until mid-2027.
+
+## marola: open-source water app
+
+- [marola.dev](https://marola.dev): the live map. It shows the best hour to swim at beaches in Brazil, with the bathing-water quality.
+- [marola-dev organization](https://github.com/marola-dev): 12 public repositories (9 November 2026).
+- [marola](https://github.com/marola-dev/marola): the umbrella repository. It holds the design proposals (MIPs) and the ways of working.
+- [marola-app](https://github.com/marola-dev/marola-app): the backend.
+- [marola-site](https://github.com/marola-dev/marola-site): the frontend of marola.dev.
+- [marola-ml](https://github.com/marola-dev/marola-ml): the fine-tuned model, the DSPy prompt compile and the benchmark gate.
+- [marola-devkit](https://github.com/marola-dev/marola-devkit): the development harness: scripts, a Claude Code plugin marketplace and reusable workflows.
+- [marola-research](https://github.com/marola-dev/marola-research): the research of the project.
+
+## Piabrota AI Studio (since October 2026)
+
+- [www.piabrota.art](https://www.piabrota.art/): the site of the studio: the projects, the structure, the dogma and the forks.
+- [Index of the site for AI agents](https://www.piabrota.art/llms.txt): every service, project and fork of Piabrota.
+- [piabrota on GitHub](https://github.com/piabrota): the organization, with every repository.
+- [nix-os](https://github.com/piabrota/nix-os): this repository. The NixOS configuration of the two VPSs that serve piabrota.art.
+- [mu](https://github.com/piabrota/mu): the company chart: the dogma, the standards, the journal and the index of the repositories.
+- [pirsig](https://github.com/piabrota/pirsig): a second brain in Rust: PARA and a Zettelkasten slip-box. Desktop app, REST API and the psg CLI.
+- [gramatico](https://github.com/piabrota/gramatico): a Claude Code plugin that rewrites technical text in Brazilian Portuguese.
+- [room.piabrota.art](https://room.piabrota.art/): a 3D room with camera shots, a VCR and a radio.
+- [metrics.piabrota.art](https://metrics.piabrota.art/): processes, memory and vCPU of the two hosts.
+- [hermes.piabrota.art](https://hermes.piabrota.art/): the dashboard of Hermes, his personal agent. Behind a login.
+- [rig.piabrota.art](https://rig.piabrota.art/): the OpenRig UI, the engine of the software factory. Behind a login.
+
+## Ouroboric
+
+- [ouroboric-dev](https://github.com/ouroboric-dev): open factories that improve themselves. The charter, the standards, the journal and the brand.
+
+## Books and other works
+
+- [closed-source](https://h0ffmann.github.io/closed-source/): a book on why closed source failed as a protection, and on the ethics of citation.
+- [nashkell](https://h0ffmann.github.io/nashkell/): an open book in progress on game theory, in Haskell.
+- [picasso](https://github.com/h0ffmann/picasso): Nix flakes that pin the toolchains of the other works. Deterministic toolchains with just, Nix and Rust.
+- [proof](https://github.com/h0ffmann/proof): specifications in Lean 4, with Haskell and Rust implementations that are checked against them. Its pages are at https://proof.piabrota.art/.
+
+## Topics
+
+- [Topics of his repositories](https://github.com/h0ffmann/h0ffmann/blob/main/site/data/topics.tsv): the most used GitHub topics. For example: claude-code, nix, rust, ai-agents, agentic-coding, brazil.
+- [All public repositories](https://github.com/h0ffmann/h0ffmann/blob/main/site/data/repos.tsv): h0ffmann, marola-dev and piabrota, with their descriptions.
+
+## Optional
+
+- [Experience](https://github.com/h0ffmann/h0ffmann/blob/main/README.md): 2015 to 2026, from ocean instrumentation at UFRJ to fintech, fraud prevention on Databricks and TV audience forecasts on AWS.
+- [Certifications](https://github.com/h0ffmann/h0ffmann/blob/main/README.md): 4 AWS certifications and 4 PADI scuba diving certifications.
