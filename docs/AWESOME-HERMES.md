@@ -156,6 +156,19 @@ rules). Prefer the catalog's commit when you pin a plugin from it.
   model on every turn), llmslim (numpy and scikit-learn from PyPI), tameru (overrides private
   Hermes methods), discord-tps, session-mirror and hermes-discord-rpc (bot presence or the desktop
   app), redaction-pack (vendors this box does not use).
+- ⛔ [xerj-org/xerj](https://github.com/xerj-org/xerj) (Apache-2.0; the XERJ Corpus Hub, a CLI and
+  an MCP tool that answers from packs of public security corpora). Checked on 2026-11-11 and left
+  out for now. The installer (`curl -fsSL https://xerj.org/get | sh`) was read, not run. It
+  downloads one release archive from GitHub, compares its SHA-256 with a file of the same
+  release, and writes `~/.local/bin/xerj`. It needs no root and edits no shell file. Reasons to
+  wait: the latest release is a release candidate (`v1.0.0-rc.101`); the repository is four
+  months old and belongs to a user account; the checksum shows that the file is whole, not who
+  made it, and no signature check was found; nobody audited the binary, and it starts a local node
+  (port 9200) and pulls packs from the network; its memory use against the 8 GB limit of
+  `hermes-agent` is not measured; the hub is a third-party aggregator, so it is not an official
+  source for alerts. A `curl | sh` install also breaks "tools come pinned from Nix" and the deny
+  list. To adopt it: a nix-os PR that pins one release by hash, off by default, with a measured
+  memory figure.
 
 - ✅ [scross01/hermes-custom-dangerous-patterns-plugin](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin)
   (MIT, v0.5.2): a `pre_tool_call` hook that blocks terminal commands by regex. Here it enforces
