@@ -11,7 +11,7 @@ let
   # to a test does not rebuild the pages.
   src = lib.fileset.toSource {
     root = ../.;
-    fileset = lib.fileset.unions [ ../design/css ../design/kit.mjs ../design/inject.mjs ./manifest.mjs ./index.mjs ];
+    fileset = lib.fileset.unions [ ../design/css ../design/kit.mjs ../design/inject.mjs ./manifest.mjs ./index.mjs ./loc.mjs ];
   };
 in
 {
@@ -33,11 +33,13 @@ in
 
   # Shell: the brand bar into every page of `dist`; the list of pages as JSON; the index, made by the
   # kit from that list; then the check that every page but the index has the bar. `current` is the
-  # site's id in design/sites.nix, `rev` the commit of the pages' repository.
-  indexSteps = { current, rev }: ''
+  # site's id in design/sites.nix, `rev` the commit of the pages' repository. `loc`, when given, is
+  # that repository's source: loc.mjs counts its lines of code for the index.
+  indexSteps = { current, rev, loc ? null }: ''
     node ${src}/design/inject.mjs inject dist --current ${current} --sites ${sitesJson} --index /
     node ${src}/proof-site/manifest.mjs dist ${current} > "$TMPDIR/manifest.json"
-    node ${src}/proof-site/index.mjs ${current} "$TMPDIR/manifest.json" --rev ${rev} --sites ${sitesJson} --icons '${icons}' > dist/index.html
+    ${lib.optionalString (loc != null) ''node ${src}/proof-site/loc.mjs ${loc} > "$TMPDIR/loc.json"''}
+    node ${src}/proof-site/index.mjs ${current} "$TMPDIR/manifest.json" --rev ${rev} --sites ${sitesJson} --icons '${icons}'${lib.optionalString (loc != null) " --loc \"$TMPDIR/loc.json\""} > dist/index.html
     node ${src}/design/inject.mjs check dist --except index.html
   '';
 }
