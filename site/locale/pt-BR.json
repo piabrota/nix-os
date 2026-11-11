@@ -112,6 +112,7 @@
   "dogma.9.text": "Uma rotina agêntica pode rodar no computador pessoal de quem desenvolve, com modelos locais (Ollama, Ollaya). A Anthropic tem suporte de primeira classe (Claude Code, Claude API), e a Kimi também.",
   "dogma.10.title": "Prod pode quebrar, por enquanto.",
   "dogma.10.text": "Quebrar prod não é um problema, desde que a correção seja rápida. O que conta é o tempo de correção, não o número de quebras.",
+  "project.ww3-gpu": "Um port bit a bit do WAVEWATCH III, o modelo de ondas, para GPU em C++, feito com codificação agêntica e pesquisa agêntica. Release v0.2.0 em 2026-11-11.",
   "project.mu": "O chart da empresa: o dogma, os padrões, o diário e o índice dos repositórios da org.",
   "project.dojo": "O umbrella: cada produto como submódulo em um commit fixado, a tabela de rotas e as ferramentas próprias. O dojo não guarda código de produto.",
   "project..github": "O perfil da org, com a tabela de projetos, a figura da fábrica e os links de financiamento.",

@@ -112,6 +112,7 @@
   "dogma.9.text": "例行任务可以在开发者的个人电脑上运行，使用本地模型（Ollama、Ollaya）。我们也完整支持 Anthropic（Claude Code、Claude API）和 Kimi。",
   "dogma.10.title": "目前，生产环境可以出错。",
   "dogma.10.text": "生产环境出错不是问题，但必须能快速修好。重要的是修复时间，不是出错次数。",
+  "project.ww3-gpu": "WAVEWATCH III 波浪模型的逐位一致的 GPU 移植，用 C++ 编写，由智能体编程和智能体研究完成。v0.2.0 版本发布于 2026-11-11。",
   "project.mu": "公司的总图：规则、标准、日志和仓库索引。",
   "project.dojo": "总仓库：把每个产品固定在一个版本。dojo 没有产品代码。",
   "project..github": "组织的主页，有项目表、图和资助链接。",

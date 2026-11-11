@@ -24,6 +24,7 @@ Dark first; light when the visitor asks for it (`prefers-color-scheme`). Same na
 | `--text`, `--muted` | `#EDEFF3`, `#9AA3B2` | `#0B0D12`, `#4F5868` | text, and what is secondary |
 | `--accent` | `#BC2318` | `#BC2318` | the logo's red: the one filled button, the current design, the glow |
 | `--accent-text` | `#FF6B5E` | `#A51D14` | the same red where it must be read: links, the eyebrow, `§` numbers |
+| `--sea` | `#0B5FA5` | `#0B5FA5` | the sea: the fill of ww3-gpu's tile, the wave model (the owner, 2026-11-11). White on it is 6.6:1 |
 | `--ok`, `--warn`, `--none` | green, amber, grey | darker in light | a project's state: live, coming, no site yet |
 
 No other colour. A new colour is a new meaning, and it starts here.
@@ -59,8 +60,9 @@ font file is stored here.
   the top left corner, as on picasso.
 - Content is at most 1040 px wide, with 20 px gutters; below 760 px the drawing moves above the
   title, and below 420 px the buttons fill the row.
-- A: tiles in a grid of the profile's lanes, the incubating lane last; two tiles are filled, in
-  `--accent`, across the row: mu's (the company chart) and proof's (the incubating project).
+- A: tiles in a grid of the profile's lanes, the incubating lane last; three tiles are filled,
+  across the row: ww3-gpu's in `--sea`, first, before mu's (the owner, 2026-11-11), then mu's
+  (the company chart) and proof's (the incubating project) in `--accent`.
   B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
 - **/hermes** is not a design and has no place in the switcher: its hero carries the hermes mark
   (below, "Marks") where the others carry a drawing, its numbers are facts in mono, and its
@@ -80,7 +82,7 @@ font file is stored here.
   two from 600 px, on 4 tracks; three from 960 px, on 6 tracks. A card spans 2 tracks, the cards of
   a row have one height, and the gap is 14 px both ways. The last row stretches: at 3 up, one card
   left takes the row and two share it in halves; at 2 up, one card left takes the row. The filled
-  tiles (mu, proof) take a row and are not counted. A plain tile that stretches turns to a row: the
+  tiles (ww3-gpu, mu, proof) take a row and are not counted. A plain tile that stretches turns to a row: the
   logo and the tags on the left, the name, the blurb and the footer on the right. The four layers
   are 1, 2 and 4 up; on the figures page the cards are 1 and 2 up, and an odd last card takes the
   row with its preview at the side. At 3 up the board's cards stack the avatar over the text.
