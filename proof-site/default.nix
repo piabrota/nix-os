@@ -17,12 +17,12 @@ let
   common = import ./common.nix { inherit lib writeText; };
 
   # h0ffmann/proof's main. Move rev and hash together; its site needs no change here.
-  proofRev = "617473d431642c072fbb624219277c23f19c0db4";
+  proofRev = "f5fd12dcb9d51949e004882c533a6052950e064a";
   proofSrc = fetchFromGitHub {
     owner = "h0ffmann";
     repo = "proof";
     rev = proofRev;
-    hash = "sha256-MQ902+C96Irz+Xh+p5sllYJLZJfIm3v2PM1PZc9ifvg=";
+    hash = "sha256-MAkd3P+fKGy2nOFNVEjdz2r8nKwHpjsZZwypF0/Btow=";
   };
   proof = callPackage "${proofSrc}/site" { rev = proofRev; };
 in
