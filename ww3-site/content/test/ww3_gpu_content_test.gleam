@@ -102,6 +102,7 @@ pub fn empty_list_test() {
       "r",
       "",
       "x",
+      "852",
       [],
       [],
       [],
@@ -114,10 +115,65 @@ pub fn empty_list_test() {
         #("the book", "o livro"),
       ],
       [],
+      [],
+      [],
     )
   assert text |> contains("pub const notes: List(Note) = []")
   assert text |> contains("pub const events: List(Event) = []")
   assert text |> contains("#(\"the book\", \"o livro\")")
+  assert text |> contains("pub const commits = \"852\"")
+  assert text |> contains("pub const figures: List(Figure) = []")
+}
+
+const versions =
+  "# Versions
+
+## Sources
+
+| Component | Version | Pinned in | Read with |
+|---|---|---|---|
+| WW4 | `74ea792` | the submodule | `git submodule status` |
+
+## The reference toolchain: picasso `labs/pratico`
+
+All from one lock.
+
+| Component | Version | Shell | Read with |
+|---|---|---|---|
+| gfortran, gcc, g++ | GCC 16.2.0 | `#ww3` | `just toolchain` |
+| Kokkos | 5.2.2: Serial and OpenMP | `#ww3` | `just toolchain` |
+
+`just toolchain` runs a recipe.
+
+## The Docker image
+
+| Component | Version | Stage | Pinned in |
+|---|---|---|---|
+| Base | Ubuntu | all | `docker/Dockerfile:16` |
+"
+
+pub fn tools_test() {
+  assert c.tools(versions, "The reference toolchain")
+    == [
+      c.Tool("gfortran, gcc, g++", "GCC 16.2.0"),
+      c.Tool("Kokkos", "5.2.2: Serial and OpenMP"),
+    ]
+  assert c.tools(versions, "Nothing") == []
+}
+
+pub fn figures_test() {
+  let dark = "# slug, height\nfour-runtimes\t470\nno-png\t300\nsteps\t932\n"
+  let readme =
+    "| Source | PDF | Type | Question | Figure |
+|---|---|---|---|---|
+| [steps.json](steps.json) | [PDF](steps.pdf) | sequence | Where does a step go? | [one](x.md) |
+| [four-runtimes.json](four-runtimes.json) | [PDF](a.pdf), [PNG](a.png) | architecture | Which four runtimes? | [two](y.md) |
+"
+  assert c.figures(dark, readme, ["four-runtimes.png", "steps.png", "a.json"])
+    == [
+      c.Figure("four-runtimes", "Which four runtimes?"),
+      c.Figure("steps", "Where does a step go?"),
+    ]
 }
 
 // One source and a table: a sentence is the English literal of `t(l, "…")`, in any layout the

@@ -58,3 +58,16 @@ export function revision() {
     return "unversioned";
   }
 }
+
+// How many commits the built commit has: WW3_GPU_COMMITS when the Nix build sets it (the pin's
+// count, written by scripts/ww3-pin.sh), else Git's, else "".
+export function commits() {
+  if (process.env.WW3_GPU_COMMITS) return process.env.WW3_GPU_COMMITS;
+  try {
+    return execSync("git rev-list --count HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch (_) {
+    return "";
+  }
+}

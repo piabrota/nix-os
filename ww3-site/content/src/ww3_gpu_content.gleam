@@ -62,6 +62,17 @@ pub type Stat {
   Stat(name: String, share: String, count: String, what: String)
 }
 
+/// One tool of the reference toolchain, a row of VERSIONS.md's table: its name and its version.
+pub type Tool {
+  Tool(name: String, version: String)
+}
+
+/// One Archify drawing of docs/archify/dark.tsv whose PNG is committed, and the question it
+/// answers (the Question column of docs/archify/README.md).
+pub type Figure {
+  Figure(slug: String, question: String)
+}
+
 /// One row of a report's bench table. The speed-up is baseline / value, computed by the site.
 pub type Bench {
   Bench(
@@ -91,6 +102,9 @@ fn zenodo_people(path: String) -> String
 
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "revision")
 fn revision() -> String
+
+@external(javascript, "./ww3_gpu_content_ffi.mjs", "commits")
+fn commits() -> String
 
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "sentences")
 pub fn sentences(code: String) -> List(String)
@@ -454,6 +468,82 @@ pub fn lineage(table: String) -> List(Event) {
   |> list.sort(fn(a, b) { string.compare(a.date, b.date) })
 }
 
+// ---- the tools and the figures -----------------------------------------------------------------
+
+/// The cells of a Markdown table row, trimmed, with no backticks.
+fn cells(line: String) -> List(String) {
+  line
+  |> string.trim
+  |> drop_suffix("|")
+  |> string.drop_start(1)
+  |> string.split("|")
+  |> list.map(fn(c) { c |> string.replace("`", "") |> string.trim })
+}
+
+/// The tools of the table under the `## ` heading that starts with `title` in VERSIONS.md: the
+/// first two cells of each row, without the header and the separator.
+pub fn tools(text: String, title: String) -> List(Tool) {
+  case string.split_once(text, "\n## " <> title) {
+    Error(_) -> []
+    Ok(#(_, rest)) -> {
+      let body = case string.split_once(rest, "\n## ") {
+        Ok(#(b, _)) -> b
+        Error(_) -> rest
+      }
+      body
+      |> string.split("\n")
+      |> list.filter(fn(line) { string.starts_with(line, "|") })
+      |> list.drop(2)
+      |> list.filter_map(fn(line) {
+        case cells(line) {
+          [name, version, ..] if name != "" -> Ok(Tool(name, version))
+          _ -> Error(Nil)
+        }
+      })
+    }
+  }
+}
+
+/// The drawings of dark.tsv whose `<slug>.png` is in `files`, each with the Question cell of its
+/// row in docs/archify/README.md (the row whose first cell names `<slug>.json`), or "".
+pub fn figures(
+  dark_tsv: String,
+  readme: String,
+  files: List(String),
+) -> List(Figure) {
+  let rows =
+    readme
+    |> string.split("\n")
+    |> list.filter(fn(line) { string.starts_with(line, "| [") })
+  tsv_rows(dark_tsv, "slug")
+  |> list.filter_map(fn(row) {
+    case row {
+      [slug, ..] ->
+        case list.contains(files, slug <> ".png") {
+          False -> Error(Nil)
+          True -> {
+            let question =
+              list.find_map(rows, fn(line) {
+                case cells(line) {
+                  [source, _, _, question, ..] ->
+                    case string.starts_with(source, "[" <> slug <> ".json]") {
+                      True -> Ok(question)
+                      False -> Error(Nil)
+                    }
+                  _ -> Error(Nil)
+                }
+              })
+            case question {
+              Ok(q) -> Ok(Figure(slug, q))
+              Error(_) -> Ok(Figure(slug, ""))
+            }
+          }
+        }
+      [] -> Error(Nil)
+    }
+  })
+}
+
 fn drop_suffix(s: String, suffix: String) -> String {
   case string.ends_with(s, suffix) {
     True -> string.drop_end(s, string.length(suffix))
@@ -524,6 +614,14 @@ pub type Stat {
 pub type Bench {
   Bench(report: String, step: String, date: String, what: String, backend: String, value: String, baseline: String, unit: String, source: String)
 }
+
+pub type Tool {
+  Tool(name: String, version: String)
+}
+
+pub type Figure {
+  Figure(slug: String, question: String)
+}
 "
 
 pub fn render(
@@ -532,6 +630,7 @@ pub fn render(
   record_title: String,
   release: String,
   rev: String,
+  commit_count: String,
   adrs: List(Record),
   wfips: List(Record),
   notes: List(Note),
@@ -542,6 +641,8 @@ pub fn render(
   stats: List(Stat),
   pt_br: List(#(String, String)),
   events: List(Event),
+  tool_rows: List(Tool),
+  figure_rows: List(Figure),
 ) -> String {
   let record = fn(r: Record) {
     call("Record", [r.id, r.title, r.status, r.date, r.file])
@@ -556,6 +657,17 @@ pub fn render(
       "pub const record_title = " <> lit(record_title) <> "\n",
       "pub const latest_release = " <> lit(release) <> "\n",
       "pub const revision = " <> lit(rev) <> "\n",
+      "pub const commits = " <> lit(commit_count) <> "\n",
+      items(
+        "tools",
+        "Tool",
+        list.map(tool_rows, fn(t) { call("Tool", [t.name, t.version]) }),
+      ),
+      items(
+        "figures",
+        "Figure",
+        list.map(figure_rows, fn(f) { call("Figure", [f.slug, f.question]) }),
+      ),
       "/// The page in Brazilian Portuguese: each English sentence with its translation\n/// (site/data/translations/pt-BR.tsv).\n"
         <> items(
         "pt_br",
@@ -766,6 +878,7 @@ pub fn main() -> Nil {
       yaml(cff, "title"),
       latest_release(read(root <> "RELEASES.md")),
       revision(),
+      commits(),
       sectioned_records("docs/ADRs.md", "ADR-"),
       records("docs/WFIPs/", "WFIP-", "Created"),
       notes,
@@ -776,6 +889,12 @@ pub fn main() -> Nil {
       stats,
       translations(table),
       lineage(lineage_table),
+      tools(read(root <> "VERSIONS.md"), "The reference toolchain"),
+      figures(
+        read(root <> "docs/archify/dark.tsv"),
+        read(root <> "docs/archify/README.md"),
+        list_dir(root <> "docs/archify"),
+      ),
     )
   write("../src/ww3_gpu_site/content.gleam", text)
 }

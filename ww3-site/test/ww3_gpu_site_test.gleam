@@ -14,6 +14,20 @@ fn html() -> String {
   prerender.render("en")
 }
 
+fn escaped(s: String) -> String {
+  s
+  |> string.replace("&", "&amp;")
+  |> string.replace("'", "&#39;")
+  |> string.replace("<", "&lt;")
+  |> string.replace(">", "&gt;")
+  |> string.replace("\"", "&quot;")
+}
+
+const sections = [
+  "research", "numbers", "tools", "figures", "port", "decisions", "designs",
+  "cite",
+]
+
 // One source, two pages: the Portuguese one is the same page, every sentence looked up by its
 // English in site/data/translations/pt-BR.tsv (h0ffmann/h0ffmann#86).
 pub fn a_sentence_is_translated_by_its_source_test() {
@@ -25,14 +39,13 @@ pub fn a_sentence_is_translated_by_its_source_test() {
 pub fn the_page_in_portuguese_test() {
   let pt = prerender.render("pt-BR")
   assert string.contains(pt, "<html lang=\"pt-BR\">")
-  assert string.contains(pt, "o segundo cérebro")
+  assert string.contains(pt, "ferramentas usadas")
   // The files of the site are one level up from /pt-BR/; the anchors stay on the page.
-  assert string.contains(pt, "href=\"../andamento/\"")
   assert string.contains(pt, "href=\"../style.css\"")
-  assert string.contains(pt, "href=\"#about\"")
-  assert string.contains(pt, "https://h0ffmann.github.io/ww3-gpu/pt-BR/")
-  // Every section and every fact is there, as on the English page.
-  list.each(["about", "decisions", "port", "cite"], fn(id) {
+  assert string.contains(pt, "src=\"../archify/")
+  assert string.contains(pt, "href=\"#research\"")
+  assert string.contains(pt, "https://wave.piabrota.art/pt-BR/")
+  list.each(sections, fn(id) {
     assert string.contains(pt, "id=\"" <> id <> "\"")
   })
 }
@@ -49,21 +62,9 @@ pub fn the_two_pages_link_each_other_test() {
 
 pub fn every_section_test() {
   let page = html()
-  list.each(
-    [
-      "about",
-      "decisions",
-      "designs",
-      "port",
-      "chaceon",
-      "brain",
-      "cite",
-      "related",
-    ],
-    fn(id) {
-      assert string.contains(page, "id=\"" <> id <> "\"")
-    },
-  )
+  list.each(sections, fn(id) {
+    assert string.contains(page, "id=\"" <> id <> "\"")
+  })
 }
 
 pub fn every_record_test() {
@@ -78,16 +79,48 @@ pub fn the_doi_test() {
   assert string.contains(html(), "https://doi.org/10.5281/zenodo.23221351")
 }
 
-pub fn related_authors_test() {
-  let page = html()
-  // Guimarães P.V. comes from .zenodo.json, with his ORCID; Fabio Akita from site/data/related.tsv.
-  assert string.contains(page, "https://orcid.org/0000-0002-1686-4722")
-  assert string.contains(page, "https://github.com/akitaonrails")
-  assert string.contains(page, "legendary br dev")
-}
-
 pub fn no_script_test() {
   assert !string.contains(html(), "<script")
+}
+
+// The number of commits is on the page when the build knows it.
+pub fn the_commits_test() {
+  case content.commits {
+    "" -> Nil
+    n -> {
+      assert string.contains(html(), n <> " commits")
+      Nil
+    }
+  }
+}
+
+// Every tool of the reference toolchain is a row of the table.
+pub fn every_tool_test() {
+  let page = html()
+  assert content.tools != []
+  assert list.any(content.tools, fn(t) { string.starts_with(t.version, "5.") })
+  list.each(content.tools, fn(t) {
+    assert string.contains(page, "<td>" <> escaped(t.name) <> "</td>")
+  })
+}
+
+// Every Archify figure is its committed PNG, with its question and a link to its PDF; the image
+// carries no class and no style, so the page never dresses it.
+pub fn every_figure_test() {
+  let page = html()
+  assert content.figures != []
+  list.each(content.figures, fn(f) {
+    assert string.contains(page, "src=\"archify/" <> f.slug <> ".png\"")
+    assert string.contains(page, "docs/archify/" <> f.slug <> ".pdf")
+    // A drawing with no row in docs/archify/README.md is captioned with its name.
+    let caption = case f.question {
+      "" -> f.slug
+      q -> q
+    }
+    assert string.contains(page, "<figcaption>" <> escaped(caption) <> " ")
+  })
+  assert !string.contains(page, "<img class")
+  assert !string.contains(page, "style=")
 }
 
 pub fn every_benchmark_number_test() {
@@ -104,14 +137,6 @@ pub fn every_benchmark_number_test() {
     )
     assert string.contains(page, app.times(app.speedup(b)))
   })
-}
-
-pub fn a_slower_step_is_never_green_test() {
-  assert app.shade(0.7) == "slower"
-  assert app.shade(1.0) == "g1"
-  assert app.shade(4.35) == "g2"
-  assert app.shade(34.5) == "g3"
-  assert app.shade(531.0) == "g4"
   assert app.times(34.5066) == "34.5x"
   assert app.times(0.7008) == "0.7x"
   assert app.times(531.06) == "531x"
@@ -119,34 +144,31 @@ pub fn a_slower_step_is_never_green_test() {
 
 pub fn the_global_numbers_and_each_record_are_on_the_page_test() {
   let page = html()
-  // Translated, ported, regtested: each of the run time and of the lines, then the C++ size.
   assert list.length(content.stats) == 7
-  assert list.any(content.stats, fn(s) {
-    s.name == "of the run time, regtested"
-  })
   list.each(content.stats, fn(s) {
-    assert string.contains(page, s.name)
-    assert string.contains(page, ">" <> s.share <> "<")
-    assert string.contains(page, ">" <> s.count <> "<")
+    assert string.contains(page, s.share <> " " <> s.name)
   })
   list.each(content.reports, fn(r) {
-    assert r.regtested != ""
-    assert string.contains(page, string.replace(r.regtested, "'", "&#39;"))
+    case list.any(content.benches, fn(b) { b.report == r.name }) {
+      True -> {
+        assert string.contains(page, escaped(r.regtested))
+        Nil
+      }
+      False -> Nil
+    }
   })
 }
 
-// The sister port in Rust: its repository is linked from the cover and from its section, and
-// each fact about it links to the file of chaceon that states it (site/data/related.tsv).
-pub fn the_rust_port_test() {
+// The look follows reasonablypolymorphic.com, and the page says so and names its author.
+pub fn the_template_is_credited_test() {
   let page = html()
-  assert string.contains(page, "href=\"https://github.com/h0ffmann/chaceon\"")
-  assert string.contains(page, "the port in rust: chaceon")
-  assert string.contains(page, "nothing has run on a real GPU")
-  let facts = list.filter(content.links, fn(l) { l.kind == "chaceon" })
-  assert facts != []
-  list.each(facts, fn(l) {
-    assert string.contains(page, l.url)
-  })
+  assert string.contains(page, "href=\"https://reasonablypolymorphic.com/\"")
+  assert string.contains(page, "href=\"https://github.com/isovector\"")
+  assert string.contains(page, "Sandy Maguire")
+  assert string.contains(
+    prerender_lineage.render("en"),
+    "href=\"https://github.com/isovector\"",
+  )
 }
 
 // The lineage: every row of site/data/lineage.tsv is on the page, oldest first, with its link;
@@ -162,10 +184,9 @@ pub fn the_lineage_test() {
   let dates = list.map(content.events, fn(e) { e.date })
   assert dates == list.sort(dates, string.compare)
   assert list.any(content.events, fn(e) { e.status == "planned" })
-  assert string.contains(page, "event port planned")
-  assert string.contains(page, ">planned<")
+  assert string.contains(page, "(planned)")
   assert string.contains(page, "href=\"../style.css\"")
-  assert string.contains(page, "https://h0ffmann.github.io/ww3-gpu/lineage/")
+  assert string.contains(page, "https://wave.piabrota.art/lineage/")
   assert string.contains(page, "href=\"../pt-BR/lineage/\" hreflang=\"pt-BR\"")
   assert string.contains(html(), "href=\"lineage/\"")
   let pt = prerender_lineage.render("pt-BR")
@@ -173,8 +194,5 @@ pub fn the_lineage_test() {
   assert string.contains(pt, "linhagem")
   assert string.contains(pt, "href=\"../../style.css\"")
   assert string.contains(pt, "href=\"../../lineage/\" hreflang=\"en\"")
-  assert string.contains(
-    pt,
-    "https://h0ffmann.github.io/ww3-gpu/pt-BR/lineage/",
-  )
+  assert string.contains(pt, "https://wave.piabrota.art/pt-BR/lineage/")
 }

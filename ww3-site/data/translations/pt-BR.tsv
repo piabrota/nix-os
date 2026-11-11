@@ -14,48 +14,48 @@ slower	mais lento	draft
 against	contra	draft
 no record	sem registro	draft
 regtested	regtests	draft	o português não tem o verbo; o rótulo diz o que rodou, e o valor ao lado (yes/no) vem de kokkos/ports.tsv
-no benchmark: the report says why.	sem benchmark: o relatório diz por quê.	draft
 the port, measured	o port, medido	draft	"port" fica em inglês, como em README.pt-BR.md
-how much of WW3 runs on Kokkos, then every number of every port report, step by step. a bar is the speed-up over its own baseline, on a log scale; the deeper the green, the larger it is. a step slower than its baseline is grey, and says so.	quanto do WW3 já roda em Kokkos e, depois, cada número de cada relatório de port, passo a passo. uma barra é o ganho de velocidade sobre a sua própria referência, em escala logarítmica; quanto mais intenso o verde, maior o ganho. um passo mais lento que a sua referência fica cinza e diz isso.	draft	"baseline" é "referência"; "deeper" é "mais intenso", não "mais profundo"
 the repository	o repositório	draft
-decisions	decisões	draft
-designs	desenhos	draft
-second brain	segundo cérebro	draft	"o segundo cérebro", título de seção de README.pt-BR.md
-cite	citar	draft
-related	relacionados	draft
-when it was checked and	quando foi conferida e	draft	"conferido", como em README.pt-BR.md
-when it was not, and every number comes with its command.	quando não foi, e cada número vem com o comando que o reproduz.	draft	"com o seu comando" fica vago; README.pt-BR.md diz "o comando que o reproduz"
-progress (pt-BR)	andamento	draft	a página já está em português; "andamento" é o nome dela e o seu endereço (/andamento/)
-decision records (pt-BR)	registros de decisão	draft	a página já está em português, e a marca "(pt-BR)" sai
-no note yet.	nenhuma nota ainda.	draft
-the second brain	o segundo cérebro	draft	título de seção de README.pt-BR.md
 latest release:	versão mais recente:	draft	"release" é "versão", como em README.pt-BR.md
 how to cite	como citar	draft	título de seção de README.pt-BR.md
 cite the concept DOI for the work as a whole: it always resolves to the latest edition. to pin the exact code you ran, cite that release's own DOI.	para citar o trabalho como um todo, use o DOI conceitual: ele sempre aponta para a edição mais recente. para fixar exatamente o código que você rodou, cite o DOI daquela versão.	draft	"concept DOI" é "DOI conceitual" e "resolves to" é "aponta para", como em README.pt-BR.md
-of this work	deste trabalho	draft
-related authors and works	autores e trabalhos relacionados	draft
-authors	autores	draft
-sister works, by the same author	outros trabalhos do mesmo autor	draft	"trabalhos irmãos" é tradução literal que ninguém usa
 every fact on this page was read from the repository at	cada fato desta página foi lido do repositório no commit	draft	o que vem depois é o hash de um commit; "em" antes dele soa estranho
 WAVEWATCH III is a registered trademark of NOAA's National Weather Service; this project is independent and not endorsed by NOAA.	WAVEWATCH III é marca registrada do National Weather Service da NOAA; este projeto é independente e não tem o endosso da NOAA.	draft
 without changing the answer	sem mudar a resposta	draft	README.pt-BR.md
-the port in rust: chaceon	o port em rust: chaceon	draft	"port" fica em inglês, como em README.pt-BR.md
-rust port	port em rust	draft
-the same rule, in rust	a mesma regra, em rust	draft
-ww3-gpu keeps WW3 and lets its Fortran call C++ written with Kokkos, one flag per routine. its sister project replaces WW3 with Rust, with no Fortran in its process. both ports must give the Fortran's bits, and a tolerance is a diagnostic, never the verdict.	o ww3-gpu mantém o WW3 e deixa o seu Fortran chamar C++ escrito com Kokkos, uma flag por rotina. o projeto irmão substitui o WW3 por Rust, sem Fortran no seu processo. os dois ports precisam dar os mesmos bits do Fortran, e uma tolerância é um diagnóstico, nunca o veredito.	draft	"flag" fica em inglês, como no código
-go to the rust repository	ir para o repositório em rust	draft
 lineage	linhagem	draft
 the works this one descends from or runs beside, on one line of time: the wave models, the ocean model, the weather models, the ports of models to other machines, and the releases of this work and its sister port in rust.	os trabalhos de que este descende e os que correm ao lado dele, numa só linha do tempo: os modelos de ondas, o modelo oceânico, os modelos de tempo, os ports de modelos para outras máquinas e os lançamentos deste trabalho e do seu port irmão em rust.	draft	"modelos de tempo" no sentido meteorológico; "port" fica em inglês, como em README.pt-BR.md
-the front page	a página inicial	draft
 the timeline	a linha do tempo	draft
-a dot in the blue light is a model;	um ponto na luz azul é um modelo;	draft
-one in the amber light is a port, a model moved to other hardware or another language.	um na luz âmbar é um port, um modelo levado para outro hardware ou outra linguagem.	draft
-a hollow dot is planned, not done. each date is only as precise as its source.	um ponto vazado está planejado, ainda não feito. cada data é só tão precisa quanto a sua fonte.	draft
-to track a new work, add a row to site/data/lineage.tsv, with its date and its source.	para acompanhar um novo trabalho, acrescente uma linha a site/data/lineage.tsv, com a data e a fonte.	draft
 planned	planejado	draft
 the works ww3-gpu descends from or runs beside, and its releases, on one line of time.	os trabalhos de que o ww3-gpu descende e os que correm ao lado dele, e os seus lançamentos, numa só linha do tempo.	draft
 making WAVEWATCH III run faster with Kokkos and CUDA, without changing the Fortran's arithmetic: every ported routine gives the Fortran's bits.	fazer o WAVEWATCH III rodar mais rápido com Kokkos e CUDA, sem mudar a aritmética do Fortran: cada rotina portada dá os mesmos bits do Fortran.	draft	o objetivo de README.pt-BR.md
-about	sobre	draft
-the code, the plans, the decisions and the measurements sit side by side. every claim carries	o código, os planos, as decisões e as medições ficam lado a lado. cada afirmação traz	draft
-one idea in one note, with a permanent id, links between notes, and a status that stays unverified until a source is cited. the preprint and the proposal are written from them.	uma ideia por nota, com um id permanente, links entre as notas e um status que fica unverified até uma fonte ser citada. o preprint e a proposta são escritos a partir delas.	draft	"unverified" fica em inglês: é o valor do status que a página mostra, como em README.pt-BR.md
 a bit-for-bit GPU port of WAVEWATCH III with Kokkos and CUDA.	um port do WAVEWATCH III para a GPU com Kokkos e CUDA que reproduz o Fortran bit a bit.	draft	"bit a bit", como em README.pt-BR.md
+the research of Matheus Hoffmann: WAVEWATCH III on GPUs, bit for bit with the Fortran.	a pesquisa de Matheus Hoffmann: o WAVEWATCH III em GPUs, bit a bit com o Fortran.	draft
+links	links	draft
+on this page	nesta página	draft
+the research	a pesquisa	draft
+in numbers	em números	draft
+tools used	ferramentas usadas	draft
+figures	figuras	draft
+commits	commits	draft
+read at	lido em	draft
+the look of this page follows	o visual desta página segue	draft
+by Sandy Maguire	de Sandy Maguire	draft
+the man who made me go back to math in 2026 and probably 2027.	o homem que me fez voltar à matemática em 2026 e provavelmente em 2027.	draft
+the code, the plans, the decisions and the measurements sit side by side. every claim carries (v) when it was checked and ⚠ when it was not, and every number comes with its command.	o código, os planos, as decisões e as medições ficam lado a lado. toda afirmação leva (v) quando foi verificada e ⚠ quando não foi, e todo número vem com o seu comando.	draft
+decision records	registros de decisão	draft
+design documents	documentos de desenho	draft
+notes	notas	draft
+port reports	relatórios de port	draft
+how much of WW3 runs on Kokkos, read from site/data/port_score.tsv:	quanto do WW3 roda em Kokkos, lido de site/data/port_score.tsv:	draft
+the reference toolchain: every verdict and every timing comes from it. read from VERSIONS.md.	a toolchain de referência: todo veredito e toda medição de tempo vêm dela. lida de VERSIONS.md.	draft
+tool	ferramenta	draft
+version	versão	draft
+drawn with Archify. each picture is the PNG committed in the repository, shown as it is.	desenhadas com o Archify. cada imagem é o PNG que está no repositório, mostrado como é.	draft
+step	passo	draft
+date	data	draft
+what	o quê	draft
+speed-up	aceleração	draft
+measured	medido	draft
+every number of every port report, step by step. the speed-up is over the step's own baseline.	cada número de cada relatório de port, passo a passo. a aceleração é sobre a linha de base do próprio passo.	draft
+each date is only as precise as its source; a planned event is marked so.	cada data é tão precisa quanto a sua fonte; um evento planejado vem marcado.	draft
+reports with no benchmark yet	relatórios ainda sem benchmark	draft

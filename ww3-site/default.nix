@@ -7,12 +7,15 @@
 # the build if the output names any store path, so gleam and node never reach the closure.
 { lib, stdenvNoCC, fetchFromGitHub, fetchurl, gleam, nodejs }:
 let
-  rev = "2ebd854ad503329c72784a9cba3c98743dd2c1d6";
+  rev = "56c5a32124b58ddbc11a1e38ef92028059a35b3b";
+  # The number of commits up to rev (`git rev-list --count`), which the page shows; the source has
+  # no .git, so scripts/ww3-pin.sh counts them and writes it here with rev.
+  commits = 852;
   ww3gpu = fetchFromGitHub {
     owner = "h0ffmann";
     repo = "ww3-gpu";
     inherit rev;
-    hash = "sha256-KTdmNOfVBfJQ3C0lkMS1HqbAgm36PEdLlpUeuNr1uEI=";
+    hash = "sha256-GqxXx6FRJSuNCFaWsZlUhzLjkVpAWTmELeb8h0CNUOM=";
   };
   # Every hex package either manifest.toml locks, at its checksum, so the build runs offline.
   hex = dir: map
@@ -61,6 +64,7 @@ stdenvNoCC.mkDerivation {
   buildPhase = ''
     runHook preBuild
     export WW3_GPU_REV=${builtins.substring 0 7 rev}
+    export WW3_GPU_COMMITS=${toString commits}
     out_dir=$TMPDIR/out
     mkdir -p $out_dir/pt-BR $out_dir/lineage $out_dir/pt-BR/lineage
     (cd $tree/site/content && gleam test && gleam run --no-print-progress)
@@ -72,8 +76,16 @@ stdenvNoCC.mkDerivation {
     gleam run -m ww3_gpu_site/prerender_lineage --no-print-progress > $out_dir/lineage/index.html
     gleam run -m ww3_gpu_site/prerender_lineage_pt_br --no-print-progress > $out_dir/pt-BR/lineage/index.html
     cp -R static/. $out_dir/
+    # The Archify figures the page shows, the PNGs committed in ww3-gpu, byte for byte.
+    mkdir -p $out_dir/archify
+    for slug in $(sed -n 's/^\([a-z0-9-]*\)\t.*/\1/p' $tree/docs/archify/dark.tsv); do
+      if [ -f $tree/docs/archify/$slug.png ]; then cp $tree/docs/archify/$slug.png $out_dir/archify/; fi
+    done
+    for img in $(grep -o 'src="archify/[^"]*"' $out_dir/index.html | cut -d'"' -f2); do
+      [ -f "$out_dir/$img" ] || { echo "ww3-site: no $img" >&2; exit 1; }
+    done
     for page in index.html pt-BR/index.html; do
-      for id in about decisions designs chaceon brain cite related; do
+      for id in research numbers tools figures port decisions designs cite; do
         grep -q "id=\"$id\"" "$out_dir/$page" || { echo "ww3-site: no #$id in $page" >&2; exit 1; }
       done
     done

@@ -207,13 +207,25 @@ The website of h0ffmann/ww3-gpu, which GitHub Pages served at h0ffmann.github.io
 pt-BR translations, the CSS), and its facts stay in ww3-gpu: `ww3-site/default.nix` copies
 ww3-gpu at a pinned commit, puts this code in its `site/`, runs the content generator
 (`ww3-site/content`, which reads `docs/ADRs.md`, `docs/WFIPs/`, `notes/`, `kokkos/ports.tsv`,
-`.zenodo.json`, `CITATION.cff`, `RELEASES.md` and `site/data/*.tsv` there), both test suites and
-the four prerenders on node, and fails unless each page holds every section. The output is the
-pages, `style.css` and `favicon.svg`, with no store reference. The commit shown in the footer is
-the pin (`WW3_GPU_REV`), since the source has no `.git`.
+`.zenodo.json`, `CITATION.cff`, `RELEASES.md`, `VERSIONS.md`, `docs/archify/` and `site/data/*.tsv`
+there), both test suites and the four prerenders on node, and fails unless each page holds every
+section. The output is the pages, `style.css`, `favicon.svg` and `archify/`, with no store
+reference. The commit and the number of commits shown on the page are the pin's (`WW3_GPU_REV`,
+`WW3_GPU_COMMITS` from `commits` in `default.nix`), since the source has no `.git`.
+
+The page is plain and about the research only: what it is, the numbers (commits, records, notes,
+figures, port reports and `site/data/port_score.tsv`), the tools of the reference toolchain
+(`VERSIONS.md`), the Archify figures, the port's benchmarks, the decisions and designs, and how to
+cite it. The figures are the PNGs ww3-gpu commits for each drawing of `docs/archify/dark.tsv`,
+copied byte for byte into `archify/` and shown as they are: no class, no style, no filter, only
+scaled down to the width of the column. The look follows
+[reasonablypolymorphic.com](https://reasonablypolymorphic.com/) by Sandy Maguire
+([@isovector](https://github.com/isovector)), a serif text column and a dark side column, written
+anew in `ww3-site/static/style.css`; the foot of every page credits it.
 
 `ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
-(`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand). The site changes when the owner merges it.
+(`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
+pin. The site changes when the owner merges it.
 A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
 needs its row in `ww3-site/data/translations/pt-BR.tsv`, or the content generator stops the build.
 `just ww3-site` builds it into `./result-ww3-site`; `nix develop .#site` has gleam and node for
