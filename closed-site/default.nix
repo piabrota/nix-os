@@ -19,7 +19,7 @@
 , esbuild
 , pandoc
 , poppler-utils
-, src ? null
+, sourceOverride ? null # a local checkout, to build without fetching
 }:
 let
   # Move rev, commits, hash and the release with its three PDF hashes together.
@@ -29,7 +29,7 @@ let
   commits = 219;
   release = "v0.3.4";
   closedSource =
-    if src != null then src else
+    if sourceOverride != null then sourceOverride else
     fetchFromGitHub {
       owner = "h0ffmann";
       repo = "closed-source";
