@@ -5,10 +5,10 @@
 //// The look follows reasonablypolymorphic.com (Sandy Maguire, github.com/isovector): a text column
 //// and a dark side column. It is prerendered and needs no JavaScript.
 ////
-//// It is written once, in English, and built twice: at / in English and at /pt-BR/ in Brazilian
-//// Portuguese. Each sentence goes through `t(l, "…")`, which looks it up by its English in
-//// site/data/translations/pt-BR.tsv; site/content fails the build when a sentence has no row, or a
-//// row no sentence. The pattern is h0ffmann/h0ffmann#86.
+//// It is written once and built in four languages: at / in English, and at /pt-BR/, /zh-CN/ and
+//// /ja-JP/. Each sentence goes through `t(l, "key")`, which reads it from
+//// site/locales/<l>.json; site/content fails the build when a language lacks a key, or has a key
+//// the page does not ask for.
 
 import gleam/float
 import gleam/int
@@ -36,25 +36,38 @@ pub const figures_site = "https://h0ffmann.github.io/ww3-gpu/figures/"
 
 pub const template_author = "https://github.com/isovector"
 
-/// A sentence of the page in language `l`, "en" or "pt-BR". The key is the English sentence
-/// itself; a sentence with no row is shown in English, and the build has already failed for it.
-pub fn t(l: String, source: String) -> String {
-  case l {
-    "pt-BR" ->
-      case list.key_find(content.pt_br, source) {
-        Ok(target) -> target
-        Error(_) -> source
-      }
-    _ -> source
+/// The languages of the site: the code, the name in that language, and the folder of its pages
+/// under the root ("" for English).
+pub const languages = [
+  #("en", "english", ""),
+  #("pt-BR", "português", "pt-BR/"),
+  #("zh-CN", "简体中文", "zh-CN/"),
+  #("ja-JP", "日本語", "ja-JP/"),
+]
+
+/// The sentence of key `key` in language `l` (site/locales/<l>.json). A sentence that the
+/// language lacks is shown in English, and a key that no file has is shown as it is; the build
+/// has already failed for both.
+pub fn t(l: String, key: String) -> String {
+  let find = fn(lang) {
+    case list.key_find(content.locales, lang) {
+      Ok(pairs) -> list.key_find(pairs, key)
+      Error(_) -> Error(Nil)
+    }
+  }
+  case find(l), find("en") {
+    Ok(text), _ -> text
+    _, Ok(text) -> text
+    _, _ -> key
   }
 }
 
 /// The way from the page to the root of the site: the style and the figures sit next to the
-/// English page, one level up from /pt-BR/.
+/// English page, one level up from the folder of each other language.
 pub fn up(l: String) -> String {
   case l {
-    "pt-BR" -> "../"
-    _ -> ""
+    "en" -> ""
+    _ -> "../"
   }
 }
 
@@ -70,20 +83,14 @@ pub fn view(l: String) -> Element(msg) {
       port(l),
       records(
         "decisions",
-        t(l, "the decisions"),
-        t(
-          l,
-          "each one a choice the lab made, the context that forced it and what follows. an accepted record is never edited; a new one supersedes it.",
-        ),
+        t(l, "decisions.title"),
+        t(l, "decisions.about"),
         content.adrs,
       ),
       records(
         "designs",
-        t(l, "the designs"),
-        t(
-          l,
-          "a change is designed before it is built, tied to a deliverable of the project proposal, with its definition of done.",
-        ),
+        t(l, "designs.title"),
+        t(l, "designs.about"),
         content.wfips,
       ),
       cite(l),
@@ -101,15 +108,42 @@ pub fn frame(
   home: String,
   children: List(Element(msg)),
 ) -> Element(msg) {
+  // The side column is on the left. A checkbox before it, with no JavaScript, hides and shows it:
+  // its label is the button at the top of the column (style.css). On a wide screen the column is
+  // open until the reader closes it; on a phone it is closed until the reader opens it.
   html.div([attribute.class("page")], [
-    html.div([attribute.class("main")], [html.article([], children)]),
+    html.input([
+      attribute.type_("checkbox"),
+      attribute.id("side-toggle"),
+      attribute.class("toggle"),
+      attribute.aria_label(t(l, "side.toggle")),
+    ]),
     side(l, home),
+    html.div([attribute.class("main")], [
+      html.article([], list.append(banner(l), children)),
+    ]),
   ])
+}
+
+/// The notice of a page that no native reader has checked yet; nothing in the other languages.
+fn banner(l: String) -> List(Element(msg)) {
+  case t(l, "banner") {
+    "" -> []
+    text -> [html.p([attribute.class("banner")], [html.text(text)])]
+  }
 }
 
 fn side(l: String, home: String) -> Element(msg) {
   let item = fn(href, text) { html.li([], [a(href, text)]) }
   html.nav([], [
+    html.label(
+      [
+        attribute.for("side-toggle"),
+        attribute.class("toggle-label"),
+        attribute.title(t(l, "side.toggle")),
+      ],
+      [html.text("☰")],
+    ),
     html.p([attribute.class("brand")], [
       html.a([attribute.href(home <> "./")], [
         html.text("ww3"),
@@ -117,33 +151,39 @@ fn side(l: String, home: String) -> Element(msg) {
         html.text("gpu"),
       ]),
     ]),
-    html.p([], [
-      html.text(t(
-        l,
-        "the research of Matheus Hoffmann: WAVEWATCH III on GPUs, bit for bit with the Fortran.",
-      )),
-    ]),
-    html.h2([], [html.text(t(l, "links"))]),
+    html.p([], [html.text(t(l, "side.about"))]),
+    html.h2([], [html.text(t(l, "side.languages"))]),
+    html.ul([], list.map(languages, language_item(l, home, _))),
+    html.h2([], [html.text(t(l, "side.links"))]),
     html.ul([], [
-      item(repo, t(l, "the repository")),
+      item(repo, t(l, "links.repository")),
       item("https://doi.org/" <> content.doi, "DOI " <> content.doi),
-      item(home <> "lineage/", t(l, "lineage")),
-      html.li([], [other_language(l, home)]),
+      item(home <> "lineage/", t(l, "lineage.title")),
     ]),
-    html.h2([], [html.text(t(l, "on this page"))]),
+    html.h2([], [html.text(t(l, "side.on_this_page"))]),
     html.ul([], [
-      item(home <> "#research", t(l, "the research")),
-      item(home <> "#numbers", t(l, "in numbers")),
-      item(home <> "#tools", t(l, "tools used")),
-      item(home <> "#figures", t(l, "figures")),
-      item(home <> "#port", t(l, "the port, measured")),
-      item(home <> "#decisions", t(l, "the decisions")),
-      item(home <> "#designs", t(l, "the designs")),
-      item(home <> "#cite", t(l, "how to cite")),
+      item(home <> "#research", t(l, "research.title")),
+      item(home <> "#numbers", t(l, "numbers.title")),
+      item(home <> "#tools", t(l, "tools.title")),
+      item(home <> "#figures", t(l, "figures.title")),
+      item(home <> "#port", t(l, "port.title")),
+      item(home <> "#decisions", t(l, "decisions.title")),
+      item(home <> "#designs", t(l, "designs.title")),
+      item(home <> "#cite", t(l, "cite.title")),
     ]),
-    ..list.flat_map(["piabrota", "marola-dev", "ouroboric-dev"], fn(org) {
+    ..list.flat_map(logos, fn(logo) {
+      let #(org, picture) = logo
       [
-        html.h2([], [a("https://github.com/" <> org, org)]),
+        html.h2([attribute.class("org")], [
+          html.a([attribute.href("https://github.com/" <> org)], [
+            html.img([
+              attribute.src(picture),
+              attribute.alt(""),
+              attribute.height(28),
+            ]),
+            html.text(org),
+          ]),
+        ]),
         html.ul(
           [],
           content.repos
@@ -157,35 +197,65 @@ fn side(l: String, home: String) -> Element(msg) {
   ])
 }
 
-/// The link to the same page in the other language, named in that language. `home` is "" on
-/// the front page and "../" on the lineage.
-fn other_language(l: String, home: String) -> Element(msg) {
-  let #(href, lang, name) = case l, home {
-    "pt-BR", "" -> #("../", "en", "english")
-    "pt-BR", _ -> #("../../lineage/", "en", "english")
-    _, "" -> #("pt-BR/", "pt-BR", "português")
-    _, _ -> #("../pt-BR/lineage/", "pt-BR", "português")
+/// The three organizations of the side column, each with its logo. A logo is a trademark and is
+/// never a file here: it loads from its owner's repository at a pinned commit (the ouroboric one
+/// is the drawing for a dark ground), and piabrota's is its GitHub picture.
+pub const logos = [
+  #("piabrota", "https://avatars.githubusercontent.com/piabrota?s=128"),
+  #(
+    "marola-dev",
+    "https://raw.githubusercontent.com/marola-dev/marola/d0d576ea014335acbc190a09ce9fcbe0f89a391d/docs/assets/logo.svg",
+  ),
+  #(
+    "ouroboric-dev",
+    "https://raw.githubusercontent.com/ouroboric-dev/ouroboric/4ab80ed2486a5e0ab0ade13e5089c2a4acdb4216/docs/7-branding/identity/logo/ouroboric-logo-horizontal-dark.svg",
+  ),
+]
+
+/// One language of the side column: the same page in that language, named in that language; the
+/// language of this page is text, not a link. `home` is "" on the front page and "../" on the
+/// lineage.
+fn language_item(
+  l: String,
+  home: String,
+  language: #(String, String, String),
+) -> Element(msg) {
+  let #(code, name, folder) = language
+  let page = case home {
+    "" -> ""
+    _ -> "lineage/"
   }
-  html.a(
-    [
-      attribute.href(href),
-      attribute.attribute("hreflang", lang),
-      attribute.attribute("lang", lang),
-    ],
-    [html.text(name)],
-  )
+  let href = case home <> up(l) <> folder <> page {
+    "" -> "./"
+    path -> path
+  }
+  html.li([], [
+    case code == l {
+      True ->
+        html.strong([attribute.attribute("lang", code)], [html.text(name)])
+      False ->
+        html.a(
+          [
+            attribute.href(href),
+            attribute.attribute("hreflang", code),
+            attribute.attribute("lang", code),
+          ],
+          [html.text(name)],
+        )
+    },
+  ])
 }
 
 /// The line under the title: the commits and the commit the page was read at.
 fn meta(l: String) -> Element(msg) {
   let count = case content.commits {
     "" -> []
-    n -> [html.text(n <> " " <> t(l, "commits") <> " · ")]
+    n -> [html.text(n <> " " <> t(l, "numbers.commits") <> " · ")]
   }
   html.p([attribute.class("meta")], [
     html.text(string.lowercase(content.site_title) <> " · "),
     ..list.append(count, [
-      html.text(t(l, "read at") <> " "),
+      html.text(t(l, "meta.read_at") <> " "),
       html.a([attribute.href(repo <> "/commit/" <> content.revision)], [
         html.text(content.revision),
       ]),
@@ -196,19 +266,11 @@ fn meta(l: String) -> Element(msg) {
 fn footer(l: String) -> Element(msg) {
   html.footer([attribute.class("foot")], [
     html.p([], [
-      html.text(
-        t(l, "every fact on this page was read from the repository at") <> " ",
-      ),
+      html.text(t(l, "foot.read_at") <> " "),
       html.a([attribute.href(repo <> "/commit/" <> content.revision)], [
         html.text(content.revision),
       ]),
-      html.text(
-        ". "
-        <> t(
-          l,
-          "WAVEWATCH III is a registered trademark of NOAA's National Weather Service; this project is independent and not endorsed by NOAA.",
-        ),
-      ),
+      html.text(". " <> t(l, "foot.trademark")),
     ]),
     credit(l),
   ])
@@ -217,14 +279,11 @@ fn footer(l: String) -> Element(msg) {
 /// The credit of the look, in the foot of every page.
 pub fn credit(l: String) -> Element(msg) {
   html.p([], [
-    html.text(t(l, "the look of this page follows") <> " "),
+    html.text(t(l, "foot.look") <> " "),
     a(template, "reasonablypolymorphic.com"),
-    html.text(", " <> t(l, "by Sandy Maguire") <> " ("),
+    html.text(", " <> t(l, "foot.by") <> " ("),
     a(template_author, "@isovector"),
-    html.text(
-      "), "
-      <> t(l, "the man who made me go back to math in 2026 and probably 2027."),
-    ),
+    html.text("), " <> t(l, "foot.thanks")),
   ])
 }
 
@@ -243,15 +302,9 @@ fn p(text: String) -> Element(msg) {
 }
 
 fn research(l: String) -> Element(msg) {
-  section("research", t(l, "the research"), [
-    p(t(
-      l,
-      "making WAVEWATCH III run faster with Kokkos and CUDA, without changing the Fortran's arithmetic: every ported routine gives the Fortran's bits.",
-    )),
-    p(t(
-      l,
-      "the code, the plans, the decisions and the measurements sit side by side. every claim carries (v) when it was checked and ⚠ when it was not, and every number comes with its command.",
-    )),
+  section("research", t(l, "research.title"), [
+    p(t(l, "research.lede")),
+    p(t(l, "research.method")),
   ])
 }
 
@@ -268,23 +321,20 @@ fn stat(s: Stat) -> Element(msg) {
 fn numbers(l: String) -> Element(msg) {
   let commits = case content.commits {
     "" -> []
-    n -> [html.li([], [html.text(n <> " " <> t(l, "commits"))])]
+    n -> [html.li([], [html.text(n <> " " <> t(l, "numbers.commits"))])]
   }
-  section("numbers", t(l, "in numbers"), [
+  section("numbers", t(l, "numbers.title"), [
     html.ul(
       [],
       list.append(commits, [
-        count_item(list.length(content.adrs), t(l, "decision records")),
-        count_item(list.length(content.wfips), t(l, "design documents")),
-        count_item(list.length(content.notes), t(l, "notes")),
-        count_item(list.length(content.figures), t(l, "figures")),
-        count_item(list.length(content.reports), t(l, "port reports")),
+        count_item(list.length(content.adrs), t(l, "numbers.adrs")),
+        count_item(list.length(content.wfips), t(l, "numbers.wfips")),
+        count_item(list.length(content.notes), t(l, "numbers.notes")),
+        count_item(list.length(content.figures), t(l, "figures.title")),
+        count_item(list.length(content.reports), t(l, "numbers.reports")),
       ]),
     ),
-    p(t(
-      l,
-      "how much of WW3 runs on Kokkos, read from site/data/port_score.tsv:",
-    )),
+    p(t(l, "numbers.score")),
     html.ul([], list.map(content.stats, stat)),
   ])
 }
@@ -297,16 +347,13 @@ fn tool_row(tool: Tool) -> Element(msg) {
 }
 
 fn tools(l: String) -> Element(msg) {
-  section("tools", t(l, "tools used"), [
-    p(t(
-      l,
-      "the reference toolchain: every verdict and every timing comes from it. read from VERSIONS.md.",
-    )),
+  section("tools", t(l, "tools.title"), [
+    p(t(l, "tools.about")),
     html.table([], [
       html.thead([], [
         html.tr([], [
-          html.th([], [html.text(t(l, "tool"))]),
-          html.th([], [html.text(t(l, "version"))]),
+          html.th([], [html.text(t(l, "tools.tool"))]),
+          html.th([], [html.text(t(l, "tools.version"))]),
         ]),
       ]),
       html.tbody([], list.map(content.tools, tool_row)),
@@ -315,8 +362,8 @@ fn tools(l: String) -> Element(msg) {
 }
 
 /// One Archify figure: the PNG as it is, at the size it was drawn at (its `width` and `height`),
-/// never shrunk to the text column; the frame around it scrolls sideways when the screen is
-/// narrower than the drawing. It links to itself, and under it are its question and its PDF.
+/// never shrunk to the text column; the style sheet scales it down only to the room beside the
+/// side column. It links to itself, and under it are its question and its PDF.
 fn figure(l: String, f: Figure) -> Element(msg) {
   let png = up(l) <> "archify/" <> f.slug <> ".png"
   let caption = case f.question {
@@ -338,7 +385,7 @@ fn figure(l: String, f: Figure) -> Element(msg) {
     ]),
     html.figcaption([], [
       html.text(caption <> " "),
-      a(page, t(l, "interactive page")),
+      a(page, t(l, "figures.page")),
       html.text(" · "),
       a(png, "png"),
       html.text(" · "),
@@ -348,11 +395,8 @@ fn figure(l: String, f: Figure) -> Element(msg) {
 }
 
 fn figures(l: String) -> Element(msg) {
-  section("figures", t(l, "figures"), [
-    p(t(
-      l,
-      "drawn with Archify. each picture is the PNG committed in the repository, at the size it was drawn. a click opens its HTML page, where you can hover and zoom.",
-    )),
+  section("figures", t(l, "figures.title"), [
+    p(t(l, "figures.about")),
     ..list.map(content.figures, figure(l, _))
   ])
 }
@@ -401,7 +445,7 @@ fn step(l: String, b: Bench) -> Element(msg) {
     td(b.date),
     td(b.what <> " · " <> b.backend),
     td(case x <. 1.0 {
-      True -> times(x) <> " " <> t(l, "slower")
+      True -> times(x) <> " " <> t(l, "port.slower")
       False -> times(x)
     }),
     td(
@@ -409,7 +453,7 @@ fn step(l: String, b: Bench) -> Element(msg) {
       <> " "
       <> b.unit
       <> " "
-      <> t(l, "against")
+      <> t(l, "port.against")
       <> " "
       <> b.baseline
       <> " "
@@ -420,23 +464,23 @@ fn step(l: String, b: Bench) -> Element(msg) {
 
 fn report(l: String, r: Report, rows: List(Bench)) -> Element(msg) {
   let regtested = case r.regtested {
-    "" -> t(l, "no record")
+    "" -> t(l, "port.no_record")
     v -> v
   }
   html.div([attribute.class("report")], [
     html.h3([], [a(blob <> r.file, r.name)]),
-    p(r.status <> ". " <> t(l, "regtested") <> ": " <> regtested),
+    p(r.status <> ". " <> t(l, "port.regtested") <> ": " <> regtested),
     html.table([], [
       html.thead([], [
         html.tr(
           [],
           list.map(
             [
-              t(l, "step"),
-              t(l, "date"),
-              t(l, "what"),
-              t(l, "speed-up"),
-              t(l, "measured"),
+              t(l, "port.step"),
+              t(l, "port.date"),
+              t(l, "port.what"),
+              t(l, "port.speedup"),
+              t(l, "port.measured"),
             ],
             fn(h) { html.th([], [html.text(h)]) },
           ),
@@ -462,17 +506,12 @@ fn port(l: String) -> Element(msg) {
       a(blob <> r.file, r.name)
     })
     |> list.intersperse(html.text(", "))
-  section("port", t(l, "the port, measured"), [
-    p(t(
-      l,
-      "every number of every port report, step by step. the speed-up is over the step's own baseline.",
-    )),
+  section("port", t(l, "port.title"), [
+    p(t(l, "port.about")),
     ..list.append(list.map(measured, fn(pair) { report(l, pair.0, pair.1) }), [
       html.h3([], [
         html.text(
-          int.to_string(list.length(others))
-          <> " "
-          <> t(l, "reports with no benchmark yet"),
+          int.to_string(list.length(others)) <> " " <> t(l, "port.others"),
         ),
       ]),
       html.p([attribute.class("others")], other_links),
@@ -525,13 +564,10 @@ fn person(p: Person) -> Element(msg) {
 fn cite(l: String) -> Element(msg) {
   let release = case content.latest_release {
     "" -> []
-    r -> [p(t(l, "latest release:") <> " " <> r)]
+    r -> [p(t(l, "cite.latest") <> " " <> r)]
   }
-  section("cite", t(l, "how to cite"), [
-    p(t(
-      l,
-      "cite the concept DOI for the work as a whole: it always resolves to the latest edition. to pin the exact code you ran, cite that release's own DOI.",
-    )),
+  section("cite", t(l, "cite.title"), [
+    p(t(l, "cite.about")),
     html.p([], [a("https://doi.org/" <> content.doi, content.doi)]),
     p(content.record_title),
     ..list.append(release, [

@@ -30,7 +30,7 @@ export function zenodo_people(path) {
   ].join("\n");
 }
 
-// The sentences a source file of the page translates: the English literal of each `t(l, "...")`,
+// The keys a source file of the page asks for: the literal of each `t(l, "...")`,
 // unescaped. Comment lines are skipped, so a doc comment that shows the call is not a sentence.
 export function sentences(code) {
   const live = code.replace(/^\s*\/\/.*$/gm, "");
@@ -79,4 +79,15 @@ export function png_size(path) {
   const head = readFileSync(path).subarray(0, 24);
   if (head.length < 24 || head.toString("latin1", 12, 16) !== "IHDR") return "";
   return `${Math.round(head.readUInt32BE(16) / 2)} ${Math.round(head.readUInt32BE(20) / 2)}`;
+}
+
+// A locale file, site/locales/<lang>.json: its pairs of key and sentence, in the file's order.
+// [] when the file does not exist; a value that is not a string stops the build.
+export function locale(path) {
+  if (!existsSync(path)) return toList([]);
+  const pairs = Object.entries(JSON.parse(readFileSync(path, "utf8")));
+  for (const [key, value] of pairs) {
+    if (typeof value !== "string") throw new Error(`${path}: ${key} is not a string`);
+  }
+  return toList(pairs);
 }
