@@ -8,6 +8,6 @@ Read these before you review anything:
 
 ## Limits of this box
 
-- Both seats and the OpenRig daemon share one memory budget of 2 GiB.
+- All seats and the OpenRig daemon share one memory budget (the unit `openrig`).
 - Run one build or test at a time. Start each heavy command with `nice -n 10`.
 - You cannot reach a secret, and you cannot push.

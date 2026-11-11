@@ -62,6 +62,18 @@
   # folders, the outbox and a read-only token for h0ffmann/chaceon (docs/OPENRIG.md). Off: the
   # specs are in /etc/openrig/specs as a definition only. The owner turns this on to use them.
   piabrota.openrig.waveForecaster.enable = false;
+  # marola-front and marola-back on the rig piabrota-dev: two builders in parallel, read tokens of
+  # marola-pr-bot, and Hermes pushes and opens these pull requests as marola-pr-bot (docs/OPENRIG.md).
+  # Without the App's key file on the box (marola-bot.nix) it mints nothing and the seats clone no
+  # private repository.
+  piabrota.openrig.marola.enable = true;
+  # Setup B of the same two repositories on Claude Code (rig piabrota-dev-claude), to compare with omp.
+  piabrota.openrig.marola.claude.enable = true;
+  # Three seats of one rig at a time: `builder` on marola-back and `front-builder` on marola-front
+  # build in parallel, and share the reviewer (docs/OPENRIG.md, "Limits"). The MemoryMax values of
+  # the box then sum to 14.25 GiB of 15.6 GiB; a cap is a ceiling, not a use.
+  piabrota.openrig.memoryMax = "4G";
+  piabrota.openrig.memoryHigh = "3G";
   # The 3D room, piabrota/room at a pinned commit (room-site/default.nix), at room.piabrota.art.
   piabrota.room.enable = true;
   # The same room on grid.piabrota.art, opened on its ▲ grid view (room.nix). The name must point

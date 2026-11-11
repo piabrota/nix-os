@@ -18,7 +18,8 @@ agents. A daemon keeps the state. Each agent is a **seat**: a program in a tmux 
 is the systemd unit `openrig` on `127.0.0.1:7433` (the web UI is on at that address, for the
 owner, behind nginx with a login at rig.piabrota.art; no other public port). The seats run `omp` or
 Claude Code, with the same Claude subscription as you. Five rigs
-are specified: `piabrota-dev`, with a builder seat and a reviewer seat, the two rigs of the
+are specified: `piabrota-dev`, with a builder seat and a reviewer seat, `piabrota-dev-claude` (the same
+seats on Claude Code, `references/marola.md`), the two rigs of the
 block wave-forecaster-dev (see "wave-forecaster-dev" below), `wave-forecaster-thesis`
 (`references/thesis-rig.md`) and `reels-fabric`, five seats that make a reel
 (`references/reels-fabric.md`). This skill and its `references/` are
@@ -49,9 +50,12 @@ write the task that a seat gets, and both for a code task on a seat.
    `rig start`, `rig host`, or any `--host`.
 2. **Run `rig status` before every `rig up`.** Go on only if it says "Daemon running". With the
    daemon down, `rig up` starts a stray daemon of its own, outside the unit's memory budget (tested).
-3. **Two seats at the same time, no more.** So one rig at a time: each rig has two seats, and `reels-fabric` has five, started by phases, two at a time. The unit has `MemoryMax=2G`, `MemoryHigh=1536M`
-   (the memory of one seat: the [reference](../hermes-omp/references/openrig-seats.md)). Run
-   `kvm4-health` before you start. A third seat needs the owner.
+3. **One rig at a time.** At piabrota2 the unit has `MemoryMax=4G`, `MemoryHigh=3G` (`openrig.nix`
+   defaults: 2G and 1536M). `piabrota-dev` and `piabrota-dev-claude` have three seats: `builder`
+   (marola-back and every other task) and `front-builder` (marola-front only) build at the same time
+   and share `reviewer` (the owner, 7 November 2026). `reels-fabric` has five, started by phases, two at a time. Every other rig: two seats at a time. The memory
+   of one seat: the [reference](../hermes-omp/references/openrig-seats.md). Run `kvm4-health` before
+   you start. A fourth seat needs the owner.
 4. **Seats run without approval prompts, and you never change that.** The rig sets
    `permission_policy: builtin:yolo`: the owner's decision in PR 124 (the
    [reference](../hermes-omp/references/openrig-seats.md)). The deny rules of `hermes/omp.yml`
@@ -168,6 +172,7 @@ git -C <clone> fetch /var/lib/rig-outbox/wave-forecaster-dev/<slug>.bundle HEAD:
 |Run the rig `reels-fabric` phase by phase: the seats, the approval gate, what to show the owner|`references/reels-fabric.md`|
 |A symptom: daemon down, port, tmux, OOM, restart loop, disk, deploy|`references/troubleshooting.md`|
 |The thesis rig `wave-forecaster-thesis`: the phases, what to show the owner, the outbox|`references/thesis-rig.md`|
+|Work on `marola-front` or `marola-back`: `marola-gh`, the outbox, the bundle, the push as marola-pr-bot|`references/marola.md`|
 
 ## What was tested
 
