@@ -68,9 +68,15 @@ pub type Tool {
 }
 
 /// One Archify drawing of docs/archify/dark.tsv whose PNG is committed, and the question it
-/// answers (the Question column of docs/archify/README.md).
+/// answers (the Question column of docs/archify/README.md). `width` and `height` are the size it
+/// was drawn at, in CSS pixels: half the PNG's, which is taken at twice the drawing's size.
 pub type Figure {
-  Figure(slug: String, question: String)
+  Figure(slug: String, question: String, width: String, height: String)
+}
+
+/// One repository of the side column, a row of site/data/orgs.tsv.
+pub type Repo {
+  Repo(org: String, name: String)
 }
 
 /// One row of a report's bench table. The speed-up is baseline / value, computed by the site.
@@ -102,6 +108,9 @@ fn zenodo_people(path: String) -> String
 
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "revision")
 fn revision() -> String
+
+@external(javascript, "./ww3_gpu_content_ffi.mjs", "png_size")
+fn png_size(path: String) -> String
 
 @external(javascript, "./ww3_gpu_content_ffi.mjs", "commits")
 fn commits() -> String
@@ -468,6 +477,17 @@ pub fn lineage(table: String) -> List(Event) {
   |> list.sort(fn(a, b) { string.compare(a.date, b.date) })
 }
 
+/// The repositories of site/data/orgs.tsv, in the order of the file.
+pub fn repos(table: String) -> List(Repo) {
+  tsv_rows(table, "org")
+  |> list.filter_map(fn(row) {
+    case row {
+      [org, name, _, _] if org != "" && name != "" -> Ok(Repo(org, name))
+      _ -> Error(Nil)
+    }
+  })
+}
+
 // ---- the tools and the figures -----------------------------------------------------------------
 
 /// The cells of a Markdown table row, trimmed, with no backticks.
@@ -510,6 +530,7 @@ pub fn figures(
   dark_tsv: String,
   readme: String,
   files: List(String),
+  size: fn(String) -> #(String, String),
 ) -> List(Figure) {
   let rows =
     readme
@@ -533,9 +554,10 @@ pub fn figures(
                   _ -> Error(Nil)
                 }
               })
+            let #(width, height) = size(slug)
             case question {
-              Ok(q) -> Ok(Figure(slug, q))
-              Error(_) -> Ok(Figure(slug, ""))
+              Ok(q) -> Ok(Figure(slug, q, width, height))
+              Error(_) -> Ok(Figure(slug, "", width, height))
             }
           }
         }
@@ -620,7 +642,11 @@ pub type Tool {
 }
 
 pub type Figure {
-  Figure(slug: String, question: String)
+  Figure(slug: String, question: String, width: String, height: String)
+}
+
+pub type Repo {
+  Repo(org: String, name: String)
 }
 "
 
@@ -643,6 +669,7 @@ pub fn render(
   events: List(Event),
   tool_rows: List(Tool),
   figure_rows: List(Figure),
+  repo_rows: List(Repo),
 ) -> String {
   let record = fn(r: Record) {
     call("Record", [r.id, r.title, r.status, r.date, r.file])
@@ -664,9 +691,16 @@ pub fn render(
         list.map(tool_rows, fn(t) { call("Tool", [t.name, t.version]) }),
       ),
       items(
+        "repos",
+        "Repo",
+        list.map(repo_rows, fn(r) { call("Repo", [r.org, r.name]) }),
+      ),
+      items(
         "figures",
         "Figure",
-        list.map(figure_rows, fn(f) { call("Figure", [f.slug, f.question]) }),
+        list.map(figure_rows, fn(f) {
+          call("Figure", [f.slug, f.question, f.width, f.height])
+        }),
       ),
       "/// The page in Brazilian Portuguese: each English sentence with its translation\n/// (site/data/translations/pt-BR.tsv).\n"
         <> items(
@@ -894,7 +928,19 @@ pub fn main() -> Nil {
         read(root <> "docs/archify/dark.tsv"),
         read(root <> "docs/archify/README.md"),
         list_dir(root <> "docs/archify"),
+        fn(slug) {
+          case
+            string.split(
+              png_size(root <> "docs/archify/" <> slug <> ".png"),
+              " ",
+            )
+          {
+            [w, h] -> #(w, h)
+            _ -> #("", "")
+          }
+        },
       ),
+      repos(read("../data/orgs.tsv")),
     )
   write("../src/ww3_gpu_site/content.gleam", text)
 }

@@ -50,7 +50,6 @@ how much of WW3 runs on Kokkos, read from site/data/port_score.tsv:	quanto do WW
 the reference toolchain: every verdict and every timing comes from it. read from VERSIONS.md.	a toolchain de referência: todo veredito e toda medição de tempo vêm dela. lida de VERSIONS.md.	draft
 tool	ferramenta	draft
 version	versão	draft
-drawn with Archify. each picture is the PNG committed in the repository, shown as it is.	desenhadas com o Archify. cada imagem é o PNG que está no repositório, mostrado como é.	draft
 step	passo	draft
 date	data	draft
 what	o quê	draft
@@ -59,3 +58,5 @@ measured	medido	draft
 every number of every port report, step by step. the speed-up is over the step's own baseline.	cada número de cada relatório de port, passo a passo. a aceleração é sobre a linha de base do próprio passo.	draft
 each date is only as precise as its source; a planned event is marked so.	cada data é tão precisa quanto a sua fonte; um evento planejado vem marcado.	draft
 reports with no benchmark yet	relatórios ainda sem benchmark	draft
+drawn with Archify. each picture is the PNG committed in the repository, at the size it was drawn. a click opens its HTML page, where you can hover and zoom.	desenhadas com o Archify. cada imagem é o PNG que está no repositório, no tamanho em que foi desenhada. um clique abre a sua página HTML, onde dá para passar o mouse e ampliar.	draft
+interactive page	página interativa	draft
