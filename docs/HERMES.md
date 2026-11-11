@@ -89,6 +89,15 @@ stopped the unit with `SIGTERM` and cut the turn in flight, also when the merge 
 PR. A new Hermes package changes the unit's `ExecStart`, and that still restarts it at once. While
 it drains, a new message waits until the gateway is back.
 
+A deploy that changes `hermes-agent.service` (a reload trigger or the package) asks Hermes for this
+graceful restart before the switch. `deploy.yml` copies the new system to the host first, then runs
+`scripts/hermes-checkpoint.sh` as root. The script compares the sha256 of the unit that runs with the
+new one. When they differ, it runs `systemctl reload hermes-agent` and waits (at most 660 s) until a
+new gateway pid is in `gateway.pid`. The gateway finishes its work in flight, closes `state.db`, and
+tells its home channels that it is online again. So a restart by the switch, which uses `SIGTERM`,
+finds no turn to cut. The step never stops a deploy: when it cannot do its work, it writes a
+warning and the switch continues. `just hermes-checkpoint-test` tests the script.
+
 The main process of the unit is `hermes/scripts/gateway-wrapper.sh`, not the gateway. It passes
 `SIGUSR1` and `SIGTERM` on to the gateway. The gateway runs with `--external-supervisor`. This
 tells it that systemd owns it, so a reload exits with code 75 and does not start a detached
