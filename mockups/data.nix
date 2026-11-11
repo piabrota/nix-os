@@ -65,6 +65,21 @@ rec {
   # repository that has no logo yet, as the org profile prints it.
   projects = [
     {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-11 (description, languages,
+      # LICENSE and .zenodo.json at 74bc58e, the v0.2.0 tag). It has no logo of its own: the logo is
+      # the wave icon of its site, ww3-site/static/favicon.svg here, at a pinned commit.
+      name = "ww3-gpu";
+      owner = "h0ffmann";
+      logo = "https://raw.githubusercontent.com/piabrota/nix-os/fedbbf01da5b9d2a8395a3f6c008cbb6491dec1d/ww3-site/static/favicon.svg";
+      lane = "company";
+      blurb = "A bit-for-bit GPU port of WAVEWATCH III, the wave model, in C++, built by agentic coding and agentic research. Release v0.2.0 on 2026-11-11.";
+      lang = "C++, Shell, Python";
+      licence = "MIT";
+      pushed = "2026-11-11";
+      site = "wave.piabrota.art";
+      state = "live";
+    }
+    {
       name = "mu";
       logo = "https://raw.githubusercontent.com/piabrota/mu/d8762696790b97e874cbd9a580ceb957ecb23c6e/docs/drawings/mu.svg";
       lane = "company";

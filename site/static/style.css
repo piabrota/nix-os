@@ -10,6 +10,7 @@
   --accent: #BC2318;      /* the logo's red: fills, edges, the glow */
   --accent-text: #FF6B5E; /* the same red, light enough to read on --bg */
   --on-accent: #FFFFFF;
+  --sea: #0B5FA5;         /* the sea: the one blue, the fill of the wave model's tile */
   --ok: #3FB950;
   --warn: #D29922;
   --none: #6E7681;
@@ -156,10 +157,11 @@ span.where { color: var(--muted); }
 .tile .blurb { flex: none; }
 /* The footer (meta, then commits) sits at the bottom of the tile, so the rows of a lane line up. */
 .tile .meta { margin-top: auto; overflow-wrap: anywhere; }
-/* The filled tiles: the company chart, and the incubating project. */
-.tile[data-name="mu"], .tile[data-name="proof"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
-.tile[data-name="mu"] h4, .tile[data-name="proof"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
-.tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill, .tile[data-name="proof"] .tile-tags span:not(.pill), .tile[data-name="proof"] .pill { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
+/* The filled tiles: the wave model (in blue), the company chart, and the incubating project. */
+.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"] { grid-column: 1 / -1; min-height: 200px; background: var(--accent); border-color: var(--accent); --muted: #FFFFFFCC; --text: var(--on-accent); }
+.tile[data-name="ww3-gpu"] h4, .tile[data-name="mu"] h4, .tile[data-name="proof"] h4 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
+.tile[data-name="ww3-gpu"] .tile-tags span:not(.pill), .tile[data-name="ww3-gpu"] .pill, .tile[data-name="mu"] .tile-tags span:not(.pill), .tile[data-name="mu"] .pill, .tile[data-name="proof"] .tile-tags span:not(.pill), .tile[data-name="proof"] .pill { color: var(--on-accent); background: none; border-color: #FFFFFF80; }
+.tile[data-name="ww3-gpu"] { background: var(--sea); border-color: var(--sea); }
 /* proof's logo is a transparent SVG with dark ink (light ink in dark mode). The filter turns every
    stroke white in both themes and keeps the background clear, so the red shows through. */
 .tile[data-name="proof"] .tile-top { flex-direction: column; align-items: flex-start; }
@@ -168,29 +170,29 @@ span.where { color: var(--muted); }
 /* The card grids: tiles, services, people and partners. One column; two from 600 px, on 4 tracks;
    three from 960 px, on 6 tracks. A card spans 2 tracks, so the last row stretches and no cell
    stays empty: one card left takes the row, two left share it in halves (3 up). The filled tiles
-   (mu, proof) are not counted. A tile that stretches turns to a row: the logo and the tags on the
+   (ww3-gpu, mu, proof) are not counted. A tile that stretches turns to a row: the logo and the tags on the
    left, the name, the text and the footer on the right. */
 .tiles, .services, .people, .partners { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 @media (min-width: 600px) and (max-width: 959.98px) {
   .tiles, .services, .people, .partners { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   :is(.tiles, .services, .people, .partners) > * { grid-column: span 2; }
-  :is(.tiles, .services, .people, .partners) > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) { grid-column: 1 / -1; }
-  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 10px 24px; }
-  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > .tile-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; align-items: flex-start; align-self: start; min-height: 0; }
-  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > :not(.tile-top) { grid-column: 2; }
-  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > h4 { margin-top: 0; }
-  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) > .commits { justify-self: start; }
+  :is(.tiles, .services, .people, .partners) > :last-child:nth-child(2n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) { grid-column: 1 / -1; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 10px 24px; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) > .tile-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; align-items: flex-start; align-self: start; min-height: 0; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) > :not(.tile-top) { grid-column: 2; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) > h4 { margin-top: 0; }
+  .tiles > :last-child:nth-child(2n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) > .commits { justify-self: start; }
 }
 @media (min-width: 960px) {
   .tiles, .services, .people, .partners { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   :is(.tiles, .services, .people, .partners) > * { grid-column: span 2; }
-  :is(.tiles, .services, .people, .partners) > :last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])) { grid-column: 1 / -1; }
-  :is(.tiles, .services, .people, .partners) > :is(:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) { grid-column: span 3; }
-  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 10px 24px; }
-  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > .tile-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; align-items: flex-start; align-self: start; min-height: 0; }
-  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > :not(.tile-top) { grid-column: 2; }
-  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > h4 { margin-top: 0; }
-  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="mu"], .tile[data-name="proof"]))) > .commits { justify-self: start; }
+  :is(.tiles, .services, .people, .partners) > :last-child:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])) { grid-column: 1 / -1; }
+  :is(.tiles, .services, .people, .partners) > :is(:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"]))) { grid-column: span 3; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"]))) { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 10px 24px; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"]))) > .tile-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; align-items: flex-start; align-self: start; min-height: 0; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"]))) > :not(.tile-top) { grid-column: 2; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"]))) > h4 { margin-top: 0; }
+  .tiles > :is(:last-child:nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])), :nth-child(3n+1 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"])):nth-last-child(2), :last-child:nth-child(3n+2 of :not(.tile[data-name="ww3-gpu"], .tile[data-name="mu"], .tile[data-name="proof"]))) > .commits { justify-self: start; }
 }
 
 .credit {
