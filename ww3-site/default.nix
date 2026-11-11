@@ -7,15 +7,15 @@
 # the build if the output names any store path, so gleam and node never reach the closure.
 { lib, stdenvNoCC, fetchFromGitHub, fetchurl, gleam, nodejs }:
 let
-  rev = "dd1e5245600c6ad17576b4fdbac3134c7f01901e";
+  rev = "74bc58edbb57035c52ae518589a52c5b2b4f18c2";
   # The number of commits up to rev (`git rev-list --count`), which the page shows; the source has
   # no .git, so scripts/ww3-pin.sh counts them and writes it here with rev.
-  commits = 856;
+  commits = 881;
   ww3gpu = fetchFromGitHub {
     owner = "h0ffmann";
     repo = "ww3-gpu";
     inherit rev;
-    hash = "sha256-eeSSLax3Ian73XbfAIMkHSGws/EYmt8E5/KsmS6sLik=";
+    hash = "sha256-e8lq9Nbl1AB1htcTnKptgIy4XLapS7ssyLDVZqkS0So=";
   };
   # Every hex package either manifest.toml locks, at its checksum, so the build runs offline.
   hex = dir: map
