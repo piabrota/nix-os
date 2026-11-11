@@ -1,0 +1,119 @@
+name: ww3 pin
+
+# When h0ffmann/ww3-gpu's main moves: scripts/ww3-pin.sh moves the pin of ww3-site/default.nix (rev
+# and the source hash), builds the site, and one pull request labelled ww3-pin carries it, opened as
+# piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer ww3-gpu commit while that pull
+# request is open moves the same branch and edits the same pull request. It looks every hour and runs
+# by hand; a `repository_dispatch` of type `ww3-main` runs it at once. Nothing merges by itself: the
+# merge is the owner's, and the merge deploys wave.piabrota.art. Copied from room-pin.yml.
+on:
+  schedule:
+    - cron: "37 * * * *"
+  workflow_dispatch:
+    inputs:
+      rev:
+        description: A commit of h0ffmann/ww3-gpu (the whole sha); empty for the head of main
+        required: false
+  repository_dispatch:
+    types: [ww3-main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ww3-pin
+  cancel-in-progress: false
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.OPS_BOT_APP_ID }}
+          private-key: ${{ secrets.OPS_BOT_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      # The cheap look first: most runs end here, with no Nix.
+      - name: Is ww3-gpu's main past the pin?
+        id: look
+        env:
+          REV: ${{ inputs.rev || github.event.client_payload.rev }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          new=${REV:-$(git ls-remote https://github.com/h0ffmann/ww3-gpu.git refs/heads/main | cut -f1)}
+          pinned=$(gh api "repos/$GITHUB_REPOSITORY/contents/ww3-site/default.nix" --jq .content |
+            base64 -d | sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";$/\1/p')
+          open=$(gh api "repos/$GITHUB_REPOSITORY/contents/ww3-site/default.nix?ref=agents/ww3-pin" \
+            --jq .content 2>/dev/null | base64 -d | sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";$/\1/p' || true)
+          echo "ww3-gpu main: $new; pinned on main: $pinned; on agents/ww3-pin: ${open:-none}"
+          if [ "$new" = "$pinned" ] || [ "$new" = "$open" ]; then
+            echo "Nothing to move."
+            echo "move=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "move=true" >>"$GITHUB_OUTPUT"
+            echo "rev=$new" >>"$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.look.outputs.move == 'true'
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      - if: steps.look.outputs.move == 'true'
+        uses: cachix/install-nix-action@v31
+
+      - name: Move the pin and build the site
+        if: steps.look.outputs.move == 'true'
+        id: pin
+        env:
+          REV: ${{ steps.look.outputs.rev }}
+        run: |
+          sh scripts/ww3-pin.sh "$REV" | tee pin.log
+          sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
+
+      - name: Open or update the pull request as piabrota-ops
+        if: steps.pin.outputs.new != ''
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+          OLD: ${{ steps.pin.outputs.old }}
+          NEW: ${{ steps.pin.outputs.new }}
+        run: |
+          branch=agents/ww3-pin
+          id=$(gh api "users/${SLUG}%5Bbot%5D" --jq .id)
+          git config user.name "${SLUG}[bot]"
+          git config user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add ww3-site/default.nix
+          git commit -m "chore(ww3): move the ww3-gpu pin to ${NEW:0:7}" \
+            -m "https://github.com/h0ffmann/ww3-gpu/compare/$OLD...$NEW"
+          git push --force origin "$branch"
+          gh label create ww3-pin --repo "$GITHUB_REPOSITORY" --color 0e8a16 \
+            --description "h0ffmann/ww3-gpu's main, pinned in ww3-site/ by ww3-pin.yml" 2>/dev/null || true
+          {
+            echo "## Summary"
+            echo
+            echo "wave.piabrota.art should show the head of h0ffmann/ww3-gpu's \`main\`, \`${NEW:0:7}\`. The pin was \`${OLD:0:7}\`."
+            echo
+            echo "## What changed"
+            echo
+            echo "\`ww3-site/default.nix\`: \`rev\` and the source \`hash\`, written by \`scripts/ww3-pin.sh\` ([compare](https://github.com/h0ffmann/ww3-gpu/compare/$OLD...$NEW))."
+            echo
+            echo "## Tested"
+            echo
+            echo "The site built on the runner with this flake's nixpkgs: the content generator and both Gleam test suites ran, the four pages hold every section (\`allowedReferences = [ ]\`). Not checked: the full system closure, and the site in a browser. The merge deploys."
+          } >body.md
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')
+          title="chore(ww3): move the ww3-gpu pin to ${NEW:0:7}"
+          if [ -n "$n" ]; then
+            gh pr edit "$n" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file body.md
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --label ww3-pin \
+              --title "$title" --body-file body.md
+          fi
