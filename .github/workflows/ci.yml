@@ -86,8 +86,24 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - run: sudo apt-get update && sudo apt-get install -y just
-      - run: just --version
+      # The runner's apt mirror stops resolving at times ("Temporary failure resolving
+      # 'azure.archive.ubuntu.com'", PR #232, 2026-11-11). Try apt three times with a short timeout,
+      # then fall back to the same 1.21.0 from upstream's release, pinned by its checksum. The next
+      # step fails if the version is not 1.21.0, so the check never runs on another just.
+      - name: install Ubuntu's just (1.21.0)
+        run: |
+          apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20'
+          for i in 1 2 3; do
+            # shellcheck disable=SC2086
+            if sudo apt-get $apt_opts update && sudo apt-get $apt_opts install -y just; then exit 0; fi
+            echo "apt failed (try $i)"; sleep $((i * 10))
+          done
+          echo "::warning::apt could not install just; using the 1.21.0 release binary"
+          curl -fsSL --retry 5 -o /tmp/just.tgz \
+            https://github.com/casey/just/releases/download/1.21.0/just-1.21.0-x86_64-unknown-linux-musl.tar.gz
+          echo '3292fd257f2e2dfd4cb0d5650aa5e47d2c99cee1233446378eb45a7b045f3b30  /tmp/just.tgz' | sha256sum -c -
+          sudo tar -xzf /tmp/just.tgz -C /usr/local/bin just
+      - run: just --version | grep -Fx 'just 1.21.0'
       - name: parse every justfile
         run: |
           status=0
