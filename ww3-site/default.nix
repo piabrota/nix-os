@@ -76,6 +76,9 @@ stdenvNoCC.mkDerivation {
     gleam run -m ww3_gpu_site/prerender_lineage --no-print-progress > $out_dir/lineage/index.html
     gleam run -m ww3_gpu_site/prerender_lineage_pt_br --no-print-progress > $out_dir/pt-BR/lineage/index.html
     cp -R static/. $out_dir/
+    # ww3-gpu's llms.txt (https://llmstxt.org), byte for byte, at /llms.txt; a pin before the
+    # commit that added it has none.
+    if [ -f $tree/llms.txt ]; then cp $tree/llms.txt $out_dir/llms.txt; fi
     # The Archify figures the page shows, the PNGs committed in ww3-gpu, byte for byte.
     mkdir -p $out_dir/archify
     for slug in $(sed -n 's/^\([a-z0-9-]*\)\t.*/\1/p' $tree/docs/archify/dark.tsv); do
