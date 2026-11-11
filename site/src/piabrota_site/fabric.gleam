@@ -4,6 +4,7 @@
 
 import gleam/int
 import gleam/list
+import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -139,9 +140,29 @@ fn tile(p: Project, lang: String) -> Element(msg) {
       html.span([attribute.class("meta")], [
         html.text(p.licence <> " · " <> p.where),
       ]),
+      paper(p, lang),
       parts.commits(p, lang),
     ],
   )
+}
+
+/// The paper badge, "aiXiv 2611.01105", linked to its abstract page; nothing without a paper.
+fn paper(p: Project, lang: String) -> Element(msg) {
+  case string.split_once(p.paper, "/abs/") {
+    Error(Nil) -> element.none()
+    Ok(#(_, id)) ->
+      html.a(
+        [
+          attribute.class("paper"),
+          attribute.href(p.paper),
+          attribute.title(i18n.t(lang, "paper.title")),
+        ],
+        [
+          html.span([attribute.class("paper-label")], [html.text("aiXiv")]),
+          html.text(" " <> id),
+        ],
+      )
+  }
 }
 
 fn tile_href(p: Project) -> String {

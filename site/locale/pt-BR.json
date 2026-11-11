@@ -59,6 +59,7 @@
   "commits.tip": "Commits na branch padrão, em {date}. Agente: uma conta de bot ou a conta claude. Um commit que uma pessoa fez com a ajuda de um agente conta como humano.",
   "origin.own": "próprio",
   "origin.personal": "pessoal",
+  "paper.title": "O artigo no aiXiv",
   "work.title": "Trabalhe com a gente. ",
   "work.text": "Pedidos de parceria ou white label: ",
   "fork.forked": "fork em ",

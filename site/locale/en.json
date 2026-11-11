@@ -59,6 +59,7 @@
   "commits.tip": "Commits on the default branch, as of {date}. Agent: a bot account or the claude account. A commit that a person made with an agent's help counts as human.",
   "origin.own": "own",
   "origin.personal": "personal",
+  "paper.title": "The paper on aiXiv",
   "work.title": "Work with us. ",
   "work.text": "Partnership or white label requests: ",
   "fork.forked": "forked ",
