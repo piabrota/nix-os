@@ -161,6 +161,19 @@ entradas, cada uma com merge de um mantenedor, fixada num commit completo e exam
   a cada turno), llmslim (numpy e scikit-learn do PyPI), tameru (sobrescreve métodos privados do
   Hermes), discord-tps, session-mirror e hermes-discord-rpc (presença do bot ou o app de desktop),
   redaction-pack (fornecedores que esta máquina não usa).
+- ⛔ [xerj-org/xerj](https://github.com/xerj-org/xerj) (Apache-2.0; o XERJ Corpus Hub, uma CLI e
+  uma ferramenta MCP que responde a partir de pacotes de corpora públicos de segurança).
+  Verificado em 2026-11-11 e deixado de fora por enquanto. O instalador
+  (`curl -fsSL https://xerj.org/get | sh`) foi lido, não executado. Ele baixa um arquivo de uma
+  versão do GitHub, compara o SHA-256 com um arquivo da mesma versão e grava `~/.local/bin/xerj`.
+  Ele não pede root e não edita arquivo do shell. Motivos para esperar: a última versão é uma
+  release candidate (`v1.0.0-rc.101`); o repositório tem quatro meses e pertence a uma conta de
+  usuário; o checksum mostra que o arquivo está inteiro, não quem o fez, e não achei checagem de
+  assinatura; ninguém auditou o binário, que sobe um nó local (porta 9200) e baixa pacotes da
+  rede; o uso de memória dele contra o limite de 8 GB do `hermes-agent` não foi medido; o hub é
+  um agregador de terceiros, então não é fonte oficial para alertas. Instalar com `curl | sh`
+  também quebra "as ferramentas vêm fixadas pelo Nix" e a lista de bloqueio. Para adotar: um PR
+  no nix-os que fixa uma versão por hash, desligada por padrão, com a memória medida.
 
 - ✅ [scross01/hermes-custom-dangerous-patterns-plugin](https://github.com/scross01/hermes-custom-dangerous-patterns-plugin)
   (MIT, v0.5.2): um hook `pre_tool_call` que bloqueia comandos de terminal por regex. Aqui ele
