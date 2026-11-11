@@ -49,6 +49,8 @@
 
   piabrota.hermesWeb.enable = true;
   piabrota.pgx.enable = true;
+  # The lofi bot (lofi.nix, docs/LOFI.md). Idle until its token and IDs are on the box.
+  piabrota.lofi.enable = true;
   # Off since 2026-11-04 by the owner's order; docs/PAPERCLIP.md says how to turn it on.
   piabrota.paperclip.enable = false;
   # Hermes operates it with `rig` and the skill hermes-rig; docs/OPENRIG.md.

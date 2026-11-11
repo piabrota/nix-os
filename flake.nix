@@ -349,6 +349,8 @@
         pgx = pkgs.callPackage ./pgx/package.nix { };
         # The eye as favicon.svg, favicon.ico and apple-touch-icon.png (favicon/): served on every vhost.
         favicon = pkgs.callPackage ./favicon { };
+        # The lofi Discord bot (lofi/, lofi.nix).
+        lofi = pkgs.callPackage ./lofi { };
         # Mockups of the homepage, in pure Nix (mockups/): docs/mockups/*.svg.
         mockups = pkgs.linkFarm "mockups" (pkgs.lib.mapAttrsToList
           (name: text: { inherit name; path = pkgs.writeText name text; })

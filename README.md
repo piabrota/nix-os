@@ -142,6 +142,7 @@ How to read each figure, and what it leaves out: [`docs/FIGURES.md`](docs/FIGURE
 | [`docs/HERMES.md`](docs/HERMES.md), [`pt-BR`](docs/HERMES.ptBR.md) | Hermes here: setup, secrets, the dashboard, checks, updating. |
 | [`docs/OPENRIG.md`](docs/OPENRIG.md) | OpenRig, the software factory, the UI, the status and the guardrails. |
 | [`docs/METRICS.md`](docs/METRICS.md), [`pt-BR`](docs/METRICS.ptBR.md) | The metrics page: collector, page, tests, cadence. |
+| [`docs/LOFI.md`](docs/LOFI.md), [`pt-BR`](docs/LOFI.ptBR.md) | The lofi bot in the Marola Discord: why our own, legal music, setup. |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | How a merge reaches the VPSs, and the one-time setup. |
 | [`docs/FORK.md`](docs/FORK.md), [`pt-BR`](docs/FORK.ptBR.md) | Run your own VPS from a fork. |
 | [`docs/STRUCTURE.md`](docs/STRUCTURE.md) | The pins, the file tree, the flake outputs and every `just` recipe. |

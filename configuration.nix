@@ -22,6 +22,8 @@
     ./metrics.nix
     # The eye as the icon of every vhost (favicon.nix): each vhost carries its locations.
     ./favicon.nix
+    # A 24/7 lofi music bot in the Marola Discord server's voice channel (docs/LOFI.md); a host turns it on.
+    ./lofi.nix
     # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
     ./kubesolo-purge.nix
   ];
@@ -71,8 +73,8 @@
   # that hVPS verification invokes by bare name (e.g. `dig` for a DNS check).
   environment.systemPackages = with pkgs; [
     cloud-init
-    dnsutils   # dig, nslookup, host
-    nettools   # ifconfig, netstat, route (net-tools parity)
+    dnsutils # dig, nslookup, host
+    nettools # ifconfig, netstat, route (net-tools parity)
     curl
     wget
     nano
