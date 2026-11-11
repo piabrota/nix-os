@@ -1,7 +1,7 @@
 // The index of proof.piabrota.art and of pirsig.piabrota.art, made with the design kit from the
 // manifest that manifest.mjs wrote (docs/DESIGN-KIT.md). The page loads no script.
 //
-//   node index.mjs <proof|pirsig> <manifest.json> --rev <commit> --sites <sites.json> --icons <html> > index.html
+//   node index.mjs <proof|pirsig> <manifest.json> --rev <commit> --sites <sites.json> --icons <html> [--loc <loc.json>] > index.html
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { card, cardGrid, chrome, footer, hero, main, page, section, sub, top, url } from '../design/kit.mjs';
@@ -42,7 +42,15 @@ function diagramGrids(diagrams) {
     .join('');
 }
 
-export function proofIndex({ pages, groups }, { rev, sites, icons }) {
+// Lines of code as the hero shows them: 2,475.
+const thousands = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+/** The hero's numbers of lines of code, from loc.mjs's JSON; none without it. */
+export function locStats(loc) {
+  return loc ? ['lean', 'agda', 'z3'].filter((id) => loc[id]).map((id) => ({ value: thousands(loc[id].lines), label: `lines of ${loc[id].label}` })) : [];
+}
+
+export function proofIndex({ pages, groups }, { rev, sites, icons, loc }) {
   const short = rev.slice(0, 7);
   const own = pages.find((p) => p.path === 'proof/index.html');
   const diagramIndex = pages.find((p) => p.kind === 'page' && p.group === 'docs/diagrams');
@@ -90,6 +98,7 @@ export function proofIndex({ pages, groups }, { rev, sites, icons }) {
             { value: plain.length, label: 'pages' },
             { value: diagrams.length, label: 'diagrams' },
             { value: languages.size, label: 'languages' },
+            ...locStats(loc),
           ],
           actions,
           mark: FOR_ALL,
@@ -147,7 +156,7 @@ export function pirsigIndex({ pages, videos }, { rev, sites, icons }) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [site, manifest, ...rest] = process.argv.slice(2);
   const f = Object.fromEntries(rest.reduce((acc, v, i) => (i % 2 ? acc : [...acc, [v.replace(/^--/, ''), rest[i + 1]]]), []));
-  const ctx = { rev: f.rev, sites: JSON.parse(readFileSync(f.sites, 'utf8')), icons: f.icons ?? '' };
+  const ctx = { rev: f.rev, sites: JSON.parse(readFileSync(f.sites, 'utf8')), icons: f.icons ?? '', loc: f.loc ? JSON.parse(readFileSync(f.loc, 'utf8')) : null };
   const m = JSON.parse(readFileSync(manifest, 'utf8'));
   const html = site === 'proof' ? proofIndex(m, ctx) : site === 'pirsig' ? pirsigIndex(m, ctx) : null;
   if (html === null) throw new Error(`usage: index.mjs <proof|pirsig> <manifest.json> --rev <commit> --sites <sites.json> --icons <html>`);

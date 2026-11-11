@@ -117,6 +117,7 @@ pub fn empty_list_test() {
       [],
       [],
       [],
+      [],
     )
   assert text |> contains("pub const notes: List(Note) = []")
   assert text |> contains("pub const events: List(Event) = []")
@@ -169,10 +170,21 @@ pub fn figures_test() {
 | [steps.json](steps.json) | [PDF](steps.pdf) | sequence | Where does a step go? | [one](x.md) |
 | [four-runtimes.json](four-runtimes.json) | [PDF](a.pdf), [PNG](a.png) | architecture | Which four runtimes? | [two](y.md) |
 "
-  assert c.figures(dark, readme, ["four-runtimes.png", "steps.png", "a.json"])
+  let size = fn(slug) {
+    case slug {
+      "steps" -> #("920", "932")
+      _ -> #("1510", "470")
+    }
+  }
+  assert c.figures(
+      dark,
+      readme,
+      ["four-runtimes.png", "steps.png", "a.json"],
+      size,
+    )
     == [
-      c.Figure("four-runtimes", "Which four runtimes?"),
-      c.Figure("steps", "Where does a step go?"),
+      c.Figure("four-runtimes", "Which four runtimes?", "1510", "470"),
+      c.Figure("steps", "Where does a step go?", "920", "932"),
     ]
 }
 
@@ -345,4 +357,11 @@ pub fn a_bad_lineage_row_is_refused_test() {
       "Feb 2027\tsoon\tidea\tx\tn\thttps://n\tw\ts\n2027\tdone\tport\n",
     )
   assert list.length(errors) == 4
+}
+
+pub fn repos_test() {
+  let table =
+    "# a comment\n# org\trepo\tstars\tsource\npiabrota\tnix-os\t3\tread\nmarola-dev\tmarola\t19\tread\nshort\trow\n"
+  assert c.repos(table)
+    == [c.Repo("piabrota", "nix-os"), c.Repo("marola-dev", "marola")]
 }
