@@ -77,7 +77,7 @@ went on). Fix DNS, then see the end of this section.
 Then merge the PR that turns the site on, or run the `deploy` workflow again if it already
 failed.
 
-The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave` and the others under `piabrota.art`)
+The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave`, `closed` and the others under `piabrota.art`)
 each need one `A` record on their host name, with piabrota2's address, before the deploy that
 turns them on.
 
@@ -164,6 +164,7 @@ as well:
 | The room | `/favicon.svg` (the same eye) | serves the shared file there |
 | proof.piabrota.art, pirsig.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
 | wave.piabrota.art | `/favicon.svg`, ww3-gpu's own (`ww3-site/static/`) | nothing: the site keeps its icon |
+| closed.piabrota.art | `/icons/favicon.svg`, closed-source's own | nothing: the site keeps its icon |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
@@ -234,6 +235,20 @@ needs its row in `ww3-site/data/translations/pt-BR.tsv`, or the content generato
 Not here yet: ww3-gpu's `/adrs/`, `/andamento/`, `/relatorio-gta/` and `/figures/` pages, which
 its `scripts/build_html.sh` and `scripts/archify.sh` build. Until they move, GitHub Pages keeps
 serving them.
+
+## The closed-source site at closed.piabrota.art
+
+The site of h0ffmann/closed-source, the book *The god that failed*. That repository builds it
+(PDFs with TeX Live, the content with its Gleam generator, the page with Lustre) and publishes it
+to GitHub Pages at h0ffmann.github.io/closed-source on each push to its `main`. `closed.nix` gives
+it the name `closed.piabrota.art` on piabrota2: nginx passes each request to Pages, so a merge
+there shows here at once, the box keeps no copy and its closure does not change. Pages caches for
+ten minutes. Only `Host` goes to Pages; the visitor's address does not.
+
+The name needs its DNS `A` record at piabrota2's address before the first deploy
+([DNS on Porkbun](#dns-on-porkbun)). Do not give the Pages site a custom domain: Pages would then
+send h0ffmann.github.io/closed-source to that name, and a request from nginx would come back to
+nginx.
 
 ## The ▲ grid at grid.piabrota.art
 

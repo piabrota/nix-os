@@ -20,7 +20,7 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix closed.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
