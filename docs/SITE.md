@@ -181,7 +181,10 @@ The two names:
 
 - `proof.piabrota.art` (`proof-site/default.nix`, option `domain`): h0ffmann/proof's own browsable
   index (its `site/default.nix`, built here with this flake's nixpkgs) under `/proof/`, and an
-  index at `/` that lists its pages.
+  index at `/` that lists its pages and gives its lines of Lean 4, Agda and Z3 code at the pin.
+  `proof-site/loc.mjs` counts them from the pinned source with the rule of that repository's own
+  badge: a line that is not blank and not only a comment, `vendor/` left out; Z3 is the Scala of
+  `z3-scala/`.
 - `pirsig.piabrota.art` (`proof-site/pirsig.nix`, option `pirsig.domain`): piabrota/pirsig's
   `brain/Videos/index.html` under `/videos/` and its `docs/archify/*.json` figures (drawn by the
   archify of `figures-site/`) under `/figures/`, and an index at `/`. The proof name has no

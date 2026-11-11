@@ -5,7 +5,8 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { decode, groupOf, groupTitle, langOf, scan, titleOf } from './manifest.mjs';
-import { cleanTitle, pirsigIndex, proofIndex } from './index.mjs';
+import { cleanTitle, locStats, pirsigIndex, proofIndex } from './index.mjs';
+import { count, countCode, LANGUAGES } from './loc.mjs';
 
 const sites = [{ id: 'proof', label: 'proof', url: 'https://proof.piabrota.art/', access: 'public' }, { id: 'pirsig', label: 'pirsig', url: 'https://pirsig.piabrota.art/', access: 'public' }];
 const ctx = { rev: 'b863c15e56a22afaab2fa228fe5eb85847c1d6c4', sites, icons: '' };
@@ -92,4 +93,38 @@ test('pirsig index: the video count is said only when the page said it', () => {
   assert.match(withCount, /<dt>video notes<\/dt><dd>2<\/dd>/);
   const without = pirsigIndex({ ...m, videos: null }, ctx);
   assert.doesNotMatch(without, /indexado|<dt>video note/);
+});
+
+test('lines of code: blank and comment lines left out, block comments across lines, the badge\'s scan', () => {
+  const agda = '{-# OPTIONS --safe #-}\nmodule M where\n\n-- a comment\n{- a\n   block -} x = 1\nopen import X -- after code\n';
+  assert.equal(countCode(agda, LANGUAGES.agda), 3);
+  assert.equal(countCode('/- doc -/\ntheorem t : True := trivial\n  --\n', LANGUAGES.lean), 1);
+  // after code the line is not read further, so this /* opens nothing
+  assert.equal(countCode('val p = "src/*.F90"\nval q = 1\n', LANGUAGES.z3), 2);
+  assert.equal(countCode('a\u2028b', LANGUAGES.z3), 2);
+});
+
+test('lines of code: Z3 is the Scala of z3-scala/, vendor/ is left out', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'proof-loc-'));
+  const put = (path, text) => {
+    mkdirSync(join(dir, path, '..'), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  };
+  put('z3-scala/src/A.scala', 'object A\n');
+  put('other/B.scala', 'object B\n');
+  put('cycle/C.lean', 'def c := 1\ndef d := 2\n');
+  put('vendor/x/D.lean', 'def d := 1\n');
+  put('agda/src/E.agda', 'e = 1\n');
+  const c = count(dir);
+  assert.deepEqual([c.z3.files, c.z3.lines, c.lean.files, c.lean.lines, c.agda.lines], [1, 1, 1, 2, 1]);
+});
+
+test('proof index: the lines of Lean 4, Agda and Z3 in the hero, only when they were counted', () => {
+  const loc = { lean: { label: 'Lean 4', files: 18, lines: 1264 }, agda: { label: 'Agda', files: 14, lines: 617 }, z3: { label: 'Z3', files: 28, lines: 2475 } };
+  const html = proofIndex(scan(tree(), 'proof'), { ...ctx, loc });
+  assert.match(html, /<dt>lines of Lean 4<\/dt><dd>1,264<\/dd>/);
+  assert.match(html, /<dt>lines of Agda<\/dt><dd>617<\/dd>/);
+  assert.match(html, /<dt>lines of Z3<\/dt><dd>2,475<\/dd>/);
+  assert.deepEqual(locStats(null), []);
+  assert.doesNotMatch(proofIndex(scan(tree(), 'proof'), ctx), /lines of/);
 });

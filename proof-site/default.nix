@@ -1,5 +1,6 @@
 # The pages of proof.piabrota.art, built on the builder: h0ffmann/proof's own browsable index
-# (its site/default.nix, at the commit below) under /proof/, and an index at / that lists them.
+# (its site/default.nix, at the commit below) under /proof/, and an index at / that lists them and
+# gives the lines of Lean 4, Agda and Z3 code at that commit (loc.mjs).
 # The pages of piabrota/pirsig are on their own name (pirsig.nix). No HTML is committed here.
 #
 # The index is made by the design kit (design/kit.mjs) from the list of pages, and the brand bar of
@@ -16,12 +17,12 @@ let
   common = import ./common.nix { inherit lib writeText; };
 
   # h0ffmann/proof's main. Move rev and hash together; its site needs no change here.
-  proofRev = "b863c15e56a22afaab2fa228fe5eb85847c1d6c4";
+  proofRev = "617473d431642c072fbb624219277c23f19c0db4";
   proofSrc = fetchFromGitHub {
     owner = "h0ffmann";
     repo = "proof";
     rev = proofRev;
-    hash = "sha256-1LdrGlHaIPZbO6ZL5JJnHN/XPzGpkYjRYQROfQ4RgQ4=";
+    hash = "sha256-MQ902+C96Irz+Xh+p5sllYJLZJfIm3v2PM1PZc9ifvg=";
   };
   proof = callPackage "${proofSrc}/site" { rev = proofRev; };
 in
@@ -38,7 +39,7 @@ stdenvNoCC.mkDerivation {
     chmod -R u+w dist/proof
 
     ${common.darkGate "dist/proof/docs/diagrams/en/*.html | dist/proof/docs/diagrams/pt-BR/*.html"}
-    ${common.indexSteps { current = "proof"; rev = proofRev; }}
+    ${common.indexSteps { current = "proof"; rev = proofRev; loc = proofSrc; }}
     runHook postBuild
   '';
 
