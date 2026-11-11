@@ -146,6 +146,12 @@ fn side(l: String, home: String) -> Element(msg) {
     ),
     html.p([attribute.class("brand")], [
       html.a([attribute.href(home <> "./")], [
+        html.img([
+          attribute.src(up(l) <> home <> "favicon.svg"),
+          attribute.alt(""),
+          attribute.width(72),
+          attribute.height(72),
+        ]),
         html.text("ww3"),
         html.br([]),
         html.text("gpu"),

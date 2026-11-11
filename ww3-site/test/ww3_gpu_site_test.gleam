@@ -293,3 +293,16 @@ pub fn the_logos_test() {
     )
   })
 }
+
+// The side column opens with the logo of ww3-gpu, the wave of the favicon, on every page.
+pub fn the_logo_of_the_site_test() {
+  assert string.contains(html(), "src=\"favicon.svg\" width=\"72\"")
+  assert string.contains(
+    prerender.render("pt-BR"),
+    "src=\"../favicon.svg\" width=\"72\"",
+  )
+  assert string.contains(
+    prerender_lineage.render("pt-BR"),
+    "src=\"../../favicon.svg\" width=\"72\"",
+  )
+}

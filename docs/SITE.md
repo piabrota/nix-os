@@ -238,6 +238,8 @@ trademark and never a file here: it loads from its owner's repository at a pinne
 ([@isovector](https://github.com/isovector)), a serif text column and a dark side column, here on the left, written
 anew in `ww3-site/static/style.css`; the foot of every page credits it.
 
+The side column opens with the logo of ww3-gpu, the wave of `ww3-site/static/favicon.svg`, and its
+links are the neon green of ww3-gpu (`--proof`, `#3DFF96`, in its `DESIGN.md`).
 The side column is on the left and the reader can fold it: a checkbox before it holds the state
 and the ☰ label at its top is the button, with no JavaScript. On a wide screen it is open until
 the reader folds it to a strip; on a phone it is a bar at the top until the reader opens it.
