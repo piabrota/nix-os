@@ -31,7 +31,7 @@ with that version.
 |---|---|---|
 | [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-26.05) `nixos-26.05` | [`9bb5222`](https://github.com/NixOS/nixpkgs/commit/9bb52223f4f6a0cc606fd0852d8784f896c137d5) (2026-11-01) | the system; `system.stateVersion` is 26.05 |
 | [deploy-rs](https://github.com/serokell/deploy-rs) | [`1cec052`](https://github.com/serokell/deploy-rs/commit/1cec0527bd09074bbee6d4461900ce5d58267217) (2026-10-19) | the activation and its rollback; the `deploy` binary comes from nixpkgs, so CI does not compile it |
-| [hermes-agent](https://github.com/NousResearch/hermes-agent) [`v0.23.0`](https://github.com/NousResearch/hermes-agent/releases/tag/v0.23.0) | [`2bd378e`](https://github.com/NousResearch/hermes-agent/commit/2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19) (2026-11-05) | Hermes Agent's package and NixOS module (`hermes.nix`); pinned to a release tag in `flake.nix`; it keeps its own nixpkgs (unstable), for which its build is made |
+| [hermes-agent](https://github.com/NousResearch/hermes-agent) [`v0.23.1`](https://github.com/NousResearch/hermes-agent/releases/tag/v0.23.1) | [`3b42157`](https://github.com/NousResearch/hermes-agent/commit/3b421578588243f920886e6fe79a6faa87ea026e) (2026-11-09) | Hermes Agent's package and NixOS module (`hermes.nix`); pinned to a release tag in `flake.nix`; it keeps its own nixpkgs (unstable), for which its build is made |
 
 `flake.lock` is the truth; this table is what it held on 2026-11-07. The Hermes badge at the top is
 edited by hand: change it with the pin. Update nixpkgs with `nix flake update` in a pull request; the
