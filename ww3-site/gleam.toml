@@ -1,0 +1,14 @@
+name = "ww3_gpu_site"
+version = "1.0.0"
+target = "javascript"
+description = "The front page of the WW3 GPU Lab: the book, its chapters, its decisions and its second brain"
+
+[javascript]
+runtime = "nodejs"
+
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+lustre = ">= 5.7.1 and < 6.0.0"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

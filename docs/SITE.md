@@ -77,7 +77,7 @@ went on). Fix DNS, then see the end of this section.
 Then merge the PR that turns the site on, or run the `deploy` workflow again if it already
 failed.
 
-The names that piabrota2 serves (`proof`, `pirsig`, `grid` and the others under `piabrota.art`)
+The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `ww3` and the others under `piabrota.art`)
 each need one `A` record on their host name, with piabrota2's address, before the deploy that
 turns them on.
 
@@ -163,6 +163,7 @@ as well:
 | Hermes dashboard | `/favicon.ico` | serves the eye there |
 | The room | `/favicon.svg` (the same eye) | serves the shared file there |
 | proof.piabrota.art, pirsig.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
+| ww3.piabrota.art | `/favicon.svg`, ww3-gpu's own (`ww3-site/static/`) | nothing: the site keeps its icon |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
@@ -198,6 +199,29 @@ To move a pin: change `proofRev` in `proof-site/default.nix`, or `pirsigRev` in
 `proof-site/pirsig.nix`, and its `hash`. The hash is the NAR hash of the tree at that commit
 (`nix hash path` on `git archive <commit>`). Each name needs its DNS A record at piabrota2's
 address before the first deploy ([DNS on Porkbun](#dns-on-porkbun)).
+
+## The ww3-gpu website at ww3.piabrota.art
+
+The website of h0ffmann/ww3-gpu, which GitHub Pages served at h0ffmann.github.io/ww3-gpu until
+2026-11-11. Its Gleam code lives here, in `ww3-site/` (the front page, the lineage page, the
+pt-BR translations, the CSS), and its facts stay in ww3-gpu: `ww3-site/default.nix` copies
+ww3-gpu at a pinned commit, puts this code in its `site/`, runs the content generator
+(`ww3-site/content`, which reads `docs/ADRs.md`, `docs/WFIPs/`, `notes/`, `kokkos/ports.tsv`,
+`.zenodo.json`, `CITATION.cff`, `RELEASES.md` and `site/data/*.tsv` there), both test suites and
+the four prerenders on node, and fails unless each page holds every section. The output is the
+pages, `style.css` and `favicon.svg`, with no store reference. The commit shown in the footer is
+the pin (`WW3_GPU_REV`), since the source has no `.git`.
+
+`ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
+(`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand). The site changes when the owner merges it.
+A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
+needs its row in `ww3-site/data/translations/pt-BR.tsv`, or the content generator stops the build.
+`just ww3-site` builds it into `./result-ww3-site`; `nix develop .#site` has gleam and node for
+`gleam test` in `ww3-site/` and `ww3-site/content`, run inside a checkout of ww3-gpu's layout.
+
+Not here yet: ww3-gpu's `/adrs/`, `/andamento/`, `/relatorio-gta/` and `/figures/` pages, which
+its `scripts/build_html.sh` and `scripts/archify.sh` build. Until they move, GitHub Pages keeps
+serving them.
 
 ## The ▲ grid at grid.piabrota.art
 

@@ -358,6 +358,8 @@
         site = self.nixosConfigurations.piabrota.config.piabrota.site.root;
         # The skills website (skills-site/), prerendered from Gleam: served at skills.piabrota.art.
         skills-site = self.nixosConfigurations.piabrota.config.piabrota.site.skills;
+        # The website of h0ffmann/ww3-gpu (ww3-site/), prerendered from Gleam: served at ww3.piabrota.art.
+        ww3-site = self.nixosConfigurations.piabrota2.config.piabrota.ww3.root;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"
           (import ./site/data.nix {

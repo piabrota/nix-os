@@ -20,7 +20,7 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
@@ -97,6 +97,14 @@ drawing:
 # build the site (site/, Gleam prerendered by Nix) into ./result-site, as the VPS gets it
 site:
     nix build .#site --out-link result-site --print-build-logs
+
+# build the ww3-gpu website (ww3-site/, Gleam prerendered by Nix) into ./result-ww3-site, as the VPS gets it
+ww3-site:
+    nix build .#ww3-site --out-link result-ww3-site --print-build-logs
+
+# move the ww3-gpu pin (ww3-site/default.nix) to ww3-gpu's main, or to <rev>, and build the site
+ww3-pin rev="":
+    sh scripts/ww3-pin.sh {{rev}}
 
 # build the skills website (skills-site/, Gleam prerendered by Nix) into ./result-skills-site, as the VPS gets it
 skills-site:
