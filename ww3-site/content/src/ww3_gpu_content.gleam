@@ -516,6 +516,47 @@ pub fn tools(text: String, title: String) -> List(Tool) {
   }
 }
 
+/// The cells of the first Markdown table row of `text` whose first cell starts with `first`, or [].
+pub fn row(text: String, first: String) -> List(String) {
+  text
+  |> string.split("\n")
+  |> list.filter(fn(line) { string.starts_with(line, "|") })
+  |> list.map(cells)
+  |> list.find(fn(c) {
+    case c {
+      [name, ..] -> string.starts_with(name, first)
+      [] -> False
+    }
+  })
+  |> fn(found) {
+    case found {
+      Ok(c) -> c
+      Error(Nil) -> []
+    }
+  }
+}
+
+/// The WW3 model version, the text before the first `:` of the "WW3 model version" row of
+/// VERSIONS.md ("7.14"), or "".
+pub fn ww3_version(versions: String) -> String {
+  case row(versions, "WW3 model version") {
+    [_, version, ..] ->
+      case string.split_once(version, ":") {
+        Ok(#(v, _)) -> string.trim(v)
+        Error(Nil) -> version
+      }
+    _ -> ""
+  }
+}
+
+/// The manual's reference, the second cell of the "Title" row of docs/ww3-manual/README.md, or "".
+pub fn ww3_manual(readme: String) -> String {
+  case row(readme, "Title") {
+    [_, title, ..] -> title
+    _ -> ""
+  }
+}
+
 /// The drawings of dark.tsv whose `<slug>.png` is in `files`, each with the Question cell of its
 /// row in docs/archify/README.md (the row whose first cell names `<slug>.json`), or "".
 pub fn figures(
@@ -646,6 +687,7 @@ pub fn render(
   site: #(String, String),
   doi: String,
   preprints: #(String, String),
+  ww3: #(String, String),
   record_title: String,
   release: String,
   rev: String,
@@ -677,6 +719,9 @@ pub fn render(
       "/// The aiXiv and arXiv records of the preprint (.zenodo.json), \"\" when it has none.\n",
       "pub const aixiv = " <> lit(preprints.0) <> "\n",
       "pub const arxiv = " <> lit(preprints.1) <> "\n",
+      "/// The WW3 model version (VERSIONS.md) and the manual's reference (docs/ww3-manual/README.md).\n",
+      "pub const ww3_version = " <> lit(ww3.0) <> "\n",
+      "pub const ww3_manual = " <> lit(ww3.1) <> "\n",
       "pub const record_title = " <> lit(record_title) <> "\n",
       "pub const latest_release = " <> lit(release) <> "\n",
       "pub const revision = " <> lit(rev) <> "\n",
@@ -932,6 +977,10 @@ pub fn main() -> Nil {
       #(yaml(meta, "title"), yaml(meta, "subtitle")),
       yaml(cff, "doi"),
       #(on_host(preprints, "aixiv.online"), on_host(preprints, "arxiv.org")),
+      #(
+        ww3_version(read(root <> "VERSIONS.md")),
+        ww3_manual(read(root <> "docs/ww3-manual/README.md")),
+      ),
       yaml(cff, "title"),
       latest_release(read(root <> "RELEASES.md")),
       revision(),

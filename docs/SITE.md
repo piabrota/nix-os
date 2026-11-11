@@ -220,7 +220,7 @@ at `/llms.txt` as UTF-8 text. The commit and the number of commits shown on the 
 pin's (`WW3_GPU_REV`, `WW3_GPU_COMMITS` from `commits` in `default.nix`), since the source has no `.git`.
 
 The page is plain and about the research only: what it is, the numbers (commits, records, notes,
-figures, port reports and `site/data/port_score.tsv`), the tools of the reference toolchain
+figures, port reports and `site/data/port_score.tsv`), the tools of the reference toolchain, led by the WW3 model version (the "WW3 model version" row of `VERSIONS.md`) and followed by the manual's reference (the "Title" row of `docs/ww3-manual/README.md`, linked at the pin)
 (`VERSIONS.md`), the Archify figures, the port's benchmarks, the decisions and designs, and how to
 cite it. The figures are the PNGs ww3-gpu commits for each drawing of `docs/archify/dark.tsv`,
 copied byte for byte into `archify/` and shown at the size they were drawn at: half the PNG's

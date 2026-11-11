@@ -132,6 +132,15 @@ pub fn the_publishers_test() {
   }
 }
 
+// The tools name the WW3 version and the manual of that version.
+pub fn the_ww3_version_and_manual_test() {
+  let page = html()
+  assert content.ww3_version == "7.14"
+  assert string.contains(page, "<td>WAVEWATCH III (WW3)</td><td>7.14</td>")
+  assert string.contains(content.ww3_manual, "version 7.14")
+  assert string.contains(page, "/docs/ww3-manual/README.md")
+}
+
 pub fn no_script_test() {
   assert !string.contains(html(), "<script")
 }

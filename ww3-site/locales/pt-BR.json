@@ -57,5 +57,7 @@
   "side.languages": "idiomas",
   "banner": "",
   "side.publishers": "publicações",
-  "publishers.pending": "pendente"
+  "publishers.pending": "pendente",
+  "tools.manual": "o manual:",
+  "tools.manual_summary": "o resumo dele no repositório"
 }

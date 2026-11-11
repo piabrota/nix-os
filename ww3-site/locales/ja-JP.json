@@ -57,5 +57,7 @@
   "side.languages": "言語",
   "banner": "このページは機械翻訳です。母語の読者はまだ確認していません。違いがあるときは、英語が正しいです。",
   "side.publishers": "公開先",
-  "publishers.pending": "投稿前"
+  "publishers.pending": "投稿前",
+  "tools.manual": "マニュアル：",
+  "tools.manual_summary": "リポジトリ内の要約"
 }

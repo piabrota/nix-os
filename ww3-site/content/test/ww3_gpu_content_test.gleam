@@ -98,6 +98,19 @@ pub fn on_host_test() {
   assert c.on_host(ids, "arxiv.org") == ""
 }
 
+pub fn ww3_version_test() {
+  let text =
+    "| Component | Version |\n|---|---|\n| WW3 model version | 7.14: the `VERSION` file |\n"
+  assert c.ww3_version(text) == "7.14"
+  assert c.ww3_version("") == ""
+}
+
+pub fn ww3_manual_test() {
+  let text =
+    "| Item | What |\n|---|---|\n| Title | \"User manual\", WW3DG | (v) |\n"
+  assert c.ww3_manual(text) == "\"User manual\", WW3DG"
+}
+
 pub fn lit_test() {
   assert c.lit("a \"quote\" and \\ back\nslash")
     == "\"a \\\"quote\\\" and \\\\ back\\nslash\""
@@ -108,6 +121,7 @@ pub fn empty_list_test() {
     c.render(
       #("t", "s"),
       "d",
+      #("", ""),
       #("", ""),
       "r",
       "",

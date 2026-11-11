@@ -357,9 +357,32 @@ fn tools(l: String) -> Element(msg) {
           html.th([], [html.text(t(l, "tools.version"))]),
         ]),
       ]),
-      html.tbody([], list.map(content.tools, tool_row)),
+      html.tbody([], [ww3_row(), ..list.map(content.tools, tool_row)]),
     ]),
+    ..manual(l)
   ])
+}
+
+/// The model the port translates, from VERSIONS.md, first in the table.
+fn ww3_row() -> Element(msg) {
+  tool_row(content.Tool("WAVEWATCH III (WW3)", content.ww3_version))
+}
+
+/// The WW3 manual of that version, as docs/ww3-manual/README.md cites it, linked to that summary at
+/// the commit the page was built from.
+fn manual(l: String) -> List(Element(msg)) {
+  case content.ww3_manual {
+    "" -> []
+    reference -> [
+      html.p([], [
+        html.text(t(l, "tools.manual") <> " " <> reference <> ". "),
+        a(
+          repo <> "/blob/" <> content.revision <> "/docs/ww3-manual/README.md",
+          t(l, "tools.manual_summary"),
+        ),
+      ]),
+    ]
+  }
 }
 
 /// One Archify figure: the PNG as it is, at the size it was drawn at (its `width` and `height`),
