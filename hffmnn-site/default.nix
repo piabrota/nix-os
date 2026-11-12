@@ -18,9 +18,9 @@
 }:
 let
   # Move rev, hash and the README numbers together.
-  rev = "c6f4f57456b0a05bcf65ca5ccf15396fec76c63d";
+  rev = "d7ae8b254f98c449e5f310eed19ba4d7cac2bc33";
   # `git log --follow --format=%as -- README.md` at rev: how many lines, and the last one.
-  readmeCommits = 311;
+  readmeCommits = 316;
   readmeFirst = "2025-06-25";
   profile =
     if sourceOverride != null then sourceOverride else
@@ -28,7 +28,7 @@ let
       owner = "h0ffmann";
       repo = "h0ffmann";
       inherit rev;
-      hash = "sha256-40/ZrgsfAoj27dIv1XWFyT1iQePJNFzCm+JKt2ZAGG8=";
+      hash = "sha256-7RiH2At6IbkGf9CHuEFEOTSQllIbqJh0b8TSza6zpiM=";
     };
   git = writeShellScriptBin "git" ''
     case "$*" in
