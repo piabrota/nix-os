@@ -28,6 +28,9 @@
     ../../ww3.nix
     # The website of h0ffmann/closed-source on closed.piabrota.art, which must point at this box.
     ../../closed.nix
+    # The website of h0ffmann/h0ffmann (the owner's profile) on hffmnn.piabrota.art, which must point at
+    # this box.
+    ../../hffmnn.nix
     # marola-site (marola-dev/marola-site): the Haskell server behind nginx (docs/MAROLA-SITE.md).
     ../../marola-site.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
@@ -89,6 +92,8 @@
   piabrota.ww3.enable = true;
   # The website of h0ffmann/closed-source at a pinned commit (closed-site/), at closed.piabrota.art.
   piabrota.closedSource.enable = true;
+  # The website of h0ffmann/h0ffmann at a pinned commit (hffmnn-site/), at hffmnn.piabrota.art.
+  piabrota.hffmnn.enable = true;
   # marola-site at a pinned commit (marola-site/default.nix). Step 1 of docs/MAROLA-SITE.md: on
   # marola.piabrota.art, whose A record must point at this box first, while marola.dev stays on the
   # Cloudflare Worker. Step 2 sets domain = "marola.dev" and redirects = [ "www.marola.dev"
