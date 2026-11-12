@@ -33,6 +33,12 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
   "services_running": 58,
   "inventory": { "agents": 9, "apps": 0, "mcp": 2, "packages": 161, "plugins": 20, "rigs": 4,
                  "sites": 7, "timers": 14, "skills": 60, "skills_bundled": 44 },
+  "system": { "nixos": "26.05.20261101.02c087f", "generation": 184 },
+  "domains": { "ts": 1793925100, "up": 2, "total": 3,
+               "list": [ { "name": "metrics.piabrota.art", "code": 200, "up": true },
+                         { "name": "hermes.piabrota.art", "code": 401, "up": true },
+                         { "name": "lofi.piabrota.art", "code": 0, "up": false } ] },
+  "repo": { "name": "piabrota/nix-os", "commits": 230, "ts": 1793924800 },
   "top_mem": [ { "pid": 826708, "name": "hermes", "user": "hermes", "rss": 431386624, "cpu_pct": 0.3 } ],
   "top_cpu": [ { "pid": 826708, "name": "hermes", "user": "hermes", "rss": 431386624, "cpu_pct": 0.3 } ],
   "units": [ { "unit": "hermes-agent.service", "mem": 432435200, "max": 8589934592, "peak": 448835584 } ]
@@ -70,6 +76,16 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
 | `procs_total` | Processes read this run. It counts kernel threads. |
 | `services_running` | Services that have a cgroup under `system.slice`, that is, that run now. |
 | `inventory` | What the deployed configuration declares, counted by Nix at build time (docs/METRICS.md, "The inventory"): an object of whole numbers, at most 24 keys. Absent when `METRICS_INVENTORY` is not set; `{}` when its file is empty or missing. The collector keeps a line only when its key is lowercase letters and `_` (24 characters at most) and its count is a whole number of 9 digits at most. |
+| `system` | Always an object; each key is absent when it cannot be read. |
+| `system.nixos` | The first line of `/run/current-system/nixos-version` (`NIXOS_VERSION_FILE`), 64 characters at most of letters, digits and `._+-`. |
+| `system.generation` | The number in `system-<n>-link`, the target of `/nix/var/nix/profiles/system` (`SYSTEM_PROFILE`): one for each deploy that changed the system. |
+| `domains` | What `metrics/probe.sh` found, from `METRICS_PROBE`. Absent without a probe file, or when it has no `ts` line. |
+| `domains.ts` | Unix seconds when the probe ran. The page greys the sites when it is more than 300 s older than `ts`. |
+| `domains.list` | The sites of the host in the order Nix wrote them, at most 24: `name` (lowercase letters, digits, `.` and `-`, 64 characters at most), `code` (the HTTP code, 0 when nothing answered) and `up` (a code from 100 to 499). |
+| `domains.up`, `domains.total` | How many of `list` are up, and how many there are. |
+| `repo` | The commits of the repository, from the probe file. Absent until GitHub has answered once. |
+| `repo.name` | `METRICS_REPO`, absent when it is not set. |
+| `repo.commits`, `repo.ts` | The commit count of the branch, and Unix seconds when GitHub gave it. |
 | `top_mem` | The 10 processes with the largest resident memory, biggest first; a tie goes to the lower pid. |
 | `top_cpu` | The 10 processes with the largest `cpu_pct`, same order rule. |
 | `top_*[].pid` | Process id. |

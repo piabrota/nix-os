@@ -16,7 +16,7 @@ cp "$here/../index.html" "$dir/index.html"
 refresh() {
   now=$(date +%s)
   for f in "$src"/*.json; do
-    jq -c --argjson now "$now" '.ts += $now' "$f" > "$dir/data/.tmp"
+    jq -c --argjson now "$now" '.ts += $now | if (.domains.ts | type) == "number" then .domains.ts += $now else . end' "$f" > "$dir/data/.tmp"
     mv "$dir/data/.tmp" "$dir/data/$(basename "$f")"
   done
 }

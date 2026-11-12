@@ -30,6 +30,8 @@ It shows, for each host:
   partitions).
 - Pressure stall (PSI) of CPU, memory and IO: the share of the last 10 s that tasks waited
   (`some` / `full`).
+- At the top: the sites that answer (green) and those that do not (red), the commits, the deploys,
+  the apps installed and the NixOS version ("The headline", below).
 - What this generation runs: the counts of "The inventory", below.
 
 How to read the numbers:
@@ -41,6 +43,32 @@ How to read the numbers:
 
 It does not show: history beyond the samples in the tab (samples come per new file, every 10 s, so
 about 10 minutes), disk usage of filesystems other than `/`, network or IO per process or per interface, alerts, command lines.
+
+## The headline: sites, commits, deploys, apps, NixOS
+
+The top of each card has five numbers and a row of sites:
+
+| Label | What it is | Where it comes from |
+|---|---|---|
+| Domains up | sites that answered, of the host's sites; green when all answer, red when one does not | `metrics/probe.sh`, every 60 s |
+| Commits | commits on `main` of `piabrota/nix-os` | the GitHub API, at most once in 10 minutes |
+| Deploys | the generation of `/nix/var/nix/profiles/system`: one for each deploy that changed the system | the collector, from the link `system-<n>-link` |
+| Apps installed | the packages of `environment.systemPackages` (the `packages` count of the inventory) | Nix, at build time |
+| NixOS | the release, for example 26.05; the full version is in the tooltip | `/run/current-system/nixos-version` |
+
+Under them, each site of the host is a chip: green when it answers, red with the HTTP code (or
+"no answer") when it does not. A site is up when it gives any answer below HTTP 500: a 301 or a
+401 (a login) is an answer. The probe does not follow a redirect. When the probe's data is more than
+5 minutes older than the host's, the chips are grey and the count is not coloured.
+
+The sites are the same names that the inventory counts as `sites`: every nginx virtual host but
+`_` and the names that only redirect. Nix writes the list (`https://` when the host has TLS). The
+probe (`metrics-probe.timer`, oneshot `metrics-probe.service`) asks each name with one `curl` of at
+most 6 s, one after the other, and writes `/run/metrics-state/<name>.probe` (not served). The
+collector copies it into `domains` and `repo` (metrics/SCHEMA.md). The probe reads the commit count
+from the `Link` header of `GET /repos/piabrota/nix-os/commits?per_page=1`: the number of the last
+page is the count. Without a token GitHub allows 60 requests an hour from one address; the probe
+uses 6. When GitHub does not answer, the last count stays.
 
 ## The inventory
 
@@ -79,7 +107,8 @@ copies them into `inventory` (metrics/SCHEMA.md).
   `/run/metrics-state/<name>.state` (not served).
 - The names are `piabrota` and `piabrota2` (option `piabrota.metrics.name`). Never the hostname:
   piabrota2's hostname is still `nixos`.
-- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df` and the inventory file in the store.
+- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df`, the inventory file in the store, the
+  probe's file, the link of the system profile and `/run/current-system/nixos-version`.
   Never a command line.
 - The JSON file is under 8 KB (schema v1).
 
@@ -183,10 +212,12 @@ Measured on piabrota2, with 127 processes:
 
 ## Hardening
 
-Both units run as `metrics` with:
+The units (collector, probe, pull) run as `metrics` with:
 
 - `ProtectSystem=strict`, with `ReadWritePaths` of the two `/run` folders only.
 - `MemoryMax=64M`, `NoNewPrivileges`, an empty capability set and a syscall filter.
+- The probe is the one unit of a host that opens a connection (the pull is the other, on
+  piabrota2): its sandbox is the same, with `AF_INET` and `AF_INET6`.
 - `PrivateNetwork` on the collector. So it reads the network of PID 1 (`/proc/1/net/dev` and
   `sockstat`), readable by any user, not its own empty `/proc/net`.
 - `LogLevelMax=warning`, so a run does not write journal lines.
@@ -203,12 +234,14 @@ All are off by default. All live under `piabrota.metrics`:
 | `name`, `label` | name of the data file and label on the page |
 | `collector.enable` | turns on the collector and the timer |
 | `collector.interval` | seconds between runs (2 to 300, default 10) |
+| `probe.enable`, `probe.interval` | the timer that asks each site for an answer (10 to 3600 s, default 60); needs the collector |
+| `probe.repo`, `probe.branch` | the repository and branch whose commits are counted (default `piabrota/nix-os`, `main`); an empty repo: no count |
 | `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the optional login file (`null`, the default, means the page is public) |
 | `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
 | `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
 | `inventory.bundledSkillDirs` | folders of skills that ship inside an agent, counted as `skills_bundled`; `hermes.nix` adds Hermes's own |
 
-Today: piabrota2 turns on collector, web and pull. piabrota turns on collector and publish.
+Today: piabrota2 turns on collector, probe, web and pull. piabrota turns on collector, probe and publish.
 
 ## Change the cadence
 

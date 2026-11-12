@@ -34,6 +34,7 @@ printf 'root:x:0:0::/root:/bin/sh\nalice:x:1000:100::/home/alice:/bin/sh\n' > "$
 
 run() { # runs the collector as the box does, on the fixture
   METRICS_NAME=piabrota2 METRICS_LABEL='piabrota2 (KVM 4)' OUT_DIR="$out" STATE_DIR="$st" METRICS_INVENTORY="${inv:-}" \
+    METRICS_PROBE="${probef:-}" METRICS_REPO="${repo:-}" SYSTEM_PROFILE="${profile:-$work/none}" NIXOS_VERSION_FILE="${nver:-$work/none}" \
     PROC_ROOT="$proc" CGROUP_ROOT="$cg" PASSWD_FILE="$work/passwd" sh "${1:-$collect}" 2>"$work/err"
 }
 
@@ -181,6 +182,84 @@ inv="$work/nope"
 ok "run with an inventory file that is missing" run
 check "a missing inventory file is an empty object" "$(val .inventory)" '{}'
 inv=""
+
+echo "# the system, the probe file and the repository"
+check "an empty system without its files" "$(val .system)" '{}'
+check "no domains and no repo without a probe file" "$(val 'has("domains") or has("repo")')" false
+ln -s system-42-link "$work/system"; printf '26.05.20261101.abcdef0' > "$work/nixos-version"
+profile="$work/system" nver="$work/nixos-version" probef="$work/probe" repo=piabrota/nix-os
+# Lines the collector must drop: a capital and a quote in a name, a code of 4 digits, a count
+# that is not a number.
+printf 'ts 1700000000\ndomain www.piabrota.art 200\ndomain metrics.piabrota.art 401\ndomain down.piabrota.art 000\ndomain bad.piabrota.art 502\ndomain B"x 200\ndomain long 2000\nrepo 230 1699999000\nrepo x 1\n' > "$probef"
+ok "run with a probe file" run
+ok "the probe run is valid JSON" jq -e . "$out/piabrota2.json"
+check "the version and the generation" "$(val .system)" '{"nixos":"26.05.20261101.abcdef0","generation":42}'
+check "an answer below 500 is up" "$(val '[.domains.list[] | [.name, .code, .up]]')" \
+  '[["www.piabrota.art",200,true],["metrics.piabrota.art",401,true],["down.piabrota.art",0,false],["bad.piabrota.art",502,false]]'
+check "the counts of the sites" "$(val '[.domains.ts, .domains.up, .domains.total]')" '[1700000000,2,4]'
+check "the repository" "$(val .repo)" '{"name":"piabrota/nix-os","commits":230,"ts":1699999000}'
+printf 'not a "version"' > "$nver"; ln -sf system-x-link "$profile"
+i=0; : > "$probef"; while [ $i -lt 30 ]; do echo "domain d$i.example 200" >> "$probef"; i=$((i + 1)); done
+echo "ts 1700000000" >> "$probef"
+ok "run with bad system files and many sites" run
+check "a bad version and a bad generation are left out" "$(val .system)" '{}'
+check "24 sites at most" "$(val '.domains.total')" 24
+check "no repo without its line" "$(val 'has("repo")')" false
+probef="$work/nope"
+ok "run with a probe file that is missing" run
+check "a missing probe file gives no domains" "$(val 'has("domains")')" false
+profile="" nver="" probef="" repo=""
+
+echo "# the probe"
+probe="$here/../probe.sh" pst="$work/pst"
+mkdir -p "$work/fake"
+# A curl that answers by the host in the address; the GitHub address gets FAKE_LINK as its Link.
+cat > "$work/fake/curl" <<'FAKE'
+#!/bin/sh
+for a; do url=$a; done
+echo "$url" >> "$FAKE_LOG"
+case $url in
+  */commits\?*) [ -n "$FAKE_LINK" ] || exit 7; printf 'HTTP/2 200\r\nlink: %s\r\n\r\n' "$FAKE_LINK" ;;
+  https://up.example/) printf 200 ;;
+  http://auth.example/) printf 401 ;;
+  *) printf 000; exit 7 ;;
+esac
+FAKE
+chmod +x "$work/fake/curl"
+printf 'up.example https://up.example/\nauth.example http://auth.example/\ndown.example https://down.example/\nBad.example https://x/\nno-url.example ftp://x/\n' > "$work/sites"
+probe_run() {
+  PATH="$work/fake:$PATH" FAKE_LOG="$work/curl.log" METRICS_NAME=piabrota2 STATE_DIR="$pst" PROBE_SITES="$work/sites" \
+    PROBE_REPO=piabrota/nix-os GITHUB_API=https://api.test PROBE_REPO_EVERY="${every:-600}" sh "$probe" 2>"$work/err"
+}
+pline() { grep "^$1 " "$pst/piabrota2.probe" | cut -d' ' -f2- | tr '\n' '|'; }
+: > "$work/curl.log"
+# shellcheck disable=SC2089,SC2090 # the quotes are the header's, read as text by the fake curl
+FAKE_LINK='<https://api.test/repositories/1/commits?per_page=1&sha=main&page=2>; rel="next", <https://api.test/repositories/1/commits?per_page=1&sha=main&page=230>; rel="last"'
+# shellcheck disable=SC2090
+export FAKE_LINK
+ok "the probe runs" probe_run
+check "a code for each good site, 000 when nothing answers" "$(pline domain)" 'up.example 200|auth.example 401|down.example 000|'
+check "the count is the last page" "$(pline repo | cut -d' ' -f1)" 230
+check "GitHub is asked for one commit a page" "$(grep -c 'api.test/repos/piabrota/nix-os/commits?per_page=1&sha=main$' "$work/curl.log")" 1
+FAKE_LINK='<https://api.test/x?page=999>; rel="last"'
+ok "a second run" probe_run
+check "GitHub is not asked again within PROBE_REPO_EVERY" "$(grep -c api.test "$work/curl.log")" 1
+check "and the count stays" "$(pline repo | cut -d' ' -f1)" 230
+FAKE_LINK=""
+every=0 probe_run
+check "a GitHub that does not answer keeps the old count" "$(pline repo | cut -d' ' -f1)" 230
+check "and the time it was asked" "$(pline asked | grep -c .)" 1
+FAKE_LINK='<https://api.test/x?page=999>; rel="last"'
+every=0 probe_run
+check "a new count when it answers" "$(pline repo | cut -d' ' -f1)" 999
+check "nothing on stderr" "$(cat "$work/err")" ""
+check "the probe file is not in the served folder" "$(find "$out" -name '*probe*' | grep -c .)" 0
+probef="$pst/piabrota2.probe" repo=piabrota/nix-os
+ok "the collector reads the probe file" run
+check "the collector shows what the probe found" "$(val '[.domains.up, .domains.total, .repo.commits]')" '[2,3,999]'
+probef="" repo=""
+METRICS_NAME='../x' STATE_DIR="$pst" sh "$probe" 2>/dev/null
+check "bad METRICS_NAME exits 2 in the probe" "$?" 2
 
 echo "# the caps"
 i=1000

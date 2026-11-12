@@ -23,6 +23,8 @@
     name = "piabrota";
     label = "piabrota (KVM 1)";
     collector.enable = true;
+    # Up or down for each site of this host, and the commit count of piabrota/nix-os.
+    probe.enable = true;
     publish = {
       enable = true;
       allowFrom = [ "187.41.117.18" ];
