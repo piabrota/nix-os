@@ -357,7 +357,7 @@ in
       max_iterations = 50;
       max_spawn_depth = 1;
     };
-    # The third directory holds this repository's own skills (hermes/skills/): hermes-omp, kvm4-health.
+    # The third directory holds this repository's own skills (hermes/skills/): hermes-omp, kvm4-health, site-pins.
     # Another module's directories (Paperclip's skill, paperclip.nix) join here: the module merges
     # settings with recursiveUpdate, which keeps only one definition of a list.
     settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ]

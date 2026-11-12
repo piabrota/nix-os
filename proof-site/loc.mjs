@@ -73,7 +73,9 @@ export function count(root) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [root] = process.argv.slice(2);
   if (!root) throw new Error('usage: loc.mjs <source> > loc.json');
-  const c = count(root);
-  for (const [id, v] of Object.entries(c)) if (v.files === 0) throw new Error(`loc.mjs: no ${LANGUAGES[id].label} file under ${root}`);
+  // A language with no file is left out, so the hero does not show it: h0ffmann/proof removed
+  // z3-scala/ in its #60. No file of any language means a wrong root.
+  const c = Object.fromEntries(Object.entries(count(root)).filter(([, v]) => v.files > 0));
+  if (Object.keys(c).length === 0) throw new Error(`loc.mjs: no Lean 4, Agda or Z3 file under ${root}`);
   process.stdout.write(JSON.stringify(c));
 }

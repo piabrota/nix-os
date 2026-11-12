@@ -2,7 +2,7 @@
 # Moves the ww3-gpu pin (ww3-site/default.nix) to a commit of h0ffmann/ww3-gpu: rev, the source
 # hash and the number of commits up to rev (the page shows it; the source has no .git), then
 # builds the site with this flake's nixpkgs, so a pin that does not build never reaches a pull
-# request.
+# request. PIN_BUILD=0 moves the pin and builds nothing (scripts/site-pins.sh passes it).
 #
 #   sh scripts/ww3-pin.sh             (or: just ww3-pin)   the head of ww3-gpu's main
 #   sh scripts/ww3-pin.sh <sha>       that commit
@@ -59,9 +59,11 @@ fi
 cp "$work/default.nix" "$file"
 
 # The build, as ww3.nix calls it: the content generator, the tests, the four pages.
-$nix build --impure -o result-ww3-site --print-build-logs --expr \
-  "let f = builtins.getFlake (toString ./.); pkgs = import f.inputs.nixpkgs { system = builtins.currentSystem; }; in pkgs.callPackage ./ww3-site { }"
-test -f result-ww3-site/index.html
+if [ "${PIN_BUILD:-1}" = 1 ]; then
+  $nix build --impure -o result-ww3-site --print-build-logs --expr \
+    "let f = builtins.getFlake (toString ./.); pkgs = import f.inputs.nixpkgs { system = builtins.currentSystem; }; in pkgs.callPackage ./ww3-site { }"
+  test -f result-ww3-site/index.html
+fi
 
 echo "old=$old"
 echo "new=$new"
