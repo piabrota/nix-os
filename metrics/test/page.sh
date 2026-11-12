@@ -39,7 +39,7 @@ if command -v python3 >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
   cp "$page" "$dir/index.html"
   now=$(date +%s)
   for f in "$here"/fixtures/healthy/data/*.json; do
-    jq -c --argjson now "$now" '.ts += $now' "$f" > "$dir/data/$(basename "$f")"
+    jq -c --argjson now "$now" '.ts += $now | if (.domains.ts | type) == "number" then .domains.ts += $now else . end' "$f" > "$dir/data/$(basename "$f")"
   done
   port=$(( $$ % 20000 + 20000 ))
   python3 -m http.server "$port" --bind 127.0.0.1 --directory "$dir" >/dev/null 2>&1 &

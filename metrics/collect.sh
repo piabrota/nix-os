@@ -10,6 +10,12 @@
 #   STATE_DIR         where the previous sample is kept (default /run/metrics-state)
 #   METRICS_INVENTORY a file of "<key> <count>" lines that Nix wrote: what this generation runs
 #                     (metrics.nix). Optional; without it the file has no "inventory".
+#   METRICS_PROBE     the file metrics/probe.sh writes: the sites' answers and the commit count.
+#                     Optional; without it the file has no "domains" and no "repo".
+#   METRICS_REPO      owner/name of the repository the commits are counted in (the "repo" name)
+#   SYSTEM_PROFILE    the system profile; its generation is the number of deploys (default
+#                     /nix/var/nix/profiles/system)
+#   NIXOS_VERSION_FILE default /run/current-system/nixos-version
 #   PROC_ROOT, CGROUP_ROOT, PASSWD_FILE, DF_PATH: the sources; the tests point them at a fixture.
 set -eu
 umask 022
@@ -26,6 +32,20 @@ cgroup=${CGROUP_ROOT:-/sys/fs/cgroup}
 passwd=${PASSWD_FILE:-/etc/passwd}
 df_path=${DF_PATH:-/}
 inventory=${METRICS_INVENTORY:-}
+probe=${METRICS_PROBE:-}
+repo=${METRICS_REPO:-}
+case $repo in *[!A-Za-z0-9._/-]*) repo="" ;; esac
+
+# The generation of the system profile: system-<n>-link. deploy-rs makes a new one on each deploy
+# that changes the system. The version file has no newline, so read fails but sets the variable.
+gen=$(readlink "${SYSTEM_PROFILE:-/nix/var/nix/profiles/system}" 2>/dev/null) || gen=""
+gen=${gen##*/}; gen=${gen#system-}; gen=${gen%-link}
+case $gen in '' | *[!0-9]*) gen="" ;; esac
+[ "${#gen}" -le 9 ] || gen=""
+nixos=""
+{ IFS= read -r nixos < "${NIXOS_VERSION_FILE:-/run/current-system/nixos-version}"; } 2>/dev/null || true
+case $nixos in *[!A-Za-z0-9._+-]*) nixos="" ;; esac
+[ "${#nixos}" -le 64 ] || nixos=""
 
 hz=$(getconf CLK_TCK 2>/dev/null || echo 100)
 page=$(getconf PAGESIZE 2>/dev/null || echo 4096)
@@ -47,7 +67,8 @@ done
 
 awk -v NAME="$name" -v LABEL="$label" -v INTERVAL="$interval" -v TS="$ts" \
   -v PROC="$proc" -v PASSWD="$passwd" -v DFPATH="$df_path" -v HZ="$hz" -v PAGE="$page" \
-  -v STATE="$state" -v STATE_TMP="$tmp_state" -v INVENTORY="$inventory" '
+  -v STATE="$state" -v STATE_TMP="$tmp_state" -v INVENTORY="$inventory" \
+  -v PROBE="$probe" -v REPO="$repo" -v GEN="$gen" -v NIXOS="$nixos" '
 # The whole file as one string, lines joined by a newline; RDN is the number of lines.
 # A file that is gone or unreadable gives RDN 0: getline returns -1 and the loop ends.
 function rd(f,   l, s) {
@@ -266,6 +287,22 @@ BEGIN {
     }
   }
 
+  # The file of the probe: its time, the HTTP code of each site (up is an answer below 500), the commits.
+  pts = ""; dom = ""; nd = 0; nup = 0; rc = ""
+  if (PROBE != "") {
+    nl = split(rd(PROBE), L, "\n")
+    for (i = 1; i <= nl; i++) {
+      nf = split(L[i], f, " ")
+      if (f[1] == "ts" && nf == 2 && f[2] ~ /^[0-9]+$/) pts = f[2]
+      else if (f[1] == "domain" && nf == 3 && nd < 24 && f[2] ~ /^[a-z0-9.-]+$/ && length(f[2]) <= 64 && f[3] ~ /^[0-9][0-9][0-9]$/) {
+        up = (f[3] + 0 >= 100 && f[3] + 0 < 500); nd++; nup += up
+        dom = dom (nd > 1 ? "," : "") sprintf("{\"name\":\"%s\",\"code\":%d,\"up\":%s}", f[2], f[3], (up ? "true" : "false"))
+      } else if (f[1] == "repo" && nf == 3 && f[2] ~ /^[0-9]+$/ && length(f[2]) <= 9 && f[3] ~ /^[0-9]+$/) { rc = f[2]; rts = f[3] }
+    }
+  }
+  sys = (NIXOS != "" ? "\"nixos\":\"" esc(NIXOS) "\"" : "")
+  if (GEN != "") sys = sys (sys == "" ? "" : ",") "\"generation\":" (GEN + 0)
+
   top_mem = plist(pmem, np)
   top_cpu = plist(pcpu, np)
 
@@ -283,6 +320,9 @@ BEGIN {
   if (psi != "") printf "\"pressure\":{%s},", psi
   printf "\"procs_total\":%d,\"services_running\":%d,", np, nsvc
   if (INVENTORY != "") printf "\"inventory\":{%s},", inv_json
+  printf "\"system\":{%s},", sys
+  if (pts != "") printf "\"domains\":{\"ts\":%.0f,\"up\":%d,\"total\":%d,\"list\":[%s]},", pts, nup, nd, dom
+  if (rc != "") printf "\"repo\":{%s\"commits\":%d,\"ts\":%.0f},", (REPO != "" ? "\"name\":\"" esc(REPO) "\"," : ""), rc, rts
   printf "\"top_mem\":[%s],\"top_cpu\":[%s],\"units\":[%s]}\n", top_mem, top_cpu, unit_json
 }
 ' "$@" > "$tmp_out"

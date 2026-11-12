@@ -11,7 +11,7 @@
 let
   inherit (lib) mkEnableOption mkIf mkMerge mkOption types;
   cfg = config.piabrota.metrics;
-  anyOn = cfg.collector.enable || cfg.web.enable || cfg.publish.enable || cfg.pull.enable;
+  anyOn = cfg.collector.enable || cfg.probe.enable || cfg.web.enable || cfg.publish.enable || cfg.pull.enable;
   outDir = "/run/metrics-web";
   stateDir = "/run/metrics-state";
 
@@ -22,17 +22,29 @@ let
   '';
   collect = script "metrics-collect" ./metrics/collect.sh;
   pull = script "metrics-pull" ./metrics/pull.sh;
+  probe = script "metrics-probe" ./metrics/probe.sh;
   # What this generation runs, counted once at build time (docs/METRICS.md, "The inventory"). The
   # names come from the evaluated config; a module that this host does not import counts 0. The
   # skills are the SKILL.md files in Hermes's skill folders and plugins, so they need a build.
   hermes = config.services.hermes-agent or { };
   hermesOn = hermes.enable or false;
   rigSpecs = config.environment.etc."openrig/specs".source or null;
+  # The sites of this host: every nginx name that is not the catch-all and not a redirect. The
+  # inventory counts them, and the probe asks each for an answer.
+  sitesOn = lib.filterAttrs (name: vhost: name != "_" && vhost.globalRedirect == null)
+    (lib.optionalAttrs config.services.nginx.enable config.services.nginx.virtualHosts);
+  siteList = pkgs.writeText "metrics-sites" (lib.concatStrings (lib.mapAttrsToList
+    (name: vhost:
+      let
+        host = if vhost.serverName != null then vhost.serverName else name;
+        scheme = if vhost.forceSSL || vhost.onlySSL || vhost.addSSL then "https" else "http";
+      in
+      "${host} ${scheme}://${host}/\n")
+    sitesOn));
   dirsIn = path: lib.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir path));
   counts = {
     apps = lib.length (lib.attrNames config.piabrota.loco.apps);
-    sites = lib.length (lib.attrNames (lib.filterAttrs (name: vhost: name != "_" && vhost.globalRedirect == null)
-      (lib.optionalAttrs config.services.nginx.enable config.services.nginx.virtualHosts)));
+    sites = lib.length (lib.attrNames sitesOn);
     rigs = if (config.piabrota.openrig.enable or false) && rigSpecs != null then lib.length (dirsIn (rigSpecs + "/rigs")) else 0;
     agents =
       if (config.piabrota.openrig.enable or false) && rigSpecs != null
@@ -317,11 +329,11 @@ let
     LogLevelMax = "warning";
   };
 
-  timer = what: {
+  timer = what: interval: {
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnActiveSec = "2s";
-      OnUnitActiveSec = "${toString cfg.collector.interval}s";
+      OnUnitActiveSec = "${toString interval}s";
       AccuracySec = "1s";
       Unit = "${what}.service";
     };
@@ -361,6 +373,27 @@ in
         type = types.ints.between 2 300;
         default = 10;
         description = "Seconds between two runs. The page marks a host offline after 30 s without a new file.";
+      };
+    };
+
+    probe = {
+      enable = mkEnableOption ''
+        the probe timer: metrics/probe.sh asks each site of this host for an answer (up or down on the
+        page), and GitHub for the commit count of `probe.repo`'';
+      interval = mkOption {
+        type = types.ints.between 10 3600;
+        default = 60;
+        description = "Seconds between two runs. GitHub is asked at most once in 10 minutes.";
+      };
+      repo = mkOption {
+        type = types.strMatching "([A-Za-z0-9._-]+/[A-Za-z0-9._-]+)?";
+        default = "piabrota/nix-os";
+        description = "The public repository whose commits the page counts. Empty: no count.";
+      };
+      branch = mkOption {
+        type = types.strMatching "[A-Za-z0-9._/-]+";
+        default = "main";
+        description = "The branch whose commits are counted.";
       };
     };
 
@@ -440,6 +473,9 @@ in
           OUT_DIR = outDir;
           STATE_DIR = stateDir;
           METRICS_INVENTORY = "${inventory}";
+        } // lib.optionalAttrs cfg.probe.enable {
+          METRICS_PROBE = "${stateDir}/${cfg.name}.probe";
+          METRICS_REPO = cfg.probe.repo;
         };
         serviceConfig = sandbox // {
           ExecStart = "${collect}/bin/metrics-collect";
@@ -448,7 +484,32 @@ in
           RestrictAddressFamilies = "AF_UNIX";
         };
       };
-      systemd.timers.metrics-collect = timer "metrics-collect";
+      systemd.timers.metrics-collect = timer "metrics-collect" cfg.collector.interval;
+    })
+
+    (mkIf cfg.probe.enable {
+      assertions = [{
+        assertion = cfg.collector.enable;
+        message = "piabrota.metrics.probe writes a file for the collector: turn piabrota.metrics.collector on.";
+      }];
+
+      # A short curl to each site, one after the other, and one to GitHub in 10 minutes.
+      systemd.services.metrics-probe = {
+        description = "Ask this host's sites for an answer";
+        path = [ pkgs.coreutils pkgs.curl pkgs.gnugrep pkgs.gnused ];
+        environment = {
+          METRICS_NAME = cfg.name;
+          PROBE_SITES = "${siteList}";
+          PROBE_REPO = cfg.probe.repo;
+          PROBE_BRANCH = cfg.probe.branch;
+          STATE_DIR = stateDir;
+        };
+        serviceConfig = sandbox // {
+          ExecStart = "${probe}/bin/metrics-probe";
+          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+        };
+      };
+      systemd.timers.metrics-probe = timer "metrics-probe" cfg.probe.interval;
     })
 
     (mkIf cfg.pull.enable {
@@ -470,7 +531,7 @@ in
           RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
         };
       };
-      systemd.timers.metrics-pull = timer "metrics-pull";
+      systemd.timers.metrics-pull = timer "metrics-pull" cfg.collector.interval;
     })
 
     (mkIf cfg.publish.enable {
