@@ -5,12 +5,12 @@
 # `git archive <rev>`).
 { callPackage, fetchFromGitHub }:
 let
-  rev = "f3c4f80a6371be83703ebcacbf2de584b5a35d97";
+  rev = "458c8cf08f2ae36a29258d2e13ec6239faf8a58d";
   src = fetchFromGitHub {
     owner = "marola-dev";
     repo = "marola-site";
     inherit rev;
-    hash = "sha256-cRe5XJW/sV4lP7WFA7/7/oOdFLEAXJgl4d03kqg7OIA=";
+    hash = "sha256-V+fMbyDO6Yw9IuuRxZqUt4THRKCrmSKs9hbdJ89IX4g=";
   };
 in
 callPackage "${src}/nix/package.nix" { }
