@@ -12,6 +12,7 @@
     { id = "pirsig"; label = "pirsig"; url = "https://pirsig.piabrota.art/"; host = "pirsig.piabrota.art"; line = "The video notes and the figures of piabrota/pirsig, the second brain."; access = "public"; }
     { id = "wave"; label = "wave"; url = "https://wave.piabrota.art/"; host = "wave.piabrota.art"; line = "The WW3 GPU Lab: WAVEWATCH III on Kokkos and CUDA, its decisions, designs and lineage."; access = "public"; }
     { id = "closed"; label = "closed"; url = "https://closed.piabrota.art/"; host = "closed.piabrota.art"; line = "The god that failed: a book on why closed source failed as a protection, from h0ffmann/closed-source."; access = "public"; }
+    { id = "me"; label = "me"; url = "https://me.piabrota.art/"; host = "me.piabrota.art"; line = "Matheus Hoffmann: what he thinks, writes, reads and plays, from h0ffmann/h0ffmann."; access = "public"; }
     { id = "room"; label = "room"; url = "https://room.piabrota.art/"; host = "room.piabrota.art"; line = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; access = "public"; }
     { id = "grid"; label = "grid"; url = "https://grid.piabrota.art/"; host = "grid.piabrota.art"; line = "The room on its own name, opened on the grid: the Brazilian coast on triangles."; access = "public"; }
     { id = "metrics"; label = "metrics"; url = "https://metrics.piabrota.art/"; host = "metrics.piabrota.art"; line = "Processes, memory and vCPU of both hosts, read every 10 seconds."; access = "public"; }

@@ -28,6 +28,9 @@
     ../../ww3.nix
     # The website of h0ffmann/closed-source on closed.piabrota.art, which must point at this box.
     ../../closed.nix
+    # The website of h0ffmann/h0ffmann (the owner's profile) on me.piabrota.art, which must point at
+    # this box.
+    ../../me.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
     ../../tyler-durden-bot.nix
@@ -87,6 +90,8 @@
   piabrota.ww3.enable = true;
   # The website of h0ffmann/closed-source at a pinned commit (closed-site/), at closed.piabrota.art.
   piabrota.closedSource.enable = true;
+  # The website of h0ffmann/h0ffmann at a pinned commit (me-site/), at me.piabrota.art.
+  piabrota.me.enable = true;
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
   piabrota.tylerDurden.enable = false;
