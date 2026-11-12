@@ -273,19 +273,27 @@ module from the paper, then the Gleam tests, the esbuild bundle and the prerende
 output is the page, `app.js`, `style.css`, the drawings, the icon and the three PDFs, with no store
 reference. nginx (`closed.nix`) serves it as static files on piabrota2.
 
-Three things differ from the Pages build, because the sandbox has no network and the source has no
+The three PDFs are built too, from the same commit, as its `just build` does: pandoc with
+pandoc-crossref and citeproc, then XeLaTeX twice, with the TeX set of picasso's paper lab plus
+`babel-portuges`. The two title-page logos are fetched by the hashes in the paper's `metadata.md`
+and converted with `rsvg-convert`. A page and a paper from two commits would disagree: the paper
+of 6e5ab43 no longer has the chemo-rx section that the v0.3.4 release PDFs still carry.
+
+Two things differ from the Pages build, because the sandbox has no network and the source has no
 `.git`:
 
-- The three PDFs are the release assets of the tag at the pinned commit (`release` in
-  `default.nix`, each with its hash), not built again with XeLaTeX.
 - The version DOIs come from `closed-site/zenodo.json`, Zenodo's reply cut to the fields the
-  generator reads, not from Zenodo at build time. Fetch it again when the pin passes a release.
+  generator reads, not from Zenodo at build time. Fetch it again when closed-source makes a release.
 - The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
   stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
 
+At 6e5ab43, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
+each PDF has the same text and page count (the bytes differ by the build date).
+
 To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
-on `git archive <rev>`), and `release` with the PDF hashes when a new tag has them. `just
-closed-site` builds it into `./result-closed-site`.
+on `git archive <rev>`), and the logos when `metadata.md` changes them. `just closed-site` builds it
+into `./result-closed-site`. The site does not follow closed-source's `main` by itself: a new
+commit there shows here only after a PR here moves the pin.
 
 The first version of this vhost (#217) passed each request to Pages, but piabrota2 timed out on
 every connection to Pages (the 502 that `certs.yml` saw on 2026-11-11), so the box now keeps its
