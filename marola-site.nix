@@ -55,6 +55,55 @@ let
       done
     '';
   };
+  bcfg = cfg.boards.build;
+  # The boards as marola-site's site.yml builds them, here instead of on the self-hosted runner:
+  # the app image marola-site pins, `--site` over its areas.json, no LLM. piabrota2 is in Brazil
+  # (LACNIC: BR), and INEA and INEMA answer only Brazilian addresses. The beach lists stay in the
+  # work folder, so Overpass is asked only for an area with none.
+  builder = pkgs.writeShellApplication {
+    name = "marola-boards-build";
+    runtimeInputs = [ config.virtualisation.podman.package pkgs.coreutils pkgs.findutils ];
+    text = ''
+      image=${lib.escapeShellArg bcfg.image}
+      work=/var/lib/marola-boards-build
+      out=${boards}
+      install -d -o marola -g marola "$work/site" "$work/site/beaches"
+      install -m 0644 -o marola -g marola ${cfg.package.areas} "$work/site/areas.json"
+      rm -rf "$work/site/dist"
+      if ! podman image exists "$image"; then
+        if [ -n "''${CREDENTIALS_DIRECTORY:-}" ] && [ -f "$CREDENTIALS_DIRECTORY/ghcr-token" ]; then
+          podman login --authfile "$RUNTIME_DIRECTORY/auth.json" -u ${lib.escapeShellArg bcfg.registryUser} \
+            --password-stdin ghcr.io < "$CREDENTIALS_DIRECTORY/ghcr-token"
+          podman pull --authfile "$RUNTIME_DIRECTORY/auth.json" "$image"
+          rm -f "$RUNTIME_DIRECTORY/auth.json"
+        else
+          podman pull "$image"
+        fi
+      fi
+      podman run --rm --memory ${bcfg.memory} --user "$(id -u marola):$(id -g marola)" -e HOME=/tmp \
+        -v "$work/site:/work/site" -w /work "$image" \
+        --site --areas site/areas.json --site-out site/dist
+      # Only what the build wrote, area by area; an area it did not write keeps its old boards.
+      for dir in "$work/site/dist/data"/*/; do
+        area=$(basename "$dir")
+        [ -f "$dir/latest.json" ] || continue
+        tmp=$(mktemp -d "$out/.incoming.XXXXXX")
+        cp -r "$dir". "$tmp/"
+        chown -R marola:marola "$tmp"
+        chmod 0755 "$tmp"
+        rm -rf "$out/$area.old"
+        if [ -d "$out/$area" ]; then mv "$out/$area" "$out/$area.old"; fi
+        mv "$tmp" "$out/$area"
+        rm -rf "$out/$area.old"
+        echo "marola-boards: $area built" >&2
+      done
+      if [ -f "$work/site/dist/data/areas.json" ]; then
+        install -m 0644 -o marola -g marola "$work/site/dist/data/areas.json" "$out/areas.json"
+      fi
+      # Old image versions, after a pin moves.
+      podman image prune -f >/dev/null || true
+    '';
+  };
 in
 {
   options.piabrota.marolaSite = {
@@ -104,6 +153,35 @@ in
       example = "https://marola.example.workers.dev/data";
       description = "A URL whose <area>/latest.json and boards are copied into MAROLA_DATA every few hours, until the board pipeline writes to this box. Null: no copy; the boards answer 404.";
     };
+    boards.build = {
+      enable = mkEnableOption "the board build on this box: marola-site's pinned app image, run with podman every few hours";
+      image = mkOption {
+        type = types.str;
+        default = cfg.package.marolaImage;
+        defaultText = lib.literalExpression "the marola-image file of the pinned marola-site commit";
+        description = "The app image, by digest.";
+      };
+      tokenFile = mkOption {
+        type = types.nullOr types.str;
+        default = "/etc/marola/ghcr-token";
+        description = "A file on the box (root, 0600) with a GitHub token that may read ghcr.io/marola-dev/marola-app (a private package). It reaches the unit with LoadCredential. Null: pull with no login (a public package).";
+      };
+      registryUser = mkOption {
+        type = types.str;
+        default = "h0ffmann";
+        description = "The GitHub login that owns tokenFile.";
+      };
+      calendar = mkOption {
+        type = types.str;
+        default = "*-*-* 01,07,13,19:00:00 UTC";
+        description = "When the boards are built (systemd OnCalendar). Each board covers today and tomorrow.";
+      };
+      memory = mkOption {
+        type = types.str;
+        default = "2g";
+        description = "The container's memory limit (podman --memory).";
+      };
+    };
     backup.enable = mkOption {
       type = types.bool;
       default = true;
@@ -112,6 +190,11 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [{
+      assertion = !(bcfg.enable && cfg.boards.mirrorFrom != null);
+      message = "piabrota.marolaSite: boards.build and boards.mirrorFrom both write MAROLA_DATA; set one.";
+    }];
+
     users.users.marola = {
       isSystemUser = true;
       group = "marola";
@@ -182,6 +265,32 @@ in
       timerConfig = {
         OnBootSec = "5min";
         OnUnitActiveSec = "3h";
+        RandomizedDelaySec = "10min";
+      };
+    };
+
+    virtualisation.podman.enable = mkIf bcfg.enable true;
+
+    systemd.services.marola-boards-build = mkIf bcfg.enable {
+      description = "Build marola's boards with the pinned app image";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = lib.getExe builder;
+        StateDirectory = [ "marola-boards-build" "marola-boards" ];
+        RuntimeDirectory = "marola-boards-build";
+        RuntimeDirectoryMode = "0700";
+        TimeoutStartSec = "45min";
+      } // optionalAttrs (bcfg.tokenFile != null) {
+        LoadCredential = "ghcr-token:${bcfg.tokenFile}";
+      };
+    };
+    systemd.timers.marola-boards-build = mkIf bcfg.enable {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = bcfg.calendar;
+        Persistent = true;
         RandomizedDelaySec = "10min";
       };
     };
