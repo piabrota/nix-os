@@ -126,6 +126,10 @@ ww3-site:
 ww3-pin rev="":
     sh scripts/ww3-pin.sh {{rev}}
 
+# move every website pin to the head of its source's main and build each site (scripts/site-pins.sh); `just site-pins --list` only reads, `just site-pins closed proof` moves those
+site-pins *args:
+    sh scripts/site-pins.sh {{args}}
+
 # build the skills website (skills-site/, Gleam prerendered by Nix) into ./result-skills-site, as the VPS gets it
 skills-site:
     nix build .#skills-site --out-link result-skills-site --print-build-logs

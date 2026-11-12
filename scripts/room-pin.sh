@@ -58,9 +58,11 @@ fi
 cp "$work/default.nix" "$file"
 
 # The build, as room.nix calls it: npm ci, vite build, allowedReferences = [ ].
-$nix build --impure -o result-room --print-build-logs --expr \
-  "let f = builtins.getFlake (toString ./.); pkgs = import f.inputs.nixpkgs { system = builtins.currentSystem; }; in pkgs.callPackage ./room-site { }"
-test -f result-room/index.html
+if [ "${PIN_BUILD:-1}" = 1 ]; then
+  $nix build --impure -o result-room --print-build-logs --expr \
+    "let f = builtins.getFlake (toString ./.); pkgs = import f.inputs.nixpkgs { system = builtins.currentSystem; }; in pkgs.callPackage ./room-site { }"
+  test -f result-room/index.html
+fi
 
 echo "old=$old"
 echo "new=$new"

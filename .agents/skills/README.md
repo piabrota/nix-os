@@ -22,6 +22,7 @@ where it came from, and what differs in this repo. AGENTS.md wins wherever a ski
 | `easy-translate` | [h0ffmann/skills](https://github.com/h0ffmann/skills) | `bcccf4950e10` | MPL-2.0 | the zh-CN and ja-JP text of `site/locale/` |
 | `eli5` | [h0ffmann/skills](https://github.com/h0ffmann/skills) | `bcccf4950e10` | MPL-2.0 | keeping that text simple |
 | `pr-stack` | this repository, not vendored | — | MPL-2.0 | several open PRs as one stack PR: one merge, one deploy, no conflict at merge time and no rebase after it (`scripts/pr-stack.sh`) |
+| `site-pins` | this repository, not vendored; a link to `hermes/skills/site-pins`, which Hermes loads | — | MPL-2.0 | every website pin moved to its source's `main` in one PR (`scripts/site-pins.sh`, `just site-pins`) |
 
 `.mcp.json` adds [mcp-nixos](https://github.com/utensils/mcp-nixos) (`nix run nixpkgs#mcp-nixos`)
 for package and option lookups; prefer it over guessing an option name. It runs where the agent
