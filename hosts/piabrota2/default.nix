@@ -96,8 +96,9 @@
   piabrota.marolaSite = {
     enable = true;
     domain = "marola.piabrota.art";
-    # The Worker's boards until the board pipeline writes to this box.
-    boards.mirrorFrom = "https://marola.dev/data";
+    # The boards are built here four times a day (marola-site.nix, docs/MAROLA-SITE.md). The
+    # token file /etc/marola/ghcr-token must be on the box, or each build fails at the pull.
+    boards.build.enable = true;
   };
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).

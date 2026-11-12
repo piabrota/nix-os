@@ -13,6 +13,7 @@ contract: read it before you change one.
 |---|---|
 | `marola-site` | `marola-server` on `127.0.0.1:8095` as the user `marola`, `MemoryMax=256M`, the file system read-only except `/var/lib/marola` (`marola.db`, `csrf.key`, `studies/`). |
 | `marola-boards.timer` | Every 3 hours, when `boards.mirrorFrom` is set: copies each area's `latest.json` and boards from that URL into `/var/lib/marola-boards` (`MAROLA_DATA`). An area whose copy fails keeps its old boards. |
+| `marola-boards-build.timer` | Four times a day (01, 07, 13, 19 UTC), when `boards.build.enable` is set (on at piabrota2): runs the app image that the pinned marola-site commit names in `marola-image` with podman, `--site` over its `site/areas.json`, as marola-site's `site.yml` does, and puts each area it built into `/var/lib/marola-boards`. An area it did not build keeps its old boards. The beach lists stay in `/var/lib/marola-boards-build/site/beaches`, so Overpass is asked only for an area with none. piabrota2 is in Brazil (LACNIC: `BR`), which INEA and INEMA require. Use it or the mirror, not both. |
 | `marola-backup.timer` | Daily: `marola.db` (SQLite's `.backup`), `csrf.key` and `studies/` into `/var/backups/marola`; database copies older than 14 days are deleted. Same disk: copy it off the box if the studies matter. |
 | nginx | `domain` over HTTPS, HSTS, 1 MB bodies except 21 MB on `/submit`, `/en/submit` and `/api/v1/studies` (not buffered); `X-Forwarded-For` replaced with `$remote_addr`. Each name in `redirects` answers 301 to `domain`. |
 
@@ -49,6 +50,20 @@ fails.
    (with marola.dev it would copy from itself). Merge.
 4. Between step 2.2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
    default server of `configuration.nix` refuses names with no vhost.
+
+**The board build needs a token.** `ghcr.io/marola-dev/marola-app` is a private package. Make a GitHub
+token that can read it (a classic token with `read:packages`, from the account in `boards.build.registryUser`)
+and put it on the box; the unit reads it with `LoadCredential`, logs in, pulls the pinned digest and forgets
+the login:
+
+```console
+sudo install -d -m 0700 /etc/marola
+sudo install -m 0600 /dev/stdin /etc/marola/ghcr-token   # paste, then Ctrl-D
+sudo systemctl start marola-boards-build && journalctl -u marola-boards-build -n 20
+```
+
+If the package is made public, set `boards.build.tokenFile = null`. When marola-site's `marola-image` moves,
+moving the marola-site pin here moves the image too.
 
 If the GitHub login is wanted, the owner makes the OAuth app (callback
 `https://marola.dev/auth/github/callback`, no scope), sets `github.clientId`, and writes the secret on the
