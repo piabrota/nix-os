@@ -18,7 +18,7 @@
 }:
 let
   # Move rev, hash and the README numbers together.
-  rev = "2bb30b6bd8add017ec240d6965047aa28d777810";
+  rev = "c6f4f57456b0a05bcf65ca5ccf15396fec76c63d";
   # `git log --follow --format=%as -- README.md` at rev: how many lines, and the last one.
   readmeCommits = 311;
   readmeFirst = "2025-06-25";
@@ -28,14 +28,14 @@ let
       owner = "h0ffmann";
       repo = "h0ffmann";
       inherit rev;
-      hash = "sha256-1j5VXoOXuPRs7CAHlIUZzzvGjUMsRtmv1viu1QVTJao=";
+      hash = "sha256-40/ZrgsfAoj27dIv1XWFyT1iQePJNFzCm+JKt2ZAGG8=";
     };
   git = writeShellScriptBin "git" ''
     case "$*" in
       "rev-parse --short HEAD") echo ${builtins.substring 0 7 rev} ;;
       "log --follow --format=%as -- ../../README.md")
         for _ in $(seq ${toString readmeCommits}); do echo ${readmeFirst}; done ;;
-      *) echo "me-site: git $* is not available in the build" >&2; exit 1 ;;
+      *) echo "hffmnn-site: git $* is not available in the build" >&2; exit 1 ;;
     esac
   '';
   # Every hex package that <dir>/manifest.toml locks, at its checksum, so the build runs offline.
@@ -87,7 +87,7 @@ stdenvNoCC.mkDerivation {
     gleam run -m h0ffmann_site/prerender --no-print-progress > dist/index.html
     cp -R static/. dist/
     cp -R ../media dist/
-    grep -q 'https://me.piabrota.art/og.png' dist/index.html
+    grep -q 'https://hffmnn.piabrota.art/og.png' dist/index.html
     cd ..
     runHook postBuild
   '';
