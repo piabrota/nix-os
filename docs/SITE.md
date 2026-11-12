@@ -77,7 +77,7 @@ went on). Fix DNS, then see the end of this section.
 Then merge the PR that turns the site on, or run the `deploy` workflow again if it already
 failed.
 
-The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave`, `closed` and the others under `piabrota.art`)
+The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave`, `closed`, `hffmnn` and the others under `piabrota.art`)
 each need one `A` record on their host name, with piabrota2's address, before the deploy that
 turns them on.
 
@@ -165,6 +165,7 @@ as well:
 | proof.piabrota.art, pirsig.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
 | wave.piabrota.art | `/favicon.svg`, ww3-gpu's own (`ww3-site/static/`) | nothing: the site keeps its icon |
 | closed.piabrota.art | `/icons/favicon.svg`, closed-source's own | nothing: the site keeps its icon |
+| hffmnn.piabrota.art | `/icons/favicon.svg`, h0ffmann/h0ffmann's own | nothing: the site keeps its icon |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
@@ -290,6 +291,27 @@ closed-site` builds it into `./result-closed-site`.
 The first version of this vhost (#217) passed each request to Pages, but piabrota2 timed out on
 every connection to Pages (the 502 that `certs.yml` saw on 2026-11-11), so the box now keeps its
 own copy. The name needs its DNS `A` record at piabrota2's address ([DNS on Porkbun](#dns-on-porkbun)).
+
+## The profile site at hffmnn.piabrota.art
+
+The website of h0ffmann/h0ffmann, the owner's profile, which GitHub Pages also serves at
+h0ffmann.github.io/h0ffmann. `hffmnn-site/default.nix` builds it on the builder at a pinned commit, with
+that repository's own steps (`just _site`): its content generator (`site/content`, Gleam on node)
+writes the content module from the README, `me/` and `site/data/`, then the Gleam tests, the esbuild
+bundle and the prerender run on node. The output is the page, `app.js`, the static files and
+`media/`, with no store reference. nginx (`hffmnn.nix`) serves it as static files on piabrota2, like
+closed.
+
+The source has no `.git`, so a stand-in `git` answers the generator's two questions from `rev`,
+`readmeCommits` and `readmeFirst` in `default.nix`. The site's own address (`address` in
+`site/src/h0ffmann_site/page.gleam` of h0ffmann/h0ffmann) is the one the page names for its link
+preview; the build fails when it is not `https://hffmnn.piabrota.art/`.
+
+To move the pin: change `rev`, `hash` (`nix-prefetch-url --unpack` on the commit's archive, then
+`nix hash convert --to sri`) and the two README numbers (`git log --follow --format=%as --
+README.md` at `rev`: its line count and its last line). `just hffmnn-site` builds it into
+`./result-hffmnn-site`. The name needs its DNS `A` record at piabrota2's address
+([DNS on Porkbun](#dns-on-porkbun)).
 
 ## The ▲ grid at grid.piabrota.art
 
