@@ -2,10 +2,14 @@
 # repository's `just site-build` builds it for GitHub Pages: its content generator (tools/fabric,
 # Gleam on Erlang) writes site/src/closed_source_site/content.gleam from the paper, then the site
 # (Gleam and Lustre on node) is bundled with esbuild and prerendered. Nothing here is a copy of its
-# code. The three PDFs are the release assets of the tag at that commit, not built again: the
-# paper's build needs XeLaTeX and the logos fetched from the network. The generator asks Zenodo for
+# code. The three PDFs are built too, as its `just build` does (pandoc with pandoc-crossref and
+# citeproc, XeLaTeX twice, with the TeX set of picasso's paper lab), from the same commit, so the
+# page and the paper never disagree. The two title-page logos are fetched by the hashes in the
+# paper's metadata.md and converted with rsvg-convert, as `tools/fabric logos` does; they stay
+# trademarks of their projects and are not files of this repository. The generator asks Zenodo for
 # the version DOIs; the sandbox has no network, so it reads zenodo.json instead, that reply cut to
-# the fields it reads (fetched 2026-11-11; fetch it again when the pin moves past a release).
+# the fields it reads (fetched 2026-11-11, still current on 2026-11-12; fetch it again when
+# closed-source makes a release).
 # allowedReferences = [ ] fails the build if the output names a store path, so gleam, erlang and
 # node never reach the closure.
 { lib
@@ -18,33 +22,60 @@
 , nodejs
 , esbuild
 , pandoc
+, haskellPackages
+, texliveMedium
+, librsvg
 , poppler-utils
 , sourceOverride ? null # a local checkout, to build without fetching
 }:
 let
-  # Move rev, commits, hash and the release with its three PDF hashes together.
-  rev = "6b3aae557f69ab89ec747364311978928dd0ca71";
+  # Move rev, commits and hash together; the logos only when metadata.md changes them.
+  rev = "6e5ab43f41a2edb6f6d67d05a95b8539935bafbb";
   # The number of commits up to rev (`git rev-list --count`), which the page shows; the source
   # has no .git.
-  commits = 219;
-  release = "v0.3.4";
+  commits = 227;
   closedSource =
     if sourceOverride != null then sourceOverride else
     fetchFromGitHub {
       owner = "h0ffmann";
       repo = "closed-source";
       inherit rev;
-      hash = "sha256-j+HPOh7bVCcfMhPf2WdAJ4998qx3P9TmtJVmlCanROs=";
+      hash = "sha256-6IwsefEk/oj5unX+8OIKZTmysSc2JoH+kPXWDrAzD5k=";
     };
-  pdf = name: hash: fetchurl {
-    url = "https://github.com/h0ffmann/closed-source/releases/download/${release}/${name}.pdf";
-    inherit hash;
+  # The `logos:` of papers/closed-source/metadata.md: file, svg and sha256.
+  logos = {
+    marola = fetchurl {
+      url = "https://raw.githubusercontent.com/marola-dev/marola/d0d576ea014335acbc190a09ce9fcbe0f89a391d/docs/assets/logo.svg";
+      sha256 = "71567f8c69a5c5e18b8b712a280cae1dac402e6a2e7ceb331408a4e713159cf9";
+    };
+    ouroboric = fetchurl {
+      url = "https://raw.githubusercontent.com/ouroboric-dev/ouroboric/4ab80ed2486a5e0ab0ade13e5089c2a4acdb4216/docs/7-branding/identity/logo/ouroboric-logo-horizontal.svg";
+      sha256 = "935eb9acf636f5da8651bdee14e6b53670e216d6a1667b46c48d62ec6f26f59d";
+    };
   };
-  pdfs = {
-    closed-source = pdf "closed-source" "sha256-eYpgC5U4GH+Rn7OCZspXlenTxOMG3uWweBvEj2TWIw8=";
-    closed-source-ste = pdf "closed-source-ste" "sha256-tqPi/3DI0TLgKv3T5tGzIkZaLixuQ/u2tx8OJTGLiQg=";
-    closed-source-pt-BR = pdf "closed-source-pt-BR" "sha256-JWDVlKjxxpm5HPbjnKb5G2G5+fc/ivImdObfR7HMOGA=";
-  };
+  # picasso's labs/paper texFor, and babel-portuges for the pt-BR text (`babel: brazilian`).
+  tex = texliveMedium.withPackages (ps: with ps; [
+    xetex
+    fontspec
+    unicode-math
+    lm
+    lm-math
+    babel-english
+    babel-portuges
+    csquotes
+    enumitem
+    etoolbox
+    fancyhdr
+    footnotehyper
+    titling
+    xurl
+    booktabs
+    microtype
+    xcolor
+    upquote
+    bookmark
+    parskip
+  ]);
   # The content generator asks git for the revision and the commit count, and nothing else.
   git = writeShellScriptBin "git" ''
     case "$*" in
@@ -77,7 +108,7 @@ stdenvNoCC.mkDerivation {
   pname = "closed-source-site";
   version = "0-unstable-${builtins.substring 0 7 rev}";
   src = closedSource;
-  nativeBuildInputs = [ gleam erlang nodejs esbuild pandoc poppler-utils git ];
+  nativeBuildInputs = [ gleam erlang nodejs esbuild pandoc haskellPackages.pandoc-crossref tex librsvg poppler-utils git ];
 
   postPatch = ''
     substituteInPlace tools/src/fabric/content.gleam --replace-fail \
@@ -92,14 +123,30 @@ stdenvNoCC.mkDerivation {
     chmod -R u+w .
     ${unpack "tools"}
     ${unpack "site"}
-    mkdir -p pdf
-    ${lib.concatStrings (lib.mapAttrsToList (n: p: "cp ${p} pdf/${n}.pdf\n") pdfs)}
+    mkdir -p pdf build/tex build/logos
+    ${lib.concatStrings (lib.mapAttrsToList (n: svg: "rsvg-convert -f pdf -o build/logos/${n}.pdf ${svg}\n") logos)}
     runHook postConfigure
   '';
 
-  # The steps of closed-source's `just site-build` and site/justfile, without the paper's build.
+  # The steps of closed-source's `just build`, `just site-build` and site/justfile.
   buildPhase = ''
     runHook preBuild
+    export TEXMFVAR=$TMPDIR/texmf-var SOURCE_DATE_EPOCH=0
+    printf '%s+%s' ${builtins.substring 0 7 rev} ${toString commits} > build/.current-revision
+    paper=papers/closed-source
+    for dir in prose prose-ste prose-pt-BR; do
+      name=closed-source''${dir#prose}
+      pandoc --from markdown+fancy_lists+raw_tex -F pandoc-crossref --citeproc \
+        --metadata link-citations=true --number-sections --top-level-division=section \
+        --fail-if-warnings -s --template format/tex/template.tex -t latex \
+        --metadata-file format/crossref.yaml --bibliography $paper/refs.bib \
+        -o build/tex/$name.tex $paper/metadata.md $paper/$dir/*.md
+      (cd build && for _ in 1 2; do
+        xelatex -interaction=nonstopmode -halt-on-error tex/$name.tex > /dev/null \
+          || { tail -n 30 $name.log >&2; exit 1; }
+      done)
+      cp build/$name.pdf pdf/$name.pdf
+    done
     patchShebangs tools/fabric
     tools/fabric content --self-test
     tools/fabric content
