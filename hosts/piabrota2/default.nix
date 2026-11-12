@@ -31,6 +31,8 @@
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
     ../../tyler-durden-bot.nix
+    # marola-hermes (marola-hermes.nix): marola's chat bot as a Hermes profile with its own bot.
+    ../../marola-hermes.nix
   ];
 
   # piabrota2 is the VPS name in hPanel; Hostinger first named it srv2125808 (srv2125808.hstgr.cloud
@@ -90,6 +92,9 @@
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
   piabrota.tylerDurden.enable = false;
+  # marola-hermes, off until the owner has made the bot and written
+  # /var/lib/marola-hermes-secrets/bot.env (docs/MAROLA-HERMES.md).
+  piabrota.marolaHermes.enable = false;
   # Live metrics (metrics.nix, docs/METRICS.md): the page at metrics.piabrota.art, which must point at
   # this box, this host's own collector, and the pull of piabrota's file.
   piabrota.metrics = {
