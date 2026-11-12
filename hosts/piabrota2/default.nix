@@ -31,6 +31,8 @@
     # The website of h0ffmann/h0ffmann (the owner's profile) on hffmnn.piabrota.art, which must point at
     # this box.
     ../../hffmnn.nix
+    # marola-site (marola-dev/marola-site): the Haskell server behind nginx (docs/MAROLA-SITE.md).
+    ../../marola-site.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
     ../../tyler-durden-bot.nix
@@ -92,6 +94,16 @@
   piabrota.closedSource.enable = true;
   # The website of h0ffmann/h0ffmann at a pinned commit (hffmnn-site/), at hffmnn.piabrota.art.
   piabrota.hffmnn.enable = true;
+  # marola-site at a pinned commit (marola-site/default.nix). Step 1 of docs/MAROLA-SITE.md: on
+  # marola.piabrota.art, whose A record must point at this box first, while marola.dev stays on the
+  # Cloudflare Worker. Step 2 sets domain = "marola.dev" and redirects = [ "www.marola.dev"
+  # "marola.piabrota.art" ] after Cloudflare points those names here.
+  piabrota.marolaSite = {
+    enable = true;
+    domain = "marola.piabrota.art";
+    # The Worker's boards until the board pipeline writes to this box.
+    boards.mirrorFrom = "https://marola.dev/data";
+  };
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
   piabrota.tylerDurden.enable = false;
