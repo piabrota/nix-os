@@ -46,11 +46,12 @@ about 10 minutes), disk usage of filesystems other than `/`, network or IO per p
 
 ## The headline: sites, commits, deploys, apps, NixOS
 
-The top of each card has five numbers and a row of sites:
+The top of each card has six numbers and a row of sites:
 
 | Label | What it is | Where it comes from |
 |---|---|---|
 | Domains up | sites that answered, of the host's sites; green when all answer, red when one does not | `metrics/probe.sh`, every 60 s |
+| Visits 24 h | the pages that browsers got from the host's sites in the last 24 hours; the tooltip has the visitors | nginx's `visits.log`, read by the probe every 60 s (see "Visits") |
 | Commits | commits on `main` of `piabrota/nix-os` | the GitHub API, at most once in 10 minutes |
 | Deploys | the generation of `/nix/var/nix/profiles/system`: one for each deploy that changed the system | the collector, from the link `system-<n>-link` |
 | Apps installed | the packages of `environment.systemPackages` (the `packages` count of the inventory) | Nix, at build time |
@@ -59,7 +60,8 @@ The top of each card has five numbers and a row of sites:
 Under them, each site of the host is a chip: green when it answers, red with the HTTP code (or
 "no answer") when it does not. A site is up when it gives any answer below HTTP 500: a 301 or a
 401 (a login) is an answer. The probe does not follow a redirect. When the probe's data is more than
-5 minutes older than the host's, the chips are grey and the count is not coloured.
+5 minutes older than the host's, the chips are grey and the count is not coloured. After the name,
+a chip shows the site's visits of the last 24 hours; its tooltip has the visitors.
 
 The sites are the same names that the inventory counts as `sites`: every nginx virtual host but
 `_` and the names that only redirect. Nix writes the list (`https://` when the host has TLS). The
@@ -69,6 +71,32 @@ collector copies it into `domains` and `repo` (metrics/SCHEMA.md). The probe rea
 from the `Link` header of `GET /repos/piabrota/nix-os/commits?per_page=1`: the number of the last
 page is the count. Without a token GitHub allows 60 requests an hour from one address; the probe
 uses 6. When GitHub does not answer, the last count stays.
+
+## Visits
+
+What counts, with `visits.enable` on (both hosts):
+
+- **A visit** is one page that a browser got: a `GET` that nginx answered with a 200 and an HTML
+  type, or with a 304 for a path that ends in `/` or `.html`. An image, a script, the page's JSON
+  polls, a redirect, a 404 and a login wall (401) are not visits.
+- **Bots are not counted.** A User-Agent that is empty or that has one of the words of
+  `notBrowsers` in `metrics.nix` (`bot`, `crawl`, `spider`, `curl`, `python`, `probe`, ...) is a
+  program, not a browser. A scraper that sends a browser's User-Agent is counted: this is a filter
+  for crawlers that say what they are, as the bot block of robots.txt is.
+- **A visitor** is one address that got a page of the site. Two people behind one address are one
+  visitor; one person on two sites is a visitor of each, so the card's sum counts them twice.
+- **The window** is the last 24 hours, counted by the hour: the oldest hour leaves whole, so the
+  window is 24 to 25 hours.
+
+How: nginx writes one line for each visit to `/var/log/nginx/visits.log` (the time, the vhost's
+first name and the address; `access_log ... if=$metrics_visit` in `services.nginx.commonHttpConfig`).
+Everything else goes on to `access.log` as before: an `access_log` in the `http` block ends nginx's
+built-in default, so the module writes that line too. nginx's logrotate rule rotates both weekly.
+Each probe run reads only what was added since the last run (at most 16 MiB) and keeps the views by
+the hour and the last time of each address in `/run/metrics-state/<name>.visits` (0700, not
+served, gone at a reboot). After a reboot or a rotation it reads the file from its start, so a
+reboot loses nothing of the week. The probe reads nginx's logs through the group `nginx`
+(`SupplementaryGroups`) and writes nothing there. No daemon, no package, no Python: the same awk.
 
 ## The inventory
 
@@ -235,13 +263,14 @@ All are off by default. All live under `piabrota.metrics`:
 | `collector.enable` | turns on the collector and the timer |
 | `collector.interval` | seconds between runs (2 to 300, default 10) |
 | `probe.enable`, `probe.interval` | the timer that asks each site for an answer (10 to 3600 s, default 60); needs the collector |
+| `visits.enable` | nginx logs each page a browser gets, and the probe counts the visits of the last 24 h of each site; needs the probe and nginx |
 | `probe.repo`, `probe.branch` | the repository and branch whose commits are counted (default `piabrota/nix-os`, `main`); an empty repo: no count |
 | `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the optional login file (`null`, the default, means the page is public) |
 | `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
 | `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
 | `inventory.bundledSkillDirs` | folders of skills that ship inside an agent, counted as `skills_bundled`; `hermes.nix` adds Hermes's own |
 
-Today: piabrota2 turns on collector, probe, web and pull. piabrota turns on collector, probe and publish.
+Today: piabrota2 turns on collector, probe, visits, web and pull. piabrota turns on collector, probe, visits and publish.
 
 ## Change the cadence
 

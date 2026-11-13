@@ -5,6 +5,7 @@
 #              robots.txt and a block of named AI agents (a login file is optional)
 #   publish    (KVM 1) one location on the www vhost serves the host's file to one address
 #   pull       (KVM 4) a timer fetches that file and keeps it beside its own
+#   visits     nginx logs each page a browser gets; the probe counts the last 24 h of each site
 # Everything is off by default. The web name must point at its host before `web.enable` is on, or the
 # ACME order fails on the deploy and deploy-rs rolls the switch back (docs/SITE.md).
 { config, lib, pkgs, ... }:
@@ -13,6 +14,11 @@ let
   cfg = config.piabrota.metrics;
   anyOn = cfg.collector.enable || cfg.probe.enable || cfg.web.enable || cfg.publish.enable || cfg.pull.enable;
   outDir = "/run/metrics-web";
+  # On disk, beside access.log: nginx's logrotate rule (/var/log/nginx/*.log) rotates it weekly.
+  visitsLog = "/var/log/nginx/visits.log";
+  # A User-Agent that is a program and not a browser: its pages are not visits. The probe's own
+  # name is in it ("probe"). A scraper can send a browser's User-Agent (docs/METRICS.md, "Visits").
+  notBrowsers = [ "bot" "crawl" "spider" "slurp" "scrap" "fetch" "curl" "wget" "python" "httpx" "aiohttp" "go-http" "java/" "okhttp" "axios" "libwww" "headless" "lighthouse" "preview" "externalhit" "monitor" "uptime" "scan" "probe" "feed" "rss" "archive" "http-client" ];
   stateDir = "/run/metrics-state";
 
   # The scripts get their shebang patched to a store shell; the tools they call are on the unit's PATH.
@@ -397,6 +403,11 @@ in
       };
     };
 
+    visits.enable = mkEnableOption ''
+      the visits of each site: nginx logs each page a browser gets (GET, an HTML 200, or a 304 for a
+      page) to /var/log/nginx/visits.log, and the probe counts the views and the addresses of the
+      last 24 hours. Needs `probe.enable` and nginx'';
+
     web = {
       enable = mkEnableOption "the page and its data behind nginx and TLS, public unless htpasswdFile is set";
       domain = mkOption {
@@ -496,7 +507,7 @@ in
       # A short curl to each site, one after the other, and one to GitHub in 10 minutes.
       systemd.services.metrics-probe = {
         description = "Ask this host's sites for an answer";
-        path = [ pkgs.coreutils pkgs.curl pkgs.gnugrep pkgs.gnused ];
+        path = [ pkgs.coreutils pkgs.curl pkgs.gawk pkgs.gnugrep pkgs.gnused ];
         environment = {
           METRICS_NAME = cfg.name;
           PROBE_SITES = "${siteList}";
@@ -510,6 +521,39 @@ in
         };
       };
       systemd.timers.metrics-probe = timer "metrics-probe" cfg.probe.interval;
+    })
+
+    (mkIf cfg.visits.enable {
+      assertions = [{
+        assertion = cfg.probe.enable && config.services.nginx.enable;
+        message = "piabrota.metrics.visits is counted by the probe from nginx's log: turn piabrota.metrics.probe and nginx on.";
+      }];
+
+      # One line a page: the time, the vhost's first name (as the probe's site list has it) and the
+      # address. Only a page a browser gets is written (the `if=`), so the file stays small. An
+      # access_log here ends nginx's built-in default, so the first line keeps access.log as it was.
+      services.nginx.commonHttpConfig = ''
+        log_format metrics_visit '$msec $server_name $remote_addr';
+        map $http_user_agent $metrics_visit_agent {
+          default 1;
+          "" 0;
+          "~*(${lib.concatMapStringsSep "|" lib.escapeRegex notBrowsers})" 0;
+        }
+        map "$request_method|$status|$sent_http_content_type|$uri" $metrics_visit {
+          default 0;
+          "~^GET\|200\|text/html" $metrics_visit_agent;
+          "~^GET\|304\|[^|]*\|(.*/|.*\.html)$" $metrics_visit_agent;
+        }
+        access_log /var/log/nginx/access.log combined;
+        access_log ${visitsLog} metrics_visit if=$metrics_visit;
+      '';
+
+      # nginx's logs are 0640 in a 0750 folder, both of the group nginx: the probe reads them, and
+      # writes nothing there.
+      systemd.services.metrics-probe = {
+        environment.PROBE_VISITS_LOG = visitsLog;
+        serviceConfig.SupplementaryGroups = [ config.services.nginx.group ];
+      };
     })
 
     (mkIf cfg.pull.enable {

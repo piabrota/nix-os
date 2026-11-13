@@ -34,10 +34,10 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
   "inventory": { "agents": 9, "apps": 0, "mcp": 2, "packages": 161, "plugins": 20, "rigs": 4,
                  "sites": 7, "timers": 14, "skills": 60, "skills_bundled": 44 },
   "system": { "nixos": "26.05.20261101.02c087f", "generation": 184 },
-  "domains": { "ts": 1793925100, "up": 2, "total": 3,
-               "list": [ { "name": "metrics.piabrota.art", "code": 200, "up": true },
-                         { "name": "hermes.piabrota.art", "code": 401, "up": true },
-                         { "name": "lofi.piabrota.art", "code": 0, "up": false } ] },
+  "domains": { "ts": 1793925100, "up": 2, "total": 3, "views": 32, "visitors": 6,
+               "list": [ { "name": "metrics.piabrota.art", "code": 200, "up": true, "views": 23, "visitors": 4 },
+                         { "name": "hermes.piabrota.art", "code": 401, "up": true, "views": 9, "visitors": 2 },
+                         { "name": "lofi.piabrota.art", "code": 0, "up": false, "views": 0, "visitors": 0 } ] },
   "repo": { "name": "piabrota/nix-os", "commits": 230, "ts": 1793924800 },
   "top_mem": [ { "pid": 826708, "name": "hermes", "user": "hermes", "rss": 431386624, "cpu_pct": 0.3 } ],
   "top_cpu": [ { "pid": 826708, "name": "hermes", "user": "hermes", "rss": 431386624, "cpu_pct": 0.3 } ],
@@ -83,6 +83,8 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
 | `domains.ts` | Unix seconds when the probe ran. The page greys the sites when it is more than 300 s older than `ts`. |
 | `domains.list` | The sites of the host in the order Nix wrote them, at most 24: `name` (lowercase letters, digits, `.` and `-`, 64 characters at most), `code` (the HTTP code, 0 when nothing answered) and `up` (a code from 100 to 499). |
 | `domains.up`, `domains.total` | How many of `list` are up, and how many there are. |
+| `domains.list[].views`, `domains.list[].visitors` | The site's visits of the last 24 hours, from the probe file's `visits` lines (`piabrota.metrics.visits`; docs/METRICS.md, "Visits"): the pages a browser got, and the distinct addresses that got them. Counted by the hour, so the oldest hour leaves whole: the window is 24 to 25 hours. Absent when the host does not count visits. |
+| `domains.views`, `domains.visitors` | The sums over `list`. An address that visited two sites counts twice. Absent when no site has visits. |
 | `repo` | The commits of the repository, from the probe file. Absent until GitHub has answered once. |
 | `repo.name` | `METRICS_REPO`, absent when it is not set. |
 | `repo.commits`, `repo.ts` | The commit count of the branch, and Unix seconds when GitHub gave it. |
