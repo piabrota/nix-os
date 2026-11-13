@@ -19,8 +19,8 @@ permissions:
   actions: write
 
 jobs:
-  # figures, the Python tests, and two small checks (the metrics page, the favicon). They take a few minutes.
-  # figures. They build nothing, so they take about a minute.
+  # The fast checks, on every pull request: formatting, lints, shellcheck, the DeepWiki plan, the
+  # figures, the Python tests and two small checks (the metrics page, the favicon).
   lint:
     name: lint (builds nothing)
     runs-on: ubuntu-latest
