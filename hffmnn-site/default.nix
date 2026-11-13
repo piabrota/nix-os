@@ -5,7 +5,7 @@
 , fetchFromGitHub
 }:
 let
-  rev = "ce8cb56877f5e42e2e72dbaf14e0a4e6dea075bf";
+  rev = "703006bfe7eb4ceed08d199efa51dd9d5dc90ced";
 in
 stdenvNoCC.mkDerivation {
   pname = "h0ffmann-site";
@@ -14,7 +14,7 @@ stdenvNoCC.mkDerivation {
     owner = "h0ffmann";
     repo = "h0ffmann";
     inherit rev;
-    hash = "sha256-3bGunvSVRKRg2OPwsdxMcn41oS7gs8wlYtBxYQcGVio=";
+    hash = "sha256-YlVUaX69vH3LHMdcV7Lrrk8100SfgSG+d4RtdNXlwso=";
   };
   dontConfigure = true;
   dontBuild = true;
