@@ -44,6 +44,7 @@ Each change is a pull request. A merge to `main` builds the two systems and depl
 | [`pirsig.piabrota.art`](https://pirsig.piabrota.art/) | The video notes and figures of [piabrota/pirsig](https://github.com/piabrota/pirsig). | KVM 4 |
 | [`wave.piabrota.art`](https://wave.piabrota.art/) | The website of [h0ffmann/ww3-gpu](https://github.com/h0ffmann/ww3-gpu). | KVM 4 |
 | [`closed.piabrota.art`](https://closed.piabrota.art/) | The website of [h0ffmann/closed-source](https://github.com/h0ffmann/closed-source). | KVM 4 |
+| [`hffmnn.piabrota.art`](https://hffmnn.piabrota.art/) | The personal site of Matheus Hoffmann, pure HTML, from [h0ffmann/h0ffmann](https://github.com/h0ffmann/h0ffmann) ([specs](docs/SITE.md#the-profile-site-at-hffmnnpiabrotaart)). | KVM 4 |
 | [`marola.piabrota.art`](https://marola.piabrota.art/) | The marola website, until it moves to [marola.dev](https://marola.dev). | KVM 4 |
 
 ## Reproduce it

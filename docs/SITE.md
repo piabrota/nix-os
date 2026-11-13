@@ -314,7 +314,9 @@ build step; it fails when the directory has no `index.html` or has a `<script>`.
 
 To move the pin: `scripts/pins.py one hffmnn [rev]` (`rev` and `hash`). `just hffmnn-site` builds
 it into `./result-hffmnn-site`. The name needs its DNS `A` record at piabrota2's address
-([DNS on Porkbun](#dns-on-porkbun)).
+([DNS on Porkbun](#dns-on-porkbun)). The record is `A hffmnn 187.41.117.18`, TTL 600, at Porkbun
+since 2026-11-13, the same address as `grid`, `wave` and `closed`. Before it, the vhost was off and
+the name answered with a TLS error (no certificate for the name) and an HTTP 503.
 
 ## The ▲ grid at grid.piabrota.art
 
