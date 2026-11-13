@@ -8,7 +8,7 @@
 # paper's metadata.md and converted with rsvg-convert, as `tools/fabric logos` does; it stays a
 # trademark of its project and is not a file of this repository. The generator asks Zenodo for
 # the version DOIs; the sandbox has no network, so it reads zenodo.json instead, that reply cut to
-# the fields it reads (fetched 2026-11-11, still current on 2026-11-12 at 23:59; fetch it again when
+# the fields it reads (fetched 2026-11-13, with v0.4.0; fetch it again when
 # closed-source makes a release).
 # allowedReferences = [ ] fails the build if the output names a store path, so gleam, erlang and
 # node never reach the closure.
@@ -30,17 +30,17 @@
 }:
 let
   # Move rev, commits and hash together; the logos only when metadata.md changes them.
-  rev = "03dee6bc64e7d30cd48a3d794801b84949df1cad";
+  rev = "7682e9095b4b88f7a7a51c6c0234b078c3a63155";
   # The number of commits up to rev (`git rev-list --count`), which the page shows; the source
   # has no .git.
-  commits = 269;
+  commits = 277;
   closedSource =
     if sourceOverride != null then sourceOverride else
     fetchFromGitHub {
       owner = "h0ffmann";
       repo = "closed-source";
       inherit rev;
-      hash = "sha256-CyVoxdXwFykN8H4EpWM13feX8vBjK6pvzWXCiDr0mUw=";
+      hash = "sha256-oTWeQSZrz3xOpFkVoRt2OLjiUEywBAMKibDpQilrBg4=";
     };
   # The `logos:` of papers/closed-source/metadata.md: file, svg and sha256.
   logos = {
@@ -146,7 +146,7 @@ stdenvNoCC.mkDerivation {
     patchShebangs tools/fabric
     tools/fabric content --self-test
     tools/fabric content
-    grep -q '10.5281/zenodo.23679470' site/src/closed_source_site/content.gleam
+    grep -q '10.5281/zenodo.24182034' site/src/closed_source_site/content.gleam
     grep -q 'pub const revision = "${builtins.substring 0 7 rev}"' site/src/closed_source_site/content.gleam
     cd site
     gleam test
