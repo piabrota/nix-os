@@ -6,6 +6,7 @@
 #   publish    (KVM 1) one location on the www vhost serves the host's file to one address
 #   pull       (KVM 4) a timer fetches that file and keeps it beside its own
 #   visits     nginx logs each page a browser gets; the probe counts the last 24 h of each site
+#   export     (web) a timer turns every host file into /data/all.json and /metrics (Prometheus)
 # Everything is off by default. The web name must point at its host before `web.enable` is on, or the
 # ACME order fails on the deploy and deploy-rs rolls the switch back (docs/SITE.md).
 { config, lib, pkgs, ... }:
@@ -29,6 +30,7 @@ let
   collect = script "metrics-collect" ./metrics/collect.sh;
   pull = script "metrics-pull" ./metrics/pull.sh;
   probe = script "metrics-probe" ./metrics/probe.sh;
+  export = script "metrics-export" ./metrics/export.sh;
   # What this generation runs, counted once at build time (docs/METRICS.md, "The inventory"). The
   # names come from the evaluated config; a module that this host does not import counts 0. The
   # skills are the SKILL.md files in Hermes's skill folders and plugins, so they need a build.
@@ -428,6 +430,17 @@ in
       };
     };
 
+    export.enable = mkOption {
+      type = types.bool;
+      default = cfg.web.enable;
+      defaultText = lib.literalExpression "config.piabrota.metrics.web.enable";
+      description = ''
+        The export timer (with the collector's interval): metrics/export.sh (jq) writes every host file of
+        /run/metrics-web as one `all.json` and as `metrics.prom`, the Prometheus text format, which
+        the page serves at `/data/all.json` and `/metrics`. On wherever the page is.
+      '';
+    };
+
     publish = {
       enable = mkEnableOption "one location on the site's vhost that serves this host's file to the addresses in allowFrom";
       allowFrom = mkOption {
@@ -556,6 +569,26 @@ in
       };
     })
 
+    (mkIf cfg.export.enable {
+      # One jq run (a small C binary, no runtime: AGENTS.md, "Resource budget" rule 4): it reads the
+      # host files of the served folder and writes two more.
+      systemd.services.metrics-export = {
+        description = "Write every host's metrics as all.json and metrics.prom";
+        path = [ pkgs.coreutils pkgs.jq ];
+        environment = {
+          OUT_DIR = outDir;
+          METRICS_STALE = "30";
+          EXPORT_JQ = "${./metrics/export.jq}";
+        };
+        serviceConfig = sandbox // {
+          ExecStart = "${export}/bin/metrics-export";
+          PrivateNetwork = true;
+          RestrictAddressFamilies = "AF_UNIX";
+        };
+      };
+      systemd.timers.metrics-export = timer "metrics-export" cfg.collector.interval;
+    })
+
     (mkIf cfg.pull.enable {
       assertions = [{
         assertion = cfg.pull.url != "";
@@ -645,6 +678,15 @@ in
               extraConfig = ''
                 default_type text/plain;
                 add_header Cache-Control "public, max-age=86400" always;
+                ${headers}
+              '';
+            };
+            # Prometheus scrapes this; the same numbers as /data/all.json (docs/METRICS.md, "For machines").
+            "= /metrics" = {
+              alias = "${outDir}/metrics.prom";
+              extraConfig = ''
+                default_type "text/plain; version=0.0.4; charset=utf-8";
+                add_header Cache-Control "no-store" always;
                 ${headers}
               '';
             };

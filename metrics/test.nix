@@ -148,6 +148,19 @@
         client.succeed("curl -sI http://hub/data/piabrota2.json | grep -i '^cache-control: no-store'")
         client.succeed("curl -sI http://hub/data/piabrota2.json | grep -i '^x-frame-options: DENY'")
 
+    with subtest("Every host's numbers for machines: /data/all.json and /metrics"):
+        hub.wait_until_succeeds("jq -e '.hosts.piabrota2.fresh and .hosts.piabrota2.data.uptime_s > 0' /run/metrics-web/all.json", timeout=60)
+        client.succeed("curl -s http://hub/data/all.json | jq -e '.v == 1 and (.hosts | has(\"piabrota2\"))'")
+        assert code(client, "http://hub/metrics") == "200"
+        client.succeed("curl -sI http://hub/metrics | grep -i '^content-type: text/plain; version=0.0.4'")
+        client.succeed("curl -sI http://hub/metrics | grep -i '^cache-control: no-store'")
+        client.succeed("curl -s http://hub/metrics | grep -c '^piabrota_host_fresh{host=\"piabrota2\"} 1$'")
+        assert code(client, "-A GPTBot http://hub/metrics") == "403"
+        assert hub.succeed("systemctl show metrics-export.service -p PrivateNetwork --value").strip() == "yes"
+        hub.fail("systemctl is-failed metrics-export.service")
+        # Not on a host without the page.
+        edge.fail("systemctl cat metrics-export.service")
+
     with subtest("robots.txt tells every crawler to go away"):
         assert code(client, "http://hub/robots.txt") == "200"
         client.succeed("curl -sI http://hub/robots.txt | grep -i '^content-type: text/plain'")

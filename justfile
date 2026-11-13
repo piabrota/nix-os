@@ -288,9 +288,10 @@ certs-fix user="h0ffmann":
 video-dummy:
     python3 video-lab/dummy/run.py
 
-# tests of the metrics collector and probe (fixture /proc, fake curl), the page's rules (pure Nix) and its HTTP fetch; needs python3 and nix
+# tests of the metrics collector, probe and export (fixture /proc, fake curl), the page's rules (pure Nix) and its HTTP fetch; needs python3 and nix
 metrics-test:
     python3 metrics/test/collect_test.py
+    python3 metrics/test/export_test.py
     nix build --no-link --print-build-logs .#checks.x86_64-linux.metrics-page
     python3 metrics/test/preview.py --check
 

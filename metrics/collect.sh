@@ -300,10 +300,11 @@ BEGIN {
       nf = split(L[i], f, " ")
       if (f[1] == "ts" && nf == 2 && f[2] ~ /^[0-9]+$/) pts = f[2]
       else if (f[1] == "domain" && nf == 3 && nd < 24 && f[2] ~ /^[a-z0-9.-]+$/ && length(f[2]) <= 64 && f[3] ~ /^[0-9][0-9][0-9]$/) {
-        up = (f[3] + 0 >= 100 && f[3] + 0 < 500); nd++; nup += up
+        # Not `up`: that name holds the uptime, printed below.
+        sup = (f[3] + 0 >= 100 && f[3] + 0 < 500); nd++; nup += sup
         vis = ""
         if (f[2] in VV) { vis = sprintf(",\"views\":%d,\"visitors\":%d", VV[f[2]], VP[f[2]]); nv++; tv += VV[f[2]]; tp += VP[f[2]] }
-        dom = dom (nd > 1 ? "," : "") sprintf("{\"name\":\"%s\",\"code\":%d,\"up\":%s%s}", f[2], f[3], (up ? "true" : "false"), vis)
+        dom = dom (nd > 1 ? "," : "") sprintf("{\"name\":\"%s\",\"code\":%d,\"up\":%s%s}", f[2], f[3], (sup ? "true" : "false"), vis)
       } else if (f[1] == "repo" && nf == 3 && f[2] ~ /^[0-9]+$/ && length(f[2]) <= 9 && f[3] ~ /^[0-9]+$/) { rc = f[2]; rts = f[3] }
     }
   }
