@@ -7,12 +7,12 @@
 { buildNpmPackage, fetchFromGitHub, nodejs_22 }:
 buildNpmPackage {
   pname = "piabrota-room";
-  version = "0-unstable-2026-11-12";
+  version = "0-unstable-2026-11-13";
   src = fetchFromGitHub {
     owner = "piabrota";
     repo = "room";
-    rev = "9f6076f691afafce115e39715808cbd65e4b629f";
-    hash = "sha256-bvP6XC551JLXxku+xke3+JMR7upVBv9FIxVaxCS4HnI=";
+    rev = "322c190e0a92929acc644e961a3b7d3c006ad106";
+    hash = "sha256-0yhf+m5sw/2nLg7V3NRt0AgoU64xoC+XPa926KwOw/s=";
   };
   # The hash of package-lock.json's packages: `nix run nixpkgs#prefetch-npm-deps -- package-lock.json`.
   npmDepsHash = "sha256-/uqbxk0gN7bIosBtSKr8xF6XG4H3TaJf9LGADFd2muQ=";
