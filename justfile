@@ -9,6 +9,39 @@ kvm4 := env_var_or_default("DEPLOY_HOST_KVM4", "srv2125808.hstgr.cloud")
 default:
     @just --list
 
+# Short names for the daily recipes (`just b`, `just h`); `just --list` shows each beside its recipe.
+alias b := build
+alias c := check
+alias h := remote-health
+alias s := remote-specs
+alias t := scripts-test
+alias p := site-pins
+
+# the morning look, read only: the health of both boxes, their failed units, then every certificate from here
+daily user="h0ffmann":
+    a=0; b=0; c=0; \
+    {{just_executable()}} remote-health {{user}} {{host}} || a=$?; \
+    {{just_executable()}} remote-health {{user}} {{kvm4}} || b=$?; \
+    for t in {{host}} {{kvm4}}; do echo "== failed units on $t"; ssh {{user}}@$t systemctl --failed --no-pager --legend=no; done; \
+    {{just_executable()}} certs || c=$?; \
+    [ "$a" = 0 ] && [ "$b" = 0 ] && [ "$c" = 0 ]
+
+# open a shell on piabrota (box) or on piabrota2 (box2)
+box user="h0ffmann":
+    ssh {{user}}@{{host}}
+
+box2 user="h0ffmann":
+    ssh {{user}}@{{kvm4}}
+
+# the last 100 lines of a unit's journal on a box, read only; `just logs hermes-agent h0ffmann {{kvm4}}`
+logs unit user="h0ffmann" target=host:
+    case '{{unit}}' in *[!a-zA-Z0-9@._-]*) echo "logs: not a unit name: {{unit}}" >&2; exit 2 ;; esac
+    ssh {{user}}@{{target}} journalctl -u '{{unit}}' -n 100 --no-pager
+
+# the open pull requests of this repository (needs gh)
+prs:
+    gh pr list --repo piabrota/nix-os
+
 # the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; python3); `just certs www.piabrota.art` checks one
 certs *names:
     python3 scripts/cert_check.py {{names}}
@@ -23,10 +56,10 @@ check:
     nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix lofi.nix lofi/default.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix closed.nix closed-site/default.nix hffmnn.nix hffmnn-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
-    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
+    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
-    nix run nixpkgs#ruff -- check scripts
-    nix run nixpkgs#ruff -- format --check scripts
+    nix run nixpkgs#ruff -- check scripts metrics/test favicon video-lab
+    nix run nixpkgs#ruff -- format --check scripts metrics/test favicon video-lab
     python3 -m unittest discover -s scripts/tests
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
@@ -258,13 +291,14 @@ certs-fix user="h0ffmann":
 
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:
-    sh video-lab/dummy/run.sh
+    python3 video-lab/dummy/run.py
 
-# tests of the metrics collector (fixture /proc) and page; needs jq, and python3 and curl for the page's HTTP check
+# tests of the metrics collector and probe (fixture /proc, fake curl), the page's rules (pure Nix) and its HTTP fetch; needs python3 and nix
 metrics-test:
-    sh metrics/test/run.sh
-    sh metrics/test/page.sh
+    python3 metrics/test/collect_test.py
+    nix build --no-link --print-build-logs .#checks.x86_64-linux.metrics-page
+    python3 metrics/test/preview.py --check
 
-# open the metrics page on fixtures (healthy, stale, missing or hostile) at http://127.0.0.1:<port>/; needs python3 and jq
+# open the metrics page on fixtures (healthy, stale, missing or hostile) at http://127.0.0.1:<port>/; needs python3
 metrics-preview case="healthy" port="8080":
-    sh metrics/test/preview.sh {{case}} {{port}}
+    python3 metrics/test/preview.py {{case}} {{port}}

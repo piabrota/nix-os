@@ -173,6 +173,30 @@ piabrota.
   `sudo nixos-rebuild switch --rollback`. The next merge to `main` deploys again over it.
 - To update nixpkgs: `nix flake update` in a pull request.
 
+### Daily commands
+
+From your machine, in this repository (`just --list` shows them all):
+
+| Command | What it does |
+|---|---|
+| `just daily` | The morning look, read only: `remote-health` of both boxes, their failed units, then `certs`. |
+| `just box`, `just box2` | A shell on piabrota, on piabrota2. |
+| `just logs <unit> [user] [host]` | The last 100 lines of a unit's journal on a box. |
+| `just prs` | The open pull requests of piabrota/nix-os. |
+| `just b`, `c`, `h`, `s`, `t`, `p` | `build`, `check`, `remote-health`, `remote-specs`, `scripts-test`, `site-pins`. |
+
+On a box, for every user (`tools.nix`, all read only):
+
+| Alias | Runs |
+|---|---|
+| `failed`, `timers` | the failed units; the timers and when they run next |
+| `logs <unit>`, `follow <unit>` | the last 200 lines of a unit's journal; the journal as it grows |
+| `errors` | the warnings and errors since the boot |
+| `hs`, `hlog` | Hermes's unit status; its journal as it grows (piabrota2) |
+| `hm <args>` | the Hermes CLI as its own user, `sudo -u hermes hermes` (piabrota2) |
+| `gens`, `changed`, `ver` | the system generations; what changed since the boot (`dix`); the NixOS version |
+| `ports`, `mem`, `disk` | the listening TCP ports; the memory; the local disks (`duf`) |
+
 ## Restarting the services by hand
 
 `just remote-restart` restarts the services of a box over SSH, as `h0ffmann` through the existing
