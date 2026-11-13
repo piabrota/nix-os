@@ -1,8 +1,8 @@
 # piabrota2: the Hostinger KVM 4 VPS (4 vCPU and 16 GB RAM by Hostinger's plan list; `just remote-specs`
 # gives the real figures), the second host. It runs Hermes: the full Hermes (upstream's `full`
 # package and upstream's defaults), its GitHub App, its web dashboard on hermes.piabrota.art, PGX
-# and OpenRig, which Hermes operates. Paperclip is off for now (see below). It does not serve
-# www.piabrota.art: that name points at piabrota.
+# and OpenRig, which Hermes operates. It does not serve www.piabrota.art: that name points at
+# piabrota.
 #
 # Its setup from an empty VPS is docs/DEPLOY.md, "A second host"; the move of Hermes from piabrota
 # is docs/MIGRATION-KVM4.md. Nothing is cloned or built on the VPS.
@@ -14,9 +14,6 @@
     ../../hermes-github.nix
     # The dashboard behind nginx, TLS and basic auth. hermes.piabrota.art must point at this box.
     ../../hermes-web.nix
-    # Paperclip, off for now: the import stays, so `enable = true` below turns it back on.
-    # paperclip.piabrota.art must point at this box before that.
-    ../../paperclip.nix
     # OpenRig (openrig.nix): loopback only, no DNS, no port.
     ../../openrig.nix
     # The room (piabrota/room) on room.piabrota.art, which must point at this box.
@@ -55,8 +52,6 @@
   piabrota.pgx.enable = true;
   # The lofi bot (lofi.nix, docs/LOFI.md). Idle until its token and IDs are on the box.
   piabrota.lofi.enable = true;
-  # Off since 2026-11-04 by the owner's order; docs/PAPERCLIP.md says how to turn it on.
-  piabrota.paperclip.enable = false;
   # Hermes operates it with `rig` and the skill hermes-rig; docs/OPENRIG.md.
   piabrota.openrig.enable = true;
   # The web UI at rig.piabrota.art, behind the dashboard's login (docs/OPENRIG.md, "The web UI").

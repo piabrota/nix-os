@@ -20,6 +20,6 @@
     { id = "rig"; label = "rig"; url = "https://rig.piabrota.art/"; host = "rig.piabrota.art"; line = "The OpenRig web UI. It needs the login."; access = "login"; }
   ];
 
-  # Hosts under piabrota.art that are not sites: the apex only redirects to www, and paperclip is off.
-  hidden = [ "piabrota.art" "paperclip.piabrota.art" ];
+  # Hosts under piabrota.art that are not sites: the apex only redirects to www.
+  hidden = [ "piabrota.art" ];
 }

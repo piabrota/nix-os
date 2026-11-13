@@ -14,7 +14,6 @@
 | `loco.nix` | Apps [Loco](https://loco.rs) como serviços systemd isolados, com SQLite, nginx e HTTPS. |
 | `site.nix` | O site estático de `site/` (Gleam e Lustre, pré-renderizado no build; a VPS recebe só o HTML e o CSS) em www.piabrota.art, por HTTP e HTTPS; `piabrota.art` redireciona para o `www`. |
 | `pgx.nix` | O [PGX](https://pgx.dev), um banco compatível com Postgres em um processo, no lugar de um servidor PostgreSQL ou do Docker, para a próxima carga que precisar de Postgres (hoje nada o usa). Só para dado que dá para refazer; o dado dos apps fica no SQLite. Veja [`docs/PGX.ptBR.md`](https://github.com/piabrota/nix-os/blob/main/docs/PGX.ptBR.md). |
-| `paperclip.nix` | O [Paperclip](https://github.com/paperclipai/paperclip), um painel de controle para um time de agentes de IA, em paperclip.piabrota.art na KVM 4, com o PostgreSQL 17 só num socket. Desligado por enquanto (`enable = false`). Ligado, o Hermes é o agente dele: o Paperclip manda cada tarefa ao servidor de API do Hermes no loopback. Veja [`docs/PAPERCLIP.md`](https://github.com/piabrota/nix-os/blob/main/docs/PAPERCLIP.md) (em inglês). |
 | `hermes.nix` | O [Hermes Agent](https://github.com/NousResearch/hermes-agent), o agente da Nous Research, pelo módulo NixOS do flake dele: um serviço isolado que responde em plataformas de chat, com o Claude pela assinatura do dono; os segredos ficam na máquina. Veja [Hermes](Hermes). |
 | `openrig.nix` | O [OpenRig](https://github.com/mvschwarz/openrig), um painel de controle para um time de agentes de código, na KVM 4, com a interface em rig.piabrota.art atrás de basic auth. É o motor da [fábrica de software](Fabrica): um seat builder e um seat reviewer, ambos no `omp`, que o Hermes opera. Veja [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md) (em inglês). |
 | `kubesolo-purge.nix` | Um oneshot que limpa uma instalação antiga da máquina, uma vez. Uma pessoa o apaga depois. |
@@ -46,7 +45,7 @@ Página interativa: <https://www.piabrota.art/figures/pt-BR/two-hosts/>
 
 **Como ler.** De cima para baixo, uma faixa por lugar: visitante, DNS, cada VPS, dono. O DNS transforma cada nome numa máquina. Na KVM 4, leia a linha da esquerda para a direita: o painel divide o estado com o gateway, o gateway comanda o openrig, e a interface do OpenRig faz proxy para ele. O gateway vai até as conversas; elas não o chamam. A borda vermelha marca o que fica fora das duas máquinas.
 
-**Fora da figura.** O deploy e os pull requests (as figuras "Como o nix-os funciona" e "A fábrica de software" mostram os dois), o PGX na KVM 4 (o Paperclip está desligado por enquanto), os certificados ACME, os segredos em cada máquina e os clones em que os seats trabalham.
+**Fora da figura.** O deploy e os pull requests (as figuras "Como o nix-os funciona" e "A fábrica de software" mostram os dois), o PGX na KVM 4, os certificados ACME, os segredos em cada máquina e os clones em que os seats trabalham.
 
 **Fonte.** [`docs/archify/pt/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/pt/two-hosts.json), a fonte da figura; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, `openrig.nix`, [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md), [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
 

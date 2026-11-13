@@ -18,7 +18,6 @@ marola.piabrota.art       piabrota2   marola-dev/marola-site, before marola.dev 
 hermes.piabrota.art       piabrota2   Hermes's dashboard, basic auth (hermes-web.nix)
 rig.piabrota.art          piabrota2   OpenRig's web UI, basic auth (openrig.nix)
 metrics.piabrota.art      piabrota2   the metrics page (metrics.nix)
-paperclip.piabrota.art    off         Paperclip, off since 2026-11-04 (paperclip.nix)
 tyler.piabrota.art        off         tyler-durden-bot's webhook, off until its DNS record exists (tyler-durden-bot.nix)
 app.piabrota.art          off         an example in an option's description (loco.nix)
 example.piabrota.art      off         an example in an option's description (loco.nix)

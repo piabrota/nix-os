@@ -44,7 +44,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── flake.nix, flake.lock    a system and a deploy-rs node per host, the checks
 ├── configuration.nix        what every host shares: the Hostinger KVM base and the common modules
 ├── hosts/piabrota/          KVM 1: the public web only
-├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, OpenRig, PGX; Paperclip off for now (docs/DEPLOY.md)
+├── hosts/piabrota2/         KVM 4: the full Hermes, its GitHub App and dashboard, OpenRig, PGX (docs/DEPLOY.md)
 ├── piabrota.nix             the user h0ffmann and the base packages
 ├── tools.nix                light CLI tools, and the size and memory limits
 ├── deploy.nix               the deploy user that CI logs in as, GC, boot generation limit
@@ -53,7 +53,6 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── site.nix, site/          the static site on www.piabrota.art (Gleam + Lustre, prerendered by Nix)
 ├── skills-site/             the skills website at skills.piabrota.art, a vhost of site.nix (docs/SITE.md)
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
-├── paperclip.nix, paperclip/ Paperclip, its npm package and lock, with Hermes as its agent
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
 ├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
@@ -74,7 +73,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── docs/archify/, docs/img/ the figures' archify sources and PNGs; vendor/archify is the pinned archify
 ├── docs/DEPLOY.md           how a merge reaches the VPSs, and the one-time setup
 ├── docs/MIGRATION-KVM4.md   the checklist that moves Hermes from KVM 1 to KVM 4
-├── docs/FIGURES.md          the README's figures, how to read them, the software factory status
+├── docs/FIGURES.md          the figures, how to read them, the software factory status
 ├── docs/STRUCTURE.md        this page: recipes, pins, the file tree, the flake outputs
 ├── docs/LOCO.md             how to add a Loco app
 ├── docs/SITE.md             how to turn the static site on
@@ -88,7 +87,6 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── docs/HERMES.md         the same, in English
 ├── docs/PGX.ptBR.md         PGX here: cost, limits, use, in Portuguese
 ├── docs/PGX.md            the same, in English
-├── docs/PAPERCLIP.md      Paperclip and Hermes here: setup, cost, updating
 ├── docs/OPENRIG.md        OpenRig and the software factory here: setup, UI, status, guardrails
 ├── docs/THESIS.ptBR.md    the thesis rig: parts, gates, UFRJ rules, deployment notes, in Portuguese
 ├── docs/THESIS.md         the same, in English

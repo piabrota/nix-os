@@ -1,6 +1,6 @@
 # Figures
 
-The figures of the README, with how to read each one and what it leaves out. The README shows them; this page keeps the text. Each figure has an interactive page at `https://www.piabrota.art/figures/<name>/`.
+The figures of the system, with how to read each one and what it leaves out. Each figure has an interactive page at `https://www.piabrota.art/figures/<name>/`.
 
 ![Two hosts: a visitor's browser asks Porkbun DNS, whose A records send www.piabrota.art to VPS 1 (KVM 1), which serves the site, /hermes, /figures and the /notes Loco app, and hermes.piabrota.art and rig.piabrota.art to VPS 2 (KVM 4); there the dashboard behind basic auth shares its state with the hermes-agent gateway, which drives the openrig unit with its two omp seats; the OpenRig UI behind basic auth proxies to openrig; the gateway polls the owner's Telegram and Discord chats.](img/two-hosts.png)
 
@@ -13,7 +13,7 @@ Interactive page: <https://www.piabrota.art/figures/two-hosts/>
 
 **How to read.** Top to bottom, one lane per place: visitor, DNS, each VPS, owner. DNS turns each name into a host. On KVM 4, read the row from left to right: the dashboard shares state with the gateway, the gateway drives openrig, and the OpenRig UI proxies to it. The gateway reaches out to the chats; they do not call it. The red border marks what is outside the two boxes.
 
-**Not shown.** The deploy and the pull requests (the figures "How nix-os works" and "The software factory" show them), PGX on KVM 4 (Paperclip is off for now), the ACME certificates, the secrets on each box, and the clones the seats work in.
+**Not shown.** The deploy and the pull requests (the figures "How nix-os works" and "The software factory" show them), PGX on KVM 4, the ACME certificates, the secrets on each box, and the clones the seats work in.
 
 **Evidence.** [`docs/archify/two-hosts.json`](archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, `openrig.nix`, [`docs/OPENRIG.md`](OPENRIG.md), [`docs/MIGRATION-KVM4.md`](MIGRATION-KVM4.md).
 

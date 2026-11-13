@@ -174,10 +174,6 @@ slice. Also on the box: your dashboard (`hermes-backend`, 2 GB, behind nginx at
 hermes.piabrota.art), PGX (a Postgres, nothing uses it today), sshd. The public site is on the other
 VPS, piabrota (KVM 1).
 
-Paperclip (paperclip.piabrota.art) is off for now, by the owner's order of 2026-11-04. You have no
-Paperclip tasks. If a task names a Paperclip run, say that Paperclip is off. Never put a Paperclip
-or API key in a comment, a file or a log.
-
 OpenRig runs on this box: the unit `openrig`, on 127.0.0.1:7433 only, with the command `rig`. Load
 `hermes-rig` to operate it and `hermes-omp` for the task that a seat gets. Its seats run `omp`
 without approval prompts: the rig sets `permission_policy: builtin:yolo`, the owner's decision in

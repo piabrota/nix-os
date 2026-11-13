@@ -53,7 +53,7 @@ build node="piabrota":
 # what CI runs on a pull request
 check:
     nix flake check --no-update-lock-file --print-build-logs
-    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix lofi.nix lofi/default.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix closed.nix closed-site/default.nix hffmnn.nix hffmnn-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
+    nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix lofi.nix lofi/default.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix closed.nix closed-site/default.nix hffmnn.nix hffmnn-site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh
@@ -101,11 +101,6 @@ scripts-test:
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
     cd hermes/feeds/tests && python3 -m unittest -v test_build_feed
-
-# tests of the Paperclip helpers (paperclip/*.test.sh): the pi_local shim and paperclip-hermes-key; needs bash and openssl
-paperclip-test:
-    bash paperclip/pi-to-omp.test.sh
-    sh paperclip/hermes-key.test.sh
 
 # tests of the hermes-omp commands (hermes/skills/hermes-omp/scripts): omp-stream and omp-run; needs bash, jq and setsid
 omp-test:
@@ -231,7 +226,7 @@ _figure-lock:
         printf '%s\t%s\n' "${rel%.json}" "$(cat "$src" docs/archify/piabrota.css docs/archify/crop.tsv | sha256sum | cut -c1-16)-${pin:0:7}"
     done
 
-# cheap and offline: every source has its PNG, shown in README.md (pt/ in the wiki), the wiki has the same PNG, all match the last `just figure`
+# cheap and offline: every source has its PNG, shown in docs/FIGURES.md (pt/ in the wiki), the wiki has the same PNG, all match the last `just figure`
 figure-check:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -241,7 +236,7 @@ figure-check:
         cmp -s "docs/img/$s.png" "wiki/img/$s.png" || { echo "figure-check: wiki/img/$s.png is not docs/img/$s.png; run just figure" >&2; exit 1; }
         case "$s" in
             pt/*) grep -rqF "](img/$s.png)" wiki/ || { echo "figure-check: no wiki page shows img/$s.png" >&2; exit 1; } ;;
-            *) grep -qF "](docs/img/$s.png)" README.md || { echo "figure-check: README.md does not show docs/img/$s.png" >&2; exit 1; } ;;
+            *) grep -qF "](img/$s.png)" docs/FIGURES.md || { echo "figure-check: docs/FIGURES.md does not show img/$s.png" >&2; exit 1; } ;;
         esac
     done
     just _figure-lock | cmp -s - docs/archify/figures.lock || { echo "figure-check: a source, the look or the Archify pin changed since the PNG; run just figure" >&2; exit 1; }

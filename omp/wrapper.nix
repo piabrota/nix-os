@@ -1,5 +1,5 @@
 # oh-my-pi (omp), the coding agent Hermes hands repository work to (hermes/skills/hermes-omp,
-# docs/HERMES.md, "omp"), and Paperclip's pi_local adapter through paperclip/pi-to-omp.sh. Hermes's
+# docs/HERMES.md, "omp"). Hermes's
 # deny list and tripwire see only the outer `omp` command, so omp gets its own rules: hermes/omp.yml,
 # a read-only config overlay. This wrapper is the only omp on Hermes's PATH. omp reads
 # ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the same subscription. omp runs

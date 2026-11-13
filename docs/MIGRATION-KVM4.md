@@ -2,7 +2,7 @@
 
 A checklist, in order. After it, **VPS 1 (KVM 1, `piabrota`)** serves the public web only, and
 **VPS 2 (KVM 4, `piabrota2`)** runs Hermes, its GitHub App, its dashboard on `hermes.piabrota.art`,
-and PGX. [www.piabrota.art/hosts](https://www.piabrota.art/hosts) and the README's first figure
+and PGX. [www.piabrota.art/hosts](https://www.piabrota.art/hosts) and the first figure of `docs/FIGURES.md`
 show the split. English only.
 
 **One rule:** do not merge the pull request that moves Hermes until KVM 4 has had its first deploy

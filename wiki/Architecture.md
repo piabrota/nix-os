@@ -14,7 +14,6 @@
 | `loco.nix` | [Loco](https://loco.rs) apps as sandboxed systemd services, with SQLite, nginx and HTTPS. |
 | `site.nix` | The static site from `site/` (Gleam and Lustre, prerendered at build time; the VPS gets only the HTML and CSS) on www.piabrota.art, over HTTP and HTTPS; `piabrota.art` redirects to `www`. |
 | `pgx.nix` | [PGX](https://pgx.dev), a Postgres-compatible database in one process, instead of a PostgreSQL server or Docker, for the next workload that needs Postgres (nothing uses it today). Only for data that can be rebuilt; the apps' data stays in SQLite. See [`docs/PGX.md`](https://github.com/piabrota/nix-os/blob/main/docs/PGX.md). |
-| `paperclip.nix` | [Paperclip](https://github.com/paperclipai/paperclip), a control plane for a team of AI agents, at paperclip.piabrota.art on KVM 4, with PostgreSQL 17 on a socket only. Off for now (`enable = false`). When on, Hermes is its agent: Paperclip sends each task to the Hermes API server on loopback. See [`docs/PAPERCLIP.md`](https://github.com/piabrota/nix-os/blob/main/docs/PAPERCLIP.md). |
 | `hermes.nix` | [Hermes Agent](https://github.com/NousResearch/hermes-agent), Nous Research's agent, from its flake's NixOS module: a sandboxed service that answers on chat platforms, on Claude through the owner's subscription; its secrets stay on the box. See [Hermes](Hermes-EN). |
 | `openrig.nix` | [OpenRig](https://github.com/mvschwarz/openrig), a control plane for a team of coding agents, on KVM 4, with its UI at rig.piabrota.art behind basic auth. It is the engine of the [software factory](Factory): a builder seat and a reviewer seat, both on `omp`, which Hermes operates. See [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md). |
 | `kubesolo-purge.nix` | A oneshot that clears an old install from the box, once. A human deletes it later. |
@@ -46,7 +45,7 @@ Interactive page: <https://www.piabrota.art/figures/two-hosts/>
 
 **How to read.** Top to bottom, one lane per place: visitor, DNS, each VPS, owner. DNS turns each name into a host. On KVM 4, read the row from left to right: the dashboard shares state with the gateway, the gateway drives openrig, and the OpenRig UI proxies to it. The gateway reaches out to the chats; they do not call it. The red border marks what is outside the two boxes.
 
-**Not shown.** The deploy and the pull requests (the figures "How nix-os works" and "The software factory" show them), PGX on KVM 4 (Paperclip is off for now), the ACME certificates, the secrets on each box, and the clones the seats work in.
+**Not shown.** The deploy and the pull requests (the figures "How nix-os works" and "The software factory" show them), PGX on KVM 4, the ACME certificates, the secrets on each box, and the clones the seats work in.
 
 **Evidence.** [`docs/archify/two-hosts.json`](https://github.com/piabrota/nix-os/blob/main/docs/archify/two-hosts.json), the source of the figure; `hosts/piabrota/default.nix`, `hosts/piabrota2/default.nix`, `hermes-web.nix`, `openrig.nix`, [`docs/OPENRIG.md`](https://github.com/piabrota/nix-os/blob/main/docs/OPENRIG.md), [`docs/MIGRATION-KVM4.md`](https://github.com/piabrota/nix-os/blob/main/docs/MIGRATION-KVM4.md).
 

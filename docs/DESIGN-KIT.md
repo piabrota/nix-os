@@ -75,6 +75,6 @@ These files still hold their own copy of the tokens. A later stage moves them to
 |`metrics/index.html`|The tokens and the type, inline in one file.|
 |`figures-site/default.nix`|The eye and the bar of 44 px for each figure page, and the index frame of `site/static/style.css`.|
 |`hermes-web/docs/index.html`|The tokens, inline, because the dashboard shows it in an iframe.|
-|`docs/archify/piabrota.css`|The dark tokens for the archify figures of the README.|
+|`docs/archify/piabrota.css`|The dark tokens for the archify figures of `docs/FIGURES.md`.|
 |`hermes/dashboard-themes/piabrota.yaml`, `hermes/skins/piabrota.yaml`|The dark tokens only.|
 |`site/src/piabrota_site/parts.gleam`, `favicon/favicon.svg`|The eye. `checks.favicon` compares them.|
