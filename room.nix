@@ -20,6 +20,11 @@ let
     "/assets/".extraConfig = ''
       add_header Cache-Control "public, max-age=31536000, immutable";
     '';
+    # The room asks for a file of public/ as path?v=<8 hex of its SHA-256> (piabrota/room#51,
+    # src/files.js): with that hash the file never changes; without it, it is asked for again.
+    "~ ^/(models|textures|audio|grid)/".extraConfig = ''
+      add_header Cache-Control $room_public_cache;
+    '';
     # The page itself is always asked for again, so a new build shows at once.
     "= /index.html".extraConfig = ''
       add_header Cache-Control "no-cache";
@@ -92,7 +97,16 @@ in
       enable = true;
       recommendedTlsSettings = true;
       recommendedGzipSettings = true;
+      # brotli, and brotli_static: the room's build writes a .br copy beside its files
+      # (piabrota/room#51), and nginx sends that copy as it is.
+      recommendedBrotliSettings = true;
       recommendedOptimisation = true;
+      commonHttpConfig = ''
+        map $arg_v $room_public_cache {
+          default          "no-cache";
+          "~^[0-9a-f]{8}$" "public, max-age=31536000, immutable";
+        }
+      '';
       serverTokens = false;
       virtualHosts = {
         ${cfg.domain} = {
