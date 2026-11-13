@@ -10,7 +10,7 @@
 #   STATE_DIR         where the previous sample is kept (default /run/metrics-state)
 #   METRICS_INVENTORY a file of "<key> <count>" lines that Nix wrote: what this generation runs
 #                     (metrics.nix). Optional; without it the file has no "inventory".
-#   METRICS_PROBE     the file metrics/probe.sh writes: the sites' answers and the commit count.
+#   METRICS_PROBE     the file metrics/probe.sh writes: the sites' answers and visits, the commits.
 #                     Optional; without it the file has no "domains" and no "repo".
 #   METRICS_REPO      owner/name of the repository the commits are counted in (the "repo" name)
 #   SYSTEM_PROFILE    the system profile; its generation is the number of deploys (default
@@ -288,15 +288,22 @@ BEGIN {
   }
 
   # The file of the probe: its time, the HTTP code of each site (up is an answer below 500), the commits.
-  pts = ""; dom = ""; nd = 0; nup = 0; rc = ""
+  # Its visits lines come first here, so that each site carries its views and visitors of 24 h.
+  pts = ""; dom = ""; nd = 0; nup = 0; rc = ""; nv = 0; tv = 0; tp = 0
   if (PROBE != "") {
     nl = split(rd(PROBE), L, "\n")
+    for (i = 1; i <= nl; i++)
+      if (split(L[i], f, " ") == 4 && f[1] == "visits" && f[3] ~ /^[0-9]+$/ && length(f[3]) <= 9 && f[4] ~ /^[0-9]+$/ && length(f[4]) <= 9 && !(f[2] in VV)) {
+        VV[f[2]] = f[3] + 0; VP[f[2]] = f[4] + 0
+      }
     for (i = 1; i <= nl; i++) {
       nf = split(L[i], f, " ")
       if (f[1] == "ts" && nf == 2 && f[2] ~ /^[0-9]+$/) pts = f[2]
       else if (f[1] == "domain" && nf == 3 && nd < 24 && f[2] ~ /^[a-z0-9.-]+$/ && length(f[2]) <= 64 && f[3] ~ /^[0-9][0-9][0-9]$/) {
         up = (f[3] + 0 >= 100 && f[3] + 0 < 500); nd++; nup += up
-        dom = dom (nd > 1 ? "," : "") sprintf("{\"name\":\"%s\",\"code\":%d,\"up\":%s}", f[2], f[3], (up ? "true" : "false"))
+        vis = ""
+        if (f[2] in VV) { vis = sprintf(",\"views\":%d,\"visitors\":%d", VV[f[2]], VP[f[2]]); nv++; tv += VV[f[2]]; tp += VP[f[2]] }
+        dom = dom (nd > 1 ? "," : "") sprintf("{\"name\":\"%s\",\"code\":%d,\"up\":%s%s}", f[2], f[3], (up ? "true" : "false"), vis)
       } else if (f[1] == "repo" && nf == 3 && f[2] ~ /^[0-9]+$/ && length(f[2]) <= 9 && f[3] ~ /^[0-9]+$/) { rc = f[2]; rts = f[3] }
     }
   }
@@ -321,7 +328,7 @@ BEGIN {
   printf "\"procs_total\":%d,\"services_running\":%d,", np, nsvc
   if (INVENTORY != "") printf "\"inventory\":{%s},", inv_json
   printf "\"system\":{%s},", sys
-  if (pts != "") printf "\"domains\":{\"ts\":%.0f,\"up\":%d,\"total\":%d,\"list\":[%s]},", pts, nup, nd, dom
+  if (pts != "") printf "\"domains\":{\"ts\":%.0f,\"up\":%d,\"total\":%d,%s\"list\":[%s]},", pts, nup, nd, (nv ? sprintf("\"views\":%d,\"visitors\":%d,", tv, tp) : ""), dom
   if (rc != "") printf "\"repo\":{%s\"commits\":%d,\"ts\":%.0f},", (REPO != "" ? "\"name\":\"" esc(REPO) "\"," : ""), rc, rts
   printf "\"top_mem\":[%s],\"top_cpu\":[%s],\"units\":[%s]}\n", top_mem, top_cpu, unit_json
 }

@@ -83,7 +83,7 @@ footer{margin-top:24px;color:var(--muted);font-size:13px}
 </header>
 <noscript><p class="none">This page needs JavaScript to draw the numbers.</p></noscript>
 <div class="grid" id="grid"></div>
-<footer id="foot">CPU % of a process is a share of one vCPU, averaged over the last interval. The lists show 10 processes. A limit shows only for units that have a MemoryMax. Rates are averages over the last interval; pressure is the share of the last 10 s that tasks stalled (some / full). The inventory is what the deployed configuration declares, counted when it was built. A site is up when it gives any answer below HTTP 500.</footer>
+<footer id="foot">CPU % of a process is a share of one vCPU. Rates and CPU % are averages over the last interval; pressure is the share of the last 10 s that tasks stalled (some / full). The lists show 10 processes; a limit shows only for units with a MemoryMax. The inventory is what the deployed configuration declares, counted at build time. A site is up when it answers below HTTP 500. A visit is a page that a browser got in the last 24 h, a visitor is an address; bots are not counted.</footer>
 </main>
 <script>
 "use strict";
@@ -138,7 +138,7 @@ function build(host) {
   head.appendChild(h); head.appendChild(pill); card.appendChild(head);
   var age = el("p", "age", "no data yet"); card.appendChild(age);
   var body = el("div", "body"); card.appendChild(body);
-  var top = el("dl", "facts top"), t = { dom: fact("Domains up"), commits: fact("Commits"), deploys: fact("Deploys"), apps: fact("Apps installed"), nixos: fact("NixOS") };
+  var top = el("dl", "facts top"), t = { dom: fact("Domains up"), vis: fact("Visits 24 h"), commits: fact("Commits"), deploys: fact("Deploys"), apps: fact("Apps installed"), nixos: fact("NixOS") };
   for (var j in t) top.appendChild(t[j].root);
   var doms = el("ul", "doms"); body.appendChild(top); body.appendChild(doms);
   var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"), svcs: fact("Services up"),
@@ -216,6 +216,7 @@ function sites(v, d) {
   var lag = num(d.ts) !== null && num(dm.ts) !== null ? d.ts - dm.ts : null, fresh = lag !== null && lag <= 300;
   put(v.t.dom, n ? up + " / " + n : "", n && !fresh ? "probe " + (lag === null ? "time unknown" : dur(lag) + " old") : "");
   v.t.dom.dd.className = n && fresh ? (up === n ? "up" : "down") : "";
+  put(v.t.vis, dm.views, num(dm.visitors) !== null ? dm.visitors + " visitors" : "");
   put(v.t.commits, rp.commits, str(rp.name));
   put(v.t.deploys, sy.generation, "generation of the system profile: one for each deploy that changed the system");
   put(v.t.apps, obj(d.inventory).packages, "packages of environment.systemPackages");
@@ -223,20 +224,22 @@ function sites(v, d) {
   v.doms.replaceChildren();
   list.forEach(function (x) {
     x = obj(x);
-    var up = x.up === true, li = el("li", fresh ? (up ? "up" : "down") : "", str(x.name) + (up ? "" : " · " + (num(x.code) ? x.code : "no answer")));
-    li.title = (up ? "up" : "down") + ", HTTP " + str(x.code); v.doms.appendChild(li);
+    var up = x.up === true, vw = num(x.views) !== null, li = el("li", fresh ? (up ? "up" : "down") : "",
+      str(x.name) + (up ? "" : " · " + (num(x.code) ? "HTTP " + x.code : "no answer")) + (vw ? " · " + x.views : ""));
+    li.title = (up ? "up" : "down") + ", HTTP " + str(x.code) + (vw ? ", " + x.views + " visits, " + str(x.visitors) + " visitors in 24 h" : ""); v.doms.appendChild(li);
   });
 }
 function draw(v) {
   var d = obj(v.data), mem = obj(d.mem), cpu = obj(d.cpu), disk = obj(d.disk), load = arr(d.load);
   v.h.textContent = str(d.label) || str(d.host) || v.name;
+  var n0 = function (x, dg) { x = num(x); return x === null ? "–" : x.toFixed(dg || 0); };
   sites(v, d);
-  v.f.vcpus.dd.textContent = num(d.vcpus) !== null ? String(d.vcpus) : "–";
-  v.f.up.dd.textContent = dur(d.uptime_s);
+  put(v.f.vcpus, n0(d.vcpus));
+  put(v.f.up, dur(d.uptime_s));
   v.f.load.dd.textContent = [0, 1, 2].map(function (i) { return num(load[i]) !== null ? load[i].toFixed(2) : "–"; }).join(" ");
-  v.f.procs.dd.textContent = num(d.procs_total) !== null ? String(d.procs_total) : "–";
-  v.f.svcs.dd.textContent = num(d.services_running) !== null ? String(d.services_running) : "–";
-  v.f.disk.dd.textContent = bytes(disk.root_used) + " / " + bytes(disk.root_total);
+  put(v.f.procs, n0(d.procs_total));
+  put(v.f.svcs, n0(d.services_running));
+  put(v.f.disk, bytes(disk.root_used) + " / " + bytes(disk.root_total));
 
   var cp = num(cpu.total_pct), mp = ratio(mem.used, mem.total);
   v.cpu.val.textContent = (cpu.warming ? "warming up" : pct(cp, 1)) + (num(d.vcpus) !== null ? " of " + d.vcpus + " vCPU" : "");
@@ -255,24 +258,24 @@ function draw(v) {
     (num(md.cached) !== null ? " Cache " + bytes(md.cached) + ", buffers " + bytes(md.buffers) + ", shmem " + bytes(md.shmem) + ", dirty " + bytes(md.dirty) + "." : "");
 
   var tk = obj(d.tasks), net = obj(d.net), dio = obj(d.disk_io), so = obj(d.sockets), ps = obj(d.pressure);
-  var n0 = function (x, dg) { x = num(x); return x === null ? "–" : x.toFixed(dg || 0); };
   var rate = function (x) { return num(x) === null ? "–" : bytes(x) + "/s"; };
   var psi = function (p) { p = obj(p); return num(p.some) === null ? "–" : pct(p.some, 1) + (num(p.full) !== null ? " / " + pct(p.full, 1) : ""); };
-  v.f.threads.dd.textContent = n0(tk.threads);
-  v.f.run.dd.textContent = n0(tk.running) + " / " + n0(tk.blocked);
-  v.f.forks.dd.textContent = n0(tk.forks_per_s, 1);
-  v.f.ctxt.dd.textContent = n0(tk.ctxt_per_s);
-  v.f.fds.dd.textContent = n0(d.fds_open);
-  v.g.rx.dd.textContent = rate(net.rx_bps); v.g.tx.dd.textContent = rate(net.tx_bps);
+  put(v.f.threads, n0(tk.threads));
+  put(v.f.run, n0(tk.running) + " / " + n0(tk.blocked));
+  put(v.f.forks, n0(tk.forks_per_s, 1));
+  put(v.f.ctxt, n0(tk.ctxt_per_s));
+  put(v.f.fds, n0(d.fds_open));
+  put(v.g.rx, rate(net.rx_bps)); put(v.g.tx, rate(net.tx_bps));
   v.g.rx.dd.title = "since boot " + bytes(net.rx_total); v.g.tx.dd.title = "since boot " + bytes(net.tx_total);
-  v.g.rd.dd.textContent = rate(dio.read_bps); v.g.wr.dd.textContent = rate(dio.write_bps);
-  v.g.tcp.dd.textContent = n0(so.tcp) + " / " + n0(so.tcp_tw);
-  v.g.udp.dd.textContent = n0(so.udp);
-  v.g.pcpu.dd.textContent = psi(ps.cpu); v.g.pmem.dd.textContent = psi(ps.memory); v.g.pio.dd.textContent = psi(ps.io);
+  put(v.g.rd, rate(dio.read_bps)); put(v.g.wr, rate(dio.write_bps));
+  put(v.g.tcp, n0(so.tcp) + " / " + n0(so.tcp_tw));
+  put(v.g.udp, n0(so.udp));
+  put(v.g.pcpu, psi(ps.cpu)); put(v.g.pmem, psi(ps.memory)); put(v.g.pio, psi(ps.io));
 
   inventory(v.inv, d.inventory);
-  table(v.tm, PROC_COLS, procs(d.top_mem), "No process list in the data.");
-  table(v.tc, PROC_COLS, procs(d.top_cpu), "No process list in the data.");
+  var np = "No process list in the data.";
+  table(v.tm, PROC_COLS, procs(d.top_mem), np);
+  table(v.tc, PROC_COLS, procs(d.top_cpu), np);
   table(v.tu, UNIT_COLS, arr(d.units).slice(0, 12).map(function (u) {
     u = obj(u);
     var p = ratio(u.mem, u.max), peak = num(u.peak) !== null ? ", peak " + bytes(u.peak) : "";

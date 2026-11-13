@@ -444,7 +444,7 @@ def probe_suite(t):
     )
     log.write_text("")
 
-    def probe_run(link, every="600"):
+    def probe_run(link, every="600", **extra):
         env = {
             "PATH": f"{fake}:{t.path}",
             "FAKE_LOG": str(log),
@@ -455,6 +455,7 @@ def probe_suite(t):
             "PROBE_REPO": "piabrota/nix-os",
             "GITHUB_API": "https://api.test",
             "PROBE_REPO_EVERY": every,
+            **extra,
         }
         done = subprocess.run(["sh", str(PROBE)], env=env, capture_output=True, text=True, check=False)
         t.err = done.stderr
@@ -492,6 +493,7 @@ def probe_suite(t):
     t.check("a new count when it answers", pline("repo")[0].split()[0], "999")
     t.check("nothing on stderr", t.err, "")
     t.check("the probe file is not in the served folder", list(t.out.rglob("*probe*")), [])
+    visits_suite(t, probe_run, pline)
     t.opts.update(probe=str(pst / "piabrota2.probe"), repo="piabrota/nix-os")
     t.ok("the collector reads the probe file", t.run())
     d = t.data()
@@ -499,6 +501,12 @@ def probe_suite(t):
         "the collector shows what the probe found",
         [d["domains"]["up"], d["domains"]["total"], d["repo"]["commits"]],
         [2, 3, 999],
+    )
+    t.check(
+        "and the visits of each site, with their sums",
+        [[x["name"], x.get("views"), x.get("visitors")] for x in d["domains"]["list"]]
+        + [[d["domains"]["views"], d["domains"]["visitors"]]],
+        [["up.example", 4, 3], ["auth.example", 1, 1], ["down.example", 0, 0], [5, 4]],
     )
     t.opts.clear()
     done = subprocess.run(
@@ -508,6 +516,70 @@ def probe_suite(t):
         check=False,
     )
     t.check("bad METRICS_NAME exits 2 in the probe", done.returncode, 2)
+
+
+def visits_suite(t, probe_run, pline):
+    print("# the visits")
+    vlog, vst = t.work / "visits.log", t.work / "pst" / "piabrota2.visits"
+    now = 1700000000
+    link = '<https://api.test/x?page=999>; rel="last"'
+
+    def run(at=now, log=vlog):
+        return probe_run(link, PROBE_VISITS_LOG=str(log), PROBE_NOW=str(at))
+
+    probe_run(link)
+    t.check("no log, no visits", pline("visits"), [])
+    vlog.write_text(
+        f"{now - 100}.123 up.example 192.0.2.1\n"
+        f"{now - 90}.001 up.example 192.0.2.1\n"
+        f"{now - 80}.500 up.example 2001:db8::1\n"
+        f"{now - 70}.000 auth.example 192.0.2.1\n"
+        f"{now - 60}.000 _ 192.0.2.9\n"
+        f"{now - 50}.000 other.example 192.0.2.9\n"
+        f"{now - 90000}.000 up.example 192.0.2.7\n"
+        "garbage line\n"
+        f'{now - 40}.000 up.example 192.0.2.1"x\n'
+        f"{now - 30}.000 up.example 198.51.100"
+    )
+    t.ok("the probe reads the visits log", run())
+    t.check(
+        "views and addresses of 24 h for each site; other names, old and bad lines are left out",
+        pline("visits"),
+        ["up.example 3 2", "auth.example 1 1", "down.example 0 0"],
+    )
+    t.check(
+        "a line nginx has not finished is not read",
+        vst.read_text().split("\n")[0].split()[2],
+        str(len(vlog.read_bytes()) - len(f"{now - 30}.000 up.example 198.51.100")),
+    )
+    with vlog.open("a") as f:
+        f.write(f".7\n{now - 20}.000 up.example 192.0.2.1\n")
+    t.ok("a second run", run(now + 60))
+    t.check("the next run reads it, and counts nothing twice", pline("visits")[0], "up.example 5 3")
+    vlog.unlink()
+    vlog.write_text(f"{now + 100}.000 auth.example 203.0.113.5\n")
+    t.ok("a run after logrotate", run(now + 120))
+    t.check("a new file is read from its start", pline("visits")[:2], ["up.example 5 3", "auth.example 2 2"])
+    later = now + 86400 + 3600 + 200
+    with vlog.open("a") as f:
+        f.write(f"{later - 10}.000 auth.example 203.0.113.6\n")
+    t.ok("a run a day later", run(later))
+    t.check("an hour older than 24 h goes", pline("visits")[:2], ["up.example 0 0", "auth.example 1 1"])
+    vst.unlink()
+    vlog.write_text(
+        f"{now - 100}.000 up.example 192.0.2.1\n{now - 90}.000 up.example 192.0.2.2\n"
+        f"{now - 80}.000 up.example 192.0.2.2\n{now - 70}.000 up.example 192.0.2.3\n"
+        f"{now - 60}.000 auth.example 192.0.2.1\n"
+    )
+    t.ok("a run with no state (a reboot)", run())
+    t.check("the whole file is read again", pline("visits")[:2], ["up.example 4 3", "auth.example 1 1"])
+    vlog.chmod(0)
+    if not os.access(vlog, os.R_OK):
+        run()
+        t.check("an unreadable log gives no visits", pline("visits"), [])
+    vlog.chmod(0o644)
+    t.ok("the state is kept", run())
+    t.check("nothing on stderr in the visits", t.err, "")
 
 
 if __name__ == "__main__":

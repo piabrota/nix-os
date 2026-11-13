@@ -28,6 +28,7 @@
             interval = 2;
           };
           probe.enable = true;
+          visits.enable = true;
           web = {
             enable = true;
             domain = "hub";
@@ -173,6 +174,23 @@
         assert code(client, "-A 'LinkedInBot/1.0 (compatible; Mozilla/5.0)' http://hub/") == "200"
         assert code(client, "-A 'facebookexternalhit/1.1' http://hub/") == "200"
         assert code(client, "-H 'User-Agent:' http://hub/") == "200"  # no User-Agent
+
+    with subtest("A page a browser gets is a visit; a bot, a script or a JSON poll is not"):
+        hub.succeed("rm -f /run/metrics-state/piabrota2.visits && : > /var/log/nginx/visits.log")
+        for _ in range(3):
+            assert code(client, f"{BROWSER} http://hub/") == "200"
+        assert code(client, f"{BROWSER} http://hub/data/piabrota2.json") == "200"
+        assert code(client, f"{BROWSER} http://hub/nothing") == "404"
+        assert code(client, "http://hub/") == "200"  # curl
+        assert code(client, "-A 'Mozilla/5.0 (compatible; Googlebot/2.1)' http://hub/") == "200"
+        assert code(client, "-A GPTBot http://hub/") == "403"
+        assert hub.succeed("wc -l < /var/log/nginx/visits.log").strip() == "3"
+        hub.succeed("awk 'NF != 3 || $2 != \"hub\" { exit 1 }' /var/log/nginx/visits.log")
+        # The other requests still reach access.log, in the combined format.
+        hub.succeed("grep -q 'GET /nothing HTTP/1.1. 404' /var/log/nginx/access.log")
+        hub.wait_until_succeeds("jq -e '.domains.list[] | select(.name == \"hub\") | .views == 3 and .visitors == 1' /run/metrics-web/piabrota2.json", timeout=150)
+        hub.succeed("jq -e '.domains.views == 3 and .domains.visitors == 1' /run/metrics-web/piabrota2.json")
+        hub.fail("systemctl is-failed metrics-probe.service")
 
     with subtest("Every response carries X-Robots-Tag"):
         for path in ("/", "/data/piabrota2.json", "/robots.txt", "/favicon.svg"):
