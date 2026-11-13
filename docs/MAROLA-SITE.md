@@ -58,9 +58,13 @@ the login:
 
 ```console
 sudo install -d -m 0700 /etc/marola
-sudo install -m 0600 /dev/stdin /etc/marola/ghcr-token   # paste, then Ctrl-D
-sudo systemctl start marola-boards-build && journalctl -u marola-boards-build -n 20
+sudo install -m 0600 /dev/stdin /etc/marola/ghcr-token   # paste, Enter, then Ctrl-D
+sudo wc -c /etc/marola/ghcr-token                        # 0 means nothing was pasted
+sudo systemctl start marola-boards-build; journalctl -u marola-boards-build -n 40 --no-pager
 ```
+
+The start waits for the whole build (up to 45 minutes). Each run tries twice, and a run that fails
+still publishes the areas it finished.
 
 If the package is made public, set `boards.build.tokenFile = null`. When marola-site's `marola-image` moves,
 moving the marola-site pin here moves the image too.
