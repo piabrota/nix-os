@@ -88,9 +88,10 @@
   # The website of h0ffmann/closed-source at a pinned commit (closed-site/), at closed.piabrota.art.
   piabrota.closedSource.enable = true;
   # The website of h0ffmann/h0ffmann at a pinned commit (hffmnn-site/), at hffmnn.piabrota.art.
-  # Off until hffmnn.piabrota.art has its A record at this box: without it the ACME order fails at
-  # activation and deploy-rs rolls every piabrota2 deploy back (deploys of #241, #242, #243).
-  piabrota.hffmnn.enable = false;
+  # hffmnn.piabrota.art has its A record at this box since 2026-11-13 (seen from outside, TTL 600).
+  # It was off before that: without the record the ACME order failed at activation and deploy-rs
+  # rolled every piabrota2 deploy back (deploys of #241, #242, #243).
+  piabrota.hffmnn.enable = true;
   # marola-site at a pinned commit (marola-site/default.nix). Step 1 of docs/MAROLA-SITE.md: on
   # marola.piabrota.art, whose A record must point at this box first, while marola.dev stays on the
   # Cloudflare Worker. Step 2 sets domain = "marola.dev" and redirects = [ "www.marola.dev"
