@@ -293,6 +293,10 @@ in
       description = "Build marola's boards with the pinned app image";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
+      # A deploy must not stop a running build and start it again: the start of a oneshot waits for
+      # the whole build (up to 45 minutes), and deploy-rs rolls back when its confirmation times out.
+      # The new definition applies at the next timer or kick start.
+      restartIfChanged = false;
       serviceConfig = {
         Type = "oneshot";
         # "-": a failed build (a pull refused, INEA down) must not leave the unit failed, or a deploy
