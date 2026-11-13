@@ -4,11 +4,11 @@
 # (Gleam and Lustre on node) is bundled with esbuild and prerendered. Nothing here is a copy of its
 # code. The three PDFs are built too, as its `just build` does (pandoc with pandoc-crossref and
 # citeproc, XeLaTeX twice, with the TeX set of picasso's paper lab), from the same commit, so the
-# page and the paper never disagree. The two title-page logos are fetched by the hashes in the
-# paper's metadata.md and converted with rsvg-convert, as `tools/fabric logos` does; they stay
-# trademarks of their projects and are not files of this repository. The generator asks Zenodo for
+# page and the paper never disagree. The title-page logo is fetched by the hashes in the
+# paper's metadata.md and converted with rsvg-convert, as `tools/fabric logos` does; it stays a
+# trademark of its project and is not a file of this repository. The generator asks Zenodo for
 # the version DOIs; the sandbox has no network, so it reads zenodo.json instead, that reply cut to
-# the fields it reads (fetched 2026-11-11, still current on 2026-11-12; fetch it again when
+# the fields it reads (fetched 2026-11-11, still current on 2026-11-12 at 23:59; fetch it again when
 # closed-source makes a release).
 # allowedReferences = [ ] fails the build if the output names a store path, so gleam, erlang and
 # node never reach the closure.
@@ -30,27 +30,23 @@
 }:
 let
   # Move rev, commits and hash together; the logos only when metadata.md changes them.
-  rev = "6e5ab43f41a2edb6f6d67d05a95b8539935bafbb";
+  rev = "03dee6bc64e7d30cd48a3d794801b84949df1cad";
   # The number of commits up to rev (`git rev-list --count`), which the page shows; the source
   # has no .git.
-  commits = 227;
+  commits = 269;
   closedSource =
     if sourceOverride != null then sourceOverride else
     fetchFromGitHub {
       owner = "h0ffmann";
       repo = "closed-source";
       inherit rev;
-      hash = "sha256-6IwsefEk/oj5unX+8OIKZTmysSc2JoH+kPXWDrAzD5k=";
+      hash = "sha256-CyVoxdXwFykN8H4EpWM13feX8vBjK6pvzWXCiDr0mUw=";
     };
   # The `logos:` of papers/closed-source/metadata.md: file, svg and sha256.
   logos = {
     marola = fetchurl {
       url = "https://raw.githubusercontent.com/marola-dev/marola/d0d576ea014335acbc190a09ce9fcbe0f89a391d/docs/assets/logo.svg";
       sha256 = "71567f8c69a5c5e18b8b712a280cae1dac402e6a2e7ceb331408a4e713159cf9";
-    };
-    ouroboric = fetchurl {
-      url = "https://raw.githubusercontent.com/ouroboric-dev/ouroboric/4ab80ed2486a5e0ab0ade13e5089c2a4acdb4216/docs/7-branding/identity/logo/ouroboric-logo-horizontal.svg";
-      sha256 = "935eb9acf636f5da8651bdee14e6b53670e216d6a1667b46c48d62ec6f26f59d";
     };
   };
   # picasso's labs/paper texFor, and babel-portuges for the pt-BR text (`babel: brazilian`).
