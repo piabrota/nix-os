@@ -276,9 +276,10 @@ reference. nginx (`closed.nix`) serves it as static files on piabrota2.
 
 The three PDFs are built too, from the same commit, as its `just build` does: pandoc with
 pandoc-crossref and citeproc, then XeLaTeX twice, with the TeX set of picasso's paper lab plus
-`babel-portuges`. The two title-page logos are fetched by the hashes in the paper's `metadata.md`
-and converted with `rsvg-convert`. A page and a paper from two commits would disagree: the paper
-of 6e5ab43 no longer has the chemo-rx section that the v0.3.4 release PDFs still carry.
+`babel-portuges`. The title-page logo (marola's, the only one since closed-source dropped
+ouroboric's) is fetched by the hash in the paper's `metadata.md` and converted with
+`rsvg-convert`. A page and a paper from two commits would disagree: the paper of 6e5ab43 already
+had no chemo-rx section, which the v0.3.4 release PDFs still carry.
 
 Two things differ from the Pages build, because the sandbox has no network and the source has no
 `.git`:
@@ -288,7 +289,7 @@ Two things differ from the Pages build, because the sandbox has no network and t
 - The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
   stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
 
-At 6e5ab43, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
+At 03dee6b, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
 each PDF has the same text and page count (the bytes differ by the build date).
 
 To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
