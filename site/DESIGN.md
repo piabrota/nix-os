@@ -15,6 +15,10 @@ A dark sheet, one red, and every state said in words before colour.
 ## Tokens
 
 Dark first; light when the visitor asks for it (`prefers-color-scheme`). Same names as picasso.
+The round switch at the end of the bar (☀ or ☾, `parts.theme`) gives the page the other scheme: a
+checkbox that `style.css` reads with `:has()`, so no script, and the choice lasts until the page
+changes. Its two blocks repeat the tokens; `design/test.mjs` checks them. Every page also says
+`<meta name="color-scheme" content="dark light">`, so a browser paints the right canvas first.
 
 | Token | Dark | Light | It means |
 |---|---|---|---|
@@ -141,6 +145,15 @@ The piabrota mark (the open green eye on red, the drawing of `parts.eye`) is the
 site under piabrota.art: the site, `skills.piabrota.art`, `/figures/`, `/notes`, and the dashboards on the
 other names. Its one source is `favicon/favicon.svg`. Change the mark there and in `parts.eye`
 together: `checks.favicon` compares them. No page stores or draws an icon of its own.
+
+## The link preview
+
+Every page names `/og.png` as its `og:image` and `twitter:image`, at `https://www.piabrota.art`
+(`page.origin`), with its size, an alt text, `og:title`, `og:description` and `og:url`. The image
+is `og/og.svg` drawn at 1200x627 (1.91:1, what LinkedIn asks for) by resvg on the builder, with the
+site's three faces (Fjalla One from Google's CDN, Inter and JetBrains Mono from nixpkgs); no font
+reaches the box. Without it LinkedIn takes the 180 px apple-touch-icon and shows it blurred.
+LinkedIn keeps a preview for days: after a change, ask again in its Post Inspector.
 
 ## Motion
 

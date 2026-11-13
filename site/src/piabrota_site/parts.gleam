@@ -80,9 +80,31 @@ pub fn top(
       ]),
       languages(lang),
       switcher(current),
+      theme(lang),
     ]),
     notice(lang),
     html.div([attribute.class("wrap hero")], hero),
+  ])
+}
+
+/// The theme switch: a checkbox that style.css reads with :has(), so it needs no script. The
+/// glyph says where it goes: ☾ to dark, ☀ to light.
+fn theme(lang: String) -> Element(msg) {
+  let label = i18n.t(lang, "aria.theme")
+  html.span([attribute.class("theme")], [
+    html.input([
+      attribute.type_("checkbox"),
+      attribute.id("theme"),
+      attribute.aria_label(label),
+    ]),
+    html.label([attribute.for("theme"), attribute.title(label)], [
+      html.span([attribute.class("to-dark"), attribute.aria_hidden(True)], [
+        html.text("☾"),
+      ]),
+      html.span([attribute.class("to-light"), attribute.aria_hidden(True)], [
+        html.text("☀"),
+      ]),
+    ]),
   ])
 }
 
