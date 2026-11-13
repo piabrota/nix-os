@@ -253,16 +253,18 @@ menos, ou mude essa constante também.
 
 ## Testes e prévia
 
-- `sh metrics/test/run.sh`: o coletor, com uma árvore falsa de `/proc` e cgroup. Imprime
-  "N checks, M failed".
-- `sh metrics/test/page.sh`: as regras estáticas da página e uma busca HTTP com python3.
+- `python3 metrics/test/collect_test.py`: o coletor e a sonda, com uma árvore falsa de `/proc` e
+  cgroup e um curl falso. Imprime "N checks, M failed".
+- `checks.metrics-page` (`metrics/test/page.nix`): as regras estáticas da página, em Nix puro, e
+  os dados de teste pelo jq. `python3 metrics/test/preview.py --check`: uma busca HTTP da página e
+  dos dados. `just metrics-test` roda os três.
 - `checks.metrics`: quatro VMs (hub, edge, locked, client), HTTP simples, precisa de KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Prévia da página com dados de teste (healthy, stale, missing, hostile):
 
   ```console
-  sh metrics/test/preview.sh healthy 8080     # abra http://127.0.0.1:8080/
+  python3 metrics/test/preview.py healthy 8080     # abra http://127.0.0.1:8080/
   just metrics-preview healthy
   ```
 
-  Precisa de python3 e jq.
+  Precisa de python3.
