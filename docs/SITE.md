@@ -289,7 +289,7 @@ Two things differ from the Pages build, because the sandbox has no network and t
 - The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
   stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
 
-At 03dee6b, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
+At 7682e90, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
 each PDF has the same text and page count (the bytes differ by the build date).
 
 To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
