@@ -46,11 +46,12 @@ comando.
 
 ## O topo: sites, commits, deploys, apps, NixOS
 
-O topo de cada cartão tem cinco números e uma linha de sites:
+O topo de cada cartão tem seis números e uma linha de sites:
 
 | Rótulo | O que é | De onde vem |
 |---|---|---|
 | Domains up | sites que responderam, dos sites do host; verde quando todos respondem, vermelho quando um não responde | `metrics/probe.sh`, a cada 60 s |
+| Visits 24 h | as páginas que navegadores receberam dos sites do host nas últimas 24 horas; a dica traz os visitantes | o `visits.log` do nginx, lido pela sonda a cada 60 s (ver "Visitas") |
 | Commits | commits na `main` de `piabrota/nix-os` | a API do GitHub, no máximo uma vez a cada 10 minutos |
 | Deploys | a geração de `/nix/var/nix/profiles/system`: uma para cada deploy que mudou o sistema | o coletor, a partir do link `system-<n>-link` |
 | Apps installed | os pacotes de `environment.systemPackages` (a contagem `packages` do inventário) | o Nix, no build |
@@ -60,6 +61,7 @@ Abaixo deles, cada site do host é uma etiqueta: verde quando responde, vermelha
 (ou "no answer") quando não responde. Um site está de pé quando dá qualquer resposta abaixo de HTTP
 500: um 301 ou um 401 (um login) é uma resposta. A sonda não segue redirecionamento. Quando os dados
 da sonda estão mais de 5 minutos atrás dos do host, as etiquetas ficam cinza e a contagem fica sem cor.
+Depois do nome, a etiqueta mostra as visitas do site nas últimas 24 horas; a dica traz os visitantes.
 
 Os sites são os mesmos nomes que o inventário conta como `sites`: todo host virtual do nginx, menos
 o `_` e os nomes que só redirecionam. O Nix grava a lista (`https://` quando o host tem TLS). A sonda
@@ -69,6 +71,32 @@ copia isso para `domains` e `repo` (metrics/SCHEMA.md). A sonda lê a contagem d
 cabeçalho `Link` de `GET /repos/piabrota/nix-os/commits?per_page=1`: o número da última página é a
 contagem. Sem token o GitHub aceita 60 pedidos por hora de um endereço; a sonda usa 6. Quando o
 GitHub não responde, fica a última contagem.
+
+## Visitas
+
+O que conta, com `visits.enable` ligado (nos dois hosts):
+
+- **Uma visita** é uma página que um navegador recebeu: um `GET` que o nginx respondeu com 200 e
+  tipo HTML, ou com 304 para um caminho que termina em `/` ou `.html`. Imagem, script, os JSON que a
+  página busca, redirecionamento, 404 e tela de login (401) não são visitas.
+- **Robôs não contam.** Um User-Agent vazio ou com uma das palavras de `notBrowsers` em
+  `metrics.nix` (`bot`, `crawl`, `spider`, `curl`, `python`, `probe`, ...) é um programa, não um
+  navegador. Um raspador que manda o User-Agent de um navegador é contado: é um filtro para robôs
+  que dizem o que são, como o bloqueio do robots.txt.
+- **Um visitante** é um endereço que recebeu uma página do site. Duas pessoas atrás de um endereço
+  são um visitante; uma pessoa em dois sites é visitante de cada um, então a soma do cartão conta duas vezes.
+- **A janela** são as últimas 24 horas, contadas por hora: a hora mais antiga sai inteira, então a
+  janela fica entre 24 e 25 horas.
+
+Como: o nginx grava uma linha por visita em `/var/log/nginx/visits.log` (a hora, o primeiro nome do
+vhost e o endereço; `access_log ... if=$metrics_visit` em `services.nginx.commonHttpConfig`). O resto
+segue para o `access.log` como antes: um `access_log` no bloco `http` desliga o padrão embutido do
+nginx, então o módulo grava essa linha também. A regra de logrotate do nginx gira os dois por semana.
+Cada rodada da sonda lê só o que entrou desde a última (no máximo 16 MiB) e guarda as visualizações
+por hora e a última hora de cada endereço em `/run/metrics-state/<name>.visits` (0700, não servido,
+some no reboot). Depois de um reboot ou de uma rotação ela lê o arquivo do começo, então um reboot
+não perde nada da semana. A sonda lê os logs do nginx pelo grupo `nginx` (`SupplementaryGroups`) e
+não grava nada lá. Sem daemon, sem pacote, sem Python: o mesmo awk.
 
 ## O inventário
 
@@ -237,13 +265,14 @@ Todas vêm desligadas. Todas ficam sob `piabrota.metrics`:
 | `collector.enable` | liga o coletor e o timer |
 | `collector.interval` | segundos entre rodadas (2 a 300, padrão 10) |
 | `probe.enable`, `probe.interval` | o timer que pergunta a cada site por uma resposta (10 a 3600 s, padrão 60); precisa do coletor |
+| `visits.enable` | o nginx registra cada página que um navegador recebe, e a sonda conta as visitas das últimas 24 h de cada site; precisa da sonda e do nginx |
 | `probe.repo`, `probe.branch` | o repositório e o branch cujos commits são contados (padrão `piabrota/nix-os`, `main`); repo vazio: sem contagem |
 | `web.enable`, `web.domain`, `web.htpasswdFile` | a página no nginx, o domínio e o arquivo de login opcional (`null`, o padrão, deixa a página pública) |
 | `publish.enable`, `publish.allowFrom` | a location da KVM 1 e o IP que pode ler |
 | `pull.enable`, `pull.url`, `pull.name` | o timer que busca o arquivo do outro host |
 | `inventory.bundledSkillDirs` | pastas de skills que vêm dentro de um agente, contadas como `skills_bundled`; o `hermes.nix` acrescenta as do Hermes |
 
-Hoje: a piabrota2 liga coletor, sonda, web e pull. A piabrota liga coletor, sonda e publish.
+Hoje: a piabrota2 liga coletor, sonda, visits, web e pull. A piabrota liga coletor, sonda, visits e publish.
 
 ## Mudar a cadência
 

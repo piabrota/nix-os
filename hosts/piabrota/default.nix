@@ -25,6 +25,8 @@
     collector.enable = true;
     # Up or down for each site of this host, and the commit count of piabrota/nix-os.
     probe.enable = true;
+    # The visits of each site in the last 24 h, from a log of the pages browsers got (docs/METRICS.md, "Visits").
+    visits.enable = true;
     publish = {
       enable = true;
       allowFrom = [ "187.41.117.18" ];
