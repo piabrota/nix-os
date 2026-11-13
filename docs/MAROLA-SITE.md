@@ -100,6 +100,9 @@ no `clientId`, `/auth/github/login` answers 503 and the rest of the site works.
 
 ## Moving the pin
 
-Change `rev` and `hash` in `marola-site/default.nix` together (`nix hash path` on `git archive <rev>`).
+`.github/workflows/marola-site-pin.yml` does it: every 20 minutes (or at once on a `repository_dispatch` of
+type `marola-site-main`) it moves the pin to marola-site's `main` with `scripts/pins.py one marola-site`,
+builds the package, and opens or updates one PR on `agents/marola-site-pin`. The owner's merge deploys.
+By hand: `just marola-site-pin [rev]`, which changes `rev` and `hash` together.
 A marola-site change to `front/package-lock.json` or the Haskell packages can need a nixpkgs override in
 its `nix/package.nix`; the build failure names the package.

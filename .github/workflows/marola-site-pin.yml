@@ -1,0 +1,127 @@
+name: marola-site pin
+
+# When marola-dev/marola-site's main moves: scripts/pins.py one marola-site moves the pin of
+# marola-site/default.nix (rev and the source hash), builds the package (the Haskell server, the Elm
+# page, the static pages), and one pull request labelled marola-site-pin carries it, opened as
+# piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer marola-site commit while that
+# pull request is open moves the same branch and edits the same pull request. A commit whose build
+# fails (a stale nix/registry.dat or npmDeps hash in marola-site) opens nothing and fails this run.
+# It looks every 20 minutes and runs by hand; a `repository_dispatch` of type `marola-site-main`
+# runs it at once. Nothing merges by itself: the merge is the owner's, and the merge deploys
+# marola.dev. Copied from room-pin.yml.
+on:
+  schedule:
+    - cron: "17,37,57 * * * *"
+  workflow_dispatch:
+    inputs:
+      rev:
+        description: A commit of marola-dev/marola-site (the whole sha); empty for the head of main
+        required: false
+  repository_dispatch:
+    types: [marola-site-main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: marola-site-pin
+  cancel-in-progress: false
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.OPS_BOT_APP_ID }}
+          private-key: ${{ secrets.OPS_BOT_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      # The cheap look first: most runs end here, with no Nix.
+      - name: Is marola-site's main past the pin?
+        id: look
+        env:
+          REV: ${{ inputs.rev || github.event.client_payload.rev }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          new=${REV:-$(git ls-remote https://github.com/marola-dev/marola-site.git refs/heads/main | cut -f1)}
+          pinned=$(gh api "repos/$GITHUB_REPOSITORY/contents/marola-site/default.nix" --jq .content |
+            base64 -d | sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";$/\1/p')
+          open=$(gh api "repos/$GITHUB_REPOSITORY/contents/marola-site/default.nix?ref=agents/marola-site-pin" \
+            --jq .content 2>/dev/null | base64 -d | sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";$/\1/p' || true)
+          echo "marola-site main: $new; pinned on main: $pinned; on agents/marola-site-pin: ${open:-none}"
+          if [ "$new" = "$pinned" ] || [ "$new" = "$open" ]; then
+            echo "Nothing to move."
+            echo "move=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "move=true" >>"$GITHUB_OUTPUT"
+            echo "rev=$new" >>"$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.look.outputs.move == 'true'
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      - if: steps.look.outputs.move == 'true'
+        uses: cachix/install-nix-action@v31
+
+      - name: Move the pin and build marola-site
+        if: steps.look.outputs.move == 'true'
+        id: pin
+        env:
+          REV: ${{ steps.look.outputs.rev }}
+        run: |
+          python3 scripts/pins.py one marola-site "$REV" | tee pin.log
+          sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
+
+      - name: Open or update the pull request as piabrota-ops
+        if: steps.pin.outputs.new != ''
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
+          OLD: ${{ steps.pin.outputs.old }}
+          NEW: ${{ steps.pin.outputs.new }}
+        run: |
+          branch=agents/marola-site-pin
+          id=$(gh api "users/${SLUG}%5Bbot%5D" --jq .id)
+          git config user.name "${SLUG}[bot]"
+          git config user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add marola-site/default.nix
+          # marola-site's merged pull requests between the two pins (squash merges end in "(#N)").
+          gh api "repos/marola-dev/marola-site/compare/$OLD...$NEW" --jq '.commits[] | .commit.message | split("\n")[0]' \
+            | grep -E '\(#[0-9]+\)$|^Merge pull request #' | sed 's/^/- /; s/(#\([0-9]*\))$/(marola-dev\/marola-site#\1)/; s/^- Merge pull request #\([0-9]*\).*/- marola-dev\/marola-site#\1/' >prs.md || true
+          [ -s prs.md ] || echo "- (no pull request title found; see the compare link)" >prs.md
+          git commit -m "chore(marola-site): move the marola-site pin to ${NEW:0:7}" -m "$(cat prs.md)"
+          git push --force origin "$branch"
+          gh label create marola-site-pin --repo "$GITHUB_REPOSITORY" --color 0e8a16 \
+            --description "marola-dev/marola-site's main, pinned in marola-site/ by marola-site-pin.yml" 2>/dev/null || true
+          {
+            echo "## Summary"
+            echo
+            echo "marola.dev should run the head of marola-dev/marola-site's \`main\`, \`${NEW:0:7}\`. The pin was \`${OLD:0:7}\`."
+            echo
+            echo "## What changed"
+            echo
+            echo "\`marola-site/default.nix\`: \`rev\` and the source \`hash\`, written by \`scripts/pins.py one marola-site\`. marola-site between the two pins ([compare](https://github.com/marola-dev/marola-site/compare/$OLD...$NEW)):"
+            echo
+            cat prs.md
+            echo
+            echo "## Tested"
+            echo
+            echo "marola-site's own \`nix/package.nix\` built on the runner with this flake's nixpkgs, and the output has \`bin/marola-server\`. Not checked: the full system closure (no \`dix\`), and the site in a browser. A deploy that moves \`marola-image\` starts a board build, and one that moves \`site/basemap.version\` or the areas re-cuts the tiles. The merge deploys."
+          } >body.md
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')
+          title="chore(marola-site): move the marola-site pin to ${NEW:0:7}"
+          if [ -n "$n" ]; then
+            gh pr edit "$n" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file body.md
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --label marola-site-pin \
+              --title "$title" --body-file body.md
+          fi
