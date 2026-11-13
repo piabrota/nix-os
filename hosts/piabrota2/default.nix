@@ -106,6 +106,10 @@
     # The boards are built here four times a day (marola-site.nix, docs/MAROLA-SITE.md). The
     # token file /etc/marola/ghcr-token must be on the box, or each build fails at the pull.
     boards.build.enable = true;
+    # marola-site's marola-image (jvm-0c1e050) is gone from ghcr: "manifest unknown". This is
+    # marola-app main's jvm-7061a08 (CI run 39499882444), with the same --site and board schema.
+    # Drop it when marola-site's pin names an image that exists.
+    boards.build.image = "ghcr.io/marola-dev/marola-app:jvm-7061a08@sha256:7656c11b9e429059913310f5e934a6dd82028d33974cffdb3c5ee2c5e2a7d286";
   };
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
