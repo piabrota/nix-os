@@ -9,9 +9,9 @@ kvm4 := env_var_or_default("DEPLOY_HOST_KVM4", "srv2125808.hstgr.cloud")
 default:
     @just --list
 
-# the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; curl, openssl); `just certs www.piabrota.art` checks one
+# the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; python3); `just certs www.piabrota.art` checks one
 certs *names:
-    sh scripts/cert-check.sh {{names}}
+    python3 scripts/cert_check.py {{names}}
 
 # build a host's system closure here, without deploying it (piabrota or piabrota2)
 build node="piabrota":
@@ -25,6 +25,9 @@ check:
     nix run nixpkgs#deadnix -- --fail .
     nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
+    nix run nixpkgs#ruff -- check scripts
+    nix run nixpkgs#ruff -- format --check scripts
+    python3 -m unittest discover -s scripts/tests
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
 hermes-plugins-test:
@@ -56,11 +59,11 @@ cert-renew-test:
 
 # the human and agent commit counts of each own repository, as lines to paste into mockups/data.nix (read-only, needs gh)
 commit-counts:
-    sh scripts/commit-counts.sh
+    python3 scripts/commit_counts.py
 
-# tests of scripts/commit-counts.sh with a stub gh (offline)
-commit-counts-test:
-    sh scripts/commit-counts.test.sh
+# tests of the Python scripts of scripts/ (commit counts with a stub gh, pins, pr-stack, cert-check, context-size), offline
+scripts-test:
+    python3 -m unittest discover -s scripts/tests
 
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
@@ -90,15 +93,15 @@ deploy user="deploy" node="piabrota":
 
 # move the room pin (room-site/default.nix) to room's main, or to <rev>, with both hashes, and build it
 room-pin rev="":
-    sh scripts/room-pin.sh {{rev}}
+    python3 scripts/pins.py one room {{rev}}
 
 # merge open PRs, in this order, onto origin/main in git's object store only, and name each that conflicts (the pr-stack skill); `just pr-stack-plan 221 222 223`
 pr-stack-plan +prs:
-    sh scripts/pr-stack.sh plan {{prs}}
+    python3 scripts/pr_stack.py plan {{prs}}
 
 # a stack branch is ready for one merge commit: it contains origin/main and every PR head (the pr-stack skill); `just pr-stack-check claude/nix-os-pr-stack 221 222 223`
 pr-stack-check branch +prs:
-    sh scripts/pr-stack.sh check {{branch}} {{prs}}
+    python3 scripts/pr_stack.py check {{branch}} {{prs}}
 
 # write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:
@@ -124,11 +127,11 @@ ww3-site:
 
 # move the ww3-gpu pin (ww3-site/default.nix) to ww3-gpu's main, or to <rev>, and build the site
 ww3-pin rev="":
-    sh scripts/ww3-pin.sh {{rev}}
+    python3 scripts/pins.py one ww3 {{rev}}
 
-# move every website pin to the head of its source's main and build each site (scripts/site-pins.sh); `just site-pins --list` only reads, `just site-pins closed proof` moves those
+# move every website pin to the head of its source's main and build each site (scripts/pins.py); `just site-pins --list` only reads, `just site-pins closed proof` moves those
 site-pins *args:
-    sh scripts/site-pins.sh {{args}}
+    python3 scripts/pins.py all {{args}}
 
 # build the skills website (skills-site/, Gleam prerendered by Nix) into ./result-skills-site, as the VPS gets it
 skills-site:
@@ -217,7 +220,7 @@ specs:
 
 # check that the files Hermes loads into its context stay under its 32000-character cut
 context-size:
-    sh scripts/context-size.sh
+    python3 scripts/context_size.py
 
 # list every package of the running system with its size, like pip freeze (--by-size to sort by size)
 freeze *args:

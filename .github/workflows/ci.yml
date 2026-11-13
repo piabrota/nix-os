@@ -36,7 +36,11 @@ jobs:
       - name: cert-renew passes its tests (a stub systemctl, no network)
         run: sh scripts/cert-renew.test.sh
       - name: every piabrota.art name of the *.nix files is in scripts/domains.txt
-        run: sh scripts/cert-check.sh --coverage
+        run: python3 scripts/cert_check.py --coverage
+      - run: nix run nixpkgs#ruff -- check scripts
+      - run: nix run nixpkgs#ruff -- format --check scripts
+      - name: the Python scripts of scripts/ pass their tests (a stub gh, local git repositories, no network)
+        run: python3 -m unittest discover -s scripts/tests
       - name: DeepWiki's page plan is within its limits (.devin/wiki.json)
         run: nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
       - name: figures match their sources (offline; the pin is read from the index)

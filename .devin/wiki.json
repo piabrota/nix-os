@@ -73,7 +73,7 @@
     },
     {
       "title": "The site",
-      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix (with the human and agent commit counts of each own repository, refreshed by scripts/commit-counts.sh), the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, the skills.piabrota.art vhost (skills-site/) with the 301 from /skills, site/DESIGN.md's look, and design/ (the design kit: tokens, CSS modules, design/sites.nix, and the brand bar for pages from other repositories, with the indexes of proof-site/; docs/DESIGN-KIT.md)."
+      "purpose": "site.nix and site/: the Gleam and Lustre site prerendered at build time, its three designs from mockups/data.nix (with the human and agent commit counts of each own repository, refreshed by scripts/commit_counts.py), the /hermes page (Hermes's configuration as YAML from site/hermes.nix, with no secret), the /hosts page (what each of the two VPSs does), nginx with ACME, the www redirect, the skills.piabrota.art vhost (skills-site/) with the 301 from /skills, site/DESIGN.md's look, and design/ (the design kit: tokens, CSS modules, design/sites.nix, and the brand bar for pages from other repositories, with the indexes of proof-site/; docs/DESIGN-KIT.md)."
     },
     {
       "title": "Mockups, figures and drawings",

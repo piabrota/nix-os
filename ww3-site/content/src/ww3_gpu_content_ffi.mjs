@@ -71,7 +71,7 @@ export function revision() {
 }
 
 // How many commits the built commit has: WW3_GPU_COMMITS when the Nix build sets it (the pin's
-// count, written by scripts/ww3-pin.sh), else Git's, else "".
+// count, written by scripts/pins.py one ww3), else Git's, else "".
 export function commits() {
   if (process.env.WW3_GPU_COMMITS) return process.env.WW3_GPU_COMMITS;
   try {

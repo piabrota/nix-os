@@ -3,7 +3,7 @@
 # and skills showed a browser warning for a day after their DNS was fixed. The module sets
 # RestartSec but no Restart. Retry every 20 minutes, at most 9 times in 6 hours: 3 failed
 # validations an hour for a name, under Let's Encrypt's limit of 5. After that the daily timer
-# takes over again. scripts/cert-check.sh and certs.yml watch the result from outside
+# takes over again. scripts/cert_check.py and certs.yml watch the result from outside
 # (docs/SITE.md, "Certificates"). With no certificate it adds nothing.
 { config, lib, ... }:
 {

@@ -9,7 +9,7 @@
 let
   rev = "45f28141f4021b268a7caa7bbbbb6394f7e8bad0";
   # The number of commits up to rev (`git rev-list --count`), which the page shows; the source has
-  # no .git, so scripts/ww3-pin.sh counts them and writes it here with rev.
+  # no .git, so scripts/pins.py one ww3 counts them and writes it here with rev.
   commits = 927;
   ww3gpu = fetchFromGitHub {
     owner = "h0ffmann";
