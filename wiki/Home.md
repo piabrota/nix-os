@@ -36,7 +36,7 @@ O [README](https://github.com/piabrota/nix-os#every-piabrotaart-address) tem a l
 - Na `piabrota2` (KVM 4), com login: [hermes.piabrota.art](https://hermes.piabrota.art/), o painel
   do Hermes, e [rig.piabrota.art](https://rig.piabrota.art/), a interface do OpenRig.
 - Na `piabrota2`, abertos: [metrics.piabrota.art](https://metrics.piabrota.art/), as métricas das
-  duas máquinas, e os sites dos projetos (room, grid, proof, pirsig, wave, closed, marola).
+  duas máquinas, e os sites dos projetos (room, grid, proof, pirsig, wave, closed, hffmnn, marola).
 
 ## No repositório
 
