@@ -160,6 +160,65 @@ send from piabrota2's address (a process on piabrota2, or a network position tha
 read the file. IPv4 only. If piabrota2's address changes, change `allowFrom` in
 `hosts/piabrota/default.nix`.
 
+## For machines: all.json and /metrics
+
+The page's host (piabrota2) also serves every number in two forms that a program reads:
+
+| Address | Format | What is in it |
+|---|---|---|
+| https://metrics.piabrota.art/data/all.json | JSON | `{"v":1,"ts":..,"stale_after_s":30,"hosts":{"piabrota":{"age_s":..,"fresh":..,"data":{..}},"piabrota2":{..}}}`: each host's file as it is (metrics/SCHEMA.md), with its age |
+| https://metrics.piabrota.art/metrics | Prometheus text, version 0.0.4 | the same numbers as series named `piabrota_*`, each with a `host` label |
+| https://metrics.piabrota.art/data/piabrota.json, `/data/piabrota2.json` | JSON | one host's file, as before |
+
+`metrics/export.sh` writes the first two with one run of jq (`metrics/export.jq`); jq is a small C
+binary, so no Python runs on the box (AGENTS.md, "Resource budget", rule 4). The timer
+`metrics-export.timer` runs it with the collector's interval, in the collector's sandbox and with no
+network: it reads `/run/metrics-web/<name>.json` and writes `all.json` and `metrics.prom`
+beside them, each through a temp file and a rename. It leaves out a file that is not a JSON object,
+that is over 64 KiB or whose `host` is not its name. A number that is not finite is left out of
+`/metrics`. The option is
+`piabrota.metrics.export.enable`, on by default where `web.enable` is on.
+
+The Prometheus series:
+
+| Series | Labels | From |
+|---|---|---|
+| `piabrota_host_fresh`, `piabrota_sample_age_seconds`, `piabrota_sample_timestamp_seconds` | `host` | `ts`; fresh is an age of 30 s or less |
+| `piabrota_uptime_seconds`, `piabrota_vcpus`, `piabrota_load` | `window` | `uptime_s`, `vcpus`, `load` |
+| `piabrota_cpu_busy_percent` | `cpu` (`total`, `0`, `1`..) | `cpu` |
+| `piabrota_memory_bytes` | `kind` | `mem`, `mem_detail` |
+| `piabrota_root_filesystem_bytes` | `kind` | `disk` |
+| `piabrota_threads`, `piabrota_tasks`, `piabrota_forks_per_second`, `piabrota_context_switches_per_second`, `piabrota_open_files`, `piabrota_processes`, `piabrota_services_running` | `state` | `tasks`, `fds_open`, `procs_total`, `services_running` |
+| `piabrota_network_bytes_per_second`, `piabrota_network_bytes_total` | `direction` | `net` |
+| `piabrota_sockets` | `kind` | `sockets` |
+| `piabrota_disk_bytes_per_second`, `piabrota_disk_bytes_total` | `direction` | `disk_io` |
+| `piabrota_pressure_percent` | `resource`, `kind` | `pressure` |
+| `piabrota_inventory` | `item` | `inventory` |
+| `piabrota_deploy_generation`, `piabrota_nixos_info` | `version` | `system` |
+| `piabrota_sites`, `piabrota_probe_timestamp_seconds` | `state` | `domains` |
+| `piabrota_site_up`, `piabrota_site_http_code`, `piabrota_site_views_24h`, `piabrota_site_visitors_24h` | `site` | `domains.list` |
+| `piabrota_repo_commits` | `repo` | `repo` |
+| `piabrota_unit_memory_bytes`, `piabrota_unit_memory_max_bytes`, `piabrota_unit_memory_peak_bytes` | `unit` | `units` |
+| `piabrota_hosts`, `piabrota_export_timestamp_seconds` | none | the export itself |
+
+The top processes stay in the JSON only: a pid is a new series at each run. Nothing on the boxes
+scrapes `/metrics`; it is there for a Prometheus or a Grafana elsewhere. Both addresses have the
+page's rules: public, `no-store`, the rate limit and the agent block.
+
+## What is not measured
+
+- **Google Analytics.** `piabrota.site.analytics.measurementId` (site.nix) puts Google's tag on
+  www.piabrota.art, and it is empty on both hosts: no page loads the tag, and Google has no data.
+  To turn it on, a person makes a GA4 property and a web data stream for `https://www.piabrota.art`
+  at https://analytics.google.com (Admin, Create, Property, then Data streams, Web), and sets the
+  `G-...` ID in `hosts/piabrota/default.nix`. Reading its numbers back into this page needs a
+  service account with the Viewer role on the property and its JSON key on piabrota2, outside git;
+  no reader is in this repository yet. The nginx visits (above) count without it.
+- **The sites of other hosts.** GitHub Pages, Cloudflare or any name that nginx on the two boxes
+  does not serve is not probed and has no visits.
+- **History.** The page keeps the samples in the tab, and the files hold the last sample only. A
+  history needs a Prometheus that scrapes `/metrics`.
+
 ## DNS and access
 
 - The DNS of `metrics.piabrota.art` already points at piabrota2: nothing to do.
@@ -237,6 +296,8 @@ Measured on piabrota2, with 127 processes:
 - At a 10 s cadence that is about 0.2 % of one vCPU (about 3 minutes of CPU a day: 8,640 runs).
 - On KVM 1 (1 vCPU) there are fewer processes, so it costs less.
 - The unit has `MemoryMax=64M` and a fixed system user, `metrics`.
+- The export (piabrota2 only), measured in a cloud container on the two live files of 2026-11-13:
+  0.04 s of CPU and 13 MB peak RSS a run, so about 0.4 % of one vCPU at 10 s. Not measured on the box.
 
 ## Hardening
 
@@ -268,9 +329,10 @@ All are off by default. All live under `piabrota.metrics`:
 | `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the optional login file (`null`, the default, means the page is public) |
 | `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
 | `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
+| `export.enable` | the timer that writes `all.json` and `metrics.prom` ("For machines"); on by default with `web.enable` |
 | `inventory.bundledSkillDirs` | folders of skills that ship inside an agent, counted as `skills_bundled`; `hermes.nix` adds Hermes's own |
 
-Today: piabrota2 turns on collector, probe, visits, web and pull. piabrota turns on collector, probe, visits and publish.
+Today: piabrota2 turns on collector, probe, visits, web, pull and (with web) export. piabrota turns on collector, probe, visits and publish.
 
 ## Change the cadence
 
@@ -284,7 +346,8 @@ lower, or change that constant too.
   cgroup tree and a fake curl. It prints "N checks, M failed".
 - `checks.metrics-page` (`metrics/test/page.nix`): the static rules of the page, in pure Nix, and
   the fixtures through jq. `python3 metrics/test/preview.py --check`: an HTTP fetch of the page and
-  its data. `just metrics-test` runs the three.
+  its data. `python3 metrics/test/export_test.py`: `all.json` and `metrics.prom` from the
+  fixtures, checked line by line against the text format. `just metrics-test` runs the four.
 - `checks.metrics`: four VMs (hub, edge, locked, client), plain HTTP, needs KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Preview of the page with fixtures (healthy, stale, missing, hostile):

@@ -161,6 +161,44 @@ consegue enviar a partir do endereço da piabrota2 (um processo na piabrota2, ou
 que falsifica endereço) consegue ler o arquivo. Só IPv4. Se o endereço da piabrota2 mudar, troque
 `allowFrom` em `hosts/piabrota/default.nix`.
 
+## Para máquinas: all.json e /metrics
+
+O host da página (piabrota2) também serve todos os números em duas formas que um programa lê:
+
+| Endereço | Formato | O que tem |
+|---|---|---|
+| https://metrics.piabrota.art/data/all.json | JSON | `{"v":1,"ts":..,"stale_after_s":30,"hosts":{"piabrota":{"age_s":..,"fresh":..,"data":{..}},"piabrota2":{..}}}`: o arquivo de cada host como está (metrics/SCHEMA.md), com a idade |
+| https://metrics.piabrota.art/metrics | texto do Prometheus, versão 0.0.4 | os mesmos números em séries `piabrota_*`, cada uma com o rótulo `host` |
+| https://metrics.piabrota.art/data/piabrota.json, `/data/piabrota2.json` | JSON | o arquivo de um host, como antes |
+
+O `metrics/export.sh` escreve os dois primeiros com uma rodada do jq (`metrics/export.jq`); o jq é
+um binário pequeno em C, então nenhum Python roda na máquina (AGENTS.md, "Resource budget", regra 4).
+O timer `metrics-export.timer` roda ele no intervalo do coletor, no sandbox do coletor e sem rede:
+lê `/run/metrics-web/<nome>.json` e escreve `all.json` e `metrics.prom` ao lado, cada um por um
+arquivo temporário e um rename. Deixa de fora um arquivo que não é um objeto JSON, que passa de
+64 KiB ou cujo `host` não é o nome dele. Um número que não é finito fica fora do `/metrics`. A opção é
+`piabrota.metrics.export.enable`, ligada por padrão onde `web.enable` está ligada.
+
+As séries têm os nomes da tabela em inglês ([METRICS.md](METRICS.md), "For machines"). Os
+processos do topo ficam só no JSON: um pid é uma série nova a cada rodada. Nada nas máquinas lê o
+`/metrics`; ele existe para um Prometheus ou um Grafana em outro lugar. Os dois endereços seguem as
+regras da página: públicos, `no-store`, o limite de pedidos e o bloqueio de agentes.
+
+## O que não é medido
+
+- **Google Analytics.** `piabrota.site.analytics.measurementId` (site.nix) põe a tag do Google no
+  www.piabrota.art, e está vazio nos dois hosts: nenhuma página carrega a tag, e o Google não tem
+  dados. Para ligar, uma pessoa cria uma propriedade GA4 e um fluxo de dados web para
+  `https://www.piabrota.art` em https://analytics.google.com (Administrador, Criar, Propriedade,
+  depois Fluxos de dados, Web) e põe o ID `G-...` em `hosts/piabrota/default.nix`. Ler esses números
+  de volta nesta página pede uma conta de serviço com o papel Leitor na propriedade e a chave JSON
+  dela na piabrota2, fora do git; ainda não há leitor neste repositório. As visitas do nginx (acima)
+  contam sem ele.
+- **Os sites de outros hosts.** GitHub Pages, Cloudflare ou qualquer nome que o nginx das duas
+  máquinas não serve não é sondado e não tem visitas.
+- **Histórico.** A página guarda as amostras na aba, e os arquivos guardam só a última amostra. Um
+  histórico pede um Prometheus que leia o `/metrics`.
+
 ## DNS e acesso
 
 - O DNS de `metrics.piabrota.art` já aponta para a piabrota2: nada a fazer.
@@ -239,6 +277,9 @@ Medido na piabrota2, com 127 processos:
 - A cada 10 s dá cerca de 0,2 % de uma vCPU (cerca de 3 minutos de CPU por dia: 8.640 rodadas).
 - Na KVM 1 (1 vCPU) há menos processos, então o custo é menor.
 - A unidade tem `MemoryMax=64M` e um usuário de sistema fixo, `metrics`.
+- O export (só na piabrota2), medido num contêiner na nuvem com os dois arquivos ao vivo de 2026-11-13:
+  0,04 s de CPU e 13 MB de RSS no pico por rodada, então cerca de 0,4 % de uma vCPU a cada 10 s. Não
+  medido na máquina.
 
 ## Endurecimento
 
@@ -270,9 +311,10 @@ Todas vêm desligadas. Todas ficam sob `piabrota.metrics`:
 | `web.enable`, `web.domain`, `web.htpasswdFile` | a página no nginx, o domínio e o arquivo de login opcional (`null`, o padrão, deixa a página pública) |
 | `publish.enable`, `publish.allowFrom` | a location da KVM 1 e o IP que pode ler |
 | `pull.enable`, `pull.url`, `pull.name` | o timer que busca o arquivo do outro host |
+| `export.enable` | o timer que escreve `all.json` e `metrics.prom` ("Para máquinas"); ligado por padrão com `web.enable` |
 | `inventory.bundledSkillDirs` | pastas de skills que vêm dentro de um agente, contadas como `skills_bundled`; o `hermes.nix` acrescenta as do Hermes |
 
-Hoje: a piabrota2 liga coletor, sonda, visits, web e pull. A piabrota liga coletor, sonda, visits e publish.
+Hoje: a piabrota2 liga coletor, sonda, visits, web, pull e (com a web) export. A piabrota liga coletor, sonda, visits e publish.
 
 ## Mudar a cadência
 
@@ -286,7 +328,8 @@ menos, ou mude essa constante também.
   cgroup e um curl falso. Imprime "N checks, M failed".
 - `checks.metrics-page` (`metrics/test/page.nix`): as regras estáticas da página, em Nix puro, e
   os dados de teste pelo jq. `python3 metrics/test/preview.py --check`: uma busca HTTP da página e
-  dos dados. `just metrics-test` roda os três.
+  dos dados. `python3 metrics/test/export_test.py`: o `all.json` e o `metrics.prom` das
+  fixtures. `just metrics-test` roda os quatro.
 - `checks.metrics`: quatro VMs (hub, edge, locked, client), HTTP simples, precisa de KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Prévia da página com dados de teste (healthy, stale, missing, hostile):

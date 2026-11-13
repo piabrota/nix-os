@@ -355,6 +355,11 @@ def scenario(t):
     )
     t.check("the counts of the sites", [d["domains"][k] for k in ("ts", "up", "total")], [1700000000, 2, 4])
     t.check("the repository", d["repo"], {"name": "piabrota/nix-os", "commits": 230, "ts": 1699999000})
+    t.check(
+        "the sites leave the uptime as it was",
+        d["uptime_s"],
+        round(float((t.proc / "uptime").read_text().split()[0])),
+    )
     (t.work / "nixos-version").write_text('not a "version"')
     (t.work / "system").unlink()
     (t.work / "system").symlink_to("system-x-link")
