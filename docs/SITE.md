@@ -304,22 +304,14 @@ own copy. The name needs its DNS `A` record at piabrota2's address ([DNS on Pork
 ## The profile site at hffmnn.piabrota.art
 
 The website of h0ffmann/h0ffmann, the owner's profile, which GitHub Pages also serves at
-h0ffmann.github.io/h0ffmann. `hffmnn-site/default.nix` builds it on the builder at a pinned commit, with
-that repository's own steps (`just _site`): its content generator (`site/content`, Gleam on node)
-writes the content module from the README, `me/` and `site/data/`, then the Gleam tests, the esbuild
-bundle and the prerender run on node. The output is the page, `app.js`, the static files and
-`media/`, with no store reference. nginx (`hffmnn.nix`) serves it as static files on piabrota2, like
-closed.
+h0ffmann.github.io/h0ffmann. It is HTML only, with no Gleam and no JavaScript (the owner,
+2026-11-13): that repository's `www/build.py` writes it from `www/content/*.md` into `www/dist`,
+and commits it. `hffmnn-site/default.nix` copies `www/dist` as it is at a pinned commit, with no
+build step; it fails when the directory has no `index.html` or has a `<script>`. nginx
+(`hffmnn.nix`) serves it as static files on piabrota2, like closed.
 
-The source has no `.git`, so a stand-in `git` answers the generator's two questions from `rev`,
-`readmeCommits` and `readmeFirst` in `default.nix`. The site's own address (`address` in
-`site/src/h0ffmann_site/page.gleam` of h0ffmann/h0ffmann) is the one the page names for its link
-preview; the build fails when it is not `https://hffmnn.piabrota.art/`.
-
-To move the pin: change `rev`, `hash` (`nix-prefetch-url --unpack` on the commit's archive, then
-`nix hash convert --to sri`) and the two README numbers (`git log --follow --format=%as --
-README.md` at `rev`: its line count and its last line). `just hffmnn-site` builds it into
-`./result-hffmnn-site`. The name needs its DNS `A` record at piabrota2's address
+To move the pin: `scripts/pins.py one hffmnn [rev]` (`rev` and `hash`). `just hffmnn-site` builds
+it into `./result-hffmnn-site`. The name needs its DNS `A` record at piabrota2's address
 ([DNS on Porkbun](#dns-on-porkbun)).
 
 ## The ▲ grid at grid.piabrota.art

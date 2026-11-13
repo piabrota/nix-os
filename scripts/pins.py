@@ -40,14 +40,14 @@ class Site:
     repo: str
     file: str
     revname: str = "rev"
-    extra: str = ""  # commits | readme | npm
+    extra: str = ""  # commits | npm
     must: str = "index.html"  # what the build's output must have
 
 
 SITES = [
     Site("ww3", "h0ffmann/ww3-gpu", "ww3-site/default.nix", extra="commits"),
     Site("closed", "h0ffmann/closed-source", "closed-site/default.nix", extra="commits"),
-    Site("hffmnn", "h0ffmann/h0ffmann", "hffmnn-site/default.nix", extra="readme"),
+    Site("hffmnn", "h0ffmann/h0ffmann", "hffmnn-site/default.nix"),
     Site("marola-site", "marola-dev/marola-site", "marola-site/default.nix", must="bin/marola-server"),
     Site("skills", "piabrota/skills", "skills-site/default.nix"),
     Site("proof", "h0ffmann/proof", "proof-site/default.nix", revname="proofRev"),
@@ -89,9 +89,6 @@ def rewrite(text, site, old, new, values):
     text = sub_once(rf'({repo}(?:.*\n)*? *hash = ")sha256-[^"]*(";)', rf"\g<1>{values['hash']}\2", text, "hash")
     if "commits" in values:
         text = sub_once(r"^( *commits = )\d+;", rf"\g<1>{values['commits']};", text, "commits")
-    if "readmeCommits" in values:
-        text = sub_once(r"^( *readmeCommits = )\d+;", rf"\g<1>{values['readmeCommits']};", text, "readmeCommits")
-        text = sub_once(r'^( *readmeFirst = ")[0-9-]*(";)', rf"\g<1>{values['readmeFirst']}\2", text, "readmeFirst")
     if "npmDepsHash" in values:
         text = sub_once(r'^( *npmDepsHash = ")[^"]*(";)', rf"\g<1>{values['npmDepsHash']}\2", text, "npmDepsHash")
         text = sub_once(r'^( *version = ")[^"]*(";)', rf"\g<1>{values['version']}\2", text, "version")
@@ -115,7 +112,7 @@ def prefetch(repo, rev):
 def values_for(site, new, work):
     src = prefetch(site.repo, new)
     values = {"hash": src["hash"]}
-    if site.extra in ("commits", "readme"):
+    if site.extra == "commits":
         # A clone with no blobs is enough for a count, and stays small.
         git_dir = Path(work) / f"{site.name}.git"
         try:
@@ -130,14 +127,7 @@ def values_for(site, new, work):
             )
         except subprocess.CalledProcessError as e:
             raise PinError("clone") from e
-        if site.extra == "commits":
-            values["commits"] = int(run("git", "-C", str(git_dir), "rev-list", "--count", new))
-        else:
-            # What the profile's generator asks git: `git log --follow --format=%as -- README.md`.
-            days = run("git", "-C", str(git_dir), "log", "--follow", "--format=%as", new, "--", "README.md").split()
-            if not days:
-                raise PinError("the README commits")
-            values["readmeCommits"], values["readmeFirst"] = len(days), days[-1]
+        values["commits"] = int(run("git", "-C", str(git_dir), "rev-list", "--count", new))
     elif site.extra == "npm":
         lock = Path(src["storePath"]) / "package-lock.json"
         npm = run(*NIX, "run", "nixpkgs#prefetch-npm-deps", "--", str(lock)).strip().splitlines()
