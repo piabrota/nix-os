@@ -51,7 +51,8 @@ The top of each card has six numbers and a row of sites:
 | Label | What it is | Where it comes from |
 |---|---|---|
 | Domains up | sites that answered, of the host's sites; green when all answer, red when one does not | `metrics/probe.sh`, every 60 s |
-| Visits 24 h | the pages that browsers got from the host's sites in the last 24 hours; the tooltip has the visitors | nginx's `visits.log`, read by the probe every 60 s (see "Visits") |
+| Visits 24 h | the pages that browsers got from the host's sites in the last 24 hours | nginx's `visits.log`, read by the probe every 60 s (see "Visits") |
+| Visitors 24 h | the different addresses that got those pages | the same |
 | Commits | commits on `main` of `piabrota/nix-os` | the GitHub API, at most once in 10 minutes |
 | Deploys | the generation of `/nix/var/nix/profiles/system`: one for each deploy that changed the system | the collector, from the link `system-<n>-link` |
 | Apps installed | the packages of `environment.systemPackages` (the `packages` count of the inventory) | Nix, at build time |
@@ -61,7 +62,7 @@ Under them, each site of the host is a chip: green when it answers, red with the
 "no answer") when it does not. A site is up when it gives any answer below HTTP 500: a 301 or a
 401 (a login) is an answer. The probe does not follow a redirect. When the probe's data is more than
 5 minutes older than the host's, the chips are grey and the count is not coloured. After the name,
-a chip shows the site's visits of the last 24 hours; its tooltip has the visitors.
+a chip shows the site's visitors of the last 24 hours; its tooltip has the visits.
 
 The sites are the same names that the inventory counts as `sites`: every nginx virtual host but
 `_` and the names that only redirect. Nix writes the list (`https://` when the host has TLS). The

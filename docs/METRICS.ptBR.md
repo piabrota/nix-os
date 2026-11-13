@@ -51,7 +51,8 @@ O topo de cada cartão tem seis números e uma linha de sites:
 | Rótulo | O que é | De onde vem |
 |---|---|---|
 | Domains up | sites que responderam, dos sites do host; verde quando todos respondem, vermelho quando um não responde | `metrics/probe.sh`, a cada 60 s |
-| Visits 24 h | as páginas que navegadores receberam dos sites do host nas últimas 24 horas; a dica traz os visitantes | o `visits.log` do nginx, lido pela sonda a cada 60 s (ver "Visitas") |
+| Visits 24 h | as páginas que navegadores receberam dos sites do host nas últimas 24 horas | o `visits.log` do nginx, lido pela sonda a cada 60 s (ver "Visitas") |
+| Visitors 24 h | os endereços diferentes que receberam essas páginas | a mesma fonte |
 | Commits | commits na `main` de `piabrota/nix-os` | a API do GitHub, no máximo uma vez a cada 10 minutos |
 | Deploys | a geração de `/nix/var/nix/profiles/system`: uma para cada deploy que mudou o sistema | o coletor, a partir do link `system-<n>-link` |
 | Apps installed | os pacotes de `environment.systemPackages` (a contagem `packages` do inventário) | o Nix, no build |
@@ -61,7 +62,7 @@ Abaixo deles, cada site do host é uma etiqueta: verde quando responde, vermelha
 (ou "no answer") quando não responde. Um site está de pé quando dá qualquer resposta abaixo de HTTP
 500: um 301 ou um 401 (um login) é uma resposta. A sonda não segue redirecionamento. Quando os dados
 da sonda estão mais de 5 minutos atrás dos do host, as etiquetas ficam cinza e a contagem fica sem cor.
-Depois do nome, a etiqueta mostra as visitas do site nas últimas 24 horas; a dica traz os visitantes.
+Depois do nome, a etiqueta mostra os visitantes do site nas últimas 24 horas; a dica traz as visitas.
 
 Os sites são os mesmos nomes que o inventário conta como `sites`: todo host virtual do nginx, menos
 o `_` e os nomes que só redirecionam. O Nix grava a lista (`https://` quando o host tem TLS). A sonda
