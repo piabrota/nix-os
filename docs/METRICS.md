@@ -251,16 +251,18 @@ lower, or change that constant too.
 
 ## Tests and preview
 
-- `sh metrics/test/run.sh`: the collector, with a fixture `/proc` and cgroup tree. It prints
-  "N checks, M failed".
-- `sh metrics/test/page.sh`: the static rules of the page and an HTTP fetch with python3.
+- `python3 metrics/test/collect_test.py`: the collector and the probe, with a fixture `/proc` and
+  cgroup tree and a fake curl. It prints "N checks, M failed".
+- `checks.metrics-page` (`metrics/test/page.nix`): the static rules of the page, in pure Nix, and
+  the fixtures through jq. `python3 metrics/test/preview.py --check`: an HTTP fetch of the page and
+  its data. `just metrics-test` runs the three.
 - `checks.metrics`: four VMs (hub, edge, locked, client), plain HTTP, needs KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Preview of the page with fixtures (healthy, stale, missing, hostile):
 
   ```console
-  sh metrics/test/preview.sh healthy 8080     # open http://127.0.0.1:8080/
+  python3 metrics/test/preview.py healthy 8080     # open http://127.0.0.1:8080/
   just metrics-preview healthy
   ```
 
-  Needs python3 and jq.
+  Needs python3.

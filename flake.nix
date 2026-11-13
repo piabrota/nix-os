@@ -86,14 +86,10 @@
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
         toplevel-piabrota2 = self.nixosConfigurations.piabrota2.config.system.build.toplevel;
         # The favicon build: the three files exist, the ICO and the PNG are well formed, and the SVG
-        # is the drawing of parts.eye (favicon/test.sh). The output has no store reference.
-        favicon = pkgs.runCommand "favicon-check" { nativeBuildInputs = [ pkgs.libxml2 ]; } ''
-          sh ${./favicon/test.sh} ${self.packages.${system}.favicon} ${pkgs.lib.fileset.toSource {
-            root = ./.;
-            fileset = pkgs.lib.fileset.unions [ ./site/src/piabrota_site/parts.gleam ./figures-site/default.nix ./skills-site/src/www.gleam ];
-          }}
-          touch $out
-        '';
+        # is the drawing of parts.eye (favicon/check.nix). The output has no store reference.
+        favicon = pkgs.callPackage ./favicon/check.nix { inherit (self.packages.${system}) favicon; };
+        # metrics/index.html and its fixtures (metrics/test/page.nix).
+        metrics-page = pkgs.callPackage ./metrics/test/page.nix { };
         # OpenRig's index.html still says `<link rel="icon" href="data:," />`, the literal that
         # openrig.nix swaps for the eye. If an upstream bump changes it, the swap does nothing.
         openrig-icon =
