@@ -1,5 +1,5 @@
-# hffmnn.piabrota.art: the website of h0ffmann/h0ffmann, the owner's profile, built
-# by hffmnn-site/ at a pinned commit of that repository. Static files served by nginx with Let's
+# hffmnn.piabrota.art: the website of h0ffmann/h0ffmann, the owner's profile: the HTML of its www/dist,
+# copied by hffmnn-site/ at a pinned commit of that repository. Static files served by nginx with Let's
 # Encrypt on their own name, HTTPS only. On piabrota2 (hosts/piabrota2), like wave. GitHub Pages
 # still publishes the same site at h0ffmann.github.io/h0ffmann. The name must point at the box
 # before this is on, or the ACME order fails on the deploy (docs/SITE.md, "DNS on Porkbun").
@@ -18,9 +18,9 @@ in
     };
     root = mkOption {
       type = types.path;
-      # Gleam, Erlang and node run on the builder; the box gets only the files.
+      # The committed HTML of www/dist; the box gets only the files.
       default = pkgs.callPackage ./hffmnn-site { };
-      defaultText = lib.literalExpression "pkgs.callPackage ./hffmnn-site { }, the prerendered site";
+      defaultText = lib.literalExpression "pkgs.callPackage ./hffmnn-site { }, the HTML of www/dist";
       description = "The directory nginx serves on `domain`. Read-only: the store.";
     };
   };

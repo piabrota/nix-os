@@ -148,8 +148,6 @@ class Pins(unittest.TestCase):
                 values = {"hash": "sha256-NEW="}
                 if site.extra == "commits":
                     values["commits"] = 4242
-                if site.extra == "readme":
-                    values.update(readmeCommits=77, readmeFirst="2001-02-03")
                 if site.extra == "npm":
                     values.update(npmDepsHash="sha256-NPM=", version="0-unstable-2001-02-03")
                 out = pins.rewrite(text, site, old, self.OLD_NEW, values)
