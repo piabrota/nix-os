@@ -1,0 +1,25 @@
+name: marola-boards
+
+# The boards marola.piabrota.art serves, from outside (scripts/marola_boards_check.sh). A red run
+# means an area's latest.json is older than 12 hours: the box's marola-boards-build has failed at
+# least twice in a row. GitHub mails the owner. It changes nothing on the box; the build runs there,
+# not here, because INEA and INEMA answer only Brazilian addresses (docs/MAROLA-SITE.md).
+on:
+  schedule:
+    - cron: "41 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fresh:
+    name: boards are fresh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check every area
+        run: |
+          set -o pipefail
+          { echo "| area | generated_at | |"; echo "|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
+          scripts/marola_boards_check.sh https://marola.piabrota.art | tee -a "$GITHUB_STEP_SUMMARY"
