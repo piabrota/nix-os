@@ -34,11 +34,11 @@ rec {
     headline = "Open software, made in Rio de Janeiro.";
     lede = "Each project is its own repository, with its own README, licence and tests. The source is open, and so is the method.";
     contact = "mhoffmannfs [at] gmail.com";
-    links = [ "structure" "dogma" "inventory" "board" "forks" ];
+    links = [ "projects" "structure" "dogma" "board" "forks" ];
   };
 
   # Projects that are not FOSS yet. They stay out of `projects`: no repository link, no place in the
-  # FOSS inventory or its counts, and no place in the mockups. None today: chaceon went public.
+  # project tiles or the counts, and no place in the mockups. None today: chaceon went public.
   # An empty list draws no lane.
   closed = [ ];
 
@@ -327,7 +327,7 @@ rec {
   structure = [
     { name = "dojo"; role = "the common layer"; text = "The umbrella: every repository as a submodule at a pinned commit, and one routing table. It inherits the rules from mu, and it holds no product code."; href = "https://github.com/piabrota/dojo"; }
     { name = "mu"; role = "the company chart"; text = "The dogma, the charter, the standards and the index of the repositories. It gives dojo the rules."; href = "https://github.com/piabrota/mu"; }
-    { name = "the products"; role = "each in its own repository"; text = "Each has its own README, licence and checks. A change to a product is made in that repository."; href = "#inventory"; }
+    { name = "the products"; role = "each in its own repository"; text = "Each has its own README, licence and checks. A change to a product is made in that repository."; href = "#projects"; }
     { name = "pirsig"; role = "the brain"; text = "Smart notes, PARA and a track record of the high-level decisions."; href = "https://github.com/piabrota/pirsig"; }
   ];
 
