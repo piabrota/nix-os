@@ -55,6 +55,33 @@ let
       done
     '';
   };
+  # The base map's tiles file (marola-site's docs/5-hosting.md, "The base map"), cut on the box by
+  # marola-site's own basemap_extract.sh from the Protomaps build its site/basemap.version pins, for the
+  # areas of the same commit. The stamp is that pin and those areas: a deploy that changes neither
+  # leaves the file alone.
+  tiles = "${state}/tiles";
+  tilesStamp = builtins.hashString "sha256" (builtins.readFile cfg.package.basemapVersion + builtins.readFile cfg.package.areas);
+  tilesBuilder = pkgs.writeShellApplication {
+    name = "marola-tiles";
+    runtimeInputs = [ pkgs.bash pkgs.coreutils pkgs.gnused pkgs.curl pkgs.nodejs_24 pkgs.pmtiles pkgs.tippecanoe ];
+    text = ''
+      work=/var/lib/marola-tiles
+      if [ -s ${tiles}/marola.pmtiles ] && [ "$(cat ${tiles}/.stamp 2>/dev/null)" = ${tilesStamp} ]; then
+        echo "marola-tiles: marola.pmtiles is current" >&2
+        exit 0
+      fi
+      install -d -m 0750 ${tiles}
+      install -d "$work/site"
+      install -m 0644 ${cfg.package.basemapVersion} "$work/site/basemap.version"
+      install -m 0644 ${cfg.package.areas} "$work/site/areas.json"
+      # Write beside the live file, then rename: a reader never sees half a file.
+      BASEMAP_ROOT="$work" bash ${cfg.package.basemapExtract} ${tiles}/marola.pmtiles.new
+      chmod 0644 ${tiles}/marola.pmtiles.new
+      mv ${tiles}/marola.pmtiles.new ${tiles}/marola.pmtiles
+      echo ${tilesStamp} > ${tiles}/.stamp
+      rm -rf "$work/.tmp"
+    '';
+  };
   bcfg = cfg.boards.build;
   # The boards as marola-site's site.yml builds them, here instead of on the self-hosted runner:
   # the app image marola-site pins, `--site` over its areas.json, no LLM. piabrota2 is in Brazil
@@ -231,6 +258,7 @@ in
         MAROLA_DB = "${state}/marola.db";
         MAROLA_STUDIES = "${state}/studies";
         MAROLA_STUDIES_QUOTA = toString cfg.studiesQuota;
+        MAROLA_TILES = tiles;
       } // optionalAttrs (cfg.github.clientId != null) {
         MAROLA_GITHUB_CLIENT_ID = cfg.github.clientId;
         MAROLA_GITHUB_CLIENT_SECRET_FILE = "%d/github-client-secret";
@@ -314,6 +342,40 @@ in
     # A deploy that moves the image (or the first deploy with the build on) starts a build at once,
     # without waiting for the next timer run and without holding the switch: --no-block, so a
     # 45-minute build never trips deploy-rs's rollback.
+    # As user marola, into the server's state folder. About 220 MB from build.protomaps.com and a few
+    # minutes; a pin that Protomaps no longer lists (it keeps about a week of builds) fails here and
+    # the old file stays.
+    systemd.services.marola-tiles = {
+      description = "Cut marola's base map tiles file";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = lib.getExe tilesBuilder;
+        User = "marola";
+        Group = "marola";
+        StateDirectory = [ "marola" "marola-tiles" ];
+        StateDirectoryMode = "0750";
+        TimeoutStartSec = "30min";
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        NoNewPrivileges = true;
+      };
+    };
+    # Every deploy that moves the pin or the areas starts it, without holding the switch.
+    systemd.services.marola-tiles-kick = {
+      description = "Start marola-tiles when the base map pin or the areas change";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network-online.target" ];
+      restartTriggers = [ tilesStamp ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${config.systemd.package}/bin/systemctl start --no-block marola-tiles.service";
+      };
+    };
+
     systemd.services.marola-boards-build-kick = mkIf bcfg.enable {
       description = "Start a board build when the app image changes";
       wantedBy = [ "multi-user.target" ];
