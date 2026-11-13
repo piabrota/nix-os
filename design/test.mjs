@@ -165,6 +165,17 @@ test('drift: the tokens of the kit are those of site/static/style.css', () => {
   for (const name of Object.keys(kit.dark)) if (name in home.dark) assert.equal(kit.dark[name], home.dark[name], name);
 });
 
+test('drift: the theme switch of site/static/style.css flips to the same tokens', () => {
+  const text = readFileSync(new URL('../site/static/style.css', import.meta.url), 'utf8');
+  const { dark, light } = tokensOf(text);
+  const read = (block) => Object.fromEntries([...block.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  const flipped = (scheme) => read(new RegExp(`@media \\(prefers-color-scheme: ${scheme}\\) \\{\\s*:root:has\\(#theme:checked\\) \\{[^}]*\\}`).exec(text)[0]);
+  const toLight = flipped('dark');
+  const toDark = flipped('light');
+  assert.deepEqual(toLight, light, 'checked on a dark system: the light tokens');
+  for (const name of Object.keys(light)) assert.equal(toDark[name], dark[name], `checked on a light system: dark ${name}`);
+});
+
 test('drift: the tokens of the kit are the table of site/DESIGN.md', () => {
   const kit = tokensOf(readFileSync(new URL('./css/tokens.css', import.meta.url), 'utf8'));
   const table = readFileSync(new URL('../site/DESIGN.md', import.meta.url), 'utf8');

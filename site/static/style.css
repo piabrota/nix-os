@@ -17,6 +17,8 @@
   --radius: 12px;
   --display: 'Fjalla One', 'Arial Narrow', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --to-dark: none;        /* which glyph the theme switch shows: the scheme it goes to */
+  --to-light: inline;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -31,7 +33,46 @@
     --ok: #1A7F37;
     --warn: #9A6700;
     --none: #6E7681;
+    --to-dark: inline;
+    --to-light: none;
     color-scheme: light;
+  }
+}
+/* The theme switch (parts.theme): checked, the page takes the other scheme than the visitor's.
+   The two blocks repeat the tokens above; design/test.mjs checks that they agree. No script, so
+   the choice lasts until the page changes. */
+@media (prefers-color-scheme: dark) {
+  :root:has(#theme:checked) {
+    --bg: #FFFFFF;
+    --surface: #F4F5F7;
+    --raised: #FFFFFF;
+    --border: #D8DCE3;
+    --text: #0B0D12;
+    --muted: #4F5868;
+    --accent-text: #A51D14;
+    --ok: #1A7F37;
+    --warn: #9A6700;
+    --none: #6E7681;
+    --to-dark: inline;
+    --to-light: none;
+    color-scheme: light;
+  }
+}
+@media (prefers-color-scheme: light) {
+  :root:has(#theme:checked) {
+    --bg: #0B0D12;
+    --surface: #14171F;
+    --raised: #1A1E28;
+    --border: #2A303C;
+    --text: #EDEFF3;
+    --muted: #9AA3B2;
+    --accent-text: #FF6B5E;
+    --ok: #3FB950;
+    --warn: #D29922;
+    --none: #6E7681;
+    --to-dark: none;
+    --to-light: inline;
+    color-scheme: dark;
   }
 }
 
@@ -96,6 +137,13 @@ h1 span { color: var(--muted); }
 .designs a b { font-weight: 400; color: var(--text); }
 .designs a:hover { text-decoration: none; color: var(--text); background: var(--raised); }
 .designs a[aria-current="page"], .designs a[aria-current="page"] b { background: var(--accent); color: var(--on-accent); }
+.theme { display: inline-flex; }
+.theme input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; }
+.theme label { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font: 400 16px/1 var(--mono); cursor: pointer; }
+.theme label:hover { background: var(--raised); }
+.theme input:focus-visible + label { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+.theme .to-dark { display: var(--to-dark); }
+.theme .to-light { display: var(--to-light); }
 
 /* Sections: a numbered head (§ 01, § 02…, counted here, never typed). */
 main { counter-reset: sec; }
