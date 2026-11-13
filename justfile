@@ -119,6 +119,10 @@ cves: build
 deploy user="deploy" node="piabrota":
     nix run .#deploy-rs -- .#{{node}} --hostname {{host}} --ssh-user {{user}} --skip-checks
 
+# move the marola-site pin (marola-site/default.nix) to marola-site's main, or to <rev>, and build it
+marola-site-pin rev="":
+    python3 scripts/pins.py one marola-site {{rev}}
+
 # move the room pin (room-site/default.nix) to room's main, or to <rev>, with both hashes, and build it
 room-pin rev="":
     python3 scripts/pins.py one room {{rev}}
