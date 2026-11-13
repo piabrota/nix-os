@@ -46,7 +46,7 @@ done
 : "${KH_JOURNAL_MIB:=220}"      # MiB of journal, above it: WARN
 : "${KH_REPEAT_HOURS:=6}"       # --alert repeats the same findings after this many hours
 
-units="hermes-agent hermes-backend pgx paperclip postgresql openrig"
+units="hermes-agent hermes-backend pgx openrig"
 home=${HERMES_HOME:-/var/lib/hermes/.hermes}
 state=$home/plugin-data/kvm4-health
 now=$(date +%s)

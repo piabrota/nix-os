@@ -2,18 +2,18 @@
 
 [Português](Home)
 
-The NixOS configuration of two live VPSs, both Hostinger KVM guests. `piabrota` (the KVM 1 plan:
-1 vCPU, 4 GB RAM, a 50 GB disk) serves the public web. `piabrota2` (the KVM 4 plan) runs Hermes Agent,
-its dashboard, OpenRig and PGX. Measured on `piabrota2` on 2026-11-04: 4 vCPU, 15.6 GiB RAM, a 196.8 GiB disk
-(6 % used) and 7.8 GiB of swap; at rest, `hermes-agent` uses about 0.4 GiB, `hermes-backend` about
-0.55 GiB and `pgx` about 0.1 GiB. Everything goes through GitHub: a pull request runs the CI
-checks, and a merge to `main` builds and deploys each system.
+The NixOS configuration of two Hostinger VPSs. Each change is a pull request. A merge to `main`
+builds the two systems and deploys them.
 
-OpenRig is the engine of the open software factory behind piabrota. [Factory](Factory) says what it
-does today and what it will do: its seats have not run a task yet.
+- `piabrota` (KVM 1: 1 vCPU, 4 GB RAM) serves the public site.
+- `piabrota2` (KVM 4: 4 vCPU, 16 GB RAM) runs Hermes Agent, its dashboard, OpenRig, PGX and the
+  other web services.
 
-This wiki is a map. The rules and the step-by-step guides live in the repository, and each page
-here points to them.
+OpenRig is the engine of the open software factory of piabrota. [Factory](Factory) tells what it
+does today and what it will do.
+
+This wiki is a map. The rules and the procedures are in the repository. Each page here links to
+them.
 
 ## Pages
 
@@ -28,17 +28,15 @@ here points to them.
 
 ## Addresses
 
-Every piabrota.art address that this repository serves. The full table, with the status of each, is
-in the [README section "Every piabrota.art address"](https://github.com/piabrota/nix-os#every-piabrotaart-address).
+The [README](https://github.com/piabrota/nix-os#every-piabrotaart-address) has the full list.
 
-- On `piabrota` (KVM 1), open: [www.piabrota.art](https://www.piabrota.art/) (the site, and also
-  `/index/`, `/paths/`, `/hosts/` and `/hermes/`) and `/nixos` (it leads to the repository).
-  `piabrota.art` redirects to `www`, and `/skills/` to [skills.piabrota.art](https://skills.piabrota.art/),
-  the skills website, also on `piabrota`.
-- On `piabrota`, with one password: [www.piabrota.art/notes](https://www.piabrota.art/notes), the Loco app `notes`.
-- On `piabrota2` (KVM 4), with a login (basic auth): [hermes.piabrota.art](https://hermes.piabrota.art/),
-  the Hermes dashboard, and [rig.piabrota.art](https://rig.piabrota.art/), the OpenRig UI.
-- `paperclip.piabrota.art`: off since 2026-11-04, no answer.
+- On `piabrota` (KVM 1): [www.piabrota.art](https://www.piabrota.art/), the site, and
+  [skills.piabrota.art](https://skills.piabrota.art/), the skills website. `piabrota.art` sends you
+  to `www`.
+- On `piabrota2` (KVM 4), with a login: [hermes.piabrota.art](https://hermes.piabrota.art/), the
+  Hermes dashboard, and [rig.piabrota.art](https://rig.piabrota.art/), the OpenRig UI.
+- On `piabrota2`, open: [metrics.piabrota.art](https://metrics.piabrota.art/), the metrics of the
+  two hosts, and the project websites (room, grid, proof, pirsig, wave, closed, marola).
 
 ## In the repository
 

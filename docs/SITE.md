@@ -389,7 +389,7 @@ is served as `text/plain; charset=utf-8`.
 `https://www.piabrota.art/figures/` serves each figure of `docs/archify/` as one self-contained
 [archify](https://github.com/tt-a1i/archify) page: it zooms, follows the visitor's light or dark
 setting, and calls no third party. `/figures/<slug>/` is the English page, `/figures/pt-BR/<slug>/`
-the pt-BR mirror, and `/figures/` lists them. The README and the wiki link each figure to its page.
+the pt-BR mirror, and `/figures/` lists them. `docs/FIGURES.md` and the wiki link each figure to its page.
 
 **The index.** `/figures/` has the page frame of `/hosts/`: the brand, the language links, the
 design switcher, a hero and the foot, in the site's `style.css`. It shows one card for each figure:

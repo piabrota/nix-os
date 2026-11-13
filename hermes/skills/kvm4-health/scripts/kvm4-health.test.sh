@@ -59,7 +59,7 @@ check "1.2G exits 1" "$status" 1
 
 # On a box with none of the Hermes units the units section has no unit line, and no finding.
 run 100.0M
-check "no unit line without the units" "$(printf '%s\n' "$report" | sed -n '/^== units/,/^== disk/p' | grep -cE '^(ok|WARN|CRIT) +(hermes|pgx|paperclip|postgresql|openrig|user-)')" 0
+check "no unit line without the units" "$(printf '%s\n' "$report" | sed -n '/^== units/,/^== disk/p' | grep -cE '^(ok|WARN|CRIT) +(hermes|pgx|openrig|user-)')" 0
 check "the units section says no failed unit" "$(printf '%s\n' "$report" | grep -c '^ok .*no failed unit')" 1
 check "the first line names the host" "$(printf '%s\n' "$report" | sed -n 1p | cut -d' ' -f1-3)" "kvm4-health on $(uname -n)"
 

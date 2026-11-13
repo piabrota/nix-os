@@ -271,8 +271,7 @@ let
       cp -r ${ownerSkillsSrc}/skills/${path} $out/${path}
     '')
     ownerSkillPaths);
-  # The `omp` wrapper (omp/wrapper.nix): the only omp on Hermes's PATH, and Paperclip's pi_local
-  # runs it too.
+  # The `omp` wrapper (omp/wrapper.nix): the only omp on Hermes's PATH.
   ompWrapped = pkgs.callPackage ./omp/wrapper.nix { };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
@@ -358,10 +357,7 @@ in
       max_spawn_depth = 1;
     };
     # The third directory holds this repository's own skills (hermes/skills/): hermes-omp, kvm4-health, site-pins.
-    # Another module's directories (Paperclip's skill, paperclip.nix) join here: the module merges
-    # settings with recursiveUpdate, which keeps only one definition of a list.
-    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ]
-      ++ config.piabrota.paperclip.hermesSkillDirs or [ ];
+    settings.skills.external_dirs = [ "${optionalSkills}" "${ownerSkills}" "${./hermes/skills}" ];
     # The deny list lives in the store, read-only: the agent cannot edit its own guardrails. (The
     # plugin then logs that it cannot write its integrity hash next to the file; that is expected.)
     extraPlugins = [
@@ -430,7 +426,7 @@ in
     # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
     # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts),
     # and omp-run runs and stops a background omp through it.
-    # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix, as Paperclip's jq is.
+    # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix.
     # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim).
     extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
