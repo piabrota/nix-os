@@ -103,7 +103,8 @@ owner. `just certs` runs the same check from any machine (`just certs proof.piab
 
 When an order fails (the name has no record yet, or points at the other host), NixOS keeps its
 self-signed stand-in, issued by `minica`. `acme-retry.nix` makes `acme-order-renew-<name>.service`
-retry every 20 minutes, at most 9 times in 6 hours (3 failed validations an hour, under Let's
+retry every 20 minutes (a transient timer started by `OnFailure=`, not `Restart=`: a unit waiting
+to restart counts as failed in every deploy, and deploy-rs then rolls the host back), at most 9 times in 6 hours (3 failed validations an hour, under Let's
 Encrypt's limit of 5); then the daily `acme-renew-<name>.timer` takes over. So once the record is
 right, the real certificate comes within about 20 minutes of the next failed order. The retry
 starts only after an order fails: a certificate that was already a stand-in before a deploy
