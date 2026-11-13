@@ -63,7 +63,8 @@ sudo systemctl start marola-boards-build; journalctl -u marola-boards-build -n 4
 
 The start waits for the whole build (up to 45 minutes). Each run tries twice, and a run that fails
 still publishes the areas it finished. A failed run does not leave the unit failed (`ExecStart=-`), so a
-deploy that starts it is not rolled back; read the exit code in the journal (`status=125/n/a, ignoring`
+deploy that starts it is not rolled back. A deploy never stops or restarts a running build
+(`restartIfChanged = false`), since a restart would hold the switch for the whole build; read the exit code in the journal (`status=125/n/a, ignoring`
 is a refused pull), and `marola-boards.yml` reports boards that go stale.
 
 A pull that answers `manifest unknown` right after `Login Succeeded!` most often means the token cannot
