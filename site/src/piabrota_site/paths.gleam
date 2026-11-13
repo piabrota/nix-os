@@ -43,7 +43,11 @@ pub fn view() -> Element(msg) {
       html.section([attribute.class("wrap"), attribute.id("ls")], [
         parts.section_head("Paths", "ls, two places"),
         html.div(
-          [attribute.class("terminal"), attribute.aria_label("Listing")],
+          [
+            attribute.class("terminal"),
+            attribute.id("projects"),
+            attribute.aria_label("Listing"),
+          ],
           [
             html.div([attribute.class("term-bar")], [
               html.span([attribute.class("dots")], [
@@ -92,6 +96,7 @@ fn block(prompt: String, projects: List(Project)) -> Element(msg) {
         html.span([attribute.class("who")], [html.text(p.name)]),
         parts.pill(p.state, "en"),
         parts.commits(p, "en"),
+        html.span([attribute.class("say")], [html.text(p.blurb)]),
       ])
     }),
   ])

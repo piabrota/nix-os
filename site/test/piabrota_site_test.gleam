@@ -319,8 +319,7 @@ pub fn commits_test() {
       }
     })
   assert list.length(with) == 11
-  let fabric = page.fabric()
-  let paths = page.paths()
+  // Every design shows the line once a project: on a tile (A, B) or on a row of the terminal (C).
   list.each(pages(), fn(p) {
     list.each(with, fn(entry) {
       let #(_, c) = entry
@@ -332,22 +331,35 @@ pub fn commits_test() {
           <> " agent",
       )
     })
-    // The inventory, on every design, has one fact for each project with counts.
-    assert list.length(string.split(p.1, "<dt>commits</dt>"))
-      == list.length(with) + 1
-  })
-  // Design A's tiles and design C's rows carry the line and the tooltip.
-  list.each([fabric, paths], fn(html) {
-    assert list.length(string.split(html, "class=\"commits\""))
+    assert list.length(string.split(p.1, "class=\"commits\""))
       == list.length(with) + 1
     assert string.contains(
-      html,
+      p.1,
       "title=\"Commits on the default branch, as of "
         <> data.commits_as_of
         <> ".",
     )
   })
-  assert !string.contains(page.index(), "class=\"commits\"")
+}
+
+// The repositories show once: the tiles hold every fact, and there is no second list of them.
+pub fn projects_once_test() {
+  list.each(pages(), fn(p) {
+    assert !string.contains(p.1, "id=\"inventory\"")
+    assert !string.contains(p.1, "href=\"#inventory\"")
+    assert string.contains(p.1, "id=\"projects\"")
+    list.each(data.projects, fn(project) {
+      assert string.contains(p.1, string.replace(project.blurb, "'", "&#39;"))
+    })
+  })
+  list.each([page.fabric(), page.index()], fn(html) {
+    assert list.length(string.split(html, "class=\"tile\""))
+      == list.length(data.projects) + list.length(data.closed) + 1
+    list.each(data.projects, fn(project) {
+      assert string.contains(html, "href=\"" <> project.repo <> "\"")
+      assert string.contains(html, "last push " <> project.pushed)
+    })
+  })
 }
 
 // The labels come in every language; the numbers are the same in all four.

@@ -15,15 +15,17 @@ other two:
 | C · paths, at `/paths/` | ![Design C, paths, dark](images/site-paths-desktop-dark.png) | ![Design C, paths, light](images/site-paths-desktop-light.png) | ![Design C, paths, phone](images/site-paths-mobile-dark.png) |
 
 Design A is built as [closed-source's site](https://h0ffmann.github.io/closed-source/) is: numbers in
-the hero, tiles with tags, a bar of anchors, then detail in sections. Every design ends with the same
+the hero, tiles with tags, a bar of anchors, then detail in sections. The tiles are the one list of
+the projects: each holds the blurb, the state, the language, the origin, the licence, the address, the
+last push, the repository link and, when the project has them, the commit counts. Designs A and B
+show them; C lists the same projects, with their blurbs, in its terminal. Every design ends with the same
 sections: the **structure** (mu, the company chart; dojo, the umbrella; the products; pirsig, the
-brain), **why it is open**, the **dogma** (the ten invariants of piabrota/mu), the **FOSS inventory**
-(every project with its origin, language, licence, last push and links), the **board** (each person
+brain), **why it is open**, the **dogma** (the ten invariants of piabrota/mu), the **board** (each person
 with a GitHub pill and their website, when they have one), the **partners** (marola.dev and
 ouroboric, with their logos) and the **forks**, a PUBLIC inventory of every fork under piabrota, as
 h0ffmann/h0ffmann lists its own:
 
-![Design A, the whole page, dark: the tiles, then the structure, the dogma, the inventory, the board, the partners and the forks](images/site-fabric-full-dark.png)
+![Design A, the whole page, dark: the tiles, then the structure, the dogma, the board, the partners and the forks](images/site-fabric-full-dark.png)
 
 All three wear picasso's look in piabrota's colours, dark first and light when the visitor asks
 for it; the rules are [`site/DESIGN.md`](../site/DESIGN.md). The pages load the sister sites'
@@ -429,7 +431,7 @@ there at a pinned commit, in English or pt-BR, and no copy lives here. `structur
 ## Closed projects
 
 `closed` in `mockups/data.nix` lists a project that is not FOSS yet. It gets a tile in design A, with no
-link. It stays out of the FOSS inventory, the counts and the mockups. The list is empty today, and an
+link. It stays out of the counts and the mockups. The list is empty today, and an
 empty list draws no lane. chaceon was the last entry: it is public now, so it is in `projects`, with a
 link to its repository.
 
@@ -437,8 +439,8 @@ link to its repository.
 
 Each project in an own repository of the org (`origin` `own`, no `repository` override; so not hermes
 and not a personal project) has `commits = { human = N; agent = M; };` in `mockups/data.nix`, and the
-file has one `commitsAsOf`. Design A shows them in the tile, design C in the row, and every design in
-the inventory entry, in the four languages (`commits.*` in `site/locale/<lang>.json`). A project with
+file has one `commitsAsOf`. Designs A and B show them in the tile and design C in the row, in the four
+languages (`commits.*` in `site/locale/<lang>.json`). A project with
 no `commits` shows nothing. The tooltip says what the count is and the day it was read.
 
 - Rule: a commit is agent when its GitHub author login ends with `[bot]` or is exactly `claude`.

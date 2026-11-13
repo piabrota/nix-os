@@ -174,7 +174,6 @@ span.where { color: var(--muted); }
   border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease;
 }
 .card:hover { border-color: color-mix(in srgb, var(--state) 60%, var(--border)); border-left-color: var(--state); transform: translateY(-2px); }
-.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .card h4 { font-size: 1.45rem; line-height: 1.1; }
 .blurb { margin: 0; color: var(--muted); font-size: 14px; flex: 1; }
 .card-foot { display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -183,6 +182,7 @@ span.where { color: var(--muted); }
 .commits-label { margin-right: 4px; font: 600 11px/1.4 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
 /* The tile's link covers the tile; lift the line above it so its tooltip shows. */
 .tile .commits { position: relative; z-index: 1; align-self: flex-start; }
+.repo { position: relative; z-index: 1; align-self: flex-start; font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .paper { position: relative; z-index: 1; align-self: flex-start; display: inline-flex; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font: 400 12px/1.4 var(--mono); color: var(--text); }
 .paper:hover { text-decoration: none; border-color: var(--text); }
 .paper-label { font: 600 12px/1.4 Inter, sans-serif; }
@@ -198,7 +198,6 @@ span.where { color: var(--muted); }
 .project-logo { flex: none; width: 44px; height: 44px; object-fit: contain; border-radius: 10px; }
 .project-logo.glyph { display: grid; place-items: center; font: 400 15px/1 var(--display); color: var(--muted); background: var(--raised); border: 1px solid var(--border); }
 .tile-top { display: flex; align-items: center; gap: 12px; min-height: 52px; }
-.card-name { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .tile-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tile-tags span:not(.pill) { padding: 4px 10px; font: 600 11px/1 Inter, sans-serif; color: var(--muted); background: var(--raised); border: 1px solid var(--border); border-radius: 999px; }
 .tile h4 { font-size: clamp(1.5rem, 2.8vw, 2rem); line-height: 1.08; overflow-wrap: anywhere; margin-top: 6px; }
@@ -277,6 +276,7 @@ span.where { color: var(--muted); }
 .term-block a.where:hover { text-decoration-color: var(--accent-text); }
 .who { color: var(--muted); }
 .term-block .commits { grid-column: 1 / -1; margin-top: -2px; }
+.term-block .say { grid-column: 1 / -1; color: var(--muted); font: 400 13px/1.5 Inter, sans-serif; }
 
 /* /hermes: the configuration as YAML, in the terminal of design C. */
 .terminal pre.yaml { margin: 0; padding: 16px 20px; overflow-x: auto; color: var(--text); font: inherit; white-space: pre; tab-size: 2; }
@@ -386,15 +386,6 @@ main > section.wrap { scroll-margin-top: 44px; }
 .dogma li { padding: 7px 0 7px 4px; color: var(--muted); }
 .dogma li::marker { font: 400 13px var(--mono); color: var(--accent-text); }
 .dogma strong { color: var(--text); font-weight: 600; }
-
-.inventory { list-style: none; counter-reset: entry; margin: 18px 0 0; padding: 0; border-top: 1px solid var(--border); }
-.entry { padding: 18px 0 18px 14px; border-bottom: 1px solid var(--border); box-shadow: inset 3px 0 0 var(--state); }
-.entry h3 { font-size: 1.5rem; line-height: 1.15; overflow-wrap: anywhere; }
-.entry .blurb { margin-top: 6px; max-width: 76ch; }
-.entry dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px 20px; margin: 12px 0 0; }
-.entry dt { font: 600 11px/1.4 Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.entry dd { margin: 0; font: 400 13px/1.5 var(--mono); overflow-wrap: anywhere; }
-.links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 10px; font-size: 13px; align-items: baseline; }
 
 /* Board, partners, forks: every design ends with them (community.gleam). */
 .people { list-style: none; margin: 18px 0 0; padding: 0; }

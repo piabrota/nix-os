@@ -67,7 +67,7 @@ font file is stored here.
 - A: tiles in a grid of the profile's lanes, the incubating lane last; three tiles are filled,
   across the row: ww3-gpu's in `--sea`, first, before mu's (the owner, 2026-11-11), then mu's
   (the company chart) and proof's (the incubating project) in `--accent`.
-  B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
+  B: the wordmark, and the tiles of A right after it. C: one terminal on `--surface`.
 - **/hermes** is not a design and has no place in the switcher: its hero carries the hermes mark
   (below, "Marks") where the others carry a drawing, its numbers are facts in mono, and its
   YAML sits in C's terminal, in a `<pre>` that scrolls sideways on a phone. It ends at the foot,
@@ -90,7 +90,7 @@ font file is stored here.
   logo and the tags on the left, the name, the blurb and the footer on the right. The four layers
   are 1, 2 and 4 up; on the figures page the cards are 1 and 2 up, and an odd last card takes the
   row with its preview at the side. At 3 up the board's cards stack the avatar over the text.
-- **Commit counts**, on a tile (A), on a row of C's terminal and in the inventory: one quiet line,
+- **Commit counts**, on a tile (A and B) and on a row of C's terminal: one quiet line,
   the word `commits` in Inter, 11 px, uppercase, then `35 human · 72 agent` in JetBrains Mono, 12 px,
   both in `--muted`. No new colour. A tooltip says what the count is and the day it was read. A
   project with no counts shows no line and no zero. On a tile the line sits above the link that
@@ -101,6 +101,12 @@ font file is stored here.
 
 ## What every design shares
 
+The project tiles (A and B; C lists the same projects in its terminal, each with its blurb) are the
+one list of the projects: there is no second one. A tile holds the state pill, the language, the
+origin (`own` is the org's; `personal` is a repository that dojo pins and a person keeps), the name,
+the blurb, a quiet line with the licence, the address and the last push, a `repository ↗` link when
+the tile's own link goes to the project's site, the paper badge and the commit counts.
+
 Every design ends with the same sections, in this order (`src/piabrota_site/community.gleam`):
 
 - **Structure**: a card a layer, the chart, the umbrella, the products and the brain, each with its
@@ -108,11 +114,6 @@ Every design ends with the same sections, in this order (`src/piabrota_site/comm
 - **Why it is open**: the three reasons of the org profile, word for word.
 - **Dogma**: the ten invariants of piabrota/mu, shortened only where a list or a link would not fit.
   The list numbers them, in `--accent-text`.
-- **FOSS inventory**: one entry a project, closed-source's detail: the name, the state pill, the
-  blurb, four facts in a `<dl>` (origin, language, licence, last push; a fifth, the commit counts,
-  when the project has them), the repository link and the
-  address. The state colours the entry's 3 px edge. `own` is the org's; `personal` is a repository
-  that dojo pins and a person keeps.
 - **Board**: a card a person, with the avatar, the name (or the `@login`), the line from the org
   profile's Board, the GitHub pill (avatar and `@login`, mono) and, when the person has a website,
   the website pill (the host, in `--accent-text`, `↗`).
