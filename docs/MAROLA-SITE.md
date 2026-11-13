@@ -17,41 +17,37 @@ contract: read it before you change one.
 | `marola-boards-build-kick` | Starts `marola-boards-build` (without waiting for it) on the first deploy with the build on and on every deploy that moves `boards.build.image`, so a new image builds at once instead of at the next timer run. |
 | `marola-boards.yml` (GitHub Actions) | Every 6 hours, from outside: `scripts/marola_boards_check.sh` reads each area's `latest.json` and fails when one is older than 12 hours, so two failed builds in a row mail the owner. The build stays on the box: INEA and INEMA refuse GitHub's US runners. |
 | `marola-backup.timer` | Daily: `marola.db` (SQLite's `.backup`), `csrf.key` and `studies/` into `/var/backups/marola`; database copies older than 14 days are deleted. Same disk: copy it off the box if the studies matter. |
-| nginx | `domain` over HTTPS, HSTS, 1 MB bodies except 21 MB on `/submit`, `/en/submit` and `/api/v1/studies` (not buffered); `X-Forwarded-For` replaced with `$remote_addr`. Each name in `redirects` answers 301 to `domain`. |
+| nginx | `domain` and each name in `aliases` (the same site, a vhost and a certificate each) over HTTPS, HSTS, 1 MB bodies except 21 MB on `/submit`, `/en/submit` and `/api/v1/studies` (not buffered); `X-Forwarded-For` replaced with `$remote_addr`. Each name in `redirects` answers 301 to `domain`. |
 
 ## DNS
 
-`marola.dev` and `www.marola.dev` are on **Cloudflare**, not Porkbun: today they resolve to Cloudflare's
-proxy, which serves the Worker `marola` (marola-site's `wrangler.jsonc`, MIP-0078). `marola.piabrota.art`
-is on Porkbun with the other piabrota.art names ([SITE.md](SITE.md#dns-on-porkbun)).
+No Cloudflare (the owner, 2026-11-13): piabrota2 (`187.41.117.18`) serves `marola.dev` and
+`marola.piabrota.art` itself, each its own nginx vhost with its own Let's Encrypt certificate (`domain`,
+`aliases`), and `www.marola.dev` answers 301 to `marola.dev` (`redirects`). `marola.piabrota.art` is on
+Porkbun with the other piabrota.art names ([SITE.md](SITE.md#dns-on-porkbun)). `marola.dev` was on
+Cloudflare, which served the Worker `marola` (marola-site's `wrangler.jsonc`, MIP-0078).
 
-Each name needs its A record at piabrota2's address before the deploy that serves it, or the ACME order
-fails.
+Each name needs its A record at piabrota2 before the deploy that serves it, or its ACME order fails
+(`acme-retry.nix` then retries every 20 minutes, and the other names keep their certificates).
 
-## Cutover
+## Moving marola.dev here
 
-**Step 1: marola.piabrota.art (this change).** marola.dev stays on the Worker.
+1. Cloudflare, Workers & Pages, `marola`, Settings, Domains & Routes: remove the custom domain
+   `marola.dev`. Then delete the Worker, or leave it: nothing deploys to it any more (marola-site's
+   `site.yml` is gone).
+2. DNS of `marola.dev`: `A marola.dev` and `A www` → `187.41.117.18`, with no proxy. Either keep the zone
+   on Cloudflare with the grey cloud (**DNS only**), or move the nameservers to the registrar's or to
+   Porkbun and drop the Cloudflare zone. Proxied, the ACME HTTP challenge and the server's per-address
+   rate limit see Cloudflare, not the visitor. Remove any `AAAA` record that does not point here. A low
+   TTL (60 s) makes a rollback fast.
+3. Wait until `dig +short marola.dev www.marola.dev` answers `187.41.117.18`, then merge. The deploy
+   orders the two certificates.
+4. Check `https://marola.dev/`, `/about.html`, `/en/studies`, `/api/v1/skill.md`,
+   `/data/floripa/latest.json`, `https://www.marola.dev/` (301) and `https://marola.piabrota.art/`. On the
+   box (as `observer`): `systemctl status marola-site nginx`, `journalctl -u acme-order-renew-marola.dev`.
 
-1. Porkbun: an `A` record `marola` → piabrota2's address (the one `hermes.piabrota.art` has).
-2. Merge. The deploy starts the server and orders the certificate.
-3. Check `https://marola.piabrota.art/`, `/about.html`, `/en/studies`, `/api/v1/skill.md` and a board
-   (`/data/floripa/latest.json`). On the box (as `observer`): `systemctl status marola-site`,
-   `journalctl -u marola-boards`.
-
-**Step 2: marola.dev.** Do it when step 1 looks right.
-
-1. Cloudflare, Workers & Pages, `marola`, Settings, Domains & Routes: note the `*.workers.dev` address,
-   then remove the custom domain `marola.dev`. In marola-site, remove the `routes` entry from
-   `wrangler.jsonc` in the same hour, or the next `site.yml` deploy attaches marola.dev to the Worker
-   again.
-2. Cloudflare DNS of marola.dev: `A marola.dev` and `A www` → piabrota2's address, **DNS only** (grey
-   cloud). Proxied, the ACME HTTP challenge and the server's per-address rate limit see Cloudflare, not
-   the visitor. A low TTL (60 s) makes a rollback fast.
-3. In `hosts/piabrota2/default.nix`: `domain = "marola.dev"`, `redirects = [ "www.marola.dev"
-   "marola.piabrota.art" ]`, and `boards.mirrorFrom` = the Worker's `https://<name>.workers.dev/data`
-   (with marola.dev it would copy from itself). Merge.
-4. Between step 2.2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
-   default server of `configuration.nix` refuses names with no vhost.
+Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
+default server of `configuration.nix` refuses names with no vhost.
 
 **The board build needs a token.** `ghcr.io/marola-dev/marola-app` is a private package. Make a GitHub
 token that can read it (a classic token with `read:packages`, from the account in `boards.build.registryUser`)
@@ -67,6 +63,9 @@ sudo systemctl start marola-boards-build; journalctl -u marola-boards-build -n 4
 
 The start waits for the whole build (up to 45 minutes). Each run tries twice, and a run that fails
 still publishes the areas it finished.
+
+The token on the box today is the owner's `gh` login token, which can do far more than pull one image.
+Replace it with a classic token that has only `read:packages`, with the same `install` line.
 
 If the package is made public, set `boards.build.tokenFile = null`. When marola-site's `marola-image` moves,
 moving the marola-site pin here moves the image too.
@@ -85,9 +84,8 @@ no `clientId`, `/auth/github/login` answers 503 and the rest of the site works.
 
 ## Rollback
 
-- **The site, to the Worker** (minutes): put the custom domain `marola.dev` back on the Worker
-  (or restore `routes` in `wrangler.jsonc` and run `site.yml`), which replaces the A records. GitHub
-  Pages still gets each `site.yml` deploy too.
+- **marola.dev, off the box**: there is no other host. Until the Worker `marola` is deleted, putting
+  the custom domain `marola.dev` back on it (minutes) serves its last deploy, which no longer updates.
 - **The server, to an older build**: move `rev` and `hash` in `marola-site/default.nix` back and merge.
   marola-site's tables only grow, so an older server reads a newer database; never delete
   `/var/lib/marola/studies` on a rollback.

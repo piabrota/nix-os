@@ -1,7 +1,7 @@
 # marola.dev: marola-site's Haskell server (marola-site/default.nix, a pinned commit), behind nginx
 # with Let's Encrypt. The server listens on 127.0.0.1 only; the unit and the nginx settings follow
-# that repository's docs/5-hosting.md, which is the contract. On piabrota2. DNS of marola.dev is on
-# Cloudflare, not Porkbun, and the cutover from the Cloudflare Worker is docs/MAROLA-SITE.md.
+# that repository's docs/5-hosting.md, which is the contract. On piabrota2, for marola.dev and
+# marola.piabrota.art (docs/MAROLA-SITE.md).
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkOption optionalAttrs types;
@@ -125,10 +125,16 @@ in
       default = "marola.dev";
       description = "The name nginx serves the site on. Its DNS A record must point at the box before the deploy, or the ACME order fails.";
     };
+    aliases = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "marola.piabrota.art" ];
+      description = "More names that serve the same site (not a redirect), each a vhost with its own certificate, so one name's failed ACME order leaves the others' certificates alone. Each must point at the box.";
+    };
     redirects = mkOption {
       type = types.listOf types.str;
       default = [ ];
-      example = [ "www.marola.dev" "marola.piabrota.art" ];
+      example = [ "www.marola.dev" ];
       description = "Names that answer with a 301 to `domain`, each with its own certificate. Each must point at the box.";
     };
     package = mkOption {
@@ -355,8 +361,8 @@ in
       recommendedGzipSettings = true;
       recommendedOptimisation = true;
       serverTokens = false;
-      virtualHosts = {
-        ${cfg.domain} = {
+      virtualHosts = lib.genAttrs ([ cfg.domain ] ++ cfg.aliases)
+        (_: {
           forceSSL = true;
           enableACME = true;
           # HSTS once, from nginx: it hides the server's copy and covers nginx's own error pages.
@@ -383,8 +389,8 @@ in
               extraConfig = proxyHeaders;
             };
           };
-        };
-      } // lib.genAttrs cfg.redirects (_: {
+        })
+      // lib.genAttrs cfg.redirects (_: {
         forceSSL = true;
         enableACME = true;
         globalRedirect = cfg.domain;

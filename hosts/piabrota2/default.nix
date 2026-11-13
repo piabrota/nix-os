@@ -92,13 +92,14 @@
   # It was off before that: without the record the ACME order failed at activation and deploy-rs
   # rolled every piabrota2 deploy back (deploys of #241, #242, #243).
   piabrota.hffmnn.enable = true;
-  # marola-site at a pinned commit (marola-site/default.nix). Step 1 of docs/MAROLA-SITE.md: on
-  # marola.piabrota.art, whose A record must point at this box first, while marola.dev stays on the
-  # Cloudflare Worker. Step 2 sets domain = "marola.dev" and redirects = [ "www.marola.dev"
-  # "marola.piabrota.art" ] after Cloudflare points those names here.
+  # marola-site at a pinned commit (marola-site/default.nix), on marola.dev and marola.piabrota.art,
+  # both served here; www.marola.dev redirects. No Cloudflare (the owner, 2026-11-13). Each name's A
+  # record must point at this box before the deploy that serves it (docs/MAROLA-SITE.md).
   piabrota.marolaSite = {
     enable = true;
-    domain = "marola.piabrota.art";
+    domain = "marola.dev";
+    aliases = [ "marola.piabrota.art" ];
+    redirects = [ "www.marola.dev" ];
     # The boards are built here four times a day (marola-site.nix, docs/MAROLA-SITE.md). The
     # token file /etc/marola/ghcr-token must be on the box, or each build fails at the pull.
     boards.build.enable = true;
