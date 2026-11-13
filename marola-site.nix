@@ -298,6 +298,20 @@ in
         LoadCredential = "ghcr-token:${bcfg.tokenFile}";
       };
     };
+    # A deploy that moves the image (or the first deploy with the build on) starts a build at once,
+    # without waiting for the next timer run and without holding the switch: --no-block, so a
+    # 45-minute build never trips deploy-rs's rollback.
+    systemd.services.marola-boards-build-kick = mkIf bcfg.enable {
+      description = "Start a board build when the app image changes";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network-online.target" ];
+      restartTriggers = [ bcfg.image ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${config.systemd.package}/bin/systemctl start --no-block marola-boards-build.service";
+      };
+    };
     systemd.timers.marola-boards-build = mkIf bcfg.enable {
       wantedBy = [ "timers.target" ];
       timerConfig = {
