@@ -1,4 +1,4 @@
-# Every name under piabrota.art that this repository names, and the host that serves it.
+# Every name under piabrota.art that this repository names (and marola.dev's), and the host that serves it.
 # scripts/cert_check.py checks the certificate of each name whose host is not "off";
 # `scripts/cert_check.py --coverage` (in CI) fails when a *.nix file names one that is not here.
 # A new vhost: add its line in the same PR, and point its DNS at the host before the merge.
@@ -14,7 +14,9 @@ pirsig.piabrota.art       piabrota2   piabrota/pirsig (proof.nix)
 wave.piabrota.art         piabrota2   h0ffmann/ww3-gpu's website (ww3.nix, ww3-site/)
 closed.piabrota.art       piabrota2   h0ffmann/closed-source's website (closed.nix, closed-site/)
 hffmnn.piabrota.art       off         h0ffmann/h0ffmann's website, the owner's profile (hffmnn.nix, hffmnn-site/)
-marola.piabrota.art       piabrota2   marola-dev/marola-site, before marola.dev moves (marola-site.nix)
+marola.piabrota.art       piabrota2   marola-dev/marola-site, an alias of marola.dev (marola-site.nix)
+marola.dev                piabrota2   marola-dev/marola-site (marola-site.nix; DNS at the registrar, not Porkbun)
+www.marola.dev            piabrota2   redirect to marola.dev (marola-site.nix)
 hermes.piabrota.art       piabrota2   Hermes's dashboard, basic auth (hermes-web.nix)
 rig.piabrota.art          piabrota2   OpenRig's web UI, basic auth (openrig.nix)
 metrics.piabrota.art      piabrota2   the metrics page (metrics.nix)

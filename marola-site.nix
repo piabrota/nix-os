@@ -1,7 +1,7 @@
 # marola.dev: marola-site's Haskell server (marola-site/default.nix, a pinned commit), behind nginx
 # with Let's Encrypt. The server listens on 127.0.0.1 only; the unit and the nginx settings follow
-# that repository's docs/5-hosting.md, which is the contract. On piabrota2. DNS of marola.dev is on
-# Cloudflare, not Porkbun, and the cutover from the Cloudflare Worker is docs/MAROLA-SITE.md.
+# that repository's docs/5-hosting.md, which is the contract. On piabrota2, for marola.dev and
+# marola.piabrota.art (docs/MAROLA-SITE.md).
 { config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkIf mkOption optionalAttrs types;
@@ -116,77 +116,6 @@ let
       exit "$status"
     '';
   };
-  wcfg = cfg.worker;
-  # marola-site's site.yml, minus the board build (the unit above already does it) and minus GitHub
-  # Pages: the legacy page of the pinned commit (site/static) with the boards of MAROLA_DATA, the
-  # generated metadata, the Mapbox token and the site-data panels, checked, then `wrangler deploy` to
-  # the Worker that serves marola.dev. wrangler in nixpkgs is a 2.2 GiB closure (workerd), so it runs
-  # in a pinned node image with podman, which the board build already has.
-  publisher = pkgs.writeShellApplication {
-    name = "marola-site-publish";
-    runtimeInputs = [ config.virtualisation.podman.package pkgs.coreutils pkgs.findutils pkgs.gnused pkgs.git pkgs.jq pkgs.python3 ];
-    text = ''
-      src=${cfg.package.source}
-      work=/var/lib/marola-site-publish
-      dist=$work/site/dist
-      install -d -o marola -g marola "$work" "$work/site" "$work/npm"
-      rm -rf "$dist"
-      install -d -o marola -g marola "$dist"
-      install -m 0644 -o marola -g marola "$src/wrangler.jsonc" "$work/wrangler.jsonc"
-
-      cp -r "$src/site/static/." "$dist/"
-      install -d "$dist/data"
-      find ${boards} -mindepth 1 -maxdepth 1 ! -name '.incoming.*' ! -name '*.old' -exec cp -r {} "$dist/data/" \;
-      chmod -R u+w "$dist"
-
-      python3 "$src/scripts/site_meta.py" "$dist"
-      MAPBOX_PUBLIC_TOKEN=$(cat "$CREDENTIALS_DIRECTORY/mapbox-token") MAPBOX_STYLE=${lib.escapeShellArg wcfg.mapboxStyle} \
-        MAPBOX_REQUIRE_TOKEN=1 bash "$src/scripts/mapbox_config.sh" "$dist"
-      # From the work folder, which is no git checkout: the stamp is the build time.
-      (cd "$work" && bash "$src/scripts/stamp_site_version.sh" "$dist")
-
-      tmp=$(mktemp -d)
-      if git clone -q --depth 1 --branch site-data https://github.com/marola-dev/marola-site "$tmp/site-data"; then
-        for dir in smoke coverage stats; do
-          if [ -d "$tmp/site-data/$dir" ]; then cp -r "$tmp/site-data/$dir" "$dist/"; else echo "marola-site-publish: no $dir/ on site-data" >&2; fi
-        done
-      else
-        echo "marola-site-publish: no site-data branch, no smoke/coverage/stats panel" >&2
-      fi
-      rm -rf "$tmp"
-
-      # A half-built site must never reach the Worker.
-      missing=0
-      for f in index.html 404.html app.js ui.js i18n.js style.css flow.js mapbox-config.js \
-               robots.txt sitemap.xml llms.txt humans.txt .well-known/security.txt \
-               vendor/mapbox-gl-csp.js vendor/mapbox-gl-csp-worker.js vendor/mapbox-gl.css data/areas.json \
-               $(jq -r '.[].id | "data/\(.)/latest.json"' "$src/site/areas.json"); do
-        [ -f "$dist/$f" ] || { echo "marola-site-publish: missing $f" >&2; missing=1; }
-      done
-      [ "$missing" = 0 ] || { echo "marola-site-publish: site/dist is incomplete, not deploying" >&2; exit 1; }
-
-      # site.yml's publish allowlist: only the map is public.
-      unexpected=$(cd "$dist" && find . -mindepth 1 \( -path ./data -o -path ./smoke -o -path ./coverage -o -path ./stats -o -path ./vendor -o -path ./img \) -prune -o -type f \
-        ! -name index.html ! -name 404.html ! -name about.html ! -name support.html ! -name news.html ! -name members.html \
-        ! -name contact.html ! -name favicon.svg ! -name app.js ! -name ui.js ! -name i18n.js ! -name style.css ! -name flow.js \
-        ! -name mapbox-config.js ! -name chat.js ! -name chatbot-config.js ! -name robots.txt ! -name sitemap.xml ! -name llms.txt \
-        ! -name humans.txt ! -name board.schema.json ! -path ./.well-known/security.txt -print)
-      if [ -n "$unexpected" ]; then
-        printf 'marola-site-publish: not on the publish allowlist:\n%s\n' "$unexpected" >&2
-        exit 1
-      fi
-      chown -R marola:marola "$work"
-
-      if ! podman image exists ${lib.escapeShellArg wcfg.nodeImage}; then podman pull ${lib.escapeShellArg wcfg.nodeImage}; fi
-      # The token stays in the env file: never on a command line, never in the store.
-      podman run --rm --memory 1g --user "$(id -u marola):$(id -g marola)" \
-        --env-file "$CREDENTIALS_DIRECTORY/cloudflare.env" \
-        -e HOME=/tmp -e CI=1 -e WRANGLER_SEND_METRICS=false -e npm_config_cache=/work/npm -e npm_config_update_notifier=false \
-        -v "$work:/work" -w /work ${lib.escapeShellArg wcfg.nodeImage} \
-        npx --yes wrangler@${wcfg.wranglerVersion} deploy
-      podman image prune -f >/dev/null || true
-    '';
-  };
 in
 {
   options.piabrota.marolaSite = {
@@ -196,10 +125,16 @@ in
       default = "marola.dev";
       description = "The name nginx serves the site on. Its DNS A record must point at the box before the deploy, or the ACME order fails.";
     };
+    aliases = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "marola.piabrota.art" ];
+      description = "More names that serve the same site (not a redirect), each a vhost with its own certificate, so one name's failed ACME order leaves the others' certificates alone. Each must point at the box.";
+    };
     redirects = mkOption {
       type = types.listOf types.str;
       default = [ ];
-      example = [ "www.marola.dev" "marola.piabrota.art" ];
+      example = [ "www.marola.dev" ];
       description = "Names that answer with a 301 to `domain`, each with its own certificate. Each must point at the box.";
     };
     package = mkOption {
@@ -265,35 +200,6 @@ in
         description = "The container's memory limit (podman --memory).";
       };
     };
-    worker = {
-      enable = mkEnableOption "the legacy page (site/static) with the box's boards, published to the Cloudflare Worker that serves marola.dev after each board build, as marola-site's site.yml did from GitHub Actions";
-      cloudflareEnvFile = mkOption {
-        type = types.str;
-        default = "/etc/marola/cloudflare.env";
-        description = "A file on the box (root, 0600) with CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, one KEY=value per line: a token that may edit Workers scripts of that account. It reaches the unit with LoadCredential.";
-      };
-      mapboxTokenFile = mkOption {
-        type = types.str;
-        default = "/etc/marola/mapbox-token";
-        description = "A file on the box with the public pk. Mapbox token, restricted to marola.dev's URLs (site.yml's MAPBOX_PUBLIC_TOKEN). marola-site's mapbox_config.sh refuses an sk. token and an empty one.";
-      };
-      mapboxStyle = mkOption {
-        type = types.str;
-        default = "";
-        example = "mapbox://styles/<user>/<style id>";
-        description = "site.yml's MAPBOX_STYLE. Empty: the page's default style.";
-      };
-      nodeImage = mkOption {
-        type = types.str;
-        default = "docker.io/library/node:22.21.1-bookworm-slim@sha256:25b3eb23a00590b7499f2a2ce939322727fcce1b15fdd69754fcd09536a3ae2c";
-        description = "The image wrangler runs in, by digest.";
-      };
-      wranglerVersion = mkOption {
-        type = types.str;
-        default = "4.155.0";
-        description = "The wrangler npm version npx runs. The npm cache stays in /var/lib/marola-site-publish/npm.";
-      };
-    };
     backup.enable = mkOption {
       type = types.bool;
       default = true;
@@ -302,16 +208,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = !(bcfg.enable && cfg.boards.mirrorFrom != null);
-        message = "piabrota.marolaSite: boards.build and boards.mirrorFrom both write MAROLA_DATA; set one.";
-      }
-      {
-        assertion = !wcfg.enable || bcfg.enable;
-        message = "piabrota.marolaSite: worker publishes the boards this box builds; turn boards.build on.";
-      }
-    ];
+    assertions = [{
+      assertion = !(bcfg.enable && cfg.boards.mirrorFrom != null);
+      message = "piabrota.marolaSite: boards.build and boards.mirrorFrom both write MAROLA_DATA; set one.";
+    }];
 
     users.users.marola = {
       isSystemUser = true;
@@ -400,10 +300,6 @@ in
         RuntimeDirectory = "marola-boards-build";
         RuntimeDirectoryMode = "0700";
         TimeoutStartSec = "45min";
-      } // optionalAttrs wcfg.enable {
-        # After every build, failed or not (a failed one still wrote some areas), as site.yml
-        # deployed after its build. --no-block: the publish is its own unit with its own log.
-        ExecStopPost = "${config.systemd.package}/bin/systemctl start --no-block marola-site-publish.service";
       } // optionalAttrs (bcfg.tokenFile != null) {
         LoadCredential = "ghcr-token:${bcfg.tokenFile}";
       };
@@ -428,34 +324,6 @@ in
         OnCalendar = bcfg.calendar;
         Persistent = true;
         RandomizedDelaySec = "10min";
-      };
-    };
-
-    systemd.services.marola-site-publish = mkIf wcfg.enable {
-      description = "Publish marola's legacy page and boards to the Cloudflare Worker";
-      after = [ "network-online.target" ];
-      wants = [ "network-online.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = lib.getExe publisher;
-        StateDirectory = "marola-site-publish";
-        TimeoutStartSec = "20min";
-        LoadCredential = [
-          "cloudflare.env:${wcfg.cloudflareEnvFile}"
-          "mapbox-token:${wcfg.mapboxTokenFile}"
-        ];
-      };
-    };
-    # A deploy that moves the marola-site pin publishes its page at once; the boards come along.
-    systemd.services.marola-site-publish-kick = mkIf wcfg.enable {
-      description = "Publish to the Cloudflare Worker when the marola-site pin changes";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network-online.target" ];
-      restartTriggers = [ cfg.package.source ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${config.systemd.package}/bin/systemctl start --no-block marola-site-publish.service";
       };
     };
 
@@ -493,8 +361,8 @@ in
       recommendedGzipSettings = true;
       recommendedOptimisation = true;
       serverTokens = false;
-      virtualHosts = {
-        ${cfg.domain} = {
+      virtualHosts = lib.genAttrs ([ cfg.domain ] ++ cfg.aliases)
+        (_: {
           forceSSL = true;
           enableACME = true;
           # HSTS once, from nginx: it hides the server's copy and covers nginx's own error pages.
@@ -521,8 +389,8 @@ in
               extraConfig = proxyHeaders;
             };
           };
-        };
-      } // lib.genAttrs cfg.redirects (_: {
+        })
+      // lib.genAttrs cfg.redirects (_: {
         forceSSL = true;
         enableACME = true;
         globalRedirect = cfg.domain;
