@@ -70,6 +70,7 @@ let
       install -d -o marola -g marola "$work/site" "$work/site/beaches"
       install -m 0644 -o marola -g marola ${cfg.package.areas} "$work/site/areas.json"
       rm -rf "$work/site/dist"
+      install -d -o marola -g marola "$work/site/dist"
       if ! podman image exists "$image"; then
         if [ -n "''${CREDENTIALS_DIRECTORY:-}" ] && [ -f "$CREDENTIALS_DIRECTORY/ghcr-token" ]; then
           podman login --authfile "$RUNTIME_DIRECTORY/auth.json" -u ${lib.escapeShellArg bcfg.registryUser} \
@@ -80,9 +81,19 @@ let
           podman pull "$image"
         fi
       fi
-      podman run --rm --memory ${bcfg.memory} --user "$(id -u marola):$(id -g marola)" -e HOME=/tmp \
-        -v "$work/site:/work/site" -w /work "$image" \
-        --site --areas site/areas.json --site-out site/dist
+      # Two tries, as marola-site's site.yml does: INEA, INEMA and Overpass time out now and then.
+      # A failed run still keeps the areas it wrote before it failed, so the copy below always runs.
+      status=1
+      for attempt in 1 2; do
+        if podman run --rm --memory ${bcfg.memory} --user "$(id -u marola):$(id -g marola)" -e HOME=/tmp \
+          -v "$work/site:/work/site" -w /work "$image" \
+          --site --areas site/areas.json --site-out site/dist; then
+          status=0
+          break
+        fi
+        echo "marola-boards: build attempt $attempt failed" >&2
+        [ "$attempt" -eq 2 ] || sleep 60
+      done
       # Only what the build wrote, area by area; an area it did not write keeps its old boards.
       for dir in "$work/site/dist/data"/*/; do
         area=$(basename "$dir")
@@ -102,6 +113,7 @@ let
       fi
       # Old image versions, after a pin moves.
       podman image prune -f >/dev/null || true
+      exit "$status"
     '';
   };
 in
