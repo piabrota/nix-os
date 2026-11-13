@@ -6,12 +6,12 @@
 # app image it pins (marola-image), site/areas.json, the base map pin and its extract script.
 { lib, callPackage, fetchFromGitHub }:
 let
-  rev = "5fe2ddd64adad10b57a57050ee068c720a659735";
+  rev = "83570e29da6e9632f3b71826ec2195907cf778e1";
   src = fetchFromGitHub {
     owner = "marola-dev";
     repo = "marola-site";
     inherit rev;
-    hash = "sha256-atucmLk0nB8iwJwPgxrn8eHfhTfG8aJAcJEcutDV1rY=";
+    hash = "sha256-mZ3XL3y4TCwVdrwbUlCf+IuZmtVdyfrLeysuWBWWNc8=";
   };
 in
 (callPackage "${src}/nix/package.nix" { }).overrideAttrs (old: {
