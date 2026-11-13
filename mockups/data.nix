@@ -353,9 +353,10 @@ rec {
   ];
 
   # The board: the people who build piabrota, from the Board of the org profile and the org's
-  # members, who agree (2026-11-01). `site` is each one's own website, "" for none.
+  # members, who agree (2026-11-01). `site` is each one's own website, "" for none; h0ffmann's is
+  # hffmnn.piabrota.art (the owner, 2026-11-13).
   people = [
-    { login = "h0ffmann"; name = "Matheus Hoffmann"; about = "water animal"; place = "Florianópolis, Brazil"; site = "https://h0ffmann.github.io/h0ffmann/"; }
+    { login = "h0ffmann"; name = "Matheus Hoffmann"; about = "water animal"; place = "Florianópolis, Brazil"; site = "https://hffmnn.piabrota.art/"; }
     { login = "aracyla"; name = ""; about = "General purpose developer currently focused on frontend development."; place = "Brazil"; site = "https://aracyla.xyz"; }
     { login = "robkler"; name = "Rôb Klér Soares da Silva Júnior"; about = "Senior Backend Engineer"; place = "Rio de Janeiro, Brazil"; site = ""; }
   ];
