@@ -138,7 +138,7 @@ function build(host) {
   head.appendChild(h); head.appendChild(pill); card.appendChild(head);
   var age = el("p", "age", "no data yet"); card.appendChild(age);
   var body = el("div", "body"); card.appendChild(body);
-  var top = el("dl", "facts top"), t = { dom: fact("Domains up"), vis: fact("Visits 24 h"), commits: fact("Commits"), deploys: fact("Deploys"), apps: fact("Apps installed"), nixos: fact("NixOS") };
+  var top = el("dl", "facts top"), t = { dom: fact("Domains up"), vis: fact("Visits 24 h"), ppl: fact("Visitors 24 h"), commits: fact("Commits"), deploys: fact("Deploys"), apps: fact("Apps installed"), nixos: fact("NixOS") };
   for (var j in t) top.appendChild(t[j].root);
   var doms = el("ul", "doms"); body.appendChild(top); body.appendChild(doms);
   var facts = el("dl", "facts"), f = { vcpus: fact("vCPUs"), up: fact("Uptime"), load: fact("Load 1 / 5 / 15"), procs: fact("Processes"), svcs: fact("Services up"),
@@ -216,7 +216,8 @@ function sites(v, d) {
   var lag = num(d.ts) !== null && num(dm.ts) !== null ? d.ts - dm.ts : null, fresh = lag !== null && lag <= 300;
   put(v.t.dom, n ? up + " / " + n : "", n && !fresh ? "probe " + (lag === null ? "time unknown" : dur(lag) + " old") : "");
   v.t.dom.dd.className = n && fresh ? (up === n ? "up" : "down") : "";
-  put(v.t.vis, dm.views, num(dm.visitors) !== null ? dm.visitors + " visitors" : "");
+  put(v.t.vis, dm.views);
+  put(v.t.ppl, dm.visitors);
   put(v.t.commits, rp.commits, str(rp.name));
   put(v.t.deploys, sy.generation, "generation of the system profile: one for each deploy that changed the system");
   put(v.t.apps, obj(d.inventory).packages, "packages of environment.systemPackages");
@@ -225,8 +226,8 @@ function sites(v, d) {
   list.forEach(function (x) {
     x = obj(x);
     var up = x.up === true, vw = num(x.views) !== null, li = el("li", fresh ? (up ? "up" : "down") : "",
-      str(x.name) + (up ? "" : " · " + (num(x.code) ? "HTTP " + x.code : "no answer")) + (vw ? " · " + x.views : ""));
-    li.title = (up ? "up" : "down") + ", HTTP " + str(x.code) + (vw ? ", " + x.views + " visits, " + str(x.visitors) + " visitors in 24 h" : ""); v.doms.appendChild(li);
+      str(x.name) + (up ? "" : " · " + (num(x.code) ? "HTTP " + x.code : "no answer")) + (vw ? " · " + str(x.visitors) + (x.visitors === 1 ? " visitor" : " visitors") : ""));
+    li.title = (up ? "up" : "down") + ", HTTP " + str(x.code) + (vw ? ", " + x.views + " visits in 24 h" : ""); v.doms.appendChild(li);
   });
 }
 function draw(v) {
