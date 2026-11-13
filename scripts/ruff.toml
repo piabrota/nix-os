@@ -1,0 +1,3 @@
+# The Python scripts of scripts/ (ci.yml: ruff check, ruff format --check).
+line-length = 120
+target-version = "py311"
