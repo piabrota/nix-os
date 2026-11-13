@@ -1,6 +1,6 @@
 name: ww3 pin
 
-# When h0ffmann/ww3-gpu's main moves: scripts/ww3-pin.sh moves the pin of ww3-site/default.nix (rev
+# When h0ffmann/ww3-gpu's main moves: scripts/pins.py one ww3 moves the pin of ww3-site/default.nix (rev
 # and the source hash), builds the site, and one pull request labelled ww3-pin carries it, opened as
 # piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer ww3-gpu commit while that pull
 # request is open moves the same branch and edits the same pull request. It looks every hour and runs
@@ -74,7 +74,7 @@ jobs:
         env:
           REV: ${{ steps.look.outputs.rev }}
         run: |
-          sh scripts/ww3-pin.sh "$REV" | tee pin.log
+          python3 scripts/pins.py one ww3 "$REV" | tee pin.log
           sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
 
       - name: Open or update the pull request as piabrota-ops
@@ -103,7 +103,7 @@ jobs:
             echo
             echo "## What changed"
             echo
-            echo "\`ww3-site/default.nix\`: \`rev\` and the source \`hash\`, written by \`scripts/ww3-pin.sh\` ([compare](https://github.com/h0ffmann/ww3-gpu/compare/$OLD...$NEW))."
+            echo "\`ww3-site/default.nix\`: \`rev\` and the source \`hash\`, written by \`scripts/pins.py one ww3\` ([compare](https://github.com/h0ffmann/ww3-gpu/compare/$OLD...$NEW))."
             echo
             echo "## Tested"
             echo

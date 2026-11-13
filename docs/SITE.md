@@ -91,11 +91,11 @@ starts with a self-signed certificate, and browsers refuse it. See "Certificates
 ## Certificates
 
 Every name under piabrota.art is listed in `scripts/domains.txt`, with the host that serves it.
-A new vhost adds its line in the same PR: CI (`scripts/cert-check.sh --coverage`) fails when a
+A new vhost adds its line in the same PR: CI (`scripts/cert_check.py --coverage`) fails when a
 `*.nix` file names a piabrota.art name that the list does not have.
 
 `certs.yml` checks the certificate of every live name from outside, as a browser does, every six
-hours and two minutes after each deploy: curl must connect with no warning, and the certificate
+hours and two minutes after each deploy: the TLS handshake must pass with no warning, and the certificate
 must have more than 14 days left. The run summary has one row per name; a red run mails the
 owner. `just certs` runs the same check from any machine (`just certs proof.piabrota.art` for one).
 
@@ -253,7 +253,7 @@ has a key the page does not ask for. The zh-CN and ja-JP pages keep their banner
 until a native reader checks them. A fact read from ww3-gpu keeps its own language.
 
 `ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
-(`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
+(`scripts/pins.py one ww3`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
 pin. The site changes when the owner merges it.
 A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
 needs its key in each file of `ww3-site/locales/`, or the content generator stops the build.
@@ -276,9 +276,10 @@ reference. nginx (`closed.nix`) serves it as static files on piabrota2.
 
 The three PDFs are built too, from the same commit, as its `just build` does: pandoc with
 pandoc-crossref and citeproc, then XeLaTeX twice, with the TeX set of picasso's paper lab plus
-`babel-portuges`. The two title-page logos are fetched by the hashes in the paper's `metadata.md`
-and converted with `rsvg-convert`. A page and a paper from two commits would disagree: the paper
-of 6e5ab43 no longer has the chemo-rx section that the v0.3.4 release PDFs still carry.
+`babel-portuges`. The title-page logo (marola's, the only one since closed-source dropped
+ouroboric's) is fetched by the hash in the paper's `metadata.md` and converted with
+`rsvg-convert`. A page and a paper from two commits would disagree: the paper of 6e5ab43 already
+had no chemo-rx section, which the v0.3.4 release PDFs still carry.
 
 Two things differ from the Pages build, because the sandbox has no network and the source has no
 `.git`:
@@ -288,7 +289,7 @@ Two things differ from the Pages build, because the sandbox has no network and t
 - The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
   stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
 
-At 6e5ab43, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
+At 7682e90, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
 each PDF has the same text and page count (the bytes differ by the build date).
 
 To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
@@ -454,7 +455,7 @@ no `commits` shows nothing. The tooltip says what the count is and the day it wa
   The repository's rule is "no agent trail in a commit", so the agent number is a floor.
 - The page never calls the network. The numbers are typed in `data.nix`, like `pushed`.
 - Refresh: `just commit-counts` prints one line for each project. Paste the lines, set `commitsAsOf`,
-  run `just mockups`, and open a pull request. `just commit-counts-test` tests the rule with a stub `gh`.
+  run `just mockups`, and open a pull request. `just scripts-test` tests the rule with a stub `gh`.
   [MOCKUPS.md](MOCKUPS.md#commit-counts) has the same rule.
 
 ## Languages

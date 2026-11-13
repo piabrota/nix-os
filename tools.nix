@@ -90,6 +90,27 @@ in
     fi
   '';
 
+  # Short commands for daily operations on a box (docs/DEPLOY.md, "Daily commands"). All read
+  # only. They cost no closure: the shells read them from /etc. A unit a host does not have answers
+  # "not found". `logs hermes-agent`, `follow nginx`.
+  environment.shellAliases = {
+    failed = "systemctl --failed --no-pager";
+    timers = "systemctl list-timers --no-pager";
+    logs = "journalctl -e -n 200 --no-pager -u";
+    follow = "journalctl -f -n 50 -u";
+    errors = "journalctl -b -p warning -n 100 --no-pager";
+    hs = "systemctl status hermes-agent --no-pager";
+    hlog = "journalctl -f -n 50 -u hermes-agent";
+    # The Hermes CLI as its own user (AGENTS.md, "hermes.nix"): `hm status`, `hm doctor`.
+    hm = "sudo -u hermes hermes";
+    gens = "ls -l --time-style=long-iso /nix/var/nix/profiles/ | grep system-";
+    changed = "dix /run/booted-system /run/current-system";
+    ports = "ss -tlnp";
+    mem = "free -h";
+    disk = "duf -only local";
+    ver = "nixos-version";
+  };
+
   # Not from gvolpe: limits for a small disk and little RAM.
   # nixos + doc: ~95 MiB of closure (the manuals, options.json, a nixpkgs source copy).
   documentation = {

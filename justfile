@@ -9,9 +9,42 @@ kvm4 := env_var_or_default("DEPLOY_HOST_KVM4", "srv2125808.hstgr.cloud")
 default:
     @just --list
 
-# the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; curl, openssl); `just certs www.piabrota.art` checks one
+# Short names for the daily recipes (`just b`, `just h`); `just --list` shows each beside its recipe.
+alias b := build
+alias c := check
+alias h := remote-health
+alias s := remote-specs
+alias t := scripts-test
+alias p := site-pins
+
+# the morning look, read only: the health of both boxes, their failed units, then every certificate from here
+daily user="h0ffmann":
+    a=0; b=0; c=0; \
+    {{just_executable()}} remote-health {{user}} {{host}} || a=$?; \
+    {{just_executable()}} remote-health {{user}} {{kvm4}} || b=$?; \
+    for t in {{host}} {{kvm4}}; do echo "== failed units on $t"; ssh {{user}}@$t systemctl --failed --no-pager --legend=no; done; \
+    {{just_executable()}} certs || c=$?; \
+    [ "$a" = 0 ] && [ "$b" = 0 ] && [ "$c" = 0 ]
+
+# open a shell on piabrota (box) or on piabrota2 (box2)
+box user="h0ffmann":
+    ssh {{user}}@{{host}}
+
+box2 user="h0ffmann":
+    ssh {{user}}@{{kvm4}}
+
+# the last 100 lines of a unit's journal on a box, read only; `just logs hermes-agent h0ffmann {{kvm4}}`
+logs unit user="h0ffmann" target=host:
+    case '{{unit}}' in *[!a-zA-Z0-9@._-]*) echo "logs: not a unit name: {{unit}}" >&2; exit 2 ;; esac
+    ssh {{user}}@{{target}} journalctl -u '{{unit}}' -n 100 --no-pager
+
+# the open pull requests of this repository (needs gh)
+prs:
+    gh pr list --repo piabrota/nix-os
+
+# the HTTPS certificate of every live name in scripts/domains.txt, from here, as a browser sees it (read-only; python3); `just certs www.piabrota.art` checks one
 certs *names:
-    sh scripts/cert-check.sh {{names}}
+    python3 scripts/cert_check.py {{names}}
 
 # build a host's system closure here, without deploying it (piabrota or piabrota2)
 build node="piabrota":
@@ -23,8 +56,11 @@ check:
     nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix lofi.nix lofi/default.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix pgx/test.nix site/default.nix skills-site/default.nix ww3.nix ww3-site/default.nix closed.nix closed-site/default.nix hffmnn.nix hffmnn-site/default.nix paperclip.nix paperclip/package.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix favicon.nix favicon/*.nix
     nix run nixpkgs#statix -- check .
     nix run nixpkgs#deadnix -- --fail .
-    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh metrics/test/*.sh favicon/*.sh
+    nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh metrics/*.sh
     nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
+    nix run nixpkgs#ruff -- check scripts metrics/test favicon video-lab
+    nix run nixpkgs#ruff -- format --check scripts metrics/test favicon video-lab
+    python3 -m unittest discover -s scripts/tests
 
 # unit tests of the owner's Hermes plugins (hermes/plugins/), with the local python3 and git
 hermes-plugins-test:
@@ -56,11 +92,11 @@ cert-renew-test:
 
 # the human and agent commit counts of each own repository, as lines to paste into mockups/data.nix (read-only, needs gh)
 commit-counts:
-    sh scripts/commit-counts.sh
+    python3 scripts/commit_counts.py
 
-# tests of scripts/commit-counts.sh with a stub gh (offline)
-commit-counts-test:
-    sh scripts/commit-counts.test.sh
+# tests of the Python scripts of scripts/ (commit counts with a stub gh, pins, pr-stack, cert-check, context-size), offline
+scripts-test:
+    python3 -m unittest discover -s scripts/tests
 
 # unit tests of the personal feed (hermes/feeds/), offline, with the local python3
 feeds-test:
@@ -90,15 +126,15 @@ deploy user="deploy" node="piabrota":
 
 # move the room pin (room-site/default.nix) to room's main, or to <rev>, with both hashes, and build it
 room-pin rev="":
-    sh scripts/room-pin.sh {{rev}}
+    python3 scripts/pins.py one room {{rev}}
 
 # merge open PRs, in this order, onto origin/main in git's object store only, and name each that conflicts (the pr-stack skill); `just pr-stack-plan 221 222 223`
 pr-stack-plan +prs:
-    sh scripts/pr-stack.sh plan {{prs}}
+    python3 scripts/pr_stack.py plan {{prs}}
 
 # a stack branch is ready for one merge commit: it contains origin/main and every PR head (the pr-stack skill); `just pr-stack-check claude/nix-os-pr-stack 221 222 223`
 pr-stack-check branch +prs:
-    sh scripts/pr-stack.sh check {{branch}} {{prs}}
+    python3 scripts/pr_stack.py check {{branch}} {{prs}}
 
 # write the README drawing (docs/drawings/mu.svg and its Desmos state) from drawings/*.nix
 drawing:
@@ -124,11 +160,11 @@ ww3-site:
 
 # move the ww3-gpu pin (ww3-site/default.nix) to ww3-gpu's main, or to <rev>, and build the site
 ww3-pin rev="":
-    sh scripts/ww3-pin.sh {{rev}}
+    python3 scripts/pins.py one ww3 {{rev}}
 
-# move every website pin to the head of its source's main and build each site (scripts/site-pins.sh); `just site-pins --list` only reads, `just site-pins closed proof` moves those
+# move every website pin to the head of its source's main and build each site (scripts/pins.py); `just site-pins --list` only reads, `just site-pins closed proof` moves those
 site-pins *args:
-    sh scripts/site-pins.sh {{args}}
+    python3 scripts/pins.py all {{args}}
 
 # build the skills website (skills-site/, Gleam prerendered by Nix) into ./result-skills-site, as the VPS gets it
 skills-site:
@@ -217,7 +253,7 @@ specs:
 
 # check that the files Hermes loads into its context stay under its 32000-character cut
 context-size:
-    sh scripts/context-size.sh
+    python3 scripts/context_size.py
 
 # list every package of the running system with its size, like pip freeze (--by-size to sort by size)
 freeze *args:
@@ -255,13 +291,14 @@ certs-fix user="h0ffmann":
 
 # smoke check of the render path: a 30 s dummy video from ffmpeg alone, into video-lab/out/dummy (see docs/VIDEO-PIPELINE.md)
 video-dummy:
-    sh video-lab/dummy/run.sh
+    python3 video-lab/dummy/run.py
 
-# tests of the metrics collector (fixture /proc) and page; needs jq, and python3 and curl for the page's HTTP check
+# tests of the metrics collector and probe (fixture /proc, fake curl), the page's rules (pure Nix) and its HTTP fetch; needs python3 and nix
 metrics-test:
-    sh metrics/test/run.sh
-    sh metrics/test/page.sh
+    python3 metrics/test/collect_test.py
+    nix build --no-link --print-build-logs .#checks.x86_64-linux.metrics-page
+    python3 metrics/test/preview.py --check
 
-# open the metrics page on fixtures (healthy, stale, missing or hostile) at http://127.0.0.1:<port>/; needs python3 and jq
+# open the metrics page on fixtures (healthy, stale, missing or hostile) at http://127.0.0.1:<port>/; needs python3
 metrics-preview case="healthy" port="8080":
-    sh metrics/test/preview.sh {{case}} {{port}}
+    python3 metrics/test/preview.py {{case}} {{port}}

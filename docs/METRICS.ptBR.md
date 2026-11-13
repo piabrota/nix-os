@@ -29,6 +29,8 @@ Mostra, por host:
   `nvme0n1`; sem partições).
 - Pressão (PSI) de CPU, memória e IO: a parte dos últimos 10 s em que tarefas esperaram
   (`some` / `full`).
+- No topo: os sites que respondem (verde) e os que não respondem (vermelho), os commits, os
+  deploys, os apps instalados e a versão do NixOS ("O topo", abaixo).
 - O que esta geração roda: as contagens de "O inventário", abaixo.
 
 Como ler os números:
@@ -41,6 +43,32 @@ Como ler os números:
 Não mostra: histórico além das amostras da aba (as amostras vêm por arquivo novo, a cada 10 s, então
 são uns 10 minutos), uso de outros sistemas de arquivos além de `/`, rede ou IO por processo ou por interface, alertas, linhas de
 comando.
+
+## O topo: sites, commits, deploys, apps, NixOS
+
+O topo de cada cartão tem cinco números e uma linha de sites:
+
+| Rótulo | O que é | De onde vem |
+|---|---|---|
+| Domains up | sites que responderam, dos sites do host; verde quando todos respondem, vermelho quando um não responde | `metrics/probe.sh`, a cada 60 s |
+| Commits | commits na `main` de `piabrota/nix-os` | a API do GitHub, no máximo uma vez a cada 10 minutos |
+| Deploys | a geração de `/nix/var/nix/profiles/system`: uma para cada deploy que mudou o sistema | o coletor, a partir do link `system-<n>-link` |
+| Apps installed | os pacotes de `environment.systemPackages` (a contagem `packages` do inventário) | o Nix, no build |
+| NixOS | a versão, por exemplo 26.05; a versão completa fica na dica | `/run/current-system/nixos-version` |
+
+Abaixo deles, cada site do host é uma etiqueta: verde quando responde, vermelha com o código HTTP
+(ou "no answer") quando não responde. Um site está de pé quando dá qualquer resposta abaixo de HTTP
+500: um 301 ou um 401 (um login) é uma resposta. A sonda não segue redirecionamento. Quando os dados
+da sonda estão mais de 5 minutos atrás dos do host, as etiquetas ficam cinza e a contagem fica sem cor.
+
+Os sites são os mesmos nomes que o inventário conta como `sites`: todo host virtual do nginx, menos
+o `_` e os nomes que só redirecionam. O Nix grava a lista (`https://` quando o host tem TLS). A sonda
+(`metrics-probe.timer`, oneshot `metrics-probe.service`) pergunta a cada nome com um `curl` de no
+máximo 6 s, um depois do outro, e grava `/run/metrics-state/<name>.probe` (não servido). O coletor
+copia isso para `domains` e `repo` (metrics/SCHEMA.md). A sonda lê a contagem de commits do
+cabeçalho `Link` de `GET /repos/piabrota/nix-os/commits?per_page=1`: o número da última página é a
+contagem. Sem token o GitHub aceita 60 pedidos por hora de um endereço; a sonda usa 6. Quando o
+GitHub não responde, fica a última contagem.
 
 ## O inventário
 
@@ -80,7 +108,8 @@ copia para `inventory` (metrics/SCHEMA.md).
   `/run/metrics-state/<nome>.state` (não é servida).
 - Os nomes são `piabrota` e `piabrota2` (opção `piabrota.metrics.name`). Nunca o hostname: o da
   piabrota2 ainda é `nixos`.
-- Lê só `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df` e o arquivo do inventário no store. Nunca
+- Lê só `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df`, o arquivo do inventário no store, o
+  arquivo da sonda, o link do perfil do sistema e `/run/current-system/nixos-version`. Nunca
   uma linha de comando.
 - O arquivo JSON tem menos de 8 KB (schema v1).
 
@@ -185,10 +214,12 @@ Medido na piabrota2, com 127 processos:
 
 ## Endurecimento
 
-As duas unidades rodam como `metrics` com:
+As unidades (coletor, sonda, pull) rodam como `metrics` com:
 
 - `ProtectSystem=strict`, com `ReadWritePaths` só das duas pastas em `/run`.
 - `MemoryMax=64M`, `NoNewPrivileges`, conjunto de capabilities vazio e filtro de syscalls.
+- A sonda é a unidade de um host que abre conexão (o pull é a outra, na piabrota2): o sandbox
+  é o mesmo, com `AF_INET` e `AF_INET6`.
 - `PrivateNetwork` no coletor. Por isso ele lê a rede do PID 1 (`/proc/1/net/dev` e `sockstat`),
   que qualquer usuário lê, e não o seu próprio `/proc/net` vazio.
 - `LogLevelMax=warning`, para a rodada não escrever linhas no journal.
@@ -205,12 +236,14 @@ Todas vêm desligadas. Todas ficam sob `piabrota.metrics`:
 | `name`, `label` | nome do arquivo de dados e rótulo na página |
 | `collector.enable` | liga o coletor e o timer |
 | `collector.interval` | segundos entre rodadas (2 a 300, padrão 10) |
+| `probe.enable`, `probe.interval` | o timer que pergunta a cada site por uma resposta (10 a 3600 s, padrão 60); precisa do coletor |
+| `probe.repo`, `probe.branch` | o repositório e o branch cujos commits são contados (padrão `piabrota/nix-os`, `main`); repo vazio: sem contagem |
 | `web.enable`, `web.domain`, `web.htpasswdFile` | a página no nginx, o domínio e o arquivo de login opcional (`null`, o padrão, deixa a página pública) |
 | `publish.enable`, `publish.allowFrom` | a location da KVM 1 e o IP que pode ler |
 | `pull.enable`, `pull.url`, `pull.name` | o timer que busca o arquivo do outro host |
 | `inventory.bundledSkillDirs` | pastas de skills que vêm dentro de um agente, contadas como `skills_bundled`; o `hermes.nix` acrescenta as do Hermes |
 
-Hoje: a piabrota2 liga coletor, web e pull. A piabrota liga coletor e publish.
+Hoje: a piabrota2 liga coletor, sonda, web e pull. A piabrota liga coletor, sonda e publish.
 
 ## Mudar a cadência
 
@@ -220,16 +253,18 @@ menos, ou mude essa constante também.
 
 ## Testes e prévia
 
-- `sh metrics/test/run.sh`: o coletor, com uma árvore falsa de `/proc` e cgroup. Imprime
-  "N checks, M failed".
-- `sh metrics/test/page.sh`: as regras estáticas da página e uma busca HTTP com python3.
+- `python3 metrics/test/collect_test.py`: o coletor e a sonda, com uma árvore falsa de `/proc` e
+  cgroup e um curl falso. Imprime "N checks, M failed".
+- `checks.metrics-page` (`metrics/test/page.nix`): as regras estáticas da página, em Nix puro, e
+  os dados de teste pelo jq. `python3 metrics/test/preview.py --check`: uma busca HTTP da página e
+  dos dados. `just metrics-test` roda os três.
 - `checks.metrics`: quatro VMs (hub, edge, locked, client), HTTP simples, precisa de KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Prévia da página com dados de teste (healthy, stale, missing, hostile):
 
   ```console
-  sh metrics/test/preview.sh healthy 8080     # abra http://127.0.0.1:8080/
+  python3 metrics/test/preview.py healthy 8080     # abra http://127.0.0.1:8080/
   just metrics-preview healthy
   ```
 
-  Precisa de python3 e jq.
+  Precisa de python3.

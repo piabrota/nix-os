@@ -1,7 +1,7 @@
 name: certs
 
 # The HTTPS certificate of every live name in scripts/domains.txt, from outside, as a browser sees
-# it (scripts/cert-check.sh). A red run means a name shows a browser warning, answers no TLS, or
+# it (scripts/cert_check.py). A red run means a name shows a browser warning, answers no TLS, or
 # expires within 14 days; GitHub mails the owner. It changes nothing on the boxes: a failed ACME
 # order retries by itself every 20 minutes (acme-retry.nix); docs/SITE.md, "Certificates".
 on:
@@ -28,4 +28,4 @@ jobs:
       - name: Check every name
         run: |
           set -o pipefail
-          sh scripts/cert-check.sh | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 scripts/cert_check.py | tee -a "$GITHUB_STEP_SUMMARY"

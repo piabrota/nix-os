@@ -116,6 +116,8 @@
     name = "piabrota2";
     label = "piabrota2 (KVM 4)";
     collector.enable = true;
+    # Up or down for each site of this host, and the commit count of piabrota/nix-os.
+    probe.enable = true;
     web.enable = true;
     pull = {
       enable = true;

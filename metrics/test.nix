@@ -27,6 +27,7 @@
             enable = true;
             interval = 2;
           };
+          probe.enable = true;
           web = {
             enable = true;
             domain = "hub";
@@ -116,11 +117,20 @@
             node.succeed("systemctl is-active metrics-collect.timer")
             node.fail("systemctl is-failed metrics-collect.service")
 
+    with subtest("The probe asks the hub's site, and the collector shows the answer"):
+        hub.wait_until_succeeds("jq -e '.domains.list[] | select(.name == \"hub\") | .up and .code == 200' /run/metrics-web/piabrota2.json", timeout=60)
+        hub.succeed("jq -e '.domains.total == .domains.up and (.system.nixos | length) > 0' /run/metrics-web/piabrota2.json")
+        # The VM cannot reach GitHub: no count, and the unit does not fail.
+        hub.succeed("jq -e 'has(\"repo\") | not' /run/metrics-web/piabrota2.json")
+        hub.fail("systemctl is-failed metrics-probe.service")
+        hub.fail("ls -A /run/metrics-web | grep -q probe")
+
     with subtest("The collector's sandbox"):
         assert hub.succeed("systemctl show metrics-collect.service -p PrivateNetwork --value").strip() == "yes"
         hub.succeed("systemctl show metrics-collect.service -p MemoryMax --value | grep -qx 67108864")
         print(hub.succeed("systemd-analyze security metrics-collect.service --no-pager | tail -n 1"))
         print(hub.succeed("systemd-analyze security metrics-pull.service --no-pager | tail -n 1"))
+        print(hub.succeed("systemd-analyze security metrics-probe.service --no-pager | tail -n 1"))
 
     BROWSER = "-A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'"
     TAG = "noindex, nofollow, noarchive, noimageindex, noai, noimageai"

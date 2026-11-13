@@ -668,7 +668,7 @@ h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and Hermes's read of 
 `hermes-agent` sandbox.
 
 The keeper `openrig-wf-keeper` did not run on the box either: a deploy with the option on is needed
-first. Its script ran against a fake `rig` (`scripts/test-wf-keeper.sh`: stopped rig, `--existing`
+first. Its script ran against a fake `rig` (`scripts/wf_keeper_test.py`: stopped rig, `--existing`
 failing, `rig down`, another rig, partial rig, daemon down, back-off), and its `jq` filters ran
 against the output of the live `rig ps`. `rig up` from the keeper (a stopped rig with no usable
 snapshot, a spec that the daemon refuses) never ran.
