@@ -295,7 +295,10 @@ in
       wants = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = lib.getExe builder;
+        # "-": a failed build (a pull refused, INEA down) must not leave the unit failed, or a deploy
+        # that starts it rolls the whole host back. The journal keeps the exit code, and
+        # marola-boards.yml mails the owner when the boards go stale.
+        ExecStart = "-${lib.getExe builder}";
         StateDirectory = [ "marola-boards-build" "marola-boards" ];
         RuntimeDirectory = "marola-boards-build";
         RuntimeDirectoryMode = "0700";
@@ -311,6 +314,7 @@ in
       description = "Start a board build when the app image changes";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
       restartTriggers = [ bcfg.image ];
       serviceConfig = {
         Type = "oneshot";

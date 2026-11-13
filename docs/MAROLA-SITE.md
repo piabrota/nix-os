@@ -62,7 +62,13 @@ sudo systemctl start marola-boards-build; journalctl -u marola-boards-build -n 4
 ```
 
 The start waits for the whole build (up to 45 minutes). Each run tries twice, and a run that fails
-still publishes the areas it finished.
+still publishes the areas it finished. A failed run does not leave the unit failed (`ExecStart=-`), so a
+deploy that starts it is not rolled back; read the exit code in the journal (`status=125/n/a, ignoring`
+is a refused pull), and `marola-boards.yml` reports boards that go stale.
+
+A pull that answers `manifest unknown` right after `Login Succeeded!` most often means the token cannot
+read the package, not that the image is gone: ghcr hides a private package from a token without
+`read:packages`. A `gh` login token has no `read:packages`.
 
 The token on the box today is the owner's `gh` login token, which can do far more than pull one image.
 Replace it with a classic token that has only `read:packages`, with the same `install` line.
