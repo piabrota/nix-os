@@ -40,7 +40,7 @@ let
       owner = "h0ffmann";
       repo = "closed-source";
       inherit rev;
-      hash = "sha256-y6pCpDYfwRhtqAG+jBjDD2cHZdDz6WAQN0fNJzwhBDY=";
+      hash = "sha256-oTWeQSZrz3xOpFkVoRt2OLjiUEywBAMKibDpQilrBg4=";
     };
   # The `logos:` of papers/closed-source/metadata.md: file, svg and sha256.
   logos = {
