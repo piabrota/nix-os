@@ -44,8 +44,8 @@ de segredos na máquina (nunca aqui, e nunca um valor num PR).
 | Discord | Um bot no servidor do dono, que responde só ao usuário permitido. Sem voz: o pacote `full` não está instalado, então o aviso de Opus no log é esperado. | `DISCORD_MAX_ATTACHMENT_BYTES` em 20 MiB, o mesmo limite do Telegram | `DISCORD_BOT_TOKEN`, `DISCORD_ALLOWED_USERS` |
 | Slack | Está no extra `messaging`; aqui só ficam os nomes das variáveis (veja "Configurar uma vez na máquina"). | nada | `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_ALLOWED_USERS` |
 | Cron | O agendador do próprio Hermes, dentro do gateway: uma tarefa por vez, resultado no canal principal (`/sethome`, veja "Discord"), sem cabeçalho e rodapé. Datas em `America/Sao_Paulo`. | `settings.cron.max_parallel_jobs = 1`, `settings.cron.wrap_response = false`, `settings.timezone` | nada |
-| Exportação das skills | O job do cron `no_agent` `skills-export`, todo dia às 01:45 `America/Sao_Paulo`, roda `~/.hermes/scripts/export-skills.sh` (`hermes/scripts/export-skills.sh`). Ele copia as skills que o Hermes criou, e as skills do nix-os que ele carrega, para um pull request no piabrota/skills. O cron dá a ele o `PATH` da unidade, que não tem `awk` nem `perl`; por isso o script acrescenta `/run/current-system/sw/bin` e para com `skills export failed: <tool> is not on the PATH` quando falta uma ferramenta. A mensagem vai para o canal principal do Discord. | `hermesHomeFiles."scripts/export-skills.sh"` | nada |
-| Atualização da grade | O job do cron `no_agent` `grid-refresh`, todo dia às 02:30 `America/Sao_Paulo`, roda `~/.hermes/scripts/refresh-grid.sh` (`hermes/scripts/refresh-grid.sh`). Ele atualiza os dados da grade ▲ do piabrota/room (`public/grid/`) em um pull request. Ele roda o `just grid` da room no shell de desenvolvimento Node dela, em um clone próprio, `/var/lib/hermes/workspace/room-src`, e depois o `scripts/check.mjs` da room. Ele não abre um segundo PR enquanto houver um PR aberto com um branch `hermes/grid-refresh*`, e não imprime nada quando nada muda. Ele não usa modelo. A primeira execução baixa o shell de desenvolvimento Node da room e os pacotes npm do lockfile dela (uns 100 MB, depois em cache em `room-src/node_modules`). As execuções seguintes buscam cerca de 1.300 pontos de vento no Open-Meteo (grátis, CC BY 4.0, 600 pontos por minuto) e um chunk do Copernicus Marine, e levam alguns minutos de um núcleo. O site da room só mostra os dados depois do próximo bump do pin da room no nix-os. A mensagem vai para o canal principal do Discord. | `hermesHomeFiles."scripts/refresh-grid.sh"` | nada |
+| Exportação das skills | O job do cron `no_agent` `skills-export`, todo dia às 01:45 `America/Sao_Paulo`, roda `~/.hermes/scripts/export-skills.sh`, que roda o `piabrota export-skills` (`scala/hermes/ExportSkills.scala`). Ele copia as skills que o Hermes criou, e as skills do nix-os que ele carrega, para um pull request no piabrota/skills. O cron dá a ele o `PATH` da unidade; o comando tem `git`, `gh` e o coreutils no seu próprio PATH, acrescenta `/run/current-system/sw/bin` (para o `nix` e o `hermes`) e para com `skills export failed: <tool> is not on the PATH` quando falta uma ferramenta. A mensagem vai para o canal principal do Discord. | `hermesHomeFiles."scripts/export-skills.sh"` | nada |
+| Atualização da grade | O job do cron `no_agent` `grid-refresh`, todo dia às 02:30 `America/Sao_Paulo`, roda `~/.hermes/scripts/refresh-grid.sh`, que roda o `piabrota refresh-grid` (`scala/hermes/RefreshGrid.scala`). Ele atualiza os dados da grade ▲ do piabrota/room (`public/grid/`) em um pull request. Ele roda o `just grid` da room no shell de desenvolvimento Node dela, em um clone próprio, `/var/lib/hermes/workspace/room-src`, e depois o `scripts/check.mjs` da room. Ele não abre um segundo PR enquanto houver um PR aberto com um branch `hermes/grid-refresh*`, e não imprime nada quando nada muda. Ele não usa modelo. A primeira execução baixa o shell de desenvolvimento Node da room e os pacotes npm do lockfile dela (uns 100 MB, depois em cache em `room-src/node_modules`). As execuções seguintes buscam cerca de 1.300 pontos de vento no Open-Meteo (grátis, CC BY 4.0, 600 pontos por minuto) e um chunk do Copernicus Marine, e levam alguns minutos de um núcleo. O site da room só mostra os dados depois do próximo bump do pin da room no nix-os. A mensagem vai para o canal principal do Discord. | `hermesHomeFiles."scripts/refresh-grid.sh"` | nada |
 | CLI | `hermes` no PATH, sobre o estado do próprio serviço; o `h0ffmann` o roda com `sudo -u hermes hermes ...`. Ele não está no grupo `hermes`: o upstream recusa o socket de controle do gateway quando esse grupo tem outro membro, e a aba Chat do painel não consegue conectar. | `addToSystemPackages` | nada |
 | Servidores MCP | DeepWiki e Context7, remotos, sem chave; nada roda na máquina por eles. | `mcpServers`; `settings.mcp.auto_reload_on_config_change = false` | nada |
 | Painel web | O `hermes dashboard` do upstream, a unidade `hermes-backend`, só em 127.0.0.1:9119; o nginx o serve em `https://hermes.piabrota.art` com TLS e basic auth (`hermes-web.nix`, veja "O painel web"). | nada: `piabrota.hermesWeb` no `hermes-web.nix` | nada: o arquivo do basic auth é `/var/lib/hermes-web-secrets/htpasswd` |
@@ -91,7 +91,8 @@ inclusive quando o merge era um PR do próprio Hermes. Um pacote novo do Hermes 
 da unit, e isso ainda a reinicia na hora. Enquanto ele drena, uma mensagem nova espera o gateway
 voltar.
 
-O processo principal da unit é o `hermes/scripts/gateway-wrapper.sh`, não o gateway. Ele repassa
+O processo principal da unit é o `piabrota gateway-wrapper` (`scala/hermes/GatewayWrapper.scala`),
+não o gateway. Ele repassa
 `SIGUSR1` e `SIGTERM` ao gateway. O gateway roda com `--external-supervisor`. Isso avisa que o
 systemd é o dono dele, então um reload sai com o código 75 e não inicia um gateway separado.
 
@@ -109,7 +110,7 @@ gateway de fora faz o novo sair em até 20 s. Se isso acontece e o `gateway.pid`
 processo vivo, o wrapper não sai e não conta um reload. Ele registra `another gateway (pid N) serves
 this host (the gateway exited S): waiting for it to exit` e olha a cada 5 s. Quando esse processo
 termina, o wrapper inicia o próprio gateway. O `SIGTERM` encerra a espera na hora. O teste é o
-`hermes/scripts/gateway-wrapper.test.sh`.
+`scala/hermes/GatewayWrapper.test.scala`.
 
 ## Quem ele é
 
@@ -173,7 +174,7 @@ lê e envia), e está fixado por commit no `hermes.nix`:
 | [hermes-plugin-guard](https://github.com/mauricemohr88-debug/hermes-plugin-guard) v0.2.1 (MIT) | plugin | `hermes plugin-guard scan <diretório> --fail-on high`: uma varredura estática de um plugin candidato (manifesto, Python, dependências, segredos) que nunca importa nem roda o código. Uma ferramenta só de leitura, `plugin_guard_review_candidate`, para um plugin instalado e não habilitado; aqui todo plugin vem do Nix e está habilitado, então o caminho é a CLI. Sem rede. Só o `src/` é instalado, sem as fixtures de teste inseguras do scanner. É o portão de todo plugin proposto depois dele (`hermes/AGENTS.md`, "Plugins"). |
 | [kvm4-health](../hermes/skills/kvm4-health/SKILL.md) (este repositório) | skill | `kvm4-health`: memória, swap, pressão, carga, disco e o journal, e para `hermes-agent`, `hermes-backend`, `pgx`, `openrig` e a slice do usuário `hermes` (onde rodam os jobs do cron) a memória agora e o `MemoryPeak` contra o `MemoryMax`, tarefas e reinícios; o crescimento do `/` por dia e o do `hermes-agent` sem reinício, a partir de uma amostra a cada 30 minutos. Os limites de `WARN` e `CRIT` são variáveis `KH_*`. O vigia é um job do cron `no_agent` sobre `~/.hermes/scripts/kvm4-health-alert.sh`: nenhuma chamada ao modelo, e uma mensagem só quando os achados mudam (de novo a cada 6 horas, e uma vez na recuperação). O Hermes cria o job uma vez, a partir da skill. Só leitura no sistema; ele grava apenas em `plugin-data/kvm4-health/`. `just remote-health` roda o script do seu computador. |
 | [rbi](../hermes/skills/rbi/SKILL.md) (este repositório) | skill | `/rbi <prompt>`, "refine before implementing" (refinar antes de implementar). Corrige ortografia e gramática, põe uma ideia em cada linha, rotula objetivo, restrições, entrega e uma checagem `Done when`, e lê o que o prompt cita antes de perguntar. Quando falta algo que muda o resultado, repete o pedido com as palavras dele, faz uma pergunta de cada vez, apresenta duas ou três abordagens com a sua escolha e pede um sim a um desenho curto antes de construir um projeto. Depois planeja os passos para o tempo de execução (o que roda em paralelo; quem faz cada passo: o agente, subagentes, omp ou o dono) e faz o trabalho. Flags no prompt: `--dry` para depois do plano, `--go` dispensa as perguntas, `--pt` liga o ponytail, que fica desligado sem ela: a tarefa do omp recebe regras enxutas, depois uma revisão do omp só de leitura com a skill `ponytail-review`, e uma rodada de correção só para achados Must fix confirmados. Os passos de conversa seguem a skill `brainstorming` de [obra/superpowers](https://github.com/obra/superpowers) (MIT), que também está instalada como plugin (linha abaixo): o `/rbi` é o caminho explícito, e o plugin é o automático. Sem rede, sem script, sem permissão nova. Um merge reinicia o `hermes-agent`, porque o diretório de skills faz parte da configuração dele. |
-| [hermes-manim](../hermes/skills/hermes-manim/SKILL.md) (este repositório) | skill | Como renderizar uma animação do [Manim](https://www.manim.community) nesta máquina: o comando `manim` no PATH, uma pasta para cada trabalho no workspace, `-ql` para um rascunho e `-qm` para o vídeo que vai ao dono, os limites de CPU, memória e disco, e o `scripts/smoke.sh`, que renderiza uma cena de teste (um título, uma equação, um círculo) e imprime `ok`. É a parceira da skill `manim-video`, que diz como fazer uma boa animação. Nada roda até o Hermes iniciar uma renderização. |
+| [hermes-manim](../hermes/skills/hermes-manim/SKILL.md) (este repositório) | skill | Como renderizar uma animação do [Manim](https://www.manim.community) nesta máquina: o comando `manim` no PATH, uma pasta para cada trabalho no workspace, `-ql` para um rascunho e `-qm` para o vídeo que vai ao dono, os limites de CPU, memória e disco, e o `manim-smoke` (`scala/hermes/ManimSmoke.scala`), que renderiza a cena de teste da skill, `scripts/smoke.py` (um título, uma equação, um círculo) e imprime `ok`. É a parceira da skill `manim-video`, que diz como fazer uma boa animação. Nada roda até o Hermes iniciar uma renderização. |
 | [superpowers](https://github.com/obra/superpowers) v7.0.2 (MIT) | plugin | Plugin da comunidade (fora do catálogo da Nous), lido na v7.0.2 e fixado por commit. Traz 15 skills: `brainstorming`, `writing-plans`, `subagent-driven-development`, `systematic-debugging`, `test-driven-development` e outras. O hook `pre_llm_call` dele põe um texto de bootstrap (cerca de 5 KB) no primeiro turno de cada sessão que não seja de subagente, inclusive as de cron. O texto manda o modelo procurar uma skill adequada antes de agir. A skill `brainstorming` faz uma pergunta de cada vez e quer um desenho aprovado antes de qualquer construção. O código do plugin não faz chamada de rede. O companheiro visual do `brainstorming` precisa de node, que esta máquina não tem, e por isso fica inerte. A varredura com `hermes plugin-guard` deu um achado baixo (sem SECURITY.md). |
 | [hermes-cron](https://github.com/itpartypattaya/hermes-cron) v1.5.2 (MIT) | skill | Regras para os jobs do cron: pausar, desativar ou remover; e `no_agent`, a checagem prévia `wakeAgent` e `[SILENT]`, para que um tick sem novidade não chame o modelo. O script de diagnóstico dela, só de leitura, pede `python3`, que não está no `PATH` do Hermes aqui; as regras funcionam sem ele. |
 | [synalinks](https://github.com/SynaLinks/synalinks-skills) (Apache-2.0), commit `092970a` | skill | Uma skill, `synalinks` (categoria `software-development`): como escrever código para o framework Synalinks, um framework neuro-simbólico de LMs em Python, no formato do Keras. Tem um `SKILL.md` de 19 KB, documentos de referência com logs de execução, e 18 scripts de exemplo. O Hermes os lê e não executa nenhum: esta máquina não tem Python para o Hermes nem o pacote `synalinks`. A descrição é longa (cerca de 1,2 KB) e aparece na lista de skills de toda sessão. Ela carrega quando uma tarefa cita o Synalinks. Lida nesse commit e fixada por hash; um commit novo é um PR. |
@@ -258,11 +259,27 @@ Não conferido antes do merge: o pico de memória do omp na máquina, e se um to
 `claude setup-token` funciona como `ANTHROPIC_OAUTH_TOKEN`. Depois do deploy, rode uma tarefa e
 leia `systemctl show hermes-agent -p MemoryPeak`.
 
-## Os plugins do dono
+## As ferramentas pirsig do dono
 
-`pirsig-notes` e `pirsig-videos`, em `hermes/plugins/`, mandam smart notes e leituras de vídeo para
-o piabrota/pirsig como pull requests em branches `hermes/*`. Eles precisam do yt-dlp
-(`yt-dlp-light`) e do GitHub App abaixo. Veja [HERMES-PLUGINS.md](HERMES-PLUGINS.md) (em inglês).
+O servidor MCP `pirsig` (`piabrota pirsig-mcp`, `scala/pirsig/`) manda smart notes e leituras de
+vídeo para o piabrota/pirsig como pull requests em branches `hermes/*`. O modelo vê as ferramentas
+dele como `mcp__pirsig__...`; as skills `pirsig-smart-notes` e `pirsig-video-indexer` dizem como
+usá-las. Elas precisam do yt-dlp (`yt-dlp-light`) e do GitHub App abaixo. Veja
+[HERMES-PLUGINS.md](HERMES-PLUGINS.md) (em inglês).
+
+## Ações na máquina depois do merge
+
+Os scripts viraram comandos de um binário só (`scala/README.md`) em 2026-11-14. Uma coisa na
+máquina não está neste repositório e não muda com o deploy:
+
+- **O job do cron do feed.** Ele fica no estado do Hermes, não aqui (docs/FEEDS.ptBR.md). Ele
+  rodava o `scripts/feed-build.py`, que o deploy remove. Aponte o job para o
+  `scripts/feed-build.sh` (peça ao Hermes no chat, com a skill `hermes-cron`) e confira a próxima
+  execução.
+
+As ferramentas do pirsig agora são `mcp__pirsig__...`, e as skills delas, `pirsig-smart-notes` e
+`pirsig-video-indexer`. Uma nota na memória do Hermes que cite as ferramentas dos plugins antigos
+ou as skills `pirsig-notes:smart-notes` e `pirsig-videos:video-indexer` precisa dos nomes novos.
 
 ## Configurar uma vez na máquina
 
@@ -381,7 +398,7 @@ hermes status
 hermes doctor
 ```
 
-`just remote-hermes-check` (do seu computador, como `h0ffmann`; `scripts/hermes-check.sh`) confere
+`just remote-hermes-check` (do seu computador, como `h0ffmann`; `piabrota hermes-check`, `scala/scripts/HermesCheck.scala`) confere
 de uma vez, só lendo, os complementos do último deploy: a unit e a hora em que subiu, cada plugin
 ligado e habilitado, as skills `hermes-omp`, `kvm4-health` e `hermes-manim`, `omp --version`, `yt-dlp --version` e `manim --version`, e erros de plugin
 no journal. Imprime `FAIL` para cada parte que falta e nunca lê os segredos.

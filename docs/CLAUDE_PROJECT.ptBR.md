@@ -84,14 +84,15 @@ Uma sessão não lê o script de setup, as variáveis nem os secrets de um ambie
 arquivo não os registra. O ambiente não precisa de nenhum secret: o deploy roda no GitHub
 Actions, com os secrets do environment `prod`.
 
-Em 2026-10-29, uma sessão encontrou Ubuntu 24.04, `nix` 2.34, `gh`, `python3` e `cargo`. Faltavam
-`just` e `shellcheck`. Para rodar o `just check` numa sessão, ponha no script de setup:
+Em 2026-10-29, uma sessão encontrou Ubuntu 24.04, `nix` 2.34, `gh`, `python3` e `cargo`. Faltava
+`just` (e o `shellcheck`, que o `just check` não roda mais). Para rodar o `just check` numa
+sessão, ponha no script de setup:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 sudo apt-get update -qq
-sudo apt-get install -y -qq just shellcheck
+sudo apt-get install -y -qq just
 ```
 
 ⚠ Esse script não rodou numa sessão. O `apt` do Ubuntu 24.04 instala o `just` 1.21.0, a versão

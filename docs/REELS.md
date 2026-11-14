@@ -12,7 +12,7 @@ The Reels Fabric is an [OpenRig](OPENRIG.md) rig that makes one vertical video, 
 1080x1920, for Instagram Reels. Five seats work as one film crew, in the pod `crew` (see "The
 crew"). The creative director writes the screenplay. The producer-editor approves it and builds the
 reel. The artist-3d makes 3D shots, the music director makes the sound, and QA checks the file. The
-seats use one toolkit, `reel`, made of POSIX shell, `jq`, `ffmpeg` and `resvg`. The 3D shots need
+seats use one toolkit, `reel`, made of Scala (`piabrota reel`, scala/reels/), `jq` rules, `ffmpeg` and `resvg`. The 3D shots need
 Blender, which is a second option and is off (see "3D shots with Blender").
 
 The rig is a definition only. The options are off, nobody starts the rig, and the owner decides when

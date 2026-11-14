@@ -1,6 +1,6 @@
 # The piabrota sites, in ONE place. The brand bar and the footer of every page that wears the kit
-# (design/kit.mjs) list `sites` with `access = "public"`; a `login` site is listed here and kept out of
-# the nav. `host` is the nginx virtual host that serves the site: `www` and `figures` share one.
+# (scala/design/Kit.scala) list `sites` with `access = "public"`; a `login` site is listed here and
+# kept out of the nav. `host` is the nginx virtual host that serves the site: `www` and `figures` share one.
 # `checks.design-sites` (flake.nix) fails when a virtual host under piabrota.art is in neither `sites`
 # nor `hidden`, or when a site names a host that no system serves. A new site starts here.
 {

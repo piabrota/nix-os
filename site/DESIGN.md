@@ -17,7 +17,7 @@ A dark sheet, one red, and every state said in words before colour.
 Dark first; light when the visitor asks for it (`prefers-color-scheme`). Same names as picasso.
 The round switch at the end of the bar (☀ or ☾, `parts.theme`) gives the page the other scheme: a
 checkbox that `style.css` reads with `:has()`, so no script, and the choice lasts until the page
-changes. Its two blocks repeat the tokens; `design/test.mjs` checks them. Every page also says
+changes. Its two blocks repeat the tokens; `scala/design/Kit.test.scala` checks them. Every page also says
 `<meta name="color-scheme" content="dark light">`, so a browser paints the right canvas first.
 
 | Token | Dark | Light | It means |
@@ -165,7 +165,7 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 ## The kit
 
 `design/` owns the tokens for the sites built outside `site/` ([docs/DESIGN-KIT.md](../docs/DESIGN-KIT.md)):
-`design/css/tokens.css` repeats the table above, and `design/test.mjs` fails when it or this table
+`design/css/tokens.css` repeats the table above, and `scala/design/Kit.test.scala` fails when it or this table
 differs from `site/static/style.css`. Change a token in all three in one pull request. The kit also holds
 one small CSS module for each part of a page, the list of sites (`design/sites.nix`) and the brand bar
 that goes into pages from other repositories.
@@ -174,7 +174,7 @@ that goes into pages from other repositories.
 
 The same tokens and type dress four things that are not the site's Gleam pages:
 
-- **proof.piabrota.art and pirsig.piabrota.art**: the indexes are made by the kit (`proof-site/index.mjs`),
+- **proof.piabrota.art and pirsig.piabrota.art**: the indexes are made by the kit (`piabrota proof-index`, scala/design/Index.scala),
   with the hero, numbered sections and card grids of this file. The pages from h0ffmann/proof and
   piabrota/pirsig keep their own looks and get the brand bar.
 - **The figures** at `/figures/`: the index is a page frame like `/hosts/` in this `style.css`

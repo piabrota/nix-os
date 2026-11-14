@@ -1,6 +1,6 @@
 # Live metrics, home-made (docs/METRICS.md): processes, memory and vCPU of each host on one page at
 # metrics.piabrota.art. No daemon stays resident:
-#   collector  a timer runs metrics/collect.sh every 10 s; it writes /run/metrics-web/<name>.json
+#   collector  a timer runs `piabrota metrics-collect` every 10 s; it writes /run/metrics-web/<name>.json
 #   web        nginx serves metrics/index.html and /data/ from that folder, public by default, with a
 #              robots.txt and a block of named AI agents (a login file is optional)
 #   publish    (KVM 1) one location on the www vhost serves the host's file to one address
@@ -22,15 +22,10 @@ let
   notBrowsers = [ "bot" "crawl" "spider" "slurp" "scrap" "fetch" "curl" "wget" "python" "httpx" "aiohttp" "go-http" "java/" "okhttp" "axios" "libwww" "headless" "lighthouse" "preview" "externalhit" "monitor" "uptime" "scan" "probe" "feed" "rss" "archive" "http-client" ];
   stateDir = "/run/metrics-state";
 
-  # The scripts get their shebang patched to a store shell; the tools they call are on the unit's PATH.
-  script = name: file: pkgs.runCommand name { } ''
-    install -D -m 0755 ${file} $out/bin/${name}
-    patchShebangs $out/bin/${name}
-  '';
-  collect = script "metrics-collect" ./metrics/collect.sh;
-  pull = script "metrics-pull" ./metrics/pull.sh;
-  probe = script "metrics-probe" ./metrics/probe.sh;
-  export = script "metrics-export" ./metrics/export.sh;
+  # Each unit runs its command of the piabrota binary (scala/metrics/) straight from ExecStart, with
+  # no wrapper script: the collector runs every 10 s. The programs a command calls are on the unit's PATH.
+  scripts = pkgs.callPackage ./scala { };
+  command = name: "${scripts}/bin/piabrota ${name}";
   # What this generation runs, counted once at build time (docs/METRICS.md, "The inventory"). The
   # names come from the evaluated config; a module that this host does not import counts 0. The
   # skills are the SKILL.md files in Hermes's skill folders and plugins, so they need a build.
@@ -376,7 +371,7 @@ in
     };
 
     collector = {
-      enable = mkEnableOption "the collector timer: metrics/collect.sh writes this host's file";
+      enable = mkEnableOption "the collector timer: `piabrota metrics-collect` writes this host's file";
       interval = mkOption {
         type = types.ints.between 2 300;
         default = 10;
@@ -386,7 +381,7 @@ in
 
     probe = {
       enable = mkEnableOption ''
-        the probe timer: metrics/probe.sh asks each site of this host for an answer (up or down on the
+        the probe timer: `piabrota metrics-probe` asks each site of this host for an answer (up or down on the
         page), and GitHub for the commit count of `probe.repo`'';
       interval = mkOption {
         type = types.ints.between 10 3600;
@@ -435,7 +430,7 @@ in
       default = cfg.web.enable;
       defaultText = lib.literalExpression "config.piabrota.metrics.web.enable";
       description = ''
-        The export timer (with the collector's interval): metrics/export.sh (jq) writes every host file of
+        The export timer (with the collector's interval): `piabrota metrics-export` writes every host file of
         /run/metrics-web as one `all.json` and as `metrics.prom`, the Prometheus text format, which
         the page serves at `/data/all.json` and `/metrics`. On wherever the page is.
       '';
@@ -452,7 +447,7 @@ in
     };
 
     pull = {
-      enable = mkEnableOption "the pull timer: metrics/pull.sh fetches another host's published file";
+      enable = mkEnableOption "the pull timer: `piabrota metrics-pull` fetches another host's published file";
       url = mkOption {
         type = types.str;
         default = "";
@@ -489,7 +484,6 @@ in
 
       systemd.services.metrics-collect = {
         description = "Write this host's metrics file";
-        path = [ pkgs.coreutils pkgs.gawk pkgs.glibc.bin ];
         environment = {
           METRICS_NAME = cfg.name;
           METRICS_LABEL = if cfg.label == "" then cfg.name else cfg.label;
@@ -502,7 +496,7 @@ in
           METRICS_REPO = cfg.probe.repo;
         };
         serviceConfig = sandbox // {
-          ExecStart = "${collect}/bin/metrics-collect";
+          ExecStart = command "metrics-collect";
           # Reads /proc and /sys/fs/cgroup only.
           PrivateNetwork = true;
           RestrictAddressFamilies = "AF_UNIX";
@@ -520,7 +514,8 @@ in
       # A short curl to each site, one after the other, and one to GitHub in 10 minutes.
       systemd.services.metrics-probe = {
         description = "Ask this host's sites for an answer";
-        path = [ pkgs.coreutils pkgs.curl pkgs.gawk pkgs.gnugrep pkgs.gnused ];
+        # curl for the sites and GitHub, stat (coreutils) for the visits log.
+        path = [ pkgs.coreutils pkgs.curl ];
         environment = {
           METRICS_NAME = cfg.name;
           PROBE_SITES = "${siteList}";
@@ -529,7 +524,7 @@ in
           STATE_DIR = stateDir;
         };
         serviceConfig = sandbox // {
-          ExecStart = "${probe}/bin/metrics-probe";
+          ExecStart = command "metrics-probe";
           RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
         };
       };
@@ -570,18 +565,16 @@ in
     })
 
     (mkIf cfg.export.enable {
-      # One jq run (a small C binary, no runtime: AGENTS.md, "Resource budget" rule 4): it reads the
+      # One run of the native binary (no runtime: AGENTS.md, "Resource budget" rule 4): it reads the
       # host files of the served folder and writes two more.
       systemd.services.metrics-export = {
         description = "Write every host's metrics as all.json and metrics.prom";
-        path = [ pkgs.coreutils pkgs.jq ];
         environment = {
           OUT_DIR = outDir;
           METRICS_STALE = "30";
-          EXPORT_JQ = "${./metrics/export.jq}";
         };
         serviceConfig = sandbox // {
-          ExecStart = "${export}/bin/metrics-export";
+          ExecStart = command "metrics-export";
           PrivateNetwork = true;
           RestrictAddressFamilies = "AF_UNIX";
         };
@@ -597,14 +590,14 @@ in
 
       systemd.services.metrics-pull = {
         description = "Fetch ${cfg.pull.name}'s metrics file";
-        path = [ pkgs.coreutils pkgs.curl pkgs.gnugrep ];
+        path = [ pkgs.curl ];
         environment = {
           METRICS_PULL_URL = cfg.pull.url;
           METRICS_PULL_NAME = cfg.pull.name;
           OUT_DIR = outDir;
         };
         serviceConfig = sandbox // {
-          ExecStart = "${pull}/bin/metrics-pull";
+          ExecStart = command "metrics-pull";
           RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
         };
       };

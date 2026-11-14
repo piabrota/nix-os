@@ -1,7 +1,7 @@
 name: certs
 
 # The HTTPS certificate of every live name in scripts/domains.txt, from outside, as a browser sees
-# it (scripts/cert_check.py). A red run means a name shows a browser warning, answers no TLS, or
+# it (piabrota cert-check, scala/scripts/CertCheck.scala). A red run means a name shows a browser warning, answers no TLS, or
 # expires within 14 days; GitHub mails the owner. It changes nothing on the boxes: a failed ACME
 # order retries by itself every 20 minutes (acme-retry.nix); docs/SITE.md, "Certificates".
 on:
@@ -22,10 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
       - name: Give a new order time to finish after a deploy
         if: github.event_name == 'workflow_run'
         run: sleep 120
       - name: Check every name
         run: |
           set -o pipefail
-          python3 scripts/cert_check.py | tee -a "$GITHUB_STEP_SUMMARY"
+          nix run .#piabrota -- cert-check | tee -a "$GITHUB_STEP_SUMMARY"

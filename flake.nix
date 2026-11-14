@@ -162,13 +162,6 @@
           diff -u ${./docs/drawings/mu.desmos.json} $art/mu.desmos.json || { echo 'run `just drawing`' >&2; exit 1; }
           touch $out
         '';
-        # The unit tests of the owner's Hermes plugins (hermes/plugins/), with git and a stub gh.
-        hermes-plugins = pkgs.runCommand "hermes-plugins-test"
-          { nativeBuildInputs = [ pkgs.python3 pkgs.git ]; } ''
-          export HOME=$TMPDIR PYTHONDONTWRITEBYTECODE=1
-          cd ${./hermes/plugins}/tests && python3 -m unittest -v test_plugins
-          touch $out
-        '';
         # The dashboard bundle still holds the docs address that hermes-web.nix swaps for
         # piabrota's page, and the backend still has the two routes that nginx refuses. If an
         # upstream bump renames one of them, the swap or the refusal does nothing and this fails.
@@ -337,10 +330,15 @@
         # the optional login, the pull and the published location (metrics/test.nix). Needs KVM to
         # run in reasonable time.
         metrics = pkgs.testers.runNixOSTest ./metrics/test.nix;
+        # The scripts' binary and its tests (scala/).
+        piabrota = self.packages.${system}.piabrota;
       };
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
+        # Every script of this repository, in Scala 3, as one native binary (scala/); its tests
+        # run in the build. A module takes a command of it with `(pkgs.callPackage ./scala { }).command`.
+        piabrota = pkgs.callPackage ./scala { };
         # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
         pgx = pkgs.callPackage ./pgx/package.nix { };
         # The eye as favicon.svg, favicon.ico and apple-touch-icon.png (favicon/): served on every vhost.
@@ -385,6 +383,11 @@
         # npx for the OpenPencil MCP server (.mcp.json). Never on the VPS.
         site = pkgs.mkShell {
           packages = [ pkgs.gleam pkgs.nodejs pkgs.just ];
+        };
+        # Work on scala/ (`just scala`, `just scala-test`, `just scala-lock`): the same scala-cli,
+        # clang and JDK as the Nix build.
+        scala = pkgs.mkShell {
+          packages = with self.packages.${system}.piabrota.toolchain; [ scalaCli jdk pkgs.clang pkgs.which pkgs.just ];
         };
       };
 

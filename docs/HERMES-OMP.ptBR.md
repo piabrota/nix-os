@@ -47,7 +47,7 @@ omp-run --stop <nome>              # para essa execução e espera ela terminar
 ```
 
 O `--mode json` faz o omp escrever um evento JSON por linha. O `omp-stream`
-([`hermes/skills/hermes-omp/scripts/omp-stream.sh`](../hermes/skills/hermes-omp/scripts/omp-stream.sh),
+(`piabrota omp-stream`, [`scala/hermes/OmpStream.scala`](../scala/hermes/OmpStream.scala),
 um comando no PATH do Hermes, em `hermes.nix`) escreve uma linha de texto por evento, na hora:
 
 ```
@@ -67,13 +67,13 @@ O Hermes inicia a execução com `terminal(background=true, notify=true, heartbe
 heartbeat entrega as linhas novas ao chat. Cada heartbeat custa um turno do Hermes: uma execução de
 15 minutos custa até 8 turnos. O filtro não chama nenhum modelo.
 
-Teste: `sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh` (precisa de `jq`). Ele roda uma
-execução gravada (`scripts/fixtures/`) e mais três casos: uma linha que não é JSON, um erro de
+Teste: `scala/hermes/OmpStream.test.scala` (`just scala-test`). Ele roda uma execução gravada
+(`OmpStreamFixture`) e mais casos, entre eles uma linha que não é JSON, um erro de
 ferramenta e um segredo.
 
 ### Como uma execução termina
 
-O `omp-run` ([`hermes/skills/hermes-omp/scripts/omp-run.sh`](../hermes/skills/hermes-omp/scripts/omp-run.sh),
+O `omp-run` (`piabrota omp-run`, [`scala/hermes/OmpRun.scala`](../scala/hermes/OmpRun.scala),
 um comando no PATH do Hermes, em `hermes.nix`) escreve uma última linha quando o omp não terminou,
 e depois o arquivo de progresso `omp-tasks/<nome>.progress`:
 
@@ -93,10 +93,9 @@ propósito (2026-11-05, a execução das métricas). O `omp-run` pega SIGTERM, S
 SIGTERM ao omp, deixa o `omp-stream` escrever as últimas linhas e sai com um código, então o bash
 não escreve a linha `tcsetattr`.
 
-Teste: `bash hermes/skills/hermes-omp/scripts/test-omp-run.sh` (precisa de `jq` e `setsid`). Ele roda
+Teste: `scala/hermes/OmpRun.test.scala` (`just scala-test`; precisa de `setsid`). Ele roda
 o `omp-run` com um omp falso em `bash -lic` sem terminal: uma execução normal, `--stop`, um SIGTERM
-ao grupo de processos, um SIGTERM só ao omp, e um arquivo de tarefa que falta. `just omp-test` roda
-os dois testes.
+ao grupo de processos, um SIGTERM só ao omp, e um arquivo de tarefa que falta.
 
 ## As camadas: o que você pode editar
 

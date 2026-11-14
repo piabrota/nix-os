@@ -93,7 +93,7 @@ starts with a self-signed certificate, and browsers refuse it. See "Certificates
 ## Certificates
 
 Every name under piabrota.art is listed in `scripts/domains.txt`, with the host that serves it.
-A new vhost adds its line in the same PR: CI (`scripts/cert_check.py --coverage`) fails when a
+A new vhost adds its line in the same PR: CI (`piabrota cert-check --coverage`) fails when a
 `*.nix` file names a piabrota.art name that the list does not have.
 
 `certs.yml` checks the certificate of every live name from outside, as a browser does, every six
@@ -117,7 +117,7 @@ just remote-cert-renew skills.piabrota.art    # piabrota: this name, even if it 
 just remote-cert-renew all h0ffmann srv2125808.hstgr.cloud   # piabrota2
 ```
 
-`scripts/cert-renew.sh` runs as root on the box (over SSH and `sudo`). It finds each certificate
+`piabrota cert-renew` (`scala/scripts/CertRenew.scala`) runs as root on the box (over SSH and `sudo`). It finds each certificate
 in `/var/lib/acme` that is self-signed (`minica`) or ends within 14 days, starts its
 `acme-order-renew-<name>.service` (no other unit) and prints the new issuer, or `FAIL` with the
 `dig` and `journalctl` commands to run next. An agent never runs it. `DEPLOY_HOST` and
@@ -180,13 +180,13 @@ equals `parts.eye`.
 are built from pinned commits by `proof-site/`, which shares the steps and the archify gate between
 the two (`proof-site/common.nix`). The index of each name is made by the design kit
 ([DESIGN-KIT.md](DESIGN-KIT.md)) from a list of the pages that the build computes
-(`proof-site/manifest.mjs`, `proof-site/index.mjs`). The brand bar of the kit goes into every other page.
+(`piabrota proof-manifest` and `piabrota proof-index`, in `scala/design/`). The brand bar of the kit goes into every other page.
 The two names:
 
 - `proof.piabrota.art` (`proof-site/default.nix`, option `domain`): h0ffmann/proof's own browsable
   index (its `site/default.nix`, built here with this flake's nixpkgs) under `/proof/`, and an
   index at `/` that lists its pages and gives its lines of Lean 4, Agda and Z3 code at the pin.
-  `proof-site/loc.mjs` counts them from the pinned source with the rule of that repository's own
+  `piabrota proof-loc` (`scala/design/Loc.scala`) counts them from the pinned source with the rule of that repository's own
   badge: a line that is not blank and not only a comment, `vendor/` left out; Z3 is the Scala of
   `z3-scala/`.
 - `pirsig.piabrota.art` (`proof-site/pirsig.nix`, option `pirsig.domain`): piabrota/pirsig's
@@ -256,7 +256,7 @@ has a key the page does not ask for. The zh-CN and ja-JP pages keep their banner
 until a native reader checks them. A fact read from ww3-gpu keeps its own language.
 
 `ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
-(`scripts/pins.py one ww3`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
+(`piabrota pins one ww3`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
 pin. The site changes when the owner merges it.
 A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
 needs its key in each file of `ww3-site/locales/`, or the content generator stops the build.
@@ -313,7 +313,7 @@ and commits it. `hffmnn-site/default.nix` copies `www/dist` as it is at a pinned
 build step; it fails when the directory has no `index.html` or has a `<script>`. nginx
 (`hffmnn.nix`) serves it as static files on piabrota2, like closed.
 
-To move the pin: `scripts/pins.py one hffmnn [rev]` (`rev` and `hash`). `just hffmnn-site` builds
+To move the pin: `piabrota pins one hffmnn [rev]` (`rev` and `hash`). `just hffmnn-site` builds
 it into `./result-hffmnn-site`. The name needs its DNS `A` record at piabrota2's address
 ([DNS on Porkbun](#dns-on-porkbun)). The record is `A hffmnn 187.41.117.18`, TTL 600, at Porkbun
 since 2026-11-13, the same address as `grid`, `wave` and `closed`. Before it, the vhost was off and
@@ -452,7 +452,7 @@ no `commits` shows nothing. The tooltip says what the count is and the day it wa
   The repository's rule is "no agent trail in a commit", so the agent number is a floor.
 - The page never calls the network. The numbers are typed in `data.nix`, like `pushed`.
 - Refresh: `just commit-counts` prints one line for each project. Paste the lines, set `commitsAsOf`,
-  run `just mockups`, and open a pull request. `just scripts-test` tests the rule with a stub `gh`.
+  run `just mockups`, and open a pull request. `CommitCounts.test.scala` tests the rule with a stub `gh` (`just scala-test`).
   [MOCKUPS.md](MOCKUPS.md#commit-counts) has the same rule.
 
 ## Languages

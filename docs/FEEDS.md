@@ -1,17 +1,17 @@
 # The personal feed
 
-`hermes/feeds/build_feed.py` builds one feed from the owner's sources. It scores each item on his interests.
-It uses no agent and no model. It uses only the standard library of Python 3.11 or later (`tomllib`).
+`piabrota feed-build` ([`scala/feeds/`](../scala/feeds/FeedBuild.scala)) builds one feed from the owner's sources. It scores each item on his interests.
+It uses no agent and no model. It fetches with `curl`.
 
-`hermes.nix` installs the script as `scripts/feed-build.py` and the sources as `feeds/feeds.toml`, in `HERMES_HOME`.
+`hermes.nix` installs the command as `scripts/feed-build.sh` and the sources as `feeds/feeds.toml`, in `HERMES_HOME`.
 A `no_agent` cron job posts what the script prints. This repository does not create that job. Ask Hermes to create it.
 
 ## Run it
 
 ```console
-just feeds-test    # unit tests, offline
+just scala-test    # the unit tests of every script, these included, offline
 just feeds-build   # all sources, prints the digest, writes nothing, needs the network
-python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out /tmp/feed --no-state
+nix run .#piabrota -- feed-build --config hermes/feeds/feeds.toml --out /tmp/feed --no-state
 ```
 
 - `--dry-run`: print the digest, write nothing. It does not read the state.
@@ -74,7 +74,7 @@ A source key `exclude_terms = ["canary"]` drops an item with a term in its title
 3. Set `id` (unique), `group` (an `id` of a `[[group]]`), `kind`, `weight` (1 to 5) and `limit`.
 4. A `feed` source and an `apple_chart` source need `url`. A `github_search` source needs `query`. A query can use `{d7}`, `{d14}` and `{d30}`.
 5. Optional keys: `max_age_days`, `pinned`, `pinned_keep`, `requires_match`, and `genres` for a chart.
-6. Run `just feeds-test`. One test checks that `feeds.toml` is complete.
+6. Run `just scala-test`. One test checks that `feeds.toml` is complete.
 
 To add an interest, add an `[[interest]]` table with `name`, `origin` (`chat` or `profile`), `weight` and `terms`. Add its row to the table above.
 A podcast feed can be 5 MB. The script reads only the first 1.5 MB, so a long feed is fine.

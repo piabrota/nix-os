@@ -144,7 +144,7 @@ jobs:
       # A merge that changes hermes-agent.service makes the switch reload or restart Hermes. Before
       # that, copy the system to the host (deploy-rs then finds it there, so the switch follows in
       # seconds) and ask Hermes for its own graceful restart: it finishes the work in flight, closes
-      # its state and comes back (scripts/hermes-checkpoint.sh). A host without Hermes, or a merge
+      # its state and comes back (piabrota hermes-checkpoint, from the copied system). A host without Hermes, or a merge
       # that leaves its unit as it is, does nothing. This step never stops the deploy.
       - name: Prepare Hermes for the switch
         if: steps.host.outputs.ready == 'true'
@@ -162,7 +162,7 @@ jobs:
           sha=$(sha256sum < "$unit" | cut -d' ' -f1)
           NIX_SSHOPTS="-o StrictHostKeyChecking=yes -o BatchMode=yes" \
             nix copy --substitute-on-destination --to "ssh://$SSH_USER@$DEPLOY_HOST" "$profile"
-          ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" "sudo sh -s -- $sha" < scripts/hermes-checkpoint.sh
+          ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" "sudo $profile/sw/bin/piabrota hermes-checkpoint $sha"
 
       - name: Build and deploy
         if: steps.host.outputs.ready == 'true'
@@ -196,6 +196,6 @@ jobs:
           {
             echo '### ${{ matrix.node }} after deploy of `'"$GITHUB_SHA"'`'
             echo '```'
-            ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" sh -s < scripts/specs.sh
+            ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" piabrota specs
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

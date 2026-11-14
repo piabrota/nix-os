@@ -1,6 +1,6 @@
 name: marola-site pin
 
-# When marola-dev/marola-site's main moves: scripts/pins.py one marola-site moves the pin of
+# When marola-dev/marola-site's main moves: piabrota pins one marola-site moves the pin of
 # marola-site/default.nix (rev and the source hash), builds the package (the Haskell server, the Elm
 # page, the static pages), and one pull request labelled marola-site-pin carries it, opened as
 # piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer marola-site commit while that
@@ -77,7 +77,7 @@ jobs:
         env:
           REV: ${{ steps.look.outputs.rev }}
         run: |
-          python3 scripts/pins.py one marola-site "$REV" | tee pin.log
+          nix run .#piabrota -- pins one marola-site "$REV" | tee pin.log
           sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
 
       - name: Open or update the pull request as piabrota-ops
@@ -109,7 +109,7 @@ jobs:
             echo
             echo "## What changed"
             echo
-            echo "\`marola-site/default.nix\`: \`rev\` and the source \`hash\`, written by \`scripts/pins.py one marola-site\`. marola-site between the two pins ([compare](https://github.com/marola-dev/marola-site/compare/$OLD...$NEW)):"
+            echo "\`marola-site/default.nix\`: \`rev\` and the source \`hash\`, written by \`piabrota pins one marola-site\`. marola-site between the two pins ([compare](https://github.com/marola-dev/marola-site/compare/$OLD...$NEW)):"
             echo
             cat prs.md
             echo

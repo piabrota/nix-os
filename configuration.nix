@@ -78,6 +78,9 @@
     curl
     wget
     nano
+    # `piabrota`: the scripts of scala/ as one native binary (about 5.5 MiB, glibc only), so the
+    # justfile and the workflows run them over SSH (`ssh box piabrota freeze`).
+    (pkgs.callPackage ./scala { })
   ];
   systemd.services.qemu-guest-agent.environment.PATH =
     lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/bin";

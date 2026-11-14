@@ -6,15 +6,16 @@ The pins, the file tree, the flake outputs and every `just` recipe of nix-os. Th
 
 ```console
 just build          # build the system here, without deploying it
-just check          # what CI runs: nix flake check, nixpkgs-fmt, statix, deadnix, shellcheck
+just check          # what CI runs: nix flake check, nixpkgs-fmt, statix, deadnix, the DeepWiki check
 just deploy         # deploy by hand, as CI does (DEPLOY_HOST=<ip>; a human only)
 just specs          # CPU, RAM, disk, kernel and NixOS generation of this machine
 just remote-specs   # the same, of the VPS, over SSH
 just remote-hermes-check  # Hermes's add-ons are live on KVM 4 (DEPLOY_HOST=<its address>)
 just remote-health  # memory, disk, CPU and units of a VPS: `just remote-health h0ffmann <address>` for KVM 4
 just remote-restart  # restart the services the box has, after a prompt: `just remote-restart hermes`, `list`, `"all --dry-run"` (a human only; docs/DEPLOY.md)
-just restart-test  # the offline test of scripts/restart-services.sh
-just metrics-test   # the tests of the metrics collector and page (docs/METRICS.md)
+just metrics-test   # the metrics page's rules and its fetch (docs/METRICS.md)
+just scala-test     # compile scala/ and run the tests of every script (scala/README.md)
+just scala-build    # the scripts' binary, piabrota, built by Nix with its tests
 just cves           # CVE report of the system closure (vulnix; a report, not a gate)
 just security       # the security review of security.yml: gitleaks on the history (fails on a finding), zizmor on the workflows
 just freeze         # every package of the running system with its size, like pip freeze
@@ -57,17 +58,15 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
-├── metrics.nix, metrics/    the metrics page at metrics.piabrota.art: collector, page, tests (docs/METRICS.md)
+├── metrics.nix, metrics/    the metrics page at metrics.piabrota.art and its VM test; the collector is in scala/metrics/ (docs/METRICS.md)
 ├── proof.nix, proof-site/   the HTML pages of h0ffmann/proof at proof.piabrota.art and of piabrota/pirsig at pirsig.piabrota.art, each with an index
 ├── favicon.nix, favicon/    the eye as the icon of every vhost under piabrota.art (docs/SITE.md)
 ├── openrig.nix, openrig/    OpenRig, the engine of the software factory: its package, its rig specs and its UI (docs/OPENRIG.md)
-├── thesis/                  the `thesis` toolkit of the thesis rig: POSIX sh, pandoc, TeX; its tests (docs/THESIS.md)
+├── thesis/                  the thesis rig's profile and TeX set; its `thesis` command is in scala/thesis/ (docs/THESIS.md)
 ├── kubesolo-purge.nix       a oneshot that clears an old install from the box; delete once it ran
 ├── keys/deploy.pub          the public key of the CI deploy key
-├── scripts/specs.sh         prints the machine's specs (POSIX sh)
-├── scripts/freeze.sh        every package of the system with its size, like pip freeze
-├── scripts/hermes-check.sh  checks on the box that Hermes's add-ons of the last deploy are live
-├── scripts/restart-services.sh  restarts the units of a box by group, from an allow list (`just remote-restart`; docs/DEPLOY.md)
+├── scala/                   every script, in Scala 3, as one Scala Native binary: `piabrota <command>` (scala/README.md)
+├── scripts/domains.txt      every name under piabrota.art and its host, for `piabrota cert-check`
 ├── drawings/                the pen and the drawing, in Nix, that draw docs/drawings/mu.svg
 ├── mockups/                 three mockups of the piabrota.art homepage, SVG in pure Nix (docs/MOCKUPS.md)
 ├── docs/archify/, docs/img/ the figures' archify sources and PNGs; vendor/archify is the pinned archify
@@ -95,7 +94,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── .github/dependabot.yml   one PR a week that bumps the actions the workflows use
 ├── wiki/                    the GitHub wiki's pages, in Portuguese and English
 ├── .agents/skills/          vendored skills for agents (.claude/skills links here), four Nix, three frontend, figure and archify (their README); .mcp.json: mcp-nixos, OpenPencil, DeepWiki
-├── .devin/wiki.json         how DeepWiki writes this repository's wiki (deepwiki.com/piabrota/nix-os); scripts/deepwiki-check.jq checks it in CI
+├── .devin/wiki.json         how DeepWiki writes this repository's wiki (deepwiki.com/piabrota/nix-os); piabrota deepwiki-check checks it in CI
 ├── justfile
 ├── llms.txt                 the index of all the public work of h0ffmann, for agents and visitors (no DOI); the README links it
 └── AGENTS.md                the rules for AI agents working here

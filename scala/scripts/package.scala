@@ -1,0 +1,40 @@
+package piabrota.scripts
+
+import piabrota.lib.Command
+
+/** The commands of scripts/: what runs on a box, on a GitHub runner or on a workstation. */
+val commands: List[Command] = List(
+  Command("specs", "the machine's OS, kernel, CPU, RAM, swap, disk, uptime and NixOS generation", Specs.run),
+  Command("pins", "move the website pins to the head of their source's main and build each site", Pins.run),
+  Command("commit-counts", "the human and agent commit counts of each own repository, for mockups/data.nix", CommitCounts.run),
+  Command("pr-stack", "plan and check a stack of PRs merged as one (the pr-stack skill)", PrStack.run),
+  Command("cert-check", "the HTTPS certificate of every live name in scripts/domains.txt, as a browser sees it", CertCheck.run),
+  Command("context-size", "the files Hermes loads into its context against its 32000-character cut", ContextSize.run),
+  Command("video-dummy", "a 28 s test video from ffmpeg alone, into video-lab/out/dummy", VideoDummy.run),
+  Command("favicon-files-check", "the ICO and PNG files of the favicon build (favicon/check.nix)", FaviconFiles.run),
+  Command("freeze", "every package of the running system as name==version with its size, like pip freeze", Freeze.run),
+  Command("hermes-check", "checks on the box that the Hermes add-ons of the last deploy are live (read-only)", HermesCheck.run),
+  Command("hermes-checkpoint", "before a switch that changes hermes-agent.service: a graceful reload and a wait (never fails)", HermesCheckpoint.run),
+  Command("cert-renew", "orders again the certificates a browser refuses (root, the owner only)", CertRenew.run),
+  Command("restart-services", "restarts the unit groups of a box from an allow list (root, the owner only)", RestartServices.run),
+  Command("marola-boards-check", "fails when a marola board is older than MAX_AGE_HOURS (from outside)", MarolaBoardsCheck.run),
+  Command("acme-retry", "starts a failed certificate order again in 20 minutes (acme-retry@.service)", Maintenance.acmeRetry),
+  Command("kubesolo-purge", "deletes what KubeSolo left on the box (never fails)", Maintenance.kubesoloPurge),
+  Command("loco-backup", "the nightly sqlite3 .backup of a Loco app, seven kept", Backups.loco),
+  Command("marola-backup", "the nightly backup of marola's database, csrf.key and studies", Backups.marola),
+  Command("marola-boards-mirror", "copies the marola boards from another marola site", MarolaBoards.mirror),
+  Command("marola-boards-build", "builds the marola boards with marola-site's app image", MarolaBoards.build),
+  Command("marola-tiles", "cuts the base map's tiles file of marola.dev when its pin moves", MarolaBoards.tiles),
+  Command("hermes-github-token", "GitHub App tokens of one hour for Hermes and the OpenRig seats", GithubTokens.hermes),
+  Command("marola-bot-token", "GitHub App tokens of marola-pr-bot for Hermes and the OpenRig seats", GithubTokens.marola),
+  Command("tyler-durden-token", "the GitHub App token of tyler-durden-bot for its Hermes profile", GithubTokens.tylerDurden),
+  Command("hermes-git-credential", "git credential helper: Hermes's token of the repository's owner", GitCredential.hermes),
+  Command("openrig-git-credential", "git credential helper: a seat's read-only token of the repository", GitCredential.seat),
+  Command("marola-gh", "gh as marola-pr-bot, for the commands that propose and read only", Wrappers.marolaGh),
+  Command("omp", "oh-my-pi for Hermes and the seats: its config, its token, a time ceiling, choom", Wrappers.omp),
+  Command("seat-claude", "the claude of a Claude seat: the subscription token moved, API keys dropped", Wrappers.seatClaude),
+  Command("openrig-claude-token", "copies Hermes's Claude token to OpenRig's env file (root)", Wrappers.openrigClaudeToken),
+  Command("chaceon-clone", "a seat's clone of h0ffmann/chaceon with the seat credential helper", Wrappers.chaceonClone),
+  Command("marola-clone", "a seat's clone of a marola repository with the seat credential helper", Wrappers.marolaClone),
+  Command("openrig-wf-keeper", "keeps the port rig wave-forecaster-dev up, with a back-off", WfKeeper.run),
+)

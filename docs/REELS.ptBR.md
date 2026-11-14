@@ -12,7 +12,7 @@ A Fábrica de Reels é uma rig do [OpenRig](OPENRIG.md) que faz um vídeo vertic
 1080x1920, para os Reels do Instagram. Cinco seats trabalham como uma equipe de cinema, num só pod,
 o `crew` (veja "A equipe"). O diretor criativo escreve o roteiro. O produtor-editor o aprova e monta
 o reel. O artista 3D faz os planos 3D, o diretor musical faz o som e o QA confere o arquivo. Os seats
-usam um só kit, o `reel`, feito de shell POSIX, `jq`, `ffmpeg` e `resvg`. Os planos 3D precisam do
+usam um só kit, o `reel`, feito de Scala (`piabrota reel`, scala/reels/), regras `jq`, `ffmpeg` e `resvg`. Os planos 3D precisam do
 Blender, que é uma segunda opção e está desligada (veja "Cenas 3D com o Blender").
 
 A rig é só uma definição. As opções estão desligadas, ninguém inicia a rig, e o dono decide quando

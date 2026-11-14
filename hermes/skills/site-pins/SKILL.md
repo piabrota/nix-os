@@ -19,18 +19,18 @@ metadata:
 
 Each website on piabrota.art is built from its source repository at one pinned commit. A new
 commit on that repository reaches the site only after a pull request here moves the pin and the
-owner merges it (the merge deploys). `scripts/pins.py all` moves all the pins in one go.
+owner merges it (the merge deploys). `piabrota pins all` (`scala/scripts/Pins.scala`) moves all the pins in one go.
 
 | Site | Address | Source | Pinned file | What else moves |
 |---|---|---|---|---|
-| `ww3` | wave.piabrota.art | h0ffmann/ww3-gpu | `ww3-site/default.nix` | `commits` (through `scripts/pins.py one ww3`) |
+| `ww3` | wave.piabrota.art | h0ffmann/ww3-gpu | `ww3-site/default.nix` | `commits` (through `piabrota pins one ww3`) |
 | `closed` | closed.piabrota.art | h0ffmann/closed-source | `closed-site/default.nix` | `commits` |
 | `hffmnn` | hffmnn.piabrota.art | h0ffmann/h0ffmann | `hffmnn-site/default.nix` | `readmeCommits`, `readmeFirst` |
 | `marola-site` | marola.piabrota.art | marola-dev/marola-site | `marola-site/default.nix` | — |
 | `skills` | skills.piabrota.art | piabrota/skills | `skills-site/default.nix` | — |
 | `proof` | proof.piabrota.art | h0ffmann/proof | `proof-site/default.nix` (`proofRev`) | — |
 | `pirsig` | pirsig.piabrota.art | piabrota/pirsig | `proof-site/pirsig.nix` (`pirsigRev`) | — |
-| `room` | room.piabrota.art | piabrota/room | `room-site/default.nix` | `npmDepsHash`, `version` (through `scripts/pins.py one room`) |
+| `room` | room.piabrota.art | piabrota/room | `room-site/default.nix` | `npmDepsHash`, `version` (through `piabrota pins one room`) |
 
 Each row always moves `rev` and the source `hash` together. Not here: the archify pin (a vendored
 tool, `vendor/archify`), the thesis source (`thesis/`, a toolkit, not a site), the Hermes add-ons
@@ -52,11 +52,11 @@ tool, `vendor/archify`), the thesis source (`thesis/`, a toolkit, not a site), t
 2. See what is behind, without a change:
 
    ```bash
-   python3 scripts/pins.py all --list      # or: just site-pins --list
+   piabrota pins all --list      # or: just site-pins --list
    ```
 
-   Hermes has no `python3` on its PATH: put `nix shell --inputs-from . nixpkgs#python3 -c` in front
-   of each `python3` command of this skill (this flake's nixpkgs, so nothing new is downloaded).
+   `piabrota` is the scripts' binary that both boxes install (`/run/current-system/sw/bin/piabrota`).
+   Elsewhere, from the checkout: `nix run .#piabrota -- pins all --list`.
 
    One line per site: `same <sha>` or `behind <pinned> <head>`. Stop here if all are `same`.
 3. Look at the open PRs of piabrota/nix-os. If one already moves a pin (`agents/ww3-pin`,
@@ -65,14 +65,14 @@ tool, `vendor/archify`), the thesis source (`thesis/`, a toolkit, not a site), t
 4. Move the pins:
 
    ```bash
-   python3 scripts/pins.py all                 # every site
-   python3 scripts/pins.py all closed proof    # some sites
+   piabrota pins all                 # every site
+   piabrota pins all closed proof    # some sites
    ```
 
    It builds each site that moved, with this flake's nixpkgs. A site that fails is put back as
    it was, and the others go on: the line says `FAILED <step>` and the exit status is 1.
    Hermes on kvm4: run `kvm4-health` first. `closed` (XeLaTeX) and `marola-site` (GHC) are the
-   heavy builds; if memory is short, run `PIN_BUILD=0 python3 scripts/pins.py all` and say in the PR
+   heavy builds; if memory is short, run `PIN_BUILD=0 piabrota pins all` and say in the PR
    that the sites were not built here and that CI's flake check builds them.
 5. Read `git diff`. Only the pinned files above may change. Delete the `result-*` links; do not
    commit them.
