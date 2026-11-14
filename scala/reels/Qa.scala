@@ -64,22 +64,23 @@ object Qa:
     walk(0L, -1L, -1L)
 
   /** The loudnorm measurement of the audio as JSON, or null when the file has no audio stream. */
-  private def loudness(tk: Toolkit, mp4: os.Path): String =
+  private def loudness(tk: Toolkit, mp4: os.Path): Jv =
     val audio = os.proc(Tool.Timeout.bin, "-k", "5", "60", Tool.Ffprobe.bin, "-v", "error", "-select_streams", "a",
       "-show_entries", "stream=index", "-of", "csv=p=0", mp4).call(stderr = os.Inherit, check = false).out.text()
-    if audio.strip().isEmpty then "null"
+    if audio.strip().isEmpty then Jv.Null
     else
       val log = tk.ffl("-i", mp4.toString, "-vn", "-af",
         s"loudnorm=I=${tk.p("audio", "target_lufs")}:TP=${tk.p("audio", "true_peak")}:LRA=11:print_format=json", "-f", "null", "-")
         .getOrElse(fail("loudness measurement failed"))
-      Audio.loudnormBlock(log).map(Json.compact).getOrElse(fail("cannot read the loudness measurement"))
+      Audio.loudnormBlock(log).flatMap(m => Json.read(Json.plain(m))).getOrElse(fail("cannot read the loudness measurement"))
 
-  /** Where QA looks (qaplan.jq): id, probe second, start second, "1" when the beat has text. */
-  private def plan(tk: Toolkit, p: Project): Seq[Array[String]] =
-    val tl = Json.compact(ujson.Arr.from(p.timeline.map(c => ujson.Obj("id" -> c.id, "tr" -> c.tr, "S" -> c.s, "E" -> c.e,
-      "hin" -> c.hin, "hout" -> c.hout, "frames" -> c.frames, "dq" -> c.dq))))
-    tk.jq(Seq("-r", "--argjson", "profile", tk.profileText, "--argjson", "sp", p.spText, "-f", tk.rule(Rule.QaPlan)),
-      "cannot plan the QA", stdin = tl).linesIterator.filter(_.nonEmpty).map(_.split('\t')).toSeq
+  /** Where QA looks at each beat. */
+  private def plan(tk: Toolkit, p: Project): Seq[Probe] =
+    try Frames.probes(p.timeline, p.spJson, tk.profile.json)
+    catch
+      case JqError(msg) =>
+        System.err.println(s"jq: error (at <stdin>:1): $msg")
+        fail("cannot plan the QA")
 
   /** A frame at the probe and at the start of every beat, as bNN.png and bNN-start.png; the frame
     * at qa.hook_probe_s is hook.png.
@@ -87,9 +88,9 @@ object Qa:
   private def extract(tk: Toolkit, p: Project, mp4: os.Path, rd: OutDir): Unit =
     os.makeDir.all(rd.qa)
     frameAt(tk, mp4, tk.p("qa", "hook_probe_s"), rd.hook)
-    for Array(id, probe, start, _) <- plan(tk, p) do
-      if !frameAt(tk, mp4, probe, rd.frame(id)) then note(s"no frame at $probe s: the file is shorter than the screenplay")
-      frameAt(tk, mp4, start, rd.startFrame(id))
+    for b <- plan(tk, p) do
+      if !frameAt(tk, mp4, b.at, rd.frame(b.id)) then note(s"no frame at ${b.at} s: the file is shorter than the screenplay")
+      frameAt(tk, mp4, b.start, rd.startFrame(b.id))
 
   /** The problems of one beat's frame: missing, empty, out of the safe area, low contrast. */
   def beatProblems(probe: String, box: String, range: Int, text: Boolean, safe: Seq[Long], slack: Long, minRange: Int): Seq[String] =
@@ -122,14 +123,14 @@ object Qa:
     val safe = Scene.safeRect(tk)
     val slack = tk.pInt("qa", "safe_slack_px")
     val minRange = tk.pInt("qa", "min_text_range")
-    val beats = for Array(id, at, _, txt) <- plan(tk, p) yield
-      val (box, range) = if os.isFile(rd.frame(id)) then measureFrame(tk, rd.frame(id)) else (Box.Missing, 0)
-      val problems = beatProblems(at, box, range, txt == "1", safe, slack, minRange)
-      // The probe second is written as qaplan.jq printed it.
-      s"""{"id":${Json.compact(id)},"probe_s":$at,"frame":${Json.compact(s"qa/$id.png")},"has_text":${txt == "1"},""" +
-        s""""drawn":${Json.compact(box)},"luminance_range":$range,"problems":${Json.compact(ujson.Arr.from(problems.map(ujson.Str(_))))},""" +
-        s""""pass":${problems.isEmpty}}"""
-    os.write.over(tk.tmp / "qa-beats.jsonl", beats.map(_ + "\n").mkString)
+    val beats = plan(tk, p).toVector.map { b =>
+      val (box, range) = if os.isFile(rd.frame(b.id)) then measureFrame(tk, rd.frame(b.id)) else (Box.Missing, 0)
+      val problems = beatProblems(b.at, box, range, b.hasText, safe, slack, minRange)
+      // The probe second is written as the plan wrote it.
+      Jv.obj("id" -> Jv.Str(b.id), "probe_s" -> Json.literal(b.at).getOrElse(Jv.Str(b.at)), "frame" -> Jv.Str(s"qa/${b.id}.png"),
+        "has_text" -> Jv.Bool(b.hasText), "drawn" -> Jv.Str(box), "luminance_range" -> Jv.num(range.toDouble),
+        "problems" -> Jv.Arr(problems.toVector.map(Jv.Str(_))), "pass" -> Jv.Bool(problems.isEmpty))
+    }
     val hook = if os.isFile(rd.hook) then measureFrame(tk, rd.hook)._1 else Box.Empty
     val (moov, mdat) = mp4Boxes(mp4)
     val loud = loudness(tk, mp4)
@@ -138,20 +139,21 @@ object Qa:
     // render wrote" fail when render.json is missing or does not match.
     val claim = RenderClaim.from(if plainFile(rd.renderReport) then Json.readFile(rd.renderReport) else None)
 
-    val report = tk.jqCall(Seq("--argjson", "profile", tk.profileText, "--arg", "slug", slug,
-      "--argjson", "fmt", p.screenplay.format, "--argjson", "loud", loud,
-      "--argjson", "moov", moov.toString, "--argjson", "mdat", mdat.toString,
-      "--slurpfile", "beats", (tk.tmp / "qa-beats.jsonl").toString, "--arg", "hook", hook,
-      "--arg", "reel_sha", tk.sha(mp4), "--arg", "sp_sha", p.hash, "--arg", "render_sha", claim.screenplaySha,
-      "--arg", "render_reel", claim.reelSha, "-f", tk.rule(Rule.QaReport)), stdin = probe.out.bytes)
-      .getOrElse(fail("cannot write the QA report"))
-    os.write.over(Name.part(rd.qaReport), report)
+    val facts = QaFacts(slug, Json.read(p.screenplay.format).getOrElse(Jv.Null), loud, moov, mdat, beats, hook,
+      tk.sha(mp4), p.hash, claim.screenplaySha, claim.reelSha)
+    val probed = Json.parse(probe.out.bytes).filter(_.length == 1).map(_.head).getOrElse(fail("cannot write the QA report"))
+    val report =
+      try QaReport.report(probed.value, tk.profile.json, facts)
+      catch
+        case JqError(msg) =>
+          System.err.println(s"jq: error (at <stdin>:${probed.line}): $msg")
+          fail("cannot write the QA report")
+    os.write.over(Name.part(rd.qaReport), Json.pretty(report) + "\n")
     os.move(Name.part(rd.qaReport), rd.qaReport, replaceExisting = true)
-    // jq prints the report's lines, so its numbers read as they are written in qa.json.
-    print(tk.jq(Seq("-r", """.checks[] | "\(if .pass then "pass" else "FAIL" end)  \(.name): \(.got)"""", rd.qaReport.toString), "cannot read the QA report"))
-    print(tk.jq(Seq("-r", """.beats[] | "\(if .pass then "pass" else "FAIL" end)  beat \(.id) at \(.probe_s) s: drawn \(.drawn), luminance range \(.luminance_range)"""", rd.qaReport.toString), "cannot read the QA report"))
-    print(tk.jq(Seq("-r", """.failures[] | "  -> \(.)"""", rd.qaReport.toString), "cannot read the QA report"))
-    if Json.readFile(rd.qaReport).exists(_.at("pass").truthy) then
+    // The lines are read back from qa.json, so its numbers read as they are written there.
+    val written = Json.readFile(rd.qaReport).getOrElse(fail("cannot read the QA report"))
+    QaReport.lines(written).foreach(say)
+    if written.at("pass").truthy then
       say(s"qa: PASS (${rd.qaReport}, frames in $qd)")
       0
     else
@@ -208,7 +210,7 @@ object Qa:
     val a = Gate.requireApproved(tk, slug)
     val rd = requireFreshReel(tk, slug, a.hash)
     if !plainFile(rd.qaReport) then fail(s"no QA report: run reel qa $slug first")
-    val report = QaVerdict.from(Json.readFile(rd.qaReport).getOrElse(ujson.Null))
+    val report = QaVerdict.from(Json.readFile(rd.qaReport).getOrElse(Jv.Null))
     if !report.passed then fail(s"the QA of $slug did not pass: fix it, render and run reel qa again")
     if report.reelSha != tk.sha(rd.reel) then fail(s"reel.mp4 changed after its QA: run reel qa $slug again")
     if report.screenplaySha != a.hash then fail("the QA is of another screenplay: render and run reel qa again")

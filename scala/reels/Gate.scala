@@ -27,28 +27,31 @@ object Gate:
       p
 
   def validJson(file: os.Path, shown: String = ""): Unit =
-    if !jqValid(file) then fail(s"${if shown.isEmpty then file.toString else shown} is not valid JSON")
-
-  def jqValid(file: os.Path): Boolean =
-    os.proc(Tool.Jq.bin, "-e", ".", file).call(stdout = os.Pipe, stderr = os.Pipe, check = false).exitCode == 0
+    if !Json.valid(file) then fail(s"${if shown.isEmpty then file.toString else shown} is not valid JSON")
 
   /** The findings of the screenplay lint. It fails closed: a file that the rules cannot read is an
     * error, never a pass.
     */
   def lint(tk: Toolkit, sp: os.Path): Seq[Finding] =
-    rules(tk, Seq("--argjson", "profile", tk.profileText, "--argjson", "styles", Json.compact(ujson.Arr.from(tk.styles.map(ujson.Str(_)))),
-      "-f", tk.rule(Rule.Lint), sp.toString), "lint", "the rules cannot read this file")
+    rules(sp, "lint", "the rules cannot read this file")(Lint.screenplay(_, tk.profile.json, tk.styles))
 
   /** The findings of the shotlist. The screenplay must be sound (its lint passes). */
   def shotlistLint(tk: Toolkit, sp: os.Path, shot: os.Path): Seq[Finding] =
-    rules(tk, Seq("--argjson", "sp", os.read(sp), "--argjson", "style", style(tk, sp),
-      "--argjson", "profile", tk.profileText, "--arg", "hash", tk.sha(sp),
-      "-f", tk.rule(Rule.ShotLint), shot.toString), "shotlist", "the rules cannot read the shotlist")
+    val spJson = Json.readFile(sp).getOrElse(fail(s"cannot read $sp"))
+    val st = style(tk, sp)
+    val hash = tk.sha(sp)
+    rules(shot, "shotlist", "the rules cannot read the shotlist")(Lint.shotlist(_, spJson, st, tk.profile.json, hash))
 
-  private def rules(tk: Toolkit, args: Seq[String], rule: String, why: String): Seq[Finding] =
-    val r = os.proc(Tool.Jq.bin, "-c", "-L", tk.lib.toString, args).call(stdout = os.Pipe, stderr = os.Pipe, check = false)
-    lazy val failed = Finding.unreadable(rule, s"$why: ${r.err.text().stripSuffix("\n")}")
-    if r.exitCode != 0 then failed else Json.read(r.out.text()).map(Finding.all).getOrElse(failed)
+  /** The rules on each value of the file. More than one value, or a value they cannot read, is the
+    * one finding that the file is unreadable, with the error of each value they could not read.
+    */
+  private def rules(file: os.Path, rule: String, why: String)(check: Jv => Seq[Finding]): Seq[Finding] =
+    val docs = Json.readDocs(file).getOrElse(Vector.empty)
+    val results = docs.map(d => try Right(check(d.value)) catch case JqError(msg) => Left(s"jq: error (at $file:${d.line}): $msg"))
+    val errors = results.collect { case Left(e) => e }
+    results match
+      case Vector(Right(fs)) => fs
+      case _                 => Finding.unreadable(rule, s"$why: ${errors.mkString("\n")}")
 
   /** One line a finding, then the count; the second value is false when there is an error. */
   def findings(fs: Seq[Finding]): (String, Boolean) =
@@ -87,7 +90,7 @@ object Gate:
     val hash = tk.sha(sp)
     if firstLine(dir.approval) != approvalLine(hash) then
       fail(s"screenplay.json of $slug changed after its approval, or the approval is not in the form of reel approve (now ${hash.take(8)}): the creative director fixes it, then lint and approve again")
-    if !jqValid(sp) then fail(s"screenplay.json of $slug is not valid JSON")
+    if !Json.valid(sp) then fail(s"screenplay.json of $slug is not valid JSON")
     val (out, ok) = findings(lint(tk, sp))
     if !ok then
       System.err.println(out)
@@ -99,22 +102,29 @@ object Gate:
   private def firstLine(file: os.Path): String =
     new String(os.read.bytes(file).takeWhile(_ != '\n'), "UTF-8")
 
-  /** The style of the screenplay, with its palette overrides, as JSON for the jq programs. */
-  def style(tk: Toolkit, sp: os.Path): String =
+  /** The style of the screenplay, with its palette overrides (`look.palette`) merged into its colours. */
+  def style(tk: Toolkit, sp: os.Path): Jv =
     val name = Json.readFile(sp).map(Screenplay.from(_).style).getOrElse("null")
     if name.isEmpty || name == "null" || !name.matches("[a-z0-9-]+") then fail(s"no style: $name")
     val file = tk.styleFile(name)
     if !os.isFile(file) then fail(s"no style $name")
-    tk.jq(Seq("-c", "--slurpfile", "sp", sp.toString, ". * {colors: (($sp[0].look.palette) // {})}", file.toString),
-      s"no style $name").stripSuffix("\n")
+    val first = Json.readDocs(sp).flatMap(_.headOption).fold(Jv.Null)(_.value)
+    Json.readFile(file).flatMap { s =>
+      try Some(s * Jv.obj("colors" -> alt(first("look")("palette"), Jv.EmptyObj)))
+      catch case _: JqError => None
+    }.getOrElse(fail(s"no style $name"))
 
   /** The gate, then the screenplay, its style, its frame plan and its shotlist. */
   def load(tk: Toolkit, slug: String): Project =
     val a = requireApproved(tk, slug)
-    val spText = os.read(a.sp)
-    val styleText = style(tk, a.sp)
-    val plan = tk.jqCall(Seq("-c", "--argjson", "profile", tk.profileText, "-f", tk.rule(Rule.Timeline), a.sp.toString))
-      .flatMap(Json.read).getOrElse(fail(s"cannot plan the frames of $slug"))
+    val spJson = Json.readFile(a.sp).getOrElse(fail(s"screenplay.json of $slug is not valid JSON"))
+    val st = style(tk, a.sp)
+    val plan =
+      try Frames.timeline(spJson, tk.profile.json)
+      catch
+        case JqError(msg) =>
+          System.err.println(s"jq: error (at ${a.sp}:1): $msg")
+          fail(s"cannot plan the frames of $slug")
     val shots = tk.tmp / Name.Shotlist
     val sf = a.dir.shotlist
     val shotsSha =
@@ -128,8 +138,8 @@ object Gate:
         Project.NoShotlist
     a.dir.workDirs.foreach(os.makeDir.all(_))
     tk.setupFonts()
-    val screenplay = Screenplay.from(Json.read(spText).getOrElse(ujson.Null))
-    Project(a, spText, screenplay, styleText, plan.items.map(Cut.from).toVector, shots, shotsSha)
+    val shotsJson = if os.isFile(shots) then Json.readFile(shots).getOrElse(Jv.Null) else Jv.Null
+    Project(a, spJson, Screenplay.from(spJson), st, plan, shots, shotsJson, shotsSha)
 
   /** The creative director's shotlist must exist, be valid and be made for this screenplay. */
   def requireShotlist(tk: Toolkit, p: Project): Unit =
@@ -142,8 +152,6 @@ object Gate:
       fail(s"the shotlist fails its lint (reel lint ${p.slug})")
 
   /** The shot of a beat in the shotlist, or the empty one. */
-  def shotOf(tk: Toolkit, p: Project, id: String): Shot =
-    Shot.from(
-      if !p.hasShots then Shot.Empty
-      else tk.jq(Seq("-c", "--arg", "id", id, "(.shots[]? | select(.beat == $id)) // {}", p.shots.toString),
-        s"cannot read the shotlist").stripSuffix("\n"))
+  def shotOf(p: Project, id: String): Shot =
+    if !p.hasShots then Shot.Empty
+    else p.shotsJson.at("shots").iterOpt.find(_.at("beat") === Jv.Str(id)).fold(Shot.Empty)(Shot.from)

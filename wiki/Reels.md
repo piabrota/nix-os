@@ -11,7 +11,7 @@ código, e nenhuma execução real da rig aconteceu ainda.
 ## Em resumo
 
 - **Só Claude.** Nenhuma API de imagem, vídeo, voz ou música. Cada pixel e cada som vêm de código
-  que um seat roda na máquina (`ffmpeg`, `resvg`, `jq`, Scala).
+  que um seat roda na máquina (`ffmpeg`, `resvg`, Scala).
 - **O roteiro vem primeiro.** Um arquivo, `screenplay.json`, é a fonte. O `reel lint` confere as
   regras e o `reel approve` grava o SHA-256 dele. Sem aprovação válida, nada depois do roteiro roda.
 - **Uma equipe de cinema, cinco seats.** O pod `crew`: o diretor criativo (`creative-director`)

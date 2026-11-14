@@ -7,7 +7,7 @@ object Scene:
   /** The safe area, in whole pixels: x0 y0 x1 y1. */
   def safeRect(tk: Toolkit): Seq[Long] =
     val safe = tk.profile.json.at("safe")
-    def f(k: String) = safe.at(k).num
+    def f(k: String) = safe.at(k).number
     Seq(tk.W * f("side"), tk.H * f("top"), tk.W * (1 - f("side")), tk.H * (1 - f("bottom"))).map(jqRound)
 
   /** True when the box "x1 y1 x2 y2" is in the safe area (2 px of slack for the edges). */
@@ -29,24 +29,20 @@ object Scene:
         "-frames:v", "1", "-f", "null", "-") then fail("cannot measure the captions")
     bboxOf(bb)
 
-  /** What scene.jq needs to draw one beat. */
-  final case class Context(p: Project, beat: String, shot: Shot, hin: String, total: String,
-      dur: String, last: Boolean)
-
-  /** One beat as an ASS script (mode "ass") or as a plan for the other layers (mode "plan"). */
-  private def sceneJq(tk: Toolkit, c: Context, mode: SceneMode, mask: Boolean): Option[String] =
-    tk.jqCall(Seq("-n", "-r", "--argjson", "sp", c.p.spText, "--argjson", "beat", c.beat, "--argjson", "shot", c.shot.text,
-      "--argjson", "style", c.p.style, "--argjson", "profile", tk.profileText, "--argjson", "hin", c.hin,
-      "--argjson", "total", c.total, "--argjson", "dur", c.dur, "--argjson", "last", c.last.toString,
-      "--argjson", "mask", mask.toString, "--arg", "mode", mode.key, "-f", tk.rule(Rule.Scene)))
+  /** A step of the captions, or None when it failed; its error goes to stderr, in jq's words. */
+  private def drawn[A](f: => A): Option[A] =
+    try Some(f)
+    catch
+      case JqError(msg) =>
+        System.err.println(s"jq: error (at <unknown>): $msg")
+        None
 
   /** The background PNG of the style, cached by its content. */
   private def ensureBg(tk: Toolkit, p: Project): os.Path =
-    val key = tk.jq(Seq("-c", "{colors: .colors, background: .background}"), "cannot draw the background", stdin = p.style)
+    val key = drawn(Captions.backgroundKey(p.style)).getOrElse(fail("cannot draw the background"))
     val bg = p.dir.cache / s"bg-${shaOf(Nil, prefix = key).take(12)}.png"
     if !os.isFile(bg) then
-      val svg = tk.jq(Seq("-r", "--argjson", "profile", tk.profileText, "-f", tk.rule(Rule.Background)),
-        "cannot draw the background", stdin = p.style)
+      val svg = drawn(Captions.background(p.style, tk.profile.json)).getOrElse(fail("cannot draw the background"))
       os.write.over(tk.tmp / "bg.svg", svg)
       val part = Name.partPng(bg)
       if !tk.svgToPng("-w", tk.W.toString, "-h", tk.H.toString, (tk.tmp / "bg.svg").toString, part.toString) then
@@ -54,11 +50,10 @@ object Scene:
       os.move(part, bg, replaceExisting = true)
     bg
 
-  private def context(tk: Toolkit, p: Project, id: String, hin: Double, total: Double, dur: Double, last: Boolean): Context =
-    val beat = tk.jq(Seq("-c", "--arg", "id", id, ".beats[] | select(.id == $id)"), s"no beat $id in the screenplay", stdin = p.spText)
-      .stripSuffix("\n")
-    if beat.isEmpty then fail(s"no beat $id in the screenplay")
-    Context(p, beat, Gate.shotOf(tk, p, id), Json.num(hin), Json.num(total), Json.num(dur), last)
+  private def input(tk: Toolkit, p: Project, id: String, hin: Double, total: Double, dur: Double, last: Boolean): (SceneInput, Shot) =
+    val beat = p.spJson.at("beats").items.find(_.at("id") === Jv.Str(id)).getOrElse(fail(s"no beat $id in the screenplay"))
+    val shot = Gate.shotOf(p, id)
+    (SceneInput(p.spJson, beat, shot.json, p.style, tk.profile.json, hin, total, dur, last), shot)
 
   /** Renders one beat to `out`. A .png makes a still `at` seconds into the clip; anything else a
     * clip of `total` seconds.
@@ -66,18 +61,19 @@ object Scene:
   def render(tk: Toolkit, p: Project, id: String, out: os.Path, hin: Double, total: Double, dur: Double,
       last: Boolean, at: String = ""): Unit =
     val still = out.last.endsWith(".png")
-    val c = context(tk, p, id, hin, total, dur, last)
+    val (in, shot) = input(tk, p, id, hin, total, dur, last)
     val ass = p.dir.ass(id)
-    val assText = sceneJq(tk, c, SceneMode.Ass, mask = false).getOrElse(fail(s"beat $id: the scene script failed"))
+    val assText = drawn(Captions.ass(in, mask = false)).getOrElse(fail(s"beat $id: the scene script failed"))
     os.write.over(Name.part(ass), assText)
     os.move(Name.part(ass), ass, replaceExisting = true)
-    val planText = sceneJq(tk, c, SceneMode.Plan, mask = false).getOrElse(fail(s"beat $id: the scene plan failed")).stripSuffix("\n")
-    val plan = Json.read(planText).map(ScenePlan.from).getOrElse(fail(s"beat $id: the scene plan failed"))
+    val planJson = drawn(Captions.plan(in)).getOrElse(fail(s"beat $id: the scene plan failed"))
+    val planText = Json.compact(planJson)
+    val plan = ScenePlan.from(planJson)
 
     // The captions must stay in the safe area: one frame of the mask, when the animations are done
     // (75 % of the beat).
     val mask = tk.tmp / s"$id.mask.ass"
-    os.write.over(mask, sceneJq(tk, c, SceneMode.Ass, mask = true).getOrElse(fail(s"beat $id: the mask script failed")))
+    os.write.over(mask, drawn(Captions.ass(in, mask = true)).getOrElse(fail(s"beat $id: the mask script failed")))
     val box = textbox(tk, mask, Json.num(hin + dur * 0.75))
     if box == Box.Empty then note(s"beat $id: warning: no caption or drawing in the picture")
     else if !insideSafe(tk, box) then
@@ -87,7 +83,7 @@ object Scene:
     // of the background and its slow zoom. The captions and the SVG layers go over it as on any
     // beat. A still of a 3d beat before its frames exist falls back to the flat background.
     val fdir = p.dir.frames(id)
-    val threeD = c.shot.kind == ShotKind.ThreeD
+    val threeD = shot.kind == ShotKind.ThreeD
     val frames = if threeD then glob(fdir, "", ".png").filter(plainFile) else Nil
     if threeD && frames.isEmpty then
       if still then note(s"beat $id: warning: a 3d shot with no frames yet: the picture shows the flat background")
