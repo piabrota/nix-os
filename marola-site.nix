@@ -74,10 +74,12 @@ let
       install -d "$work/site"
       install -m 0644 ${cfg.package.basemapVersion} "$work/site/basemap.version"
       install -m 0644 ${cfg.package.areas} "$work/site/areas.json"
-      # Write beside the live file, then rename: a reader never sees half a file.
-      BASEMAP_ROOT="$work" bash ${cfg.package.basemapExtract} ${tiles}/marola.pmtiles.new
-      chmod 0644 ${tiles}/marola.pmtiles.new
-      mv ${tiles}/marola.pmtiles.new ${tiles}/marola.pmtiles
+      # Write beside the live file, then rename: a reader never sees half a file. The name must end in
+      # .pmtiles: tile-join picks its output format from the suffix and writes MBTiles (SQLite) otherwise.
+      BASEMAP_ROOT="$work" bash ${cfg.package.basemapExtract} ${tiles}/marola.new.pmtiles
+      chmod 0644 ${tiles}/marola.new.pmtiles
+      rm -f ${tiles}/marola.pmtiles.new
+      mv ${tiles}/marola.new.pmtiles ${tiles}/marola.pmtiles
       echo ${tilesStamp} > ${tiles}/.stamp
       rm -rf "$work/.tmp"
     '';
@@ -365,10 +367,11 @@ in
     };
     # Every deploy that moves the pin or the areas starts it, without holding the switch.
     systemd.services.marola-tiles-kick = {
-      description = "Start marola-tiles when the base map pin or the areas change";
+      description = "Start marola-tiles when the base map pin, the areas or the builder change";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
-      restartTriggers = [ tilesStamp ];
+      # The builder too: a fix to it reruns the cut even when the pin and the areas stay.
+      restartTriggers = [ tilesStamp tilesBuilder ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
