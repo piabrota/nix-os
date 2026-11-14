@@ -13,13 +13,13 @@
 let
   certs = builtins.attrNames config.security.acme.certs;
   systemd = config.systemd.package;
-  retry = pkgs.writeShellScript "acme-retry" ''
-    unit="acme-order-renew-$1.service"
-    # Past StartLimitBurst the start is refused: leave the name to its daily timer.
-    [ "$(${systemd}/bin/systemctl show -P Result "$unit")" = start-limit-hit ] && exit 0
-    exec ${systemd}/bin/systemd-run --collect --on-active=20min --unit="acme-retry-later-$1" \
-      ${systemd}/bin/systemctl start --no-block "$unit"
-  '';
+  # `piabrota acme-retry NAME` (scala/scripts/Maintenance.scala): past StartLimitBurst the start is
+  # refused, so it leaves the name to its daily timer.
+  retry = lib.getExe ((pkgs.callPackage ./scala { }).command {
+    name = "acme-retry";
+    runtimeInputs = [ systemd ];
+    exclusivePath = true;
+  });
 in
 {
   systemd.services = lib.mkMerge [

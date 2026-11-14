@@ -159,39 +159,55 @@ let
   manim = pkgs.manim.overridePythonAttrs (old: {
     disabledTests = (old.disabledTests or [ ]) ++ [ "test_ImageMobject" "test_ImageInterpolation" ];
   });
-  # The kvm4-health skill's script as a command (hermes/skills/kvm4-health), with the tools it
-  # reads with on its PATH, for chat and for the watchdog cron job below.
-  kvm4Health = pkgs.writeShellApplication {
+  # The Scala commands of this repository (scala/README.md); each one below is a program of its own.
+  scripts = pkgs.callPackage ./scala { };
+  # The kvm4-health skill's command (hermes/skills/kvm4-health, scala/hermes/Kvm4Health.scala), with
+  # the tools it reads with on its PATH, for chat and for the watchdog cron job below.
+  kvm4Health = scripts.command {
     name = "kvm4-health";
-    runtimeInputs = with pkgs; [ coreutils gawk gnugrep gnused config.systemd.package ];
-    text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/kvm4-health/scripts/kvm4-health.sh} "$@"'';
+    runtimeInputs = [ pkgs.coreutils config.systemd.package ];
   };
-  # The hermes-omp skill's stream filter as a command (hermes/skills/hermes-omp/scripts): it turns
-  # the JSON lines of `omp -p --mode json` into plain lines, for the heartbeat of a background run.
-  ompStream = pkgs.writeShellApplication {
-    name = "omp-stream";
-    runtimeInputs = [ pkgs.jq ];
-    text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/hermes-omp/scripts/omp-stream.sh} "$@"'';
-  };
-  # The hermes-omp skill's runner (hermes/skills/hermes-omp/scripts/omp-run.sh): one background omp
-  # run through omp-stream, and `omp-run --stop <name>`. It ends with a code, never by a signal, so
-  # the `bash -lic` of a background task prints no tcsetattr error and a stop is not a failure.
-  ompRun = pkgs.writeShellApplication {
+  # The hermes-omp skill's stream filter (scala/hermes/OmpStream.scala): it turns the JSON lines of
+  # `omp -p --mode json` into plain lines, for the heartbeat of a background run.
+  ompStream = scripts.command { name = "omp-stream"; };
+  # The hermes-omp skill's runner (scala/hermes/OmpRun.scala): one background omp run through
+  # omp-stream, and `omp-run --stop <name>`. It ends with a code, never by a signal, so the
+  # `bash -lic` of a background task prints no tcsetattr error and a stop is not a failure.
+  ompRun = scripts.command {
     name = "omp-run";
-    runtimeInputs = [ pkgs.coreutils ompWrapped ompStream ];
-    text = ''exec ${pkgs.runtimeShell} ${./hermes/skills/hermes-omp/scripts/omp-run.sh} "$@"'';
+    runtimeInputs = [ ompWrapped ompStream ];
   };
+  # The hermes-manim skill's smoke render (scala/hermes/ManimSmoke.scala). The scene stays a file of
+  # the skill: it is written in manim's Python API, which only Python reads.
+  manimSmoke = scripts.command {
+    name = "manim-smoke";
+    runtimeInputs = [ manim ];
+    env.MANIM_SMOKE_SCENE = "${./hermes/skills/hermes-manim/scripts/smoke.py}";
+  };
+  # The two cron jobs that open pull requests (scala/hermes/ExportSkills.scala, RefreshGrid.scala).
+  # Cron gives them the unit's PATH; they add the system profile, for nix and hermes.
+  exportSkills = scripts.command {
+    name = "export-skills";
+    runtimeInputs = with pkgs; [ git gh coreutils ];
+  };
+  refreshGrid = scripts.command {
+    name = "refresh-grid";
+    runtimeInputs = with pkgs; [ git gh coreutils bash ];
+  };
+  # A cron script must be a file in HERMES_HOME/scripts: this one runs the command.
+  cronScript = command: ''
+    #!/bin/sh
+    exec ${command}/bin/${command.meta.mainProgram} "$@"
+  '';
   # The module wants a plugin's plugin.yaml at the package's root; these keep it in a subdirectory.
   subPlugin = name: src: pkgs.runCommand name { } "cp -r ${src}/${name} $out";
-  # The owner's own plugins, in this repository (hermes/plugins/, docs/HERMES-PLUGINS.md): smart
-  # notes and video readings, sent to piabrota/pirsig as pull requests on hermes/* branches. Each
-  # is its directory plus the shared common/brain.py, so each stays one self-contained plugin.
-  ownPlugins = [ "pirsig-notes" "pirsig-videos" ];
-  ownPlugin = name: pkgs.runCommand name { } ''
-    cp -r ${./hermes/plugins + "/${name}"} $out
-    chmod u+w $out
-    cp ${./hermes/plugins/common/brain.py} $out/brain.py
-  '';
+  # The owner's pirsig tools (docs/HERMES-PLUGINS.md): smart notes and video readings, sent to
+  # piabrota/pirsig as pull requests on hermes/* branches. One MCP server on stdio,
+  # `piabrota pirsig-mcp` (scala/pirsig/), in mcpServers below, with the programs it runs.
+  pirsigMcp = scripts.command {
+    name = "pirsig-mcp";
+    runtimeInputs = [ pkgs.git pkgs.gh pkgs.yt-dlp-light ];
+  };
   # hermes-cron: a skill (markdown, no code in the agent) on cheap cron jobs: no_agent, the
   # wakeAgent pre-check and [SILENT], so a quiet tick makes no model call. Its read-only doctor
   # script needs python3, which is not on Hermes's PATH here; the rules work without it.
@@ -368,7 +384,7 @@ in
       hermesGuide
       pluginGuard
       superpowers
-    ] ++ lib.mapAttrsToList subPlugin (labs // more) ++ map ownPlugin ownPlugins;
+    ] ++ lib.mapAttrsToList subPlugin (labs // more);
     settings.plugins.enabled = [
       "custom-dangerous-patterns"
       "tripwire"
@@ -377,7 +393,7 @@ in
       "hermes-guide"
       "hermes-plugin-guard"
       "superpowers"
-    ] ++ builtins.attrNames (labs // more) ++ ownPlugins;
+    ] ++ builtins.attrNames (labs // more);
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for a subscription's quota (the fan-out limits
     # are in settings.delegation above): fewer turns per run, a hard stop on tool loops, and no
@@ -418,17 +434,24 @@ in
     mcpServers = {
       deepwiki.url = "https://mcp.deepwiki.com/mcp";
       context7.url = "https://mcp.context7.com/mcp";
+      # The pirsig tools, which the model sees as mcp__pirsig__<tool>. A video fetch runs git and
+      # then yt-dlp twice, 300 s each at most: more than Hermes's default of 300 s for one call.
+      pirsig = {
+        command = "${pirsigMcp}/bin/pirsig-mcp";
+        timeout = 900;
+      };
     };
     # gh for the bundled github skill (a read-only token as GITHUB_TOKEN in the env file),
     # ast-grep for the skill of that name, yt-dlp for pirsig-videos (captions only: the light
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
     # omp is the wrapper above, for the hermes-omp skill.
     # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
-    # omp-stream filters omp's JSON output for the hermes-omp skill (hermes/skills/hermes-omp/scripts),
+    # omp-stream filters omp's JSON output for the hermes-omp skill (scala/hermes/OmpStream.scala),
     # and omp-run runs and stops a background omp through it.
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix.
-    # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim).
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun ];
+    # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim), and
+    # manim-smoke renders its smoke scene.
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun manimSmoke ];
     # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
     # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
     # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
@@ -453,14 +476,18 @@ in
     # The personal feed (docs/FEEDS.md): the script of a no_agent cron job and its sources. The
     # outputs go to HERMES_HOME/feeds/out/ and the state to HERMES_HOME/feeds/state.json; the
     # tmpfiles rule below gives feeds/ to hermes.
-    hermesHomeFiles."scripts/feed-build.py" = ./hermes/feeds/build_feed.py;
+    # Hermes runs a cron script by its suffix: python for .py, bash for .sh.
+    hermesHomeFiles."scripts/feed-build.sh" = ''
+      #!/bin/sh
+      exec ${scripts.command { name = "feed-build"; runtimeInputs = [ pkgs.curl ]; }}/bin/feed-build "$@"
+    '';
     hermesHomeFiles."feeds/feeds.toml" = ./hermes/feeds/feeds.toml;
     # The skills-export no_agent cron job (daily 01:45) runs this: it copies Hermes's skills into a
-    # pull request on piabrota/skills. Cron gives it the unit's PATH, so the script adds the system profile.
-    hermesHomeFiles."scripts/export-skills.sh" = ./hermes/scripts/export-skills.sh;
+    # pull request on piabrota/skills.
+    hermesHomeFiles."scripts/export-skills.sh" = cronScript exportSkills;
     # The grid-refresh no_agent cron job (daily 02:30) runs this: it refreshes the data of the ▲ grid
-    # in a pull request on piabrota/room. It runs the room's dev shell with nix develop; the script adds the system profile to the PATH.
-    hermesHomeFiles."scripts/refresh-grid.sh" = ./hermes/scripts/refresh-grid.sh;
+    # in a pull request on piabrota/room. It runs the room's dev shell with nix develop.
+    hermesHomeFiles."scripts/refresh-grid.sh" = cronScript refreshGrid;
     documents."AGENTS.md" = ./hermes/AGENTS.md;
     # Where AGENTS.md goes and where the gateway runs; the module's default, stated as it asks.
     workingDirectory = "/var/lib/hermes/workspace";
@@ -510,14 +537,14 @@ in
   # The gateway's exit 75 after a reload failed the first deploy that reloaded it (#76,
   # 2026-11-03): switch-to-configuration counts a service in auto-restart whose ExecMainStatus is
   # not 0 as failed, so deploy-rs rolled the box back. SuccessExitStatus does not change
-  # ExecMainStatus. hermes/scripts/gateway-wrapper.sh is the main process instead: it passes
-  # SIGUSR1 and SIGTERM on to the gateway, and on a 75 it starts the gateway again itself, with no
-  # pause, so a reload never leaves "active" and never fails the unit. The package is the module's
-  # own (moduleCommon.nix, effectivePackage).
+  # ExecMainStatus. `piabrota gateway-wrapper` (scala/hermes/GatewayWrapper.scala) is the main
+  # process instead: it passes SIGUSR1 and SIGTERM on to the gateway, and on a 75 it starts the
+  # gateway again itself, with no pause, so a reload never leaves "active" and never fails the
+  # unit. The package is the module's own (moduleCommon.nix, effectivePackage).
   # The gap of Restart=always (RestartSec 5 s) let the dashboard's Chat tab start a second,
   # unmanaged gateway, and the unit then looped on "already serves" (2026-11-05). The wrapper
   # also waits for such a gateway to exit and does not loop. See docs/HERMES.md.
-  # The wrapper also hides systemd from the gateway: the gateway is a child of a shell, not of
+  # The wrapper also hides systemd from the gateway: the gateway is a child of the wrapper, not of
   # systemd. Without --external-supervisor, Hermes v0.22.7 treated a reload as a graceful restart
   # and started a detached gateway, and the unit then looped (2026-11-04). The flag makes the
   # gateway exit back to this wrapper instead. v0.23.1 still reads it (gateway/restart.py) and
@@ -534,10 +561,10 @@ in
               extraPythonPackages = (prev.extraPythonPackages or [ ]) ++ cfg.extraPythonPackages;
               extraDependencyGroups = (prev.extraDependencyGroups or [ ]) ++ cfg.extraDependencyGroups;
             });
-        wrapper = pkgs.writeShellScript "hermes-gateway" (builtins.readFile ./hermes/scripts/gateway-wrapper.sh);
       in
       utils.escapeSystemdExecArgs (
-        [ wrapper "${package}/bin/hermes" "gateway" "run" "--external-supervisor" ] ++ cfg.extraArgs
+        [ "${scripts}/bin/piabrota" "gateway-wrapper" "${package}/bin/hermes" "gateway" "run" "--external-supervisor" ]
+        ++ cfg.extraArgs
       )
     );
     ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";

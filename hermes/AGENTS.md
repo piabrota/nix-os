@@ -95,10 +95,10 @@ which command a skill gives (`just`, `python3`) that this box cannot run.
 ## Notes and videos for pirsig
 
 When the owner asks to save ideas, a quote or a source to pirsig, load the skill
-`pirsig-notes:smart-notes` and use `pirsig_note_search` and `pirsig_notes_submit`. When the owner
-gives a video to index, load `pirsig-videos:video-indexer` and use `pirsig_video_fetch`,
-`pirsig_video_check` and `pirsig_video_submit`. Show the owner the notes before you send them.
-These tools open the pull request themselves: do not clone pirsig or push by hand for this.
+`pirsig-smart-notes` and use `mcp__pirsig__pirsig_note_search` and
+`mcp__pirsig__pirsig_notes_submit`. When the owner gives a video to index, load
+`pirsig-video-indexer` and use `mcp__pirsig__pirsig_video_fetch`, `mcp__pirsig__pirsig_video_check`
+and `mcp__pirsig__pirsig_video_submit`. Show the owner the notes before you send them. These tools open the pull request themselves: do not clone pirsig or push by hand for this.
 
 ## Working with repositories
 

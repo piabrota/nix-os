@@ -50,7 +50,7 @@ The top of each card has six numbers and a row of sites:
 
 | Label | What it is | Where it comes from |
 |---|---|---|
-| Domains up | sites that answered, of the host's sites; green when all answer, red when one does not | `metrics/probe.sh`, every 60 s |
+| Domains up | sites that answered, of the host's sites; green when all answer, red when one does not | `piabrota metrics-probe`, every 60 s |
 | Visits 24 h | the pages that browsers got from the host's sites in the last 24 hours | nginx's `visits.log`, read by the probe every 60 s (see "Visits") |
 | Visitors 24 h | the different addresses that got those pages | the same |
 | Commits | commits on `main` of `piabrota/nix-os` | the GitHub API, at most once in 10 minutes |
@@ -97,7 +97,7 @@ Each probe run reads only what was added since the last run (at most 16 MiB) and
 the hour and the last time of each address in `/run/metrics-state/<name>.visits` (0700, not
 served, gone at a reboot). After a reboot or a rotation it reads the file from its start, so a
 reboot loses nothing of the week. The probe reads nginx's logs through the group `nginx`
-(`SupplementaryGroups`) and writes nothing there. No daemon, no package, no Python: the same awk.
+(`SupplementaryGroups`) and writes nothing there. No daemon, no package: the same binary.
 
 ## The inventory
 
@@ -130,7 +130,8 @@ copies them into `inventory` (metrics/SCHEMA.md).
 | piabrota2 (KVM 4) | yes | yes | yes | no |
 | piabrota (KVM 1) | yes | no | no | yes |
 
-- The collector is `metrics/collect.sh` (POSIX sh and awk). The timer `metrics-collect.timer` runs
+- The collector is `piabrota metrics-collect` (`scala/metrics/Collect.scala`), a command of the
+  scripts' Scala Native binary (`scala/README.md`). The timer `metrics-collect.timer` runs
   it every 10 s (oneshot unit `metrics-collect.service`).
 - It writes `/run/metrics-web/<name>.json` atomically. The previous sample is in
   `/run/metrics-state/<name>.state` (not served).
@@ -171,9 +172,9 @@ The page's host (piabrota2) also serves every number in two forms that a program
 | https://metrics.piabrota.art/metrics | Prometheus text, version 0.0.4 | the same numbers as series named `piabrota_*`, each with a `host` label |
 | https://metrics.piabrota.art/data/piabrota.json, `/data/piabrota2.json` | JSON | one host's file, as before |
 
-`metrics/export.sh` writes the first two with one run of jq (`metrics/export.jq`); jq is a small C
-binary, so no Python runs on the box (AGENTS.md, "Resource budget", rule 4). The timer
-`metrics-export.timer` runs it with the collector's interval, in the collector's sandbox and with no
+`piabrota metrics-export` (`scala/metrics/Export.scala`) writes the first two in one run; the
+binary needs only glibc, so no Python or JVM runs on the box (AGENTS.md, "Resource budget", rule 4).
+The timer `metrics-export.timer` runs it with the collector's interval, in the collector's sandbox and with no
 network: it reads `/run/metrics-web/<name>.json` and writes `all.json` and `metrics.prom`
 beside them, each through a temp file and a rename. It leaves out a file that is not a JSON object,
 that is over 64 KiB or whose `host` is not its name. A number that is not finite is left out of
@@ -343,19 +344,17 @@ lower, or change that constant too.
 
 ## Tests and preview
 
-- `python3 metrics/test/collect_test.py`: the collector and the probe, with a fixture `/proc` and
-  cgroup tree and a fake curl. It prints "N checks, M failed".
+- `scala/metrics/*.test.scala` (`just scala-test`, and the Nix build of the binary): the collector
+  and the probe, with a fixture `/proc` and cgroup tree and a fake curl, and the export: `all.json`
+  and `metrics.prom` from the fixtures, checked line by line against the text format.
 - `checks.metrics-page` (`metrics/test/page.nix`): the static rules of the page, in pure Nix, and
-  the fixtures through jq. `python3 metrics/test/preview.py --check`: an HTTP fetch of the page and
-  its data. `python3 metrics/test/export_test.py`: `all.json` and `metrics.prom` from the
-  fixtures, checked line by line against the text format. `just metrics-test` runs the four.
+  the fixtures through jq. `piabrota metrics-preview --check`: an HTTP fetch of the page and its
+  data. `just metrics-test` runs these two.
 - `checks.metrics`: four VMs (hub, edge, locked, client), plain HTTP, needs KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Preview of the page with fixtures (healthy, stale, missing, hostile):
 
   ```console
-  python3 metrics/test/preview.py healthy 8080     # open http://127.0.0.1:8080/
+  nix run .#piabrota -- metrics-preview healthy 8080   # open http://127.0.0.1:8080/
   just metrics-preview healthy
   ```
-
-  Needs python3.

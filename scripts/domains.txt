@@ -1,6 +1,6 @@
 # Every name under piabrota.art that this repository names (and marola.dev's), and the host that serves it.
-# scripts/cert_check.py checks the certificate of each name whose host is not "off";
-# `scripts/cert_check.py --coverage` (in CI) fails when a *.nix file names one that is not here.
+# `piabrota cert-check` (scala/scripts/CertCheck.scala) checks the certificate of each name whose host is not "off";
+# `piabrota cert-check --coverage` (in CI) fails when a *.nix file names one that is not here.
 # A new vhost: add its line in the same PR, and point its DNS at the host before the merge.
 #
 # name                    host        what

@@ -234,9 +234,9 @@ Smoke checks, in this order. Each prints a number, and none is a formal test:
 
 ## 13. The dummy pipeline
 
-`video-lab/dummy/run.py` makes a 30 s, 1280x720 video from nothing but `ffmpeg` and `ffprobe`:
+`piabrota video-dummy` (`scala/scripts/VideoDummy.scala`) makes a 28 s, 1280x720 video from nothing but `ffmpeg` and `ffprobe`:
 five scenes of a moving gradient with text, one tone per scene as the voice, a soft subtitle track, a
 cross fade, and a loudness pass. It writes `video-lab/out/dummy/dummy.mp4` and `report.json` (duration,
 size, streams, wall time, peak memory). It is a check that the render path works, nothing more. Run it with
-`just video-dummy`, or with `nix shell nixpkgs#ffmpeg -c python3 video-lab/dummy/run.py` on a machine
+`just video-dummy`, or with `nix shell nixpkgs#ffmpeg -c nix run .#piabrota -- video-dummy` on a machine
 without `ffmpeg`.

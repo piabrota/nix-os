@@ -668,9 +668,10 @@ h0ffmann/chaceon), the outbox ACL with the unit's `UMask`, and Hermes's read of 
 `hermes-agent` sandbox.
 
 The keeper `openrig-wf-keeper` did not run on the box either: a deploy with the option on is needed
-first. Its script ran against a fake `rig` (`scripts/wf_keeper_test.py`: stopped rig, `--existing`
-failing, `rig down`, another rig, partial rig, daemon down, back-off), and its `jq` filters ran
-against the output of the live `rig ps`. `rig up` from the keeper (a stopped rig with no usable
+first. It is `piabrota openrig-wf-keeper` (`scala/scripts/WfKeeper.scala`); its tests
+(`WfKeeper.test.scala`) run it against a fake `rig`: stopped rig, `--existing` failing, `rig down`,
+another rig, partial rig, daemon down, back-off. The shell version's `jq` filters ran against the
+output of the live `rig ps`; the Scala version has not met a live `rig ps`. `rig up` from the keeper (a stopped rig with no usable
 snapshot, a spec that the daemon refuses) never ran.
 
 For wave-forecaster-thesis, no seat ran. Not tested: a deploy with the option on, the closure growth

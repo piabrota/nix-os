@@ -2,21 +2,21 @@
 
 `design/` is the one source of the look for the sites that are not built in `site/`. It holds the
 tokens of [site/DESIGN.md](../site/DESIGN.md), a small CSS module for each part of a page, the list
-of piabrota sites, and functions that write HTML. A page takes only the modules it uses.
+of piabrota sites, and functions that write HTML (in Scala, `scala/design/`). A page takes only the modules it uses.
 
 Today `proof.piabrota.art` and `pirsig.piabrota.art` use it. Their indexes are made by the kit
-(`proof-site/index.mjs`). The pages that come from other repositories get the brand bar.
+(`piabrota proof-index`, `scala/design/Index.scala`). The pages that come from other repositories get the brand bar.
 
 ## Files
 
 |File|What it is|
 |---|---|
-|`design/css/tokens.css`|The tokens: dark first, light under `prefers-color-scheme`. `design/test.mjs` compares them with the table of `site/DESIGN.md` and with `site/static/style.css`.|
+|`design/css/tokens.css`|The tokens: dark first, light under `prefers-color-scheme`. `scala/design/Kit.test.scala` compares them with the table of `site/DESIGN.md` and with `site/static/style.css`.|
 |`design/css/*.css`|One module each. Every class starts with `pb-`. A module needs only `tokens.css` and `base.css`.|
 |`design/sites.nix`|The list of sites, and the hosts that are not sites.|
-|`design/kit.mjs`|Functions that return HTML. They escape all text and refuse a link with a script scheme.|
-|`design/inject.mjs`|A build step: the brand bar into every `.html` file of a folder.|
-|`design/test.mjs`|`node --test design/test.mjs` (`just design-test`).|
+|`scala/design/Kit.scala`|Functions that return HTML. They escape all text and refuse a link with a script scheme.|
+|`scala/design/Inject.scala`|A build step, `piabrota design-inject`: the brand bar into every `.html` file of a folder.|
+|`scala/design/*.test.scala`|The tests of the kit, the bar and the indexes (`just scala-test`).|
 
 ## The modules
 
@@ -31,16 +31,16 @@ Today `proof.piabrota.art` and `pirsig.piabrota.art` use it. Their indexes are m
 |`footer`|`pb-footer`|One line and the public sites.|
 |`prose`|`pb-prose`|Long text.|
 
-`page({ lang, title, description, modules, head, icons, body })` inlines `tokens`, `base`, then the
+`Kit.page(css, title, description, body, lang, modules, head, icons)` inlines `tokens`, `base`, then the
 modules asked, in a fixed order. `icons` is the HTML of `favicon/links.nix`. The page loads no script.
 
 ## Add a module
 
 1. Write `design/css/<name>.css`. Use only the tokens. Start every class with `pb-`.
-2. Add the name to `MODULES` in `design/kit.mjs`, in the order of the page.
-3. Add a function to `design/kit.mjs` if the module has markup, and a test to `design/test.mjs`.
+2. Add the name to `Kit.modules` in `scala/design/Kit.scala`, in the order of the page.
+3. Add a function to `Kit.scala` if the module has markup, and a test to `Kit.test.scala`.
 
-`design/test.mjs` fails when a class has no prefix or when one module names another.
+`Kit.test.scala` fails when a class has no prefix or when one module names another.
 
 ## Add a site
 
@@ -51,7 +51,7 @@ serves. The check evaluates the two systems and builds nothing.
 
 ## The brand bar
 
-`design/inject.mjs` puts the bar right after the opening `<body>` tag of every page that came from
+`piabrota design-inject` (`scala/design/Inject.scala`) puts the bar right after the opening `<body>` tag of every page that came from
 another repository. The bar is a 44 px strip in the page flow. It is always dark. It shows the eye and
 `piabrota`, a link back to the site's index, and the public sites with the current one marked.
 

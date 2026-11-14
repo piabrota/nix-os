@@ -2,8 +2,9 @@
 # with Let's Encrypt. The server listens on 127.0.0.1 only; the unit and the nginx settings follow
 # that repository's docs/5-hosting.md, which is the contract. On piabrota2, for marola.dev and
 # marola.piabrota.art (docs/MAROLA-SITE.md).
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, utils, ... }:
 let
+  scripts = pkgs.callPackage ./scala { };
   inherit (lib) mkEnableOption mkIf mkOption optionalAttrs types;
   cfg = config.piabrota.marolaSite;
   upstream = "http://127.0.0.1:${toString cfg.port}";
@@ -18,42 +19,10 @@ let
   '';
   state = "/var/lib/marola";
   boards = "/var/lib/marola-boards";
-  mirror = pkgs.writeShellApplication {
+  # The boards as a mirror of another site's (`piabrota marola-boards-mirror`, scala/scripts).
+  mirror = scripts.command {
     name = "marola-boards-mirror";
-    runtimeInputs = [ pkgs.curl pkgs.jq pkgs.coreutils ];
-    text = ''
-      src=${lib.escapeShellArg (toString cfg.boards.mirrorFrom)}
-      out=${boards}
-      for area in $(jq -r '.areas[].id' ${cfg.package}/share/marola/dist/data/areas.json); do
-        tmp=$(mktemp -d "$out/.incoming.XXXXXX")
-        if ! curl -fsS --max-time 30 "$src/$area/latest.json" -o "$tmp/latest.json"; then
-          echo "marola-boards: no latest.json for $area" >&2
-          rm -rf "$tmp"
-          continue
-        fi
-        ok=1
-        for f in $(jq -r '.days[].file' "$tmp/latest.json"); do
-          # A file name from the network: only <date>.json, never a path.
-          if ! [[ $f =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\.json$ ]]; then
-            echo "marola-boards: $area: refused file name $f" >&2
-            ok=0
-            break
-          fi
-          curl -fsS --max-time 60 "$src/$area/$f" -o "$tmp/$f" || { ok=0; break; }
-        done
-        if [ "$ok" = 1 ]; then
-          chmod 0755 "$tmp"
-          rm -rf "$out/$area.old"
-          if [ -d "$out/$area" ]; then mv "$out/$area" "$out/$area.old"; fi
-          mv "$tmp" "$out/$area"
-          rm -rf "$out/$area.old"
-          echo "marola-boards: $area updated" >&2
-        else
-          echo "marola-boards: $area kept as it was" >&2
-          rm -rf "$tmp"
-        fi
-      done
-    '';
+    runtimeInputs = [ pkgs.curl ];
   };
   # The base map's tiles file (marola-site's docs/5-hosting.md, "The base map"), cut on the box by
   # marola-site's own basemap_extract.sh from the Protomaps build its site/basemap.version pins, for the
@@ -61,89 +30,23 @@ let
   # leaves the file alone.
   tiles = "${state}/tiles";
   tilesStamp = builtins.hashString "sha256" (builtins.readFile cfg.package.basemapVersion + builtins.readFile cfg.package.areas);
-  tilesBuilder = pkgs.writeShellApplication {
+  tilesBuilder = scripts.command {
     name = "marola-tiles";
     runtimeInputs = [ pkgs.bash pkgs.coreutils pkgs.gnused pkgs.curl pkgs.nodejs_24 pkgs.pmtiles pkgs.tippecanoe ];
-    text = ''
-      work=/var/lib/marola-tiles
-      if [ -s ${tiles}/marola.pmtiles ] && [ "$(cat ${tiles}/.stamp 2>/dev/null)" = ${tilesStamp} ]; then
-        echo "marola-tiles: marola.pmtiles is current" >&2
-        exit 0
-      fi
-      install -d -m 0750 ${tiles}
-      install -d "$work/site"
-      install -m 0644 ${cfg.package.basemapVersion} "$work/site/basemap.version"
-      install -m 0644 ${cfg.package.areas} "$work/site/areas.json"
-      # Write beside the live file, then rename: a reader never sees half a file. The name must end in
-      # .pmtiles: tile-join picks its output format from the suffix and writes MBTiles (SQLite) otherwise.
-      BASEMAP_ROOT="$work" bash ${cfg.package.basemapExtract} ${tiles}/marola.new.pmtiles
-      chmod 0644 ${tiles}/marola.new.pmtiles
-      rm -f ${tiles}/marola.pmtiles.new
-      mv ${tiles}/marola.new.pmtiles ${tiles}/marola.pmtiles
-      echo ${tilesStamp} > ${tiles}/.stamp
-      rm -rf "$work/.tmp"
-    '';
   };
   bcfg = cfg.boards.build;
   # The boards as marola-site's site.yml builds them, here instead of on the self-hosted runner:
   # the app image marola-site pins, `--site` over its areas.json, no LLM. piabrota2 is in Brazil
   # (LACNIC: BR), and INEA and INEMA answer only Brazilian addresses. The beach lists stay in the
   # work folder, so Overpass is asked only for an area with none.
-  builder = pkgs.writeShellApplication {
+  # (`piabrota marola-boards-build`, scala/scripts.)
+  builder = scripts.command {
     name = "marola-boards-build";
-    runtimeInputs = [ config.virtualisation.podman.package pkgs.coreutils pkgs.findutils ];
-    text = ''
-      image=${lib.escapeShellArg bcfg.image}
-      work=/var/lib/marola-boards-build
-      out=${boards}
-      install -d -o marola -g marola "$work/site" "$work/site/beaches"
-      install -m 0644 -o marola -g marola ${cfg.package.areas} "$work/site/areas.json"
-      rm -rf "$work/site/dist"
-      install -d -o marola -g marola "$work/site/dist"
-      if ! podman image exists "$image"; then
-        if [ -n "''${CREDENTIALS_DIRECTORY:-}" ] && [ -f "$CREDENTIALS_DIRECTORY/ghcr-token" ]; then
-          podman login --authfile "$RUNTIME_DIRECTORY/auth.json" -u ${lib.escapeShellArg bcfg.registryUser} \
-            --password-stdin ghcr.io < "$CREDENTIALS_DIRECTORY/ghcr-token"
-          podman pull --authfile "$RUNTIME_DIRECTORY/auth.json" "$image"
-          rm -f "$RUNTIME_DIRECTORY/auth.json"
-        else
-          podman pull "$image"
-        fi
-      fi
-      # Two tries, as marola-site's site.yml does: INEA, INEMA and Overpass time out now and then.
-      # A failed run still keeps the areas it wrote before it failed, so the copy below always runs.
-      status=1
-      for attempt in 1 2; do
-        if podman run --rm --memory ${bcfg.memory} --user "$(id -u marola):$(id -g marola)" -e HOME=/tmp \
-          -v "$work/site:/work/site" -w /work "$image" \
-          --site --areas site/areas.json --site-out site/dist; then
-          status=0
-          break
-        fi
-        echo "marola-boards: build attempt $attempt failed" >&2
-        [ "$attempt" -eq 2 ] || sleep 60
-      done
-      # Only what the build wrote, area by area; an area it did not write keeps its old boards.
-      for dir in "$work/site/dist/data"/*/; do
-        area=$(basename "$dir")
-        [ -f "$dir/latest.json" ] || continue
-        tmp=$(mktemp -d "$out/.incoming.XXXXXX")
-        cp -r "$dir". "$tmp/"
-        chown -R marola:marola "$tmp"
-        chmod 0755 "$tmp"
-        rm -rf "$out/$area.old"
-        if [ -d "$out/$area" ]; then mv "$out/$area" "$out/$area.old"; fi
-        mv "$tmp" "$out/$area"
-        rm -rf "$out/$area.old"
-        echo "marola-boards: $area built" >&2
-      done
-      if [ -f "$work/site/dist/data/areas.json" ]; then
-        install -m 0644 -o marola -g marola "$work/site/dist/data/areas.json" "$out/areas.json"
-      fi
-      # Old image versions, after a pin moves.
-      podman image prune -f >/dev/null || true
-      exit "$status"
-    '';
+    runtimeInputs = [ config.virtualisation.podman.package pkgs.coreutils ];
+  };
+  backup = scripts.command {
+    name = "marola-backup";
+    runtimeInputs = [ pkgs.sqlite pkgs.rsync pkgs.coreutils pkgs.findutils ];
   };
 in
 {
@@ -298,7 +201,12 @@ in
       wants = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = lib.getExe mirror;
+        ExecStart = utils.escapeSystemdExecArgs [
+          (lib.getExe mirror)
+          (toString cfg.boards.mirrorFrom)
+          boards
+          "${cfg.package}/share/marola/dist/data/areas.json"
+        ];
         User = "marola";
         Group = "marola";
         StateDirectory = "marola-boards";
@@ -332,7 +240,14 @@ in
         # "-": a failed build (a pull refused, INEA down) must not leave the unit failed, or a deploy
         # that starts it rolls the whole host back. The journal keeps the exit code, and
         # marola-boards.yml mails the owner when the boards go stale.
-        ExecStart = "-${lib.getExe builder}";
+        ExecStart = "-" + utils.escapeSystemdExecArgs [
+          (lib.getExe builder)
+          bcfg.image
+          bcfg.registryUser
+          bcfg.memory
+          "${cfg.package.areas}"
+          boards
+        ];
         StateDirectory = [ "marola-boards-build" "marola-boards" ];
         RuntimeDirectory = "marola-boards-build";
         RuntimeDirectoryMode = "0700";
@@ -353,7 +268,14 @@ in
       wants = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = lib.getExe tilesBuilder;
+        ExecStart = utils.escapeSystemdExecArgs [
+          (lib.getExe tilesBuilder)
+          tiles
+          tilesStamp
+          "${cfg.package.basemapVersion}"
+          "${cfg.package.areas}"
+          "${cfg.package.basemapExtract}"
+        ];
         User = "marola";
         Group = "marola";
         StateDirectory = [ "marola" "marola-tiles" ];
@@ -404,20 +326,10 @@ in
     # (docs/5-hosting.md, "The studies and their backup").
     systemd.services.marola-backup = mkIf cfg.backup.enable {
       description = "Back up marola's database, csrf.key and studies";
-      path = [ pkgs.sqlite pkgs.rsync pkgs.coreutils pkgs.findutils ];
-      script = ''
-        set -euo pipefail
-        dest=/var/backups/marola
-        install -d -m 0700 "$dest" "$dest/studies"
-        if [ -f ${state}/marola.db ]; then
-          sqlite3 ${state}/marola.db ".backup '$dest/marola-$(date +%F).db'"
-          chmod 0600 "$dest/marola-$(date +%F).db"
-        fi
-        if [ -f ${state}/csrf.key ]; then install -m 0600 ${state}/csrf.key "$dest/csrf.key"; fi
-        if [ -d ${state}/studies ]; then rsync -a --exclude .incoming ${state}/studies/ "$dest/studies/"; fi
-        find "$dest" -maxdepth 1 -name 'marola-*.db' -mtime +14 -delete
-      '';
-      serviceConfig.Type = "oneshot";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = utils.escapeSystemdExecArgs [ (lib.getExe backup) state ];
+      };
     };
     systemd.timers.marola-backup = mkIf cfg.backup.enable {
       wantedBy = [ "timers.target" ];

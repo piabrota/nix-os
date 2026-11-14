@@ -29,33 +29,20 @@ let
     (url: "[includeIf \"hasconfig:remote.*.url:${url}\"]\n  path = ${home}/.gitconfig-marola-bot\n")
     (lib.concatMap (r: [ "https://github.com/${r}" "https://github.com/${r}.git" ]) marola.repos);
 
+  scripts = pkgs.callPackage ./scala { };
   # git credential helper: the token of the repository's owner, from the path git hands over
-  # (credential.useHttpPath). Nothing for an owner without an installation: git then fails.
-  credentialHelper = pkgs.writeShellScript "hermes-git-credential" ''
-    [ "''${1:-}" = get ] || exit 0
-    path=
-    while IFS='=' read -r key value; do
-      [ -z "$key" ] && break
-      [ "$key" = path ] && path=$value
-    done${lib.optionalString marola.enable ''
-
-      # GitHub matches owner and name in any case: so must this, or marola-dev/Marola-Front would
-      # get the owner's token below.
-      lower=''${path,,}
-      case "''${lower%.git}" in
-        ${lib.concatMapStringsSep "|" (r: lib.escapeShellArg (lib.toLower r)) marola.repos})
-          # Fail closed: no token of marola-pr-bot, no password, and never the token of the owner.
-          if [ -r "${tokens}/marola-pr-bot" ]; then
-            echo username=x-access-token
-            echo "password=$(cat "${tokens}/marola-pr-bot")"
-          fi
-          exit 0 ;;
-      esac''}
-    owner=''${path%%/*}
-    [ -n "$owner" ] && [ -r "${tokens}/$owner" ] || exit 0
-    echo username=x-access-token
-    echo "password=$(cat "${tokens}/$owner")"
-  '';
+  # (credential.useHttpPath). Nothing for an owner without an installation: git then fails. The
+  # marola repositories take marola-pr-bot's token, and fail closed (`piabrota hermes-git-credential`).
+  credentialHelper = lib.getExe (scripts.command {
+    name = "hermes-git-credential";
+    env = lib.optionalAttrs marola.enable { HERMES_GIT_MAROLA_REPOS = toString marola.repos; };
+  });
+  # The settings of `piabrota hermes-github-token` (scala/scripts/GithubTokens.scala).
+  tokenConfig = pkgs.writeText "hermes-github-token.json" (builtins.toJSON {
+    inherit owners permissions tokens seatRepos seatTokens home;
+    helper = credentialHelper;
+    marolaGitconfig = lib.optionalString marola.enable marolaGitconfig;
+  });
 in
 {
   systemd.tmpfiles.rules = [ "d ${tokens} 0750 root hermes -" ];
@@ -66,99 +53,8 @@ in
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     unitConfig.ConditionPathExists = "/var/lib/hermes-secrets/github-app.env";
-    path = with pkgs; [ coreutils curl gnused jq openssl ];
-    script = ''
-      set -u
-      umask 077
-      # GH_APP_ID and GH_APP_PRIVATE_KEY_B64 (the .pem, base64 on one line).
-      GH_APP_ID=$(sed -n 's/^GH_APP_ID=//p' "$CREDENTIALS_DIRECTORY/app")
-      key=$(mktemp)
-      trap 'rm -f "$key"' EXIT
-      sed -n 's/^GH_APP_PRIVATE_KEY_B64=//p' "$CREDENTIALS_DIRECTORY/app" | base64 -d >"$key"
-      b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-      now=$(date +%s)
-      header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
-      payload=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now - 60)) $((now + 540)) "$GH_APP_ID" | b64url)
-      jwt="$header.$payload.$(printf '%s.%s' "$header" "$payload" | openssl dgst -sha256 -sign "$key" | b64url)"
-      api() { curl -fsS --max-time 20 -H "Accept: application/vnd.github+json" "$@"; }
-
-      if ! installations=$(api -H "Authorization: Bearer $jwt" https://api.github.com/app/installations); then
-        echo "GitHub refused the App's JWT: check GH_APP_ID and the key"
-        exit 0
-      fi
-      first=
-      for owner in ${toString owners}; do
-        id=$(jq -r --arg o "$owner" '.[] | select(.account.login == $o) | .id' <<<"$installations")
-        if [ -z "$id" ]; then
-          rm -f "${tokens}/$owner"
-          echo "$owner: the App is not installed there"
-          continue
-        fi
-        if token=$(api -X POST -H "Authorization: Bearer $jwt" -d '{"permissions":${permissions}}' \
-          "https://api.github.com/app/installations/$id/access_tokens" | jq -er .token); then
-          printf '%s' "$token" >"${tokens}/.$owner"
-          chown root:hermes "${tokens}/.$owner"
-          chmod 0640 "${tokens}/.$owner"
-          mv "${tokens}/.$owner" "${tokens}/$owner"
-          [ -n "$first" ] || first=$token
-          echo "$owner: token for one hour"
-        else
-          echo "$owner: GitHub refused a token"
-        fi
-      done
-      ${lib.optionalString (seatRepos != [ ]) ''
-        # Read-only tokens for the OpenRig seats: contents read, on one repository each. The seats
-        # run without approval prompts, so their token can do nothing but clone and fetch.
-        for full in ${toString seatRepos}; do
-          owner=''${full%%/*}
-          repo=''${full#*/}
-          file="${seatTokens}/$owner--$repo"
-          id=$(jq -r --arg o "$owner" '.[] | select(.account.login == $o) | .id' <<<"$installations")
-          body=$(jq -cn --arg r "$repo" '{repositories: [$r], permissions: {contents: "read"}}')
-          if [ -n "$id" ] && token=$(api -X POST -H "Authorization: Bearer $jwt" -d "$body" \
-            "https://api.github.com/app/installations/$id/access_tokens" | jq -er .token); then
-            printf '%s' "$token" >"$file.new"
-            chown root:openrig "$file.new"
-            chmod 0640 "$file.new"
-            mv "$file.new" "$file"
-            echo "$full: read-only token for the seats, for one hour"
-          else
-            rm -f "$file"
-            echo "$full: no read-only token for the seats (is the App installed on it?)"
-          fi
-        done
-      ''}
-      [ -n "$first" ] || exit 0
-
-      # Who Hermes commits as: the App's bot user, as GitHub shows it.
-      slug=$(api -H "Authorization: Bearer $jwt" https://api.github.com/app | jq -r .slug)
-      botid=$(api -H "Authorization: token $first" "https://api.github.com/users/$slug%5Bbot%5D" | jq -r .id)
-      install -d -o hermes -g hermes -m 0750 ${home}/.config ${home}/.config/gh
-      cat >${home}/.gitconfig.new <<EOF
-      [user]
-        name = ''${slug}[bot]
-        email = $botid+''${slug}[bot]@users.noreply.github.com
-      [credential "https://github.com"]
-        helper = ${credentialHelper}
-        useHttpPath = true
-      [push]
-        default = current
-      EOF${lib.optionalString marola.enable ''
-
-        cat >>${home}/.gitconfig.new <<'EOF'
-        ${marolaGitconfig}EOF''}
-      cat >${home}/.config/gh/hosts.yml.new <<EOF
-      github.com:
-        oauth_token: $first
-        git_protocol: https
-        user: ''${slug}[bot]
-      EOF
-      for f in ${home}/.gitconfig ${home}/.config/gh/hosts.yml; do
-        chown hermes:hermes "$f.new"
-        chmod 0600 "$f.new"
-        mv "$f.new" "$f"
-      done
-    '';
+    path = with pkgs; [ coreutils curl openssl ];
+    script = "${lib.getExe (scripts.command { name = "hermes-github-token"; })} ${tokenConfig}";
     serviceConfig = {
       Type = "oneshot";
       LoadCredential = [ "app:/var/lib/hermes-secrets/github-app.env" ];

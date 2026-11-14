@@ -1,6 +1,6 @@
 name: room pin
 
-# When piabrota/room's main moves: scripts/pins.py one room moves the pin of room-site/default.nix (rev,
+# When piabrota/room's main moves: piabrota pins one room moves the pin of room-site/default.nix (rev,
 # the source hash, npmDepsHash), builds the room package, and one pull request labelled room-pin
 # carries it, opened as piabrota-ops (OPS_BOT_APP_ID, OPS_BOT_KEY) so CI runs on it. A newer room
 # commit while that pull request is open moves the same branch and edits the same pull request. It
@@ -75,7 +75,7 @@ jobs:
         env:
           REV: ${{ steps.look.outputs.rev }}
         run: |
-          python3 scripts/pins.py one room "$REV" | tee pin.log
+          nix run .#piabrota -- pins one room "$REV" | tee pin.log
           sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
           echo "size=$(du -sh result-room/ | cut -f1)" >>"$GITHUB_OUTPUT"
 
@@ -110,7 +110,7 @@ jobs:
             echo
             echo "## What changed"
             echo
-            echo "\`room-site/default.nix\`: \`rev\`, the source \`hash\`, \`npmDepsHash\` and \`version\`, written by \`scripts/pins.py one room\`. The room between the two pins ([compare](https://github.com/piabrota/room/compare/$OLD...$NEW)):"
+            echo "\`room-site/default.nix\`: \`rev\`, the source \`hash\`, \`npmDepsHash\` and \`version\`, written by \`piabrota pins one room\`. The room between the two pins ([compare](https://github.com/piabrota/room/compare/$OLD...$NEW)):"
             echo
             cat prs.md
             echo

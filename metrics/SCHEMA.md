@@ -1,7 +1,7 @@
 # The metrics file, schema version 1
 
-`collect.sh` writes one file for each host, `/run/metrics-web/<name>.json`, every 10 seconds, and
-never a half file: it writes a temp file in the same folder and renames it. The page reads it at
+`piabrota metrics-collect` (`scala/metrics/Collect.scala`) writes one file for each host,
+`/run/metrics-web/<name>.json`, every 10 seconds, and never a half file: it writes a temp file in the same folder and renames it. The page reads it at
 `/data/<name>.json`. The file stays under 8 KB.
 
 A reader must ignore keys it does not know and survive keys that are missing. A new key that old
@@ -79,7 +79,7 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
 | `system` | Always an object; each key is absent when it cannot be read. |
 | `system.nixos` | The first line of `/run/current-system/nixos-version` (`NIXOS_VERSION_FILE`), 64 characters at most of letters, digits and `._+-`. |
 | `system.generation` | The number in `system-<n>-link`, the target of `/nix/var/nix/profiles/system` (`SYSTEM_PROFILE`): one for each deploy that changed the system. |
-| `domains` | What `metrics/probe.sh` found, from `METRICS_PROBE`. Absent without a probe file, or when it has no `ts` line. |
+| `domains` | What `piabrota metrics-probe` (`scala/metrics/Probe.scala`) found, from `METRICS_PROBE`. Absent without a probe file, or when it has no `ts` line. |
 | `domains.ts` | Unix seconds when the probe ran. The page greys the sites when it is more than 300 s older than `ts`. |
 | `domains.list` | The sites of the host in the order Nix wrote them, at most 24: `name` (lowercase letters, digits, `.` and `-`, 64 characters at most), `code` (the HTTP code, 0 when nothing answered) and `up` (a code from 100 to 499). |
 | `domains.up`, `domains.total` | How many of `list` are up, and how many there are. |
@@ -107,10 +107,10 @@ readers can ignore does not change `v`. A change of meaning, or a key that must 
 - CPU: two samples of `/proc/stat`. The first is kept in `/run/metrics-state/<name>.state`, so a run
   never sleeps.
 - Per process: the difference of `utime + stime` (fields 14 and 15 of `/proc/<pid>/stat`) divided by
-  the clock ticks (`getconf CLK_TCK`) and by the seconds between the runs (from `/proc/uptime`). The
+  the clock ticks (`sysconf(_SC_CLK_TCK)`, what `getconf CLK_TCK` gives) and by the seconds between the runs (from `/proc/uptime`). The
   key is the pid and the start time (field 22), so a reused pid starts at 0. The line is parsed after
   its LAST `)`, because a name can hold spaces and parentheses.
 - A process that ends while it is read has an empty file: it is skipped, with no error.
-- Every string goes through `esc` in `collect.sh`: a backslash or a quote gets a backslash, and any
-  byte outside printable ASCII becomes `?`. `test/run.sh` has a check that a naive escaper breaks
-  the JSON.
+- Every string goes through `Awk.esc` (`scala/metrics/Awk.scala`): a backslash or a quote gets a
+  backslash, and any byte outside printable ASCII becomes `?`. `Collect.test.scala` checks that a
+  hostile name stays valid JSON.

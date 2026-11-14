@@ -10,8 +10,8 @@ que não prova, e traz as notas de deploy. O resto da instalação do OpenRig es
 [`OPENRIG.md`](OPENRIG.md). Os arquivos são `thesis/`, `openrig/specs/rigs/wave-forecaster-thesis/`,
 `openrig/specs/agents/thesis-*/` e a opção `piabrota.openrig.thesis.enable` de `openrig.nix`.
 
-**Como ler.** Cada número vem de um arquivo deste repositório (`thesis/profile.json`, os scripts de
-`thesis/lib/`, as specs) ou do relatório da execução que construiu as ferramentas (2026-11-05). `⚠`
+**Como ler.** Cada número vem de um arquivo deste repositório (`thesis/profile.json`, o código do
+comando em `scala/thesis/`, as specs) ou do relatório da execução que construiu as ferramentas (2026-11-05). `⚠`
 marca o que não foi conferido. "Não medido" quer dizer que ninguém mediu. **Nenhum seat rodou esta
 rig ainda.** O que foi provado é o `thesis` sobre uma tese de exemplo (veja "O que está provado e o
 que não está").
@@ -50,7 +50,7 @@ Página interativa: <https://www.piabrota.art/figures/pt-BR/thesis-rig/>
 
 **Fora da figura.** Os três writers aparecem como uma caixa só. Os peers que trocam mensagens (`collaborates_with`), a lista dos quatro portões (veja a tabela abaixo), os arquivos do projeto e o prompt de consentimento do Claude Code.
 
-**Fonte.** [`docs/archify/pt/thesis-rig.json`](archify/pt/thesis-rig.json), a fonte da figura; `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, `thesis/thesis`, `openrig.nix`. ⚠ Nenhum seat rodou esta rig: as setas são o desenho, não uma execução.
+**Fonte.** [`docs/archify/pt/thesis-rig.json`](archify/pt/thesis-rig.json), a fonte da figura; `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, `scala/thesis/`, `openrig.nix`. ⚠ Nenhum seat rodou esta rig: as setas são o desenho, não uma execução.
 
 </details>
 
@@ -75,8 +75,10 @@ seats e não são um sandbox. O sandbox duro é o do unit `openrig`.
 
 ### O comando `thesis`
 
-POSIX sh, `jq`, `awk`, pandoc e pdfLaTeX. Sem Python, sem rede, sem modelo. Cada comando roda com um
-`PATH` que tem só essas ferramentas.
+`piabrota thesis` ([`scala/thesis/`](../scala/thesis/Thesis.scala)), um comando do binário dos
+scripts (`scala/README.md`), com pandoc, pdfLaTeX, poppler-utils, coreutils e `time`. Sem Python,
+sem rede, sem modelo. Cada comando roda com um `PATH` que tem só essas ferramentas
+(`thesis/default.nix`, `exclusivePath`).
 
 |Grupo|Comandos|
 |---|---|
@@ -429,13 +431,13 @@ Estas notas valem para quem faz o deploy: o dono, com o Hermes quando o dono ped
 
 **Provado** (execução de 2026-11-05, sem seat):
 
-- O `thesis` real sobre uma tese de exemplo (15 páginas, 8 seções, PDF de cerca de 100 KB):
-  `thesis/test/run.sh` deu **60 verificações, 0 falhas**. Elas cobrem nomes, `fetch` em paralelo,
+- O `thesis` real sobre uma tese de exemplo (15 páginas, 8 seções, PDF de cerca de 100 KB): o
+  `thesis/test/run.sh` da versão em shell deu **60 verificações, 0 falhas**. Elas cobrem nomes, `fetch` em paralelo,
   recusa de marcador, `accept`, edição e `assemble`, `cite-check` com fonte não verificada e
   verificada, `slop` com falha e com aprovação, TeX bruto escapado, a lista de macros de matemática,
   caracteres hostis, emoji recusado, arquivo de modelo ausente, TeX parado por tempo e `publish` sem
   `--replace`.
-- `shellcheck` limpo, e `nixpkgs-fmt`, `statix` e `deadnix` sem aviso nos arquivos Nix.
+- A versão em shell com `shellcheck` limpo, e `nixpkgs-fmt`, `statix` e `deadnix` sem aviso nos arquivos Nix.
 - A avaliação de `piabrota` (igual à do `main`) e de `piabrota2`, com a opção desligada e ligada.
 - Nos testes: a montagem leva 2,5 a 3 s, e o maior processo (pdfLaTeX) usa 135 MiB de pico.
 - Os nomes e caminhos das specs batem com o `thesis`: nenhum desencontro.
@@ -453,6 +455,9 @@ Estas notas valem para quem faz o deploy: o dono, com o Hermes quando o dono ped
 - O Manual do SiBI, lido só em trechos.
 - O crescimento do sistema com `dix`, o tamanho do que se busca e o teste `passthru.tests.run` no Nix
   (só o `run.sh` contra o pacote construído).
+- A versão em Scala de 2026-11-14 (`scala/thesis/`): os testes de caixa-preta dela rodam no
+  `passthru.tests.run` (`thesis/default.nix`) sobre um projeto de exemplo. ⚠ Não rodou para esta
+  página; nenhum check do flake o roda.
 
 ## Limites e riscos
 

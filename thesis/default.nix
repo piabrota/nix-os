@@ -1,8 +1,8 @@
 # `thesis`, the toolkit of the wave-forecaster-thesis rig (docs/THESIS.md): sections of a final
 # project for the Escola Politécnica of UFRJ, claimed one at a time by writer seats, checked by four
-# gates, built to a PDF with pandoc and TeX. POSIX sh, jq, awk and pandoc; no Python, no network, no
-# model. `bin/thesis` runs with a PATH of its own tools only, and finds its data in share/thesis
-# (THESIS_SHARE).
+# gates, built to a PDF with pandoc and TeX. The commands are `piabrota thesis` (scala/thesis/); no
+# Python, no network, no model. `bin/thesis` runs with a PATH of its own tools only, and finds its
+# data in share/thesis (THESIS_SHARE).
 #
 # Template: h0ffmann/forecast-energy-demand, pinned by commit. Only the files that the overlay
 # uses are installed (shared/thesis_pack.tex, page.sty, portland.sty, the Poli logo as PDF and the
@@ -18,27 +18,23 @@
 # output need. pandoc-crossref is not used: its closure is 5.5 GiB (Haskell); filters/thesis.lua
 # does the cross-references.
 #
-# Tests: `nix build .#...thesis.tests.run` (passthru.tests.run, test/run.sh) runs the real command on
-# a sample project. No check of the flake runs it.
+# Tests: `nix build .#...thesis.tests.run` (passthru.tests.run) builds piabrota with the toolkit's
+# tools and THESIS_SHARE, so its checkPhase runs the black-box tests of scala/thesis/ on a sample
+# project. No check of the flake runs it.
 { lib
 , stdenvNoCC
-, makeWrapper
+, callPackage
+, symlinkJoin
 , fetchFromGitHub
 , fetchurl
 , runCommand
 , texlive
 , pandoc
 , poppler-utils
-, jq
 , coreutils
-, gawk
 , gnused
 , gnugrep
-, findutils
-, diffutils
 , time
-, dash
-, shellcheck
 }:
 let
   template = fetchFromGitHub {
@@ -74,58 +70,59 @@ let
       epstopdf-pkg;
   };
 
-  toolPath = lib.makeBinPath [ jq pandoc tex poppler-utils coreutils gawk gnused gnugrep findutils diffutils time ];
-in
-stdenvNoCC.mkDerivation (finalAttrs: {
-  pname = "thesis";
-  version = "1";
+  # The programs the commands still run: coreutils gives timeout, nice, sha256sum and date; time is
+  # GNU time, for the seconds and memory of each pandoc and TeX run.
+  runtimeInputs = [ pandoc tex poppler-utils coreutils time ];
 
-  # The tests are not part of what runs: a change to them does not rebuild the toolkit.
-  src = lib.fileset.toSource {
-    root = ./.;
-    fileset = lib.fileset.difference ./. (lib.fileset.unions [ ./default.nix ./test ]);
+  # share/thesis: profile.json, the work order text, the Lua filter, the templates and the CSL.
+  share = stdenvNoCC.mkDerivation {
+    pname = "thesis-share";
+    version = "1";
+    src = lib.fileset.toSource {
+      root = ./.;
+      fileset = lib.fileset.unions [ ./profile.json ./lib/workorder.txt ./filters ./templates ];
+    };
+    dontBuild = true;
+    installPhase = ''
+      runHook preInstall
+      share=$out/share/thesis
+      tpl=$share/templates/forecast-energy-demand
+      mkdir -p $share/lib $tpl/pinned/pt $tpl/pinned/shared/fig $share/csl
+      cp -r profile.json filters $share/
+      cp lib/workorder.txt $share/lib/
+      cp -r templates/forecast-energy-demand/overlay templates/forecast-energy-demand/template.json $tpl/
+      src=${template}/docs/project
+      install -m 0444 $src/pt/project_main.tex $tpl/pinned/pt/project_main.tex
+      for f in thesis_pack.tex page.sty portland.sty; do install -m 0444 $src/shared/$f $tpl/pinned/shared/$f; done
+      install -m 0444 $src/shared/fig/Polinew-eps-converted-to.pdf $tpl/pinned/shared/fig/
+      install -m 0444 ${csl} $share/csl/abnt-author-date.csl
+      runHook postInstall
+    '';
   };
 
-  nativeBuildInputs = [ makeWrapper ];
+  env = {
+    THESIS_SHARE = "${share}/share/thesis";
+    LC_ALL = "C.UTF-8";
+    LANG = "C.UTF-8";
+  };
 
-  dontBuild = true;
-
-  installPhase = ''
-    runHook preInstall
-    share=$out/share/thesis
-    tpl=$share/templates/forecast-energy-demand
-    mkdir -p $out/bin $share $tpl/pinned/pt $tpl/pinned/shared/fig $share/csl
-    cp -r profile.json lib filters $share/
-    cp -r templates/forecast-energy-demand/overlay templates/forecast-energy-demand/template.json $tpl/
-    install -m 0755 thesis $out/bin/thesis
-    src=${template}/docs/project
-    install -m 0444 $src/pt/project_main.tex $tpl/pinned/pt/project_main.tex
-    for f in thesis_pack.tex page.sty portland.sty; do install -m 0444 $src/shared/$f $tpl/pinned/shared/$f; done
-    install -m 0444 $src/shared/fig/Polinew-eps-converted-to.pdf $tpl/pinned/shared/fig/
-    install -m 0444 ${csl} $share/csl/abnt-author-date.csl
-    wrapProgram $out/bin/thesis \
-      --set THESIS_SHARE $share \
-      --set PATH ${toolPath} \
-      --set LC_ALL C.UTF-8 \
-      --set LANG C.UTF-8
-    runHook postInstall
-  '';
+  piabrota = callPackage ../scala { };
+in
+symlinkJoin {
+  name = "thesis-1";
+  paths = [
+    (piabrota.command { name = "thesis"; exclusivePath = true; inherit runtimeInputs env; })
+    share
+  ];
 
   passthru = {
-    inherit tex csl;
-    tests.run = runCommand "thesis-test"
-      {
-        nativeBuildInputs = [ jq pandoc tex poppler-utils coreutils gawk gnused gnugrep findutils diffutils time dash shellcheck ];
-      }
-      ''
-        pkg=${finalAttrs.finalPackage}
-        cd ${./.}
-        shellcheck -x -s sh thesis lib/*.sh test/run.sh
-        for f in thesis lib/*.sh test/run.sh; do dash -n "$f"; done
-        export THESIS=$pkg/bin/thesis
-        export TMPDIR=$(mktemp -d)
-        sh ${./test/run.sh} | tee $out
-      '';
+    inherit tex csl share;
+    tests.run = piabrota.overrideAttrs (old: {
+      pname = "thesis-test";
+      nativeBuildInputs = old.nativeBuildInputs ++ runtimeInputs;
+      inherit env;
+      installPhase = "touch $out";
+    });
   };
 
   meta = {
@@ -134,4 +131,4 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     mainProgram = "thesis";
     platforms = lib.platforms.linux;
   };
-})
+}

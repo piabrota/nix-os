@@ -50,7 +50,7 @@ O topo de cada cartão tem seis números e uma linha de sites:
 
 | Rótulo | O que é | De onde vem |
 |---|---|---|
-| Domains up | sites que responderam, dos sites do host; verde quando todos respondem, vermelho quando um não responde | `metrics/probe.sh`, a cada 60 s |
+| Domains up | sites que responderam, dos sites do host; verde quando todos respondem, vermelho quando um não responde | `piabrota metrics-probe`, a cada 60 s |
 | Visits 24 h | as páginas que navegadores receberam dos sites do host nas últimas 24 horas | o `visits.log` do nginx, lido pela sonda a cada 60 s (ver "Visitas") |
 | Visitors 24 h | os endereços diferentes que receberam essas páginas | a mesma fonte |
 | Commits | commits na `main` de `piabrota/nix-os` | a API do GitHub, no máximo uma vez a cada 10 minutos |
@@ -97,7 +97,7 @@ Cada rodada da sonda lê só o que entrou desde a última (no máximo 16 MiB) e 
 por hora e a última hora de cada endereço em `/run/metrics-state/<name>.visits` (0700, não servido,
 some no reboot). Depois de um reboot ou de uma rotação ela lê o arquivo do começo, então um reboot
 não perde nada da semana. A sonda lê os logs do nginx pelo grupo `nginx` (`SupplementaryGroups`) e
-não grava nada lá. Sem daemon, sem pacote, sem Python: o mesmo awk.
+não grava nada lá. Sem daemon, sem pacote: o mesmo binário.
 
 ## O inventário
 
@@ -131,7 +131,8 @@ copia para `inventory` (metrics/SCHEMA.md).
 | piabrota2 (KVM 4) | sim | sim | sim | não |
 | piabrota (KVM 1) | sim | não | não | sim |
 
-- O coletor é o `metrics/collect.sh` (POSIX sh e awk). O timer `metrics-collect.timer` o roda a cada
+- O coletor é o `piabrota metrics-collect` (`scala/metrics/Collect.scala`), um comando do binário
+  Scala Native dos scripts (`scala/README.md`). O timer `metrics-collect.timer` o roda a cada
   10 s (unidade oneshot `metrics-collect.service`).
 - Ele escreve `/run/metrics-web/<nome>.json` de forma atômica. A amostra anterior fica em
   `/run/metrics-state/<nome>.state` (não é servida).
@@ -172,8 +173,9 @@ O host da página (piabrota2) também serve todos os números em duas formas que
 | https://metrics.piabrota.art/metrics | texto do Prometheus, versão 0.0.4 | os mesmos números em séries `piabrota_*`, cada uma com o rótulo `host` |
 | https://metrics.piabrota.art/data/piabrota.json, `/data/piabrota2.json` | JSON | o arquivo de um host, como antes |
 
-O `metrics/export.sh` escreve os dois primeiros com uma rodada do jq (`metrics/export.jq`); o jq é
-um binário pequeno em C, então nenhum Python roda na máquina (AGENTS.md, "Resource budget", regra 4).
+O `piabrota metrics-export` (`scala/metrics/Export.scala`) escreve os dois primeiros numa rodada;
+o binário só precisa da glibc, então nenhum Python nem JVM roda na máquina (AGENTS.md, "Resource
+budget", regra 4).
 O timer `metrics-export.timer` roda ele no intervalo do coletor, no sandbox do coletor e sem rede:
 lê `/run/metrics-web/<nome>.json` e escreve `all.json` e `metrics.prom` ao lado, cada um por um
 arquivo temporário e um rename. Deixa de fora um arquivo que não é um objeto JSON, que passa de
@@ -325,19 +327,17 @@ menos, ou mude essa constante também.
 
 ## Testes e prévia
 
-- `python3 metrics/test/collect_test.py`: o coletor e a sonda, com uma árvore falsa de `/proc` e
-  cgroup e um curl falso. Imprime "N checks, M failed".
+- `scala/metrics/*.test.scala` (`just scala-test`, e o build Nix do binário): o coletor e a sonda,
+  com uma árvore falsa de `/proc` e cgroup e um curl falso, e a exportação: o `all.json` e o
+  `metrics.prom` das fixtures, conferidos linha a linha contra o formato de texto.
 - `checks.metrics-page` (`metrics/test/page.nix`): as regras estáticas da página, em Nix puro, e
-  os dados de teste pelo jq. `python3 metrics/test/preview.py --check`: uma busca HTTP da página e
-  dos dados. `python3 metrics/test/export_test.py`: o `all.json` e o `metrics.prom` das
-  fixtures. `just metrics-test` roda os quatro.
+  os dados de teste pelo jq. `piabrota metrics-preview --check`: uma busca HTTP da página e dos
+  dados. `just metrics-test` roda estes dois.
 - `checks.metrics`: quatro VMs (hub, edge, locked, client), HTTP simples, precisa de KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Prévia da página com dados de teste (healthy, stale, missing, hostile):
 
   ```console
-  python3 metrics/test/preview.py healthy 8080     # abra http://127.0.0.1:8080/
+  nix run .#piabrota -- metrics-preview healthy 8080   # abra http://127.0.0.1:8080/
   just metrics-preview healthy
   ```
-
-  Precisa de python3.

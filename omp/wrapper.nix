@@ -21,27 +21,17 @@
 , appendSystemPrompt ? ../hermes/omp-append-system.md
 }:
 let
-  omp = "${pkgs.callPackage ./package.nix { }}/bin/omp";
-  run =
-    if ceiling == null then
-      "exec ${pkgs.util-linux}/bin/choom -n 500 -- ${omp}"
-    else
-      "exec ${pkgs.coreutils}/bin/timeout --signal=TERM --kill-after=30s ${ceiling} ${pkgs.util-linux}/bin/choom -n 500 -- ${omp}";
+  scripts = pkgs.callPackage ../scala { };
 in
-pkgs.writeShellApplication {
+# `piabrota omp` (scala/scripts/Wrappers.scala) does the token moves and execs the programs below.
+scripts.command {
   name = "omp";
-  text = ''
-    export PI_CONFIG_FILES=${../hermes/omp.yml}
-    if [ -z "''${ANTHROPIC_OAUTH_TOKEN:-}" ] && [ -z "''${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
-      case "''${ANTHROPIC_API_KEY:-}" in
-        sk-ant-oat*)
-          export ANTHROPIC_OAUTH_TOKEN="$ANTHROPIC_API_KEY"
-          unset ANTHROPIC_API_KEY
-          ;;
-      esac
-    fi
-    export ANTHROPIC_OAUTH_TOKEN="''${ANTHROPIC_OAUTH_TOKEN:-''${CLAUDE_CODE_OAUTH_TOKEN:-}}"
-    export OTEL_SDK_DISABLED=true PI_NO_TITLE=1 PI_PY=0 PI_JS=0
-    ${run} --append-system-prompt ${appendSystemPrompt} "$@"
-  '';
+  env = {
+    OMP_CONFIG = "${../hermes/omp.yml}";
+    OMP_APPEND = "${appendSystemPrompt}";
+    OMP_CEILING = if ceiling == null then "none" else ceiling;
+    OMP_BIN = "${pkgs.callPackage ./package.nix { }}/bin/omp";
+    OMP_TIMEOUT = "${pkgs.coreutils}/bin/timeout";
+    OMP_CHOOM = "${pkgs.util-linux}/bin/choom";
+  };
 }

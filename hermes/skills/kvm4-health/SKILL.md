@@ -38,11 +38,11 @@ kvm4-health            # the full report, with the sizes in HERMES_HOME
 kvm4-health --alert    # only findings (what the watchdog posts)
 ```
 
-`kvm4-health` is `scripts/kvm4-health.sh` of this skill, on your `PATH` with the tools it needs
-(nix-os `hermes.nix`).
+`kvm4-health` is a command of nix-os (`scala/hermes/Kvm4Health.scala`), on your `PATH` with the
+tools it needs (nix-os `hermes.nix`).
 
 Each line starts with `ok`, `WARN` or `CRIT`. Exit 1 means at least one finding. Thresholds are
-environment variables at the top of the script (`KH_DISK_WARN=80` and the like); set one on the
+environment variables (`KH_DISK_WARN=80` and the like, listed at the top of the command's source); set one on the
 command line to test (`KH_DISK_WARN=1 kvm4-health`), never in a file. The restart count of each unit
 (`NRestarts`, since the unit started) is WARN above `KH_RESTARTS_WARN=3` and CRIT above
 `KH_RESTARTS_CRIT=50`. The journal is WARN above `KH_JOURNAL_MIB=220`: journald caps it at 200 MiB
@@ -51,8 +51,8 @@ the box does not run (KVM 1 has none of the Hermes units) is skipped, not a find
 
 The owner runs it from his computer with `just remote-health`: KVM 1 (`piabrota.art`, or
 `DEPLOY_HOST`), or `just remote-health h0ffmann <address>` for another box. Exit 1 means a `WARN` or
-`CRIT` line. `hermes/skills/kvm4-health/scripts/kvm4-health.test.sh` (`just health-test`) tests the
-journal line and the exit status with a stub `journalctl`.
+`CRIT` line. `scala/hermes/Kvm4Health.test.scala` (`just scala-test`) tests the journal line, the
+alerts and the exit status with a stub `journalctl`.
 
 ## What a finding means
 
@@ -75,7 +75,7 @@ Freeing disk does not free memory. Say which of the two the finding is about.
 
 A `no_agent` cron job runs a script and posts its output. Empty output posts nothing, so a healthy
 tick costs no model call and no message. nix-os installs the job's script as
-`~/.hermes/scripts/kvm4-health-alert.sh` (it runs this script with `--alert --record`). The script
+`~/.hermes/scripts/kvm4-health-alert.sh` (it runs `kvm4-health --alert --record`). The command
 speaks when the set of findings changes, repeats it every 6 hours while it lasts, and says once
 when the box is healthy again.
 

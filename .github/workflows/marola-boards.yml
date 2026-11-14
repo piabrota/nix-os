@@ -1,6 +1,6 @@
 name: marola-boards
 
-# The boards marola.dev and marola.piabrota.art serve, from outside (scripts/marola_boards_check.sh).
+# The boards marola.dev and marola.piabrota.art serve, from outside (piabrota marola-boards-check, scala/scripts/).
 # A red run means an area's latest.json is older than 12 hours: the box's marola-boards-build has failed at
 # least twice in a row. GitHub mails the owner. It changes nothing on the box; the build runs there,
 # not here, because INEA and INEMA answer only Brazilian addresses (docs/MAROLA-SITE.md).
@@ -18,12 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - run: nix build .#piabrota
       - name: Check every area
         run: |
           set -o pipefail
           { echo "| area | generated_at | |"; echo "|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
           fail=0
           for base in https://marola.dev https://marola.piabrota.art; do
-            scripts/marola_boards_check.sh "$base" | tee -a "$GITHUB_STEP_SUMMARY" || fail=1
+            ./result/bin/piabrota marola-boards-check "$base" | tee -a "$GITHUB_STEP_SUMMARY" || fail=1
           done
           exit "$fail"

@@ -19,10 +19,10 @@ permissions:
   actions: write
 
 jobs:
-  # The fast checks, on every pull request: formatting, lints, shellcheck, the DeepWiki plan, the
-  # figures, the Python tests and two small checks (the metrics page, the favicon).
+  # The fast checks, on every pull request: formatting, lints, the DeepWiki plan, the figures, the
+  # scripts' binary with its tests (scala/) and two small checks (the metrics page, the favicon).
   lint:
-    name: lint (builds nothing)
+    name: lint (builds only the scripts' binary)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,27 +30,18 @@ jobs:
       - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hermes-web.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix omp/package.nix pgx/test.nix site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
       - run: nix run nixpkgs#statix -- check .
       - run: nix run nixpkgs#deadnix -- --fail .
-      - run: nix run nixpkgs#shellcheck -- scripts/*.sh hermes/skills/*/scripts/*.sh
-      - name: hermes-checkpoint passes its tests (a stub systemctl, no network)
-        run: sh scripts/hermes-checkpoint.test.sh
-      - name: cert-renew passes its tests (a stub systemctl, no network)
-        run: sh scripts/cert-renew.test.sh
+      - name: the scripts' binary builds offline and passes its tests (scala/; stand-in programs, no network)
+        run: nix build --print-build-logs .#piabrota
       - name: every piabrota.art name of the *.nix files is in scripts/domains.txt
-        run: python3 scripts/cert_check.py --coverage
-      - run: nix run nixpkgs#ruff -- check scripts metrics/test favicon video-lab
-      - run: nix run nixpkgs#ruff -- format --check scripts metrics/test favicon video-lab
-      - name: the Python scripts of scripts/ pass their tests (a stub gh, local git repositories, no network)
-        run: python3 -m unittest discover -s scripts/tests
-      - name: the metrics collector and probe pass their tests (a fixture /proc, a fake curl), and the page's fetch
-        run: python3 metrics/test/collect_test.py && python3 metrics/test/preview.py --check
+        run: ./result/bin/piabrota cert-check --coverage
+      - name: the metrics page's fetch, as the browser does it
+        run: ./result/bin/piabrota metrics-preview --check
       - name: the metrics page and the favicon pass their checks (pure Nix rules; small builds)
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.metrics-page .#checks.x86_64-linux.favicon
       - name: DeepWiki's page plan is within its limits (.devin/wiki.json)
-        run: nix run nixpkgs#jq -- -r -f scripts/deepwiki-check.jq .devin/wiki.json
+        run: ./result/bin/piabrota deepwiki-check
       - name: figures match their sources (offline; the pin is read from the index)
-        run: nix shell nixpkgs#just -c just figure-check
-      - name: omp-stream and omp-run pass their tests (a fake omp, no network)
-        run: nix shell nixpkgs#just nixpkgs#jq -c just omp-test
+        run: ./result/bin/piabrota figure-check
 
   # The full `nix flake check` builds the system and runs the VM test (checks.pgx), about 10 minutes
   # a run. The owner took it off pull requests on 2026-11-03: deploy.yml builds the system on each

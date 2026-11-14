@@ -1,7 +1,7 @@
 name: freeze
 
 # Like `pip freeze`, for each VPS: every package of the running system with its version and
-# size (scripts/freeze.sh), in the run summary and as the `freeze-<host>` artifact. Runs after
+# size (piabrota freeze), in the run summary and as the `freeze-<host>` artifact. Runs after
 # each deploy and by hand. A host whose address secret is not set yet is skipped.
 on:
   workflow_run:
@@ -45,8 +45,8 @@ jobs:
       - name: Freeze
         if: steps.host.outputs.ready == 'true'
         run: |
-          ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s < scripts/freeze.sh > freeze.txt
-          ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" sh -s -- --by-size < scripts/freeze.sh > by-size.txt
+          ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" piabrota freeze > freeze.txt
+          ssh -o BatchMode=yes "deploy@$DEPLOY_HOST" piabrota freeze --by-size > by-size.txt
           {
             echo '### ${{ matrix.node }}: what the running system holds'
             echo

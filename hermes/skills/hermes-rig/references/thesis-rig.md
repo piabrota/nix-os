@@ -69,4 +69,4 @@ the PDF. You cannot read `/var/lib/openrig` (the projects are there).
 - Never put a fact, a number or a reference in a task that the owner did not give.
 - Never run this rig at the same time as another rig. Never start the daemon.
 
-Source: `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, `thesis/thesis`, `docs/THESIS.md`.
+Source: `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, `scala/thesis/` (the `thesis` command), `docs/THESIS.md`.

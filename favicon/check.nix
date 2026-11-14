@@ -1,9 +1,9 @@
 # Checks of the favicon build (favicon/default.nix). The rules on the SVG are pure Nix, evaluated
 # here: it is the drawing of parts.eye (the same viewBox, radius, path, circles and colours, in
 # order), and the other copies of the mark carry the same shapes. The build runs xmllint on the SVG
-# and favicon/files_test.py on the ICO and the PNG, whose bytes Nix cannot read. `failures` is the
-# list of the SVG checks that fail, for `nix eval`.
-{ lib, runCommand, libxml2, python3, favicon }:
+# and `piabrota favicon-files-check` (scala/scripts/FaviconFiles.scala) on the ICO and the PNG,
+# whose bytes Nix cannot read. `failures` is the list of the SVG checks that fail, for `nix eval`.
+{ lib, callPackage, runCommand, libxml2, favicon }:
 let
   svg = builtins.readFile ./favicon.svg;
   eye =
@@ -33,11 +33,12 @@ let
     (f: map (part: lib.nameValuePair "${baseNameOf f} has ${part}" (count part (builtins.readFile f) > 0)) shapes)
     copies);
   failures = builtins.attrNames (lib.filterAttrs (_: ok: !ok) checks);
+  filesCheck = (callPackage ../scala { }).command { name = "favicon-files-check"; };
 in
-runCommand "favicon-check" { nativeBuildInputs = [ libxml2 python3 ]; passthru = { inherit failures; }; } ''
+runCommand "favicon-check" { nativeBuildInputs = [ libxml2 filesCheck ]; passthru = { inherit failures; }; } ''
   ${lib.concatMapStrings (f: "echo ${lib.escapeShellArg "FAIL ${f}"}\n") failures}
   echo "${toString (builtins.length (builtins.attrNames checks))} checks of the SVG, ${toString (builtins.length failures)} failed"
   xmllint --noout ${favicon}/favicon.svg
-  python3 ${./files_test.py} ${favicon}
+  favicon-files-check ${favicon}
   ${if failures == [ ] then "touch $out" else "exit 1"}
 ''

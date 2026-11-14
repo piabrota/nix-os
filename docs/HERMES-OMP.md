@@ -46,7 +46,7 @@ omp-run --stop <name>              # stop that run and wait until it has ended
 ```
 
 `--mode json` makes omp print one JSON event per line. `omp-stream`
-([`hermes/skills/hermes-omp/scripts/omp-stream.sh`](../hermes/skills/hermes-omp/scripts/omp-stream.sh),
+(`piabrota omp-stream`, [`scala/hermes/OmpStream.scala`](../scala/hermes/OmpStream.scala),
 a command on Hermes's PATH, in `hermes.nix`) prints one plain line per event, at once:
 
 ```
@@ -66,12 +66,12 @@ Hermes starts the run with `terminal(background=true, notify=true, heartbeat=120
 delivers the new lines to the chat. Each heartbeat costs one turn of Hermes, so a run of 15 minutes
 costs up to 8 turns. The filter calls no model.
 
-Test: `sh hermes/skills/hermes-omp/scripts/test-omp-stream.sh` (needs `jq`). It runs a recorded
-run (`scripts/fixtures/`) and three more cases: a line that is not JSON, a tool error and a secret.
+Test: `scala/hermes/OmpStream.test.scala` (`just scala-test`). It runs a recorded run
+(`OmpStreamFixture`) and more cases, among them a line that is not JSON, a tool error and a secret.
 
 ### How a run ends
 
-`omp-run` ([`hermes/skills/hermes-omp/scripts/omp-run.sh`](../hermes/skills/hermes-omp/scripts/omp-run.sh),
+`omp-run` (`piabrota omp-run`, [`scala/hermes/OmpRun.scala`](../scala/hermes/OmpRun.scala),
 a command on Hermes's PATH, in `hermes.nix`) prints one last line when omp did not finish, and then
 the progress file `omp-tasks/<name>.progress`:
 
@@ -90,9 +90,9 @@ ended as a failure with exit 143, also when Hermes had stopped it on purpose (20
 metrics run). `omp-run` catches SIGTERM, SIGINT and SIGHUP, passes SIGTERM to omp, lets
 `omp-stream` print the last lines and exits with a code, so bash prints no `tcsetattr` line.
 
-Test: `bash hermes/skills/hermes-omp/scripts/test-omp-run.sh` (needs `jq` and `setsid`). It runs
+Test: `scala/hermes/OmpRun.test.scala` (`just scala-test`; needs `setsid`). It runs
 `omp-run` with a fake omp in `bash -lic` with no terminal: a normal run, `--stop`, a SIGTERM to
-the process group, a SIGTERM to omp only, and a missing task file. `just omp-test` runs both tests.
+the process group, a SIGTERM to omp only, and a missing task file.
 
 ## The layers: what you can edit
 
