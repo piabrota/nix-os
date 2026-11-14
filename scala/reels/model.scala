@@ -8,7 +8,6 @@ import Json.*
 
 /** The programs the toolkit runs, by the name it looks up on the PATH. */
 enum Tool(val bin: String):
-  case Jq extends Tool("jq")
   case Ffmpeg extends Tool("ffmpeg")
   case Ffprobe extends Tool("ffprobe")
   case Resvg extends Tool("resvg")
@@ -22,21 +21,21 @@ enum Tool(val bin: String):
 
 /** The subcommands of `reel`, and the tools each one needs on the PATH. */
 enum Cmd(val key: String, val tools: Seq[Tool]):
-  case New extends Cmd("new", Seq(Tool.Jq))
+  case New extends Cmd("new", Nil)
   case Lint extends Cmd("lint", Nil)
-  case View extends Cmd("screenplay-view", Seq(Tool.Jq))
-  case Timing extends Cmd("timing-report", Seq(Tool.Jq))
-  case Approve extends Cmd("approve", Seq(Tool.Jq, Tool.Sha256sum))
-  case Shotlist extends Cmd("shotlist", Seq(Tool.Jq, Tool.Sha256sum))
-  case Still extends Cmd("still", Seq(Tool.Jq, Tool.Ffmpeg, Tool.Resvg))
-  case Scene extends Cmd("scene", Seq(Tool.Jq, Tool.Ffmpeg, Tool.Resvg))
-  case Music extends Cmd("music", Seq(Tool.Jq, Tool.Ffmpeg))
-  case Blender extends Cmd("blender", Seq(Tool.Jq, Tool.Sha256sum))
-  case Mix extends Cmd("mix", Seq(Tool.Jq, Tool.Ffmpeg))
-  case Render extends Cmd("render", Seq(Tool.Jq, Tool.Ffmpeg, Tool.Ffprobe, Tool.Resvg))
-  case Qa extends Cmd("qa", Seq(Tool.Jq, Tool.Ffmpeg, Tool.Ffprobe))
-  case ContactSheet extends Cmd("contact-sheet", Seq(Tool.Jq, Tool.Ffmpeg))
-  case Publish extends Cmd("publish", Seq(Tool.Jq, Tool.Sha256sum))
+  case View extends Cmd("screenplay-view", Nil)
+  case Timing extends Cmd("timing-report", Nil)
+  case Approve extends Cmd("approve", Seq(Tool.Sha256sum))
+  case Shotlist extends Cmd("shotlist", Seq(Tool.Sha256sum))
+  case Still extends Cmd("still", Seq(Tool.Ffmpeg, Tool.Resvg))
+  case Scene extends Cmd("scene", Seq(Tool.Ffmpeg, Tool.Resvg))
+  case Music extends Cmd("music", Seq(Tool.Ffmpeg))
+  case Blender extends Cmd("blender", Seq(Tool.Sha256sum))
+  case Mix extends Cmd("mix", Seq(Tool.Ffmpeg))
+  case Render extends Cmd("render", Seq(Tool.Ffmpeg, Tool.Ffprobe, Tool.Resvg))
+  case Qa extends Cmd("qa", Seq(Tool.Ffmpeg, Tool.Ffprobe))
+  case ContactSheet extends Cmd("contact-sheet", Seq(Tool.Ffmpeg))
+  case Publish extends Cmd("publish", Seq(Tool.Sha256sum))
 
 object Cmd:
   def parse(key: String): Option[Cmd] = values.find(_.key == key)
@@ -44,7 +43,7 @@ object Cmd:
 /** The tools that every command needs: the wrapper's PATH has no more than these and each
   * command's own.
   */
-val baseTools: Seq[Tool] = Seq(Tool.Jq, Tool.Timeout, Tool.Nice, Tool.Sha256sum)
+val baseTools: Seq[Tool] = Seq(Tool.Timeout, Tool.Nice, Tool.Sha256sum)
 
 /** The environment variables the toolkit reads, once, in `Config.read`. */
 object EnvVar:
@@ -83,7 +82,6 @@ object Name:
   val Hook = "hook.png"
   val ContactSheet = "contact-sheet.png"
   val Fonts = "fonts"
-  val Lib = "lib"
   val Styles = "styles"
   val Examples = "examples"
   val Projects = "projects"
@@ -96,20 +94,6 @@ object Name:
 
   /** `file.part.png`: ffmpeg and resvg pick the format from the extension. */
   def partPng(file: os.Path): os.Path = file / os.up / s"${file.last}$Part.png"
-
-/** The jq rule programs of share/reels/lib. */
-enum Rule(val file: String):
-  case Lint extends Rule("lint.jq")
-  case ShotLint extends Rule("shotlint.jq")
-  case Timeline extends Rule("timeline.jq")
-  case Scene extends Rule("scene.jq")
-  case Shotlist extends Rule("shotlist.jq")
-  case Skeleton extends Rule("skeleton.jq")
-  case Timing extends Rule("timing.jq")
-  case View extends Rule("view.jq")
-  case Background extends Rule("bg.jq")
-  case QaPlan extends Rule("qaplan.jq")
-  case QaReport extends Rule("qareport.jq")
 
 /** The folders of one project, projects/<slug>/. */
 final case class ProjectDir(root: os.Path):
@@ -151,7 +135,6 @@ final case class OutDir(root: os.Path):
 /** Where everything is, read once from the environment at the edge (`Config.read`). */
 final case class Config(share: os.Path, fonts: os.Path, home: os.Path, outbox: os.Path, tmpRoot: os.Path,
     cacheBase: Option[String], blender: Option[String]):
-  def lib: os.Path = share / Name.Lib
   def profileFile: os.Path = share / Name.Profile
   def styles: os.Path = share / Name.Styles
   def example(format: String): os.Path = share / Name.Examples / format
@@ -181,39 +164,29 @@ def checkedPath(path: String, what: String): os.Path =
     fail(s"$what: unsupported character in the path $path (letters, digits and / . _ - only)")
   os.Path(path, os.pwd)
 
-/** profile.json: every number of the toolkit. `text` is the file as `jq -c` writes it, which the
-  * jq programs get and which is in the key of every cached clip.
+/** profile.json: every number of the toolkit. `text` is the file as `jq -c` writes it, which is in
+  * the key of every cached clip; the rules read `json`, number texts and all.
   */
-final case class Profile(text: String, json: ujson.Value):
-  /** A number or a word, as `jq -r` prints it: `p("video", "crf")`. */
-  def p(path: String*): String = path.foldLeft(json)(_.at(_)).text
-  def pInt(path: String*): Int = path.foldLeft(json)(_.at(_)).num.toInt
+final case class Profile(text: String, json: Jv):
+  /** A number or a word, as the toolkit writes it into an argument: `p("video", "crf")`. */
+  def p(path: String*): String = Json.plain(get(path*))
+  def pInt(path: String*): Int = get(path*).number.toInt
+  def get(path: String*): Jv = path.foldLeft(json)(_.at(_))
   def W: Int = pInt("video", "width")
   def H: Int = pInt("video", "height")
   def FPS: Int = pInt("video", "fps")
 
-/** The level of a lint finding. */
-enum Level(val key: String):
-  case Error extends Level("error")
-  case Warn extends Level("warn")
-  case Other extends Level("")
+/** The level of a lint finding: an error blocks `reel approve`, a warning does not. */
+enum Level:
+  case Error, Warn
 
-object Level:
-  def parse(key: String): Level = values.find(l => l != Other && l.key == key).getOrElse(Other)
-
-/** One finding of a jq rule program. */
+/** One finding of the screenplay lint or the shotlist lint. `beat` is the beat's id as text, or
+  * `NoBeat` for a finding about the whole file.
+  */
 final case class Finding(level: Level, beat: String, rule: String, msg: String)
 
 object Finding:
   val NoBeat = "--"
-
-  def from(v: ujson.Value): Finding =
-    val level = v.at("level") match
-      case ujson.Str(s) => Level.parse(s)
-      case _            => Level.Other
-    Finding(level, v.at("beat").or(ujson.Str(NoBeat)).text, v.at("rule").text, v.at("msg").text)
-
-  def all(v: ujson.Value): Seq[Finding] = v.items.map(from)
 
   /** The one finding of a rule program that could not read its input: an error, never a pass. */
   def unreadable(rule: String, why: String): Seq[Finding] = Seq(Finding(Level.Error, NoBeat, rule, why))
@@ -262,26 +235,27 @@ final case class Beat(tIn: Option[Double], sound: Sound)
 final case class Music(preset: String, bpm: Option[Double], bpmText: String):
   def isOn: Boolean = preset != MusicPreset.NoMusic
 
-/** What the toolkit's Scala code reads of a screenplay; the jq programs read the whole text. Each
-  * text field is as `jq -r` prints it.
+/** What the commands read of a screenplay to make the sound and the file; the rules read the whole
+  * JSON. Each text field is as `Json.plain` writes it.
   */
 final case class Screenplay(slug: String, format: String, title: String, loop: Boolean, style: String,
     music: Music, beats: Seq[Beat])
 
 object Screenplay:
-  def from(v: ujson.Value): Screenplay =
-    def number(x: ujson.Value) = x match
-      case ujson.Num(d) => Some(d)
+  def from(v: Jv): Screenplay =
+    def number(x: Jv) = x match
+      case Jv.Num(d, _) => Some(d)
       case _            => None
     val music = v.at("music")
     val beats = v.at("beats").items.map { b =>
       val s = b.at("sound")
-      val cues = s.at("sfx").items.map(e => SfxCue(e.at("name").text, number(e.at("at"))))
-      Beat(number(b.at("t_in")), Sound(s.at("silence") == ujson.True, s.at("music").or(ujson.Str(MusicLevel.On.key)).text, cues))
+      val cues = s.at("sfx").items.map(e => SfxCue(Json.plain(e.at("name")), number(e.at("at"))))
+      Beat(number(b.at("t_in")), Sound(s.at("silence") == Jv.True, Json.plain(s.at("music").or(Jv.Str(MusicLevel.On.key))), cues))
     }
-    Screenplay(v.at("slug").text, v.at("format").text, v.at("title").text, v.at("loop").text == "true",
-      v.at("look").at("style").text,
-      Music(music.at("preset").or(ujson.Str(MusicPreset.NoMusic)).text, number(music.at("bpm")).filter(_ != 0), music.at("bpm").text),
+    Screenplay(Json.plain(v.at("slug")), Json.plain(v.at("format")), Json.plain(v.at("title")), v.at("loop") == Jv.True,
+      Json.plain(v.at("look").at("style")),
+      Music(Json.plain(music.at("preset").or(Jv.Str(MusicPreset.NoMusic))), number(music.at("bpm")).filter(_ != 0),
+        Json.plain(music.at("bpm"))),
       beats)
 
 /** The kind of a shot in the shotlist. */
@@ -292,22 +266,21 @@ enum ShotKind(val key: String):
 object ShotKind:
   def parse(key: String): ShotKind = if key == ThreeD.key then ThreeD else Flat
 
-/** The shot of a beat: `text` is its JSON for the jq programs, `{}` when the shotlist has none. */
-final case class Shot(text: String, listed: Boolean, kind: ShotKind)
+/** The shot of a beat in the shotlist, `{}` when the shotlist has none. */
+final case class Shot(json: Jv, listed: Boolean, kind: ShotKind)
 
 object Shot:
-  val Empty = "{}"
-  def from(text: String): Shot =
-    val v = Json.read(text).getOrElse(ujson.Obj())
-    Shot(text, v.at("beat").truthy, ShotKind.parse(v.at("kind").or(ujson.Str(ShotKind.Flat.key)).text))
+  def from(v: Jv): Shot =
+    Shot(v, v.at("beat").truthy, ShotKind.parse(Json.plain(v.at("kind").or(Jv.Str(ShotKind.Flat.key)))))
+  val Empty: Shot = from(Jv.EmptyObj)
 
 /** A screenplay that passed the gate: `sp` is a private copy of the file that was hashed, so the
   * file cannot change under a render.
   */
 final case class Approved(slug: String, dir: ProjectDir, sp: os.Path, hash: String)
 
-/** One beat in the frame plan (timeline.jq): frames S to E, the handles, the clip length, the
-  * transition into it and where its xfade starts.
+/** One beat in the frame plan (`Frames.timeline`): frames S to E, the handles, the clip length, the
+  * transition into it and where its xfade starts (0 for the first beat, which has none).
   */
 final case class Cut(id: String, tr: String, s: Double, e: Double, hin: Double, hout: Double,
     frames: Double, dq: Double, offset: Double)
@@ -317,17 +290,11 @@ object Cut:
   val Hard = "cut"
   val HardAs = "fade"
 
-  def from(c: ujson.Value): Cut =
-    def n(k: String) = c.at(k) match
-      case ujson.Num(d) => d
-      case _            => 0.0
-    Cut(c.at("id").text, c.at("tr").text, n("S"), n("E"), n("hin"), n("hout"), n("frames"), n("dq"), n("offset"))
-
 /** An approved project with what a render reads: the screenplay, its style, its frame plan and its
   * shotlist, each read once, so a render uses one version from its first beat to its last.
   */
-final case class Project(approved: Approved, spText: String, screenplay: Screenplay, style: String,
-    timeline: Vector[Cut], shots: os.Path, shotsSha: String):
+final case class Project(approved: Approved, spJson: Jv, screenplay: Screenplay, style: Jv,
+    timeline: Vector[Cut], shots: os.Path, shotsJson: Jv, shotsSha: String):
   export approved.{slug, dir, sp, hash}
   def hasShots: Boolean = os.isFile(shots)
   def isLast(id: String): Boolean = timeline.lastOption.exists(_.id == id)
@@ -346,28 +313,25 @@ object RenderClaim:
   val ScreenplaySha = "screenplay_sha256"
   val ReelSha = "reel_sha256"
 
-  def from(v: Option[ujson.Value]): RenderClaim =
-    def claim(k: String) = v.map(_.at(k).or(ujson.Str("")).text).getOrElse("")
+  def from(v: Option[Jv]): RenderClaim =
+    def claim(k: String) = v.map(r => Json.plain(r.at(k).or(Jv.Str("")))).getOrElse("")
     RenderClaim(claim(ScreenplaySha), claim(ReelSha))
 
 /** The QA report that publish reads. */
 final case class QaVerdict(passed: Boolean, reelSha: String, screenplaySha: String)
 
 object QaVerdict:
-  val Schema = "reels.qa/1"
 
   /** True when the report passed: every check, every beat, no failure. */
-  def passed(report: ujson.Value): Boolean =
+  def passed(report: Jv): Boolean =
     def allPass(k: String) = report.at(k) match
-      case a: ujson.Arr => a.value.forall(_.at("pass").truthy)
-      case _            => false
-    report.at("schema") == ujson.Str(Schema) && report.at("pass") == ujson.True &&
-      allPass("checks") && allPass("beats") && (report.at("failures") match
-        case a: ujson.Arr => a.value.isEmpty
-        case _            => false)
+      case Jv.Arr(xs) => xs.forall(_.at("pass").truthy)
+      case _          => false
+    report.at("schema") == Jv.Str(Schema.Qa) && report.at("pass") == Jv.True &&
+      allPass("checks") && allPass("beats") && report.at("failures") == Jv.EmptyArr
 
-  def from(report: ujson.Value): QaVerdict =
-    QaVerdict(passed(report), report.at(RenderClaim.ReelSha).text, report.at(RenderClaim.ScreenplaySha).text)
+  def from(report: Jv): QaVerdict =
+    QaVerdict(passed(report), Json.plain(report.at(RenderClaim.ReelSha)), Json.plain(report.at(RenderClaim.ScreenplaySha)))
 
 /** The two modes of a Blender run. */
 enum BlenderMode(val key: String):
@@ -377,11 +341,6 @@ enum BlenderMode(val key: String):
 object BlenderMode:
   /** The output path of a probe, which writes nothing. */
   val NoOutput = "none"
-
-/** What scene.jq writes for a beat. */
-enum SceneMode(val key: String):
-  case Ass extends SceneMode("ass")
-  case Plan extends SceneMode("plan")
 
 /** The options of `reel still`. */
 final case class StillOptions(at: String, out: String)
@@ -408,12 +367,58 @@ object Format:
 /** An SVG layer of a beat: its file in the project, when it fades in and for how long. */
 final case class Layer(svg: String, at: String, fade: String)
 
-/** What scene.jq plans for the picture of a beat, each number as jq prints it. */
+/** What `Captions.plan` plans for the picture of a beat, each number as `Json.plain` writes it. */
 final case class ScenePlan(zoom0: String, zoom1: String, grain: String, diagramY0: String, diagramH: String,
     diagramW: String, layers: Seq[Layer])
 
 object ScenePlan:
-  def from(v: ujson.Value): ScenePlan =
+  def from(v: Jv): ScenePlan =
+    def t(x: Jv) = Json.plain(x)
     val d = v.at("diagram")
-    ScenePlan(v.at("zoom").at(0).text, v.at("zoom").at(1).text, v.at("grain").text, d.at("y0").text, d.at("h").text,
-      d.at("w").text, v.at("layers").items.map(l => Layer(l.at("svg").text, l.at("at").text, l.at("fade").text)))
+    ScenePlan(t(v.at("zoom").at(0)), t(v.at("zoom").at(1)), t(v.at("grain")), t(d.at("y0")), t(d.at("h")),
+      t(d.at("w")), v.at("layers").items.map(l => Layer(t(l.at("svg")), t(l.at("at")), t(l.at("fade")))))
+
+/** The safe area of the picture, in pixels, and its size and centre. */
+final case class Region(x0: Double, y0: Double, x1: Double, y1: Double):
+  def w: Double = x1 - x0
+  def h: Double = y1 - y0
+  def cx: Double = (x0 + x1) / 2
+  def cy: Double = (y0 + y1) / 2
+
+/** A piece of a caption line: its text, and whether it is emphasis (between `*`). */
+final case class Run(t: String, emph: Boolean)
+
+/** A word of a caption line: the runs that no space separates. */
+final case class Word(runs: Vector[Run])
+
+/** Where QA looks at a beat: the probe second and the start second, as text, and whether the beat
+  * has text on screen.
+  */
+final case class Probe(id: String, at: String, start: String, hasText: Boolean)
+
+/** The names of the scenes of the profile, as the screenplay writes them. */
+enum SceneKind(val key: String):
+  case KineticText extends SceneKind("kinetic_text")
+  case TitleCard extends SceneKind("title_card")
+  case BigNumber extends SceneKind("big_number")
+  case BulletReveal extends SceneKind("bullet_reveal")
+  case Quote extends SceneKind("quote")
+  case SplitCompare extends SceneKind("split_compare")
+  case Timeline extends SceneKind("timeline")
+  case DiagramReveal extends SceneKind("diagram_reveal")
+  case OutroLoop extends SceneKind("outro_loop")
+
+object SceneKind:
+  def parse(v: Jv): Option[SceneKind] = values.find(k => v == Jv.Str(k.key))
+
+/** The schemas of the files the toolkit writes and reads. */
+object Schema:
+  val Screenplay = "reels.screenplay/1"
+  val Shotlist = "reels.shotlist/1"
+  val Qa = "reels.qa/1"
+
+/** The roles of a beat that the rules name. */
+object Role:
+  val Hook = "hook"
+  val Cta = "cta"
+  val Loop = "loop"

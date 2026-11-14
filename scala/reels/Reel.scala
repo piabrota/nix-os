@@ -2,10 +2,11 @@ package piabrota.reels
 
 import piabrota.lib.{Exit, env}
 
-/** `reel`, the toolkit of the Reels Fabric (docs/REELS.md): ffmpeg, resvg and jq, nothing else, and
-  * no network. The screenplay.json of a project is the one source: every command that makes a
-  * picture or a sound refuses to run when the screenplay is not approved, or changed after its
-  * approval. The data (profile, styles, jq rules, examples, fonts) is in REELS_SHARE.
+/** `reel`, the toolkit of the Reels Fabric (docs/REELS.md): ffmpeg and resvg, nothing else, and no
+  * network. The screenplay.json of a project is the one source: every command that makes a picture
+  * or a sound refuses to run when the screenplay is not approved, or changed after its approval.
+  * The rules are Scala functions of this package; the data (profile, styles, examples, fonts) is in
+  * REELS_SHARE.
   */
 object Reel:
   val usage: String =

@@ -23,7 +23,10 @@ object Screenplays:
     catch case _: java.io.IOException => fail(s"cannot make $proj")
     if example then
       val dir = ProjectDir(tk.cfg.example(fmt))
-      val text = tk.jq(Seq("--arg", "slug", slug, ".slug = $slug", dir.screenplay.toString), "cannot copy the example")
+      val text = Json.readDocs(dir.screenplay).flatMap { docs =>
+        try Some(docs.map(d => Json.pretty(Drafts.example(d.value, slug)) + "\n").mkString)
+        catch case _: JqError => None
+      }.getOrElse(fail("cannot copy the example"))
       os.write(stage.screenplay, text)
       glob(dir.root / "svg", "", ".svg").foreach(f => os.copy(f, stage.svg / f.last))
       os.write(stage.brief,
@@ -33,9 +36,8 @@ object Screenplays:
            |It is a sample, not a client brief.
            |""".stripMargin)
     else
-      val text = tk.jq(Seq("-n", "--arg", "slug", slug, "--argjson", "format", fmt, "-f", tk.rule(Rule.Skeleton)),
-        "cannot write the skeleton")
-      os.write(stage.screenplay, text)
+      val format = Json.literal(fmt).getOrElse(fail("cannot write the skeleton"))
+      os.write(stage.screenplay, Json.pretty(Drafts.skeleton(slug, format)) + "\n")
       os.write(stage.brief, brief)
     try os.move(stage.root, proj)
     catch case _: java.io.IOException => fail(s"cannot move the project into place: $proj")
@@ -61,7 +63,6 @@ object Screenplays:
 
   def lint(tk: Toolkit, args: List[String]): Int =
     if args.length != 1 then fail("usage: reel lint <slug|file.json>")
-    needTools(Seq(Tool.Jq))
     val arg = args.head
     val sp = Gate.spPath(tk, arg)
     Gate.validJson(sp, arg)
@@ -83,26 +84,26 @@ object Screenplays:
     say(if pass then "lint: PASS" else "lint: FAIL")
     if pass then 0 else 1
 
-  /** The output of a jq program of lib/, without control characters. A failing program prints its
-    * error and what it wrote; the command does not fail for it.
+  /** A view of each value of the file, without control characters. A value that the view cannot
+    * read gets its error line and what was written before it; the command does not fail for it.
     */
-  private def view(tk: Toolkit, program: Rule, extra: Seq[String], sp: os.Path): String =
-    val r = os.proc(Tool.Jq.bin, "-r", "-L", tk.lib.toString, extra, "-f", tk.rule(program), sp)
-      .call(stdout = os.Pipe, stderr = os.Inherit, check = false)
-    printable(r.out.text())
+  private def view(sp: os.Path)(program: (Jv, String => Unit) => Unit): String =
+    val printed = Views.each(Json.readDocs(sp).getOrElse(Vector.empty), sp.toString)(program)
+    printed.err.foreach(System.err.println)
+    printable(printed.out)
 
   def screenplayView(tk: Toolkit, args: List[String]): Int =
     if args.length != 1 then fail("usage: reel screenplay-view <slug|file.json>")
     val sp = Gate.spPath(tk, args.head)
     Gate.validJson(sp, args.head)
-    print(view(tk, Rule.View, Nil, sp))
+    print(view(sp)(Views.screenplay))
     0
 
   def timingReport(tk: Toolkit, args: List[String]): Int =
     if args.length != 1 then fail("usage: reel timing-report <slug|file.json>")
     val sp = Gate.spPath(tk, args.head)
     Gate.validJson(sp, args.head)
-    val out = view(tk, Rule.Timing, Seq("--argjson", "profile", tk.profileText), sp).stripSuffix("\n")
+    val out = view(sp)(Views.timing(_, tk.profile.json, _)).stripSuffix("\n")
     say(out)
     if out.contains("result: FAIL") then 1 else 0
 
@@ -142,11 +143,17 @@ object Screenplays:
     val dest = a.dir.shotlist
     if os.exists(dest) && !force then fail(s"$dest exists: edit it, or use --force to start again")
     os.makeDir.all(a.dir.direction)
-    val r = os.proc(Tool.Jq.bin, "-L", tk.lib.toString, "--argjson", "style", Gate.style(tk, a.sp), "--arg", "hash", a.hash,
-      "-f", tk.rule(Rule.Shotlist), a.sp).call(stdout = os.Pipe, stderr = os.Inherit, check = false)
-    if r.exitCode != 0 then throw Exit(r.exitCode)
+    val style = Gate.style(tk, a.sp)
+    val docs = Json.readDocs(a.sp).getOrElse(Vector.empty)
+    val text = docs.map { d =>
+      try Json.pretty(Drafts.shotlist(d.value, style, a.hash)) + "\n"
+      catch
+        case JqError(msg) =>
+          System.err.println(s"jq: error (at ${a.sp}:${d.line}): $msg")
+          throw Exit(5)
+    }.mkString
     val part = Name.part(dest)
-    os.write.over(part, r.out.bytes)
+    os.write.over(part, text)
     os.move(part, dest, replaceExisting = true)
     say(s"wrote $dest")
     0

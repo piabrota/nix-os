@@ -17,7 +17,7 @@ def needTools(tools: Seq[Tool]): Unit =
   * `tmp`, which `Toolkit.close` removes. Made once for each run of `reel`, by `Toolkit.open`.
   */
 final case class Toolkit(cfg: Config, profile: Profile, tmp: os.Path, gnuTime: Boolean):
-  export cfg.{share, fonts, home, outbox, lib}
+  export cfg.{share, fonts, home, outbox}
   export profile.{p, pInt, W, H, FPS}
 
   def profileText: String = profile.text
@@ -94,16 +94,6 @@ final case class Toolkit(cfg: Config, profile: Profile, tmp: os.Path, gnuTime: B
   /** SHA-256 of a file, in lower-case hex. */
   def sha(file: os.Path): String = shaOf(Seq(file))
 
-  /** A jq program of lib/ (`-L lib`), its stdout; dies with `message` when it fails. */
-  def jq(args: Seq[String], message: String, stdin: os.ProcessInput = os.Pipe): String =
-    jqCall(args, stdin).getOrElse(fail(message))
-
-  def jqCall(args: Seq[String], stdin: os.ProcessInput = os.Pipe): Option[String] =
-    val r = os.proc(Tool.Jq.bin, "-L", lib.toString, args).call(stdin = stdin, stderr = os.Inherit, check = false)
-    Option.when(r.exitCode == 0)(r.out.text())
-
-  def rule(r: Rule): String = (lib / r.file).toString
-
   /** The names of the style files. */
   def styles: Seq[String] =
     os.list(cfg.styles).map(_.last).filter(_.endsWith(".json")).map(_.stripSuffix(".json")).sorted
@@ -126,10 +116,8 @@ object Toolkit:
   def close(tk: Toolkit): Unit = os.remove.all(tk.tmp)
 
   private def readProfile(file: os.Path): Profile =
-    val r = os.proc(Tool.Jq.bin, "-c", ".", file).call(stdout = os.Pipe, stderr = os.Inherit, check = false)
-    if r.exitCode != 0 then fail(s"cannot read $file")
-    val text = r.out.text().stripSuffix("\n")
-    Profile(text, Json.read(text).getOrElse(fail(s"cannot read $file")))
+    val json = Json.readFile(file).getOrElse(fail(s"cannot read $file"))
+    Profile(Json.compact(json), json)
 
   private def gnuTime: Boolean =
     try Sh.ok(Tool.Time.bin, "-f", "%e %M", "true")

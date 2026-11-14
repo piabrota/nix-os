@@ -12,7 +12,7 @@ The Reels Fabric is an [OpenRig](OPENRIG.md) rig that makes one vertical video, 
 1080x1920, for Instagram Reels. Five seats work as one film crew, in the pod `crew` (see "The
 crew"). The creative director writes the screenplay. The producer-editor approves it and builds the
 reel. The artist-3d makes 3D shots, the music director makes the sound, and QA checks the file. The
-seats use one toolkit, `reel`, made of Scala (`piabrota reel`, scala/reels/), `jq` rules, `ffmpeg` and `resvg`. The 3D shots need
+seats use one toolkit, `reel`, made of Scala (`piabrota reel`, scala/reels/, with the screenplay rules), `ffmpeg` and `resvg`. The 3D shots need
 Blender, which is a second option and is off (see "3D shots with Blender").
 
 The rig is a definition only. The options are off, nobody starts the rig, and the owner decides when
@@ -504,8 +504,8 @@ Set `piabrota.openrig.reels.enable = true;` in `hosts/piabrota2/default.nix` and
 The merge deploys it. The option adds:
 
 - the toolkit `reel` in the profile of the user `openrig` and in the unit's `path`, with
-  `ffmpeg-headless` and `jq`. The toolkit has its own `ffmpeg-headless`, `resvg`, `jq`, `coreutils` and
-  `time`.
+  `ffmpeg-headless` and `jq`. The toolkit has its own `ffmpeg-headless`, `resvg`, `coreutils` and
+  `time`. The toolkit does not use `jq`; it is in the profile for the seats' own scripts.
 - two font files, Inter (879,708 bytes) and Fjalla One (209,052 bytes). This is the owner's exception to
   "no fonts" in `AGENTS.md`: two files in `share/reels/fonts`, no collection, no `fontconfig` of the
   system, no GUI.
@@ -571,7 +571,6 @@ To test the toolkit without a rig, run `reel new demo 15 --example` and the sess
 - [FFmpeg](https://ffmpeg.org) (`ffmpeg-headless` 8.1.3, with libx264 and libass; the license in
   nixpkgs is LGPL-2.1-or-later or GPL-2.0-or-later and the build with libx264 is GPL).
 - [resvg](https://github.com/linebender/resvg) 0.47.0 (MPL-2.0) draws the SVG.
-- [jq](https://github.com/jqlang/jq) 1.8.2 (MIT) does the screenplay logic.
 - [Inter](https://rsms.me/inter/) 4.1 by Rasmus Andersson (SIL OFL 1.1), from nixpkgs.
 - [Fjalla One](https://fonts.google.com/specimen/Fjalla+One) by Sorkin Type (SIL OFL 1.1: the file is
   in the `ofl/` folder of [google/fonts](https://github.com/google/fonts) and its name table names the

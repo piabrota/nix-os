@@ -75,7 +75,7 @@ object Blender:
     val p = Gate.load(tk, slug)
     Gate.requireShotlist(tk, p)
     if !id.matches("b[0-9][0-9]") then fail(s"the shot id is a beat id, like b03: $id")
-    val shot = Gate.shotOf(tk, p, id)
+    val shot = Gate.shotOf(p, id)
     if !shot.listed then fail(s"no shot $id in the shotlist")
     if shot.kind != ShotKind.ThreeD then
       fail(s"shot $id is not of kind 3d: the creative director marks it in direction/shotlist.json")

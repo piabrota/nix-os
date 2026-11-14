@@ -1,12 +1,11 @@
 # `reel`, the toolkit of the Reels Fabric rig (docs/REELS.md): one screenplay.json a reel, scenes in
 # SVG and ASS captions, procedural sound, assembly with ffmpeg. The command is `piabrota reel`
-# (scala/reels/, Scala 3), the screenplay rules are jq programs (lib/*.jq); no Python, no network, no
-# model. `bin/reel` runs with a PATH of its own tools only, and finds its data in share/reels
-# (REELS_SHARE).
+# (scala/reels/, Scala 3), and so are the screenplay rules; no Python, no jq, no network, no model.
+# `bin/reel` runs with a PATH of its own tools only, and finds its data in share/reels (REELS_SHARE).
 #
 # Tools: ffmpeg-headless (it has libx264, libass and fontconfig, which the captions need; the full
 # ffmpeg adds a display stack for nothing), resvg (one small Rust binary, no fontconfig of its own;
-# ImageMagick would pull more), jq, GNU coreutils (timeout, nice, sha256sum, cp, chmod) and `time`
+# ImageMagick would pull more), GNU coreutils (timeout, nice, sha256sum, cp, chmod) and `time`
 # (the peak memory in render.json). Blender is not here: it is optional, and the wrapper only passes
 # on the `blender` that the caller has in its PATH (docs/REELS.md, "3D shots with Blender").
 #
@@ -41,7 +40,7 @@ let
     url = "https://raw.githubusercontent.com/google/fonts/5174b3333331c966c38f4355d50b03ca1c1df2f9/ofl/fjallaone/FjallaOne-Regular.ttf";
     hash = "sha256-zjspliWr48dvis0jW1ez4HrG7i1VDhBqS05NYAla4ro=";
   };
-  tools = [ jq ffmpeg-headless resvg coreutils time ];
+  tools = [ ffmpeg-headless resvg coreutils time ];
 
   # `piabrota reel` with the toolkit's tools as its whole PATH.
   reel = scripts.command {
@@ -56,7 +55,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [ ./profile.json ./lib ./styles ./examples ];
+    fileset = lib.fileset.unions [ ./profile.json ./styles ./examples ];
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -67,7 +66,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook preInstall
     share=$out/share/reels
     mkdir -p $out/bin $share/fonts
-    cp -r profile.json lib styles examples $share/
+    cp -r profile.json styles examples $share/
     install -m 0444 ${inter}/share/fonts/truetype/InterVariable.ttf $share/fonts/InterVariable.ttf
     install -m 0444 ${fjallaOne} $share/fonts/FjallaOne-Regular.ttf
     # The inner wrapper replaces PATH with the toolkit's tools, so this one reads the caller's PATH
@@ -81,7 +80,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.tests.run = scripts.overrideAttrs (old: {
     pname = "reels-test";
-    nativeBuildInputs = old.nativeBuildInputs ++ tools;
+    # jq edits the test screenplays; the toolkit itself does not run it.
+    nativeBuildInputs = old.nativeBuildInputs ++ tools ++ [ jq ];
     preCheck = ''
       export REELS_SHARE=${finalAttrs.finalPackage}/share/reels
       export REELS_SPECS=${../openrig/specs}

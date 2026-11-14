@@ -1,6 +1,10 @@
 package piabrota.reels
 
+import Json.*
+
 class ReelUnitSuite extends munit.FunSuite:
+  private def j(text: String): Jv = Json.read(text).getOrElse(fail(s"not JSON: $text"))
+
   test("numbers print as jq prints them") {
     assertEquals(Json.num(0.22 - 0.55), "-0.33000000000000007")
     assertEquals(Json.num(60 / 112.0), "0.5357142857142857")
@@ -13,21 +17,20 @@ class ReelUnitSuite extends munit.FunSuite:
   }
 
   test("compact JSON is jq's") {
-    val v = ujson.Obj("a" -> ujson.Arr(1.0, 2.5), "b" -> "x\"y\n\u0001é", "c" -> ujson.Null)
-    assertEquals(Json.compact(v), """{"a":[1,2.5],"b":"x\"y\n\u0001é","c":null}""")
+    val v = Jv.obj("a" -> Jv.arr(Jv.num(1), Jv.num(2.5)), "b" -> Jv.Str("x\"y\n\u0001é\u007f"), "c" -> Jv.Null)
+    assertEquals(Json.compact(v), """{"a":[1,2.5],"b":"x\"y\n\u0001é\u007f","c":null}""")
   }
 
   test("jq-style access") {
-    import Json.*
-    val v = ujson.read("""{"a": {"b": false}, "n": 15}""")
-    assertEquals(v.at("a").at("b").or(ujson.Str("d")).text, "d")
-    assertEquals(v.at("x").at("y"), ujson.Null)
-    assertEquals(v.at("n").text, "15")
-    assertEquals(ujson.Str("s").at("k"), ujson.Null)
+    val v = j("""{"a": {"b": false}, "n": 15}""")
+    assertEquals(plain(v.at("a").at("b").or(Jv.Str("d"))), "d")
+    assertEquals(v.at("x").at("y"), Jv.Null)
+    assertEquals(plain(v.at("n")), "15")
+    assertEquals(Jv.Str("s").at("k"), Jv.Null)
   }
 
   test("the music gain moves at each cut where the level changes") {
-    val sp = ujson.read("""{"beats": [
+    val sp = j("""{"beats": [
       {"t_in": 0, "sound": {"music": "on"}},
       {"t_in": 2.5, "sound": {}},
       {"t_in": 6, "sound": {"music": "low"}},
@@ -46,7 +49,7 @@ class ReelUnitSuite extends munit.FunSuite:
 
   test("the loudnorm block is read from the log") {
     val log = "[Parsed_loudnorm_0 @ 0x1]\n{\n\t\"input_i\" : \"-23.10\",\n\t\"input_tp\" : \"-inf\"\n}\nmore"
-    assertEquals(Audio.loudnormBlock(log).map(_("input_i").str), Some("-23.10"))
+    assertEquals(Audio.loudnormBlock(log).map(b => plain(b.at("input_i"))), Some("-23.10"))
     assertEquals(Audio.loudnormBlock("no block"), None)
   }
 
@@ -78,17 +81,17 @@ class ReelUnitSuite extends munit.FunSuite:
 
   test("the stats of the timed runs") {
     val s = Render.stats(Seq("1.25 2048", "0.75 10342", ""))
-    assertEquals(s.map(Json.compact), Some("""{"ffmpeg_wall_s":2,"peak_rss_mib":10.1,"runs":2,"per_run":[[1.25,2],[0.75,10.1]]}"""))
-    assertEquals(Render.stats(Nil).map(Json.compact), Some("""{"ffmpeg_wall_s":0,"peak_rss_mib":0,"runs":0,"per_run":[]}"""))
+    assertEquals(s.map(compact(_)), Some("""{"ffmpeg_wall_s":2,"peak_rss_mib":10.1,"runs":2,"per_run":[[1.25,2],[0.75,10.1]]}"""))
+    assertEquals(Render.stats(Nil).map(compact(_)), Some("""{"ffmpeg_wall_s":0,"peak_rss_mib":0,"runs":0,"per_run":[]}"""))
     assertEquals(Render.stats(Seq("Command exited with non-zero status 1")), None)
   }
 
   test("a QA report passes only when every check and beat passes") {
-    val good = ujson.read("""{"schema": "reels.qa/1", "pass": true, "checks": [{"pass": true}], "beats": [{"pass": true}], "failures": []}""")
+    val good = j("""{"schema": "reels.qa/1", "pass": true, "checks": [{"pass": true}], "beats": [{"pass": true}], "failures": []}""")
     assert(QaVerdict.passed(good))
-    val bad = ujson.read("""{"schema": "reels.qa/1", "pass": true, "checks": [{"pass": false}], "beats": [], "failures": []}""")
+    val bad = j("""{"schema": "reels.qa/1", "pass": true, "checks": [{"pass": false}], "beats": [], "failures": []}""")
     assert(!QaVerdict.passed(bad))
-    assert(!QaVerdict.passed(ujson.Null))
+    assert(!QaVerdict.passed(Jv.Null))
   }
 
   test("control characters are dropped, tabs and line breaks kept") {
@@ -107,9 +110,7 @@ class ReelUnitSuite extends munit.FunSuite:
     assertEquals(Stage.plan(0, 4), Nil)
   }
 
-  test("a lint finding is read from the rules' JSON") {
-    val fs = Finding.all(ujson.read("""[{"level": "error", "beat": null, "rule": "r", "msg": "m"},
-      {"level": "warn", "beat": "b01", "rule": "s", "msg": "n"}]"""))
-    assertEquals(fs, Seq(Finding(Level.Error, "--", "r", "m"), Finding(Level.Warn, "b01", "s", "n")))
+  test("the findings print one line each, then the count") {
+    val fs = Seq(Finding(Level.Error, Finding.NoBeat, "r", "m"), Finding(Level.Warn, "b01", "s", "n"))
     assertEquals(Gate.findings(fs), ("ERROR  --  [r]  m\nwarn   b01  [s]  n\nlint: 1 error(s), 1 warning(s)", false))
   }
