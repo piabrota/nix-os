@@ -158,7 +158,7 @@ Rules for anything you add:
    `nix-output-monitor` from gvolpe's list were left out for this reason. Hermes Agent
    (`hermes.nix`) is a Python runtime the owner asked for, not a small job: it gets its own
    `MemoryMax`. OpenRig (`openrig.nix`) is the owner's exception for Node 24, with its own limit.
-   The repository's own scripts are one Scala Native binary (`scala/`, about 8 MiB, glibc only):
+   The repository's own scripts are one Scala Native binary (`scala/`, about 19 MiB, glibc only):
    no JVM, no Python and no extra shell tools reach the box for them. A new script is a command
    of it, not a new runtime.
 5. **No resident daemons** unless the host needs them. Each service costs RAM all the time.
