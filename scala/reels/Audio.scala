@@ -147,7 +147,7 @@ object Audio:
       if !quiet then say(s"mix: $mixWav ($n sources, $fmt s, ${tk.p("audio", "target_lufs")} LUFS target)")
 
   /** The JSON block that loudnorm prints in its log. */
-  def loudnormBlock(log: String): Option[ujson.Value] =
+  def loudnormBlock(log: String): Option[Jv] =
     """\{[^}]*\}""".r.findFirstIn(log).flatMap(Json.read)
 
   /** loudnorm in two passes, to the target of the profile. The peak ceiling is audio.premix_peak,
@@ -159,7 +159,7 @@ object Audio:
     val log = tk.ffl("-i", in.toString, "-af", s"loudnorm=I=$i:TP=$tp:LRA=11:print_format=json", "-f", "null", "-")
       .getOrElse(fail("loudnorm (pass 1) failed"))
     val m = loudnormBlock(log).getOrElse(fail("cannot read the loudnorm measurement"))
-    def g(k: String) = m.at(k).text
+    def g(k: String) = Json.plain(m.at(k))
     val part = Name.part(out)
     if !tk.ffp("-i", in.toString, "-af",
         s"loudnorm=I=$i:TP=$tp:LRA=11:measured_I=${g("input_i")}:measured_TP=${g("input_tp")}:measured_LRA=${g("input_lra")}:measured_thresh=${g("input_thresh")}:offset=${g("target_offset")}:linear=true,aresample=${tk.p("audio", "rate")},aformat=sample_fmts=s16:channel_layouts=stereo",

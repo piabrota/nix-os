@@ -6,16 +6,16 @@ import Json.*
 /** The clips, the sound and the assembly into out/<slug>/reel.mp4. */
 object Render:
   /** Seconds and peak memory of the timed runs so far, from the toolkit's `times`. */
-  def stats(times: Seq[String]): Option[ujson.Obj] =
+  def stats(times: Seq[String]): Option[Jv] =
     val runs = times.filter(_.nonEmpty).map(_.split(' ').toSeq.map(_.toDoubleOption))
     if runs.exists(r => r.length < 2 || r.take(2).exists(_.isEmpty)) then None
     else
       val rows = runs.map(r => (r(0).get, jqRound(r(1).get / 1024 * 10) / 10.0))
-      Some(ujson.Obj(
-        "ffmpeg_wall_s" -> rows.map(_._1).sum,
-        "peak_rss_mib" -> rows.map(_._2).maxOption.getOrElse(0.0),
-        "runs" -> rows.length,
-        "per_run" -> ujson.Arr.from(rows.map((s, m) => ujson.Arr(s, m)))))
+      Some(Jv.obj(
+        "ffmpeg_wall_s" -> plainNum(rows.map(_._1).sum),
+        "peak_rss_mib" -> plainNum(rows.map(_._2).maxOption.getOrElse(0.0)),
+        "runs" -> plainNum(rows.length.toDouble),
+        "per_run" -> Jv.Arr(rows.toVector.map((s, m) => Jv.arr(plainNum(s), plainNum(m))))))
 
   /** The filter graph of one xfade chain over `cuts`, after the stream of the stages before it when
     * `hasAcc`. Returns the graph and the index of the next input (the sound, on the last stage).
@@ -118,13 +118,13 @@ object Render:
     os.move(part, rd.reel, replaceExisting = true)
     val wall = System.currentTimeMillis() / 1000 - t0
     val bytes = os.size(rd.reel)
-    val report = stats(os.read.lines(tk.times)).getOrElse(fail("cannot write render.json"))
-    report("slug") = p.slug
-    report("wall_s") = wall.toDouble
-    report("bytes") = bytes.toDouble
-    report(RenderClaim.ReelSha) = tk.sha(rd.reel)
-    report(RenderClaim.ScreenplaySha) = p.hash
+    val report = stats(os.read.lines(tk.times)).getOrElse(fail("cannot write render.json")) + Jv.obj(
+      "slug" -> Jv.Str(p.slug),
+      "wall_s" -> plainNum(wall.toDouble),
+      "bytes" -> plainNum(bytes.toDouble),
+      RenderClaim.ReelSha -> Jv.Str(tk.sha(rd.reel)),
+      RenderClaim.ScreenplaySha -> Jv.Str(p.hash))
     os.write.over(Name.part(rd.renderReport), Json.compact(report) + "\n")
     os.move(Name.part(rd.renderReport), rd.renderReport, replaceExisting = true)
-    say(s"render: ${rd.reel} ($bytes bytes, $wall s wall, ${report("peak_rss_mib").text} MiB peak in one ffmpeg)")
+    say(s"render: ${rd.reel} ($bytes bytes, $wall s wall, ${Json.plain(report.at("peak_rss_mib"))} MiB peak in one ffmpeg)")
     0

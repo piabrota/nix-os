@@ -12,7 +12,7 @@ A Fábrica de Reels é uma rig do [OpenRig](OPENRIG.md) que faz um vídeo vertic
 1080x1920, para os Reels do Instagram. Cinco seats trabalham como uma equipe de cinema, num só pod,
 o `crew` (veja "A equipe"). O diretor criativo escreve o roteiro. O produtor-editor o aprova e monta
 o reel. O artista 3D faz os planos 3D, o diretor musical faz o som e o QA confere o arquivo. Os seats
-usam um só kit, o `reel`, feito de Scala (`piabrota reel`, scala/reels/), regras `jq`, `ffmpeg` e `resvg`. Os planos 3D precisam do
+usam um só kit, o `reel`, feito de Scala (`piabrota reel`, scala/reels/, com as regras do roteiro), `ffmpeg` e `resvg`. Os planos 3D precisam do
 Blender, que é uma segunda opção e está desligada (veja "Cenas 3D com o Blender").
 
 A rig é só uma definição. As opções estão desligadas, ninguém inicia a rig, e o dono decide quando
@@ -507,7 +507,8 @@ Ponha `piabrota.openrig.reels.enable = true;` em `hosts/piabrota2/default.nix` e
 O merge faz o deploy. A opção adiciona:
 
 - o kit `reel` no perfil do usuário `openrig` e no `path` da unit, com `ffmpeg-headless` e `jq`. O kit
-  tem o próprio `ffmpeg-headless`, `resvg`, `jq`, `coreutils` e `time`.
+  tem o próprio `ffmpeg-headless`, `resvg`, `coreutils` e `time`. O kit não usa o `jq`; ele está no
+  perfil para os scripts dos próprios seats.
 - dois arquivos de fonte, Inter (879.708 bytes) e Fjalla One (209.052 bytes). É a exceção do dono para
   "sem fontes" no `AGENTS.md`: dois arquivos em `share/reels/fonts`, sem coleção, sem `fontconfig` do
   sistema, sem GUI.
@@ -574,7 +575,6 @@ Para testar o kit sem uma rig, rode `reel new demo 15 --example` e a sessão aci
 - [FFmpeg](https://ffmpeg.org) (`ffmpeg-headless` 8.1.3, com libx264 e libass; a licença no nixpkgs é
   LGPL-2.1-or-later ou GPL-2.0-or-later, e o build com libx264 é GPL).
 - [resvg](https://github.com/linebender/resvg) 0.47.0 (MPL-2.0) desenha o SVG.
-- [jq](https://github.com/jqlang/jq) 1.8.2 (MIT) faz a lógica do roteiro.
 - [Inter](https://rsms.me/inter/) 4.1, de Rasmus Andersson (SIL OFL 1.1), do nixpkgs.
 - [Fjalla One](https://fonts.google.com/specimen/Fjalla+One), de Sorkin Type (SIL OFL 1.1: o arquivo
   está na pasta `ofl/` do [google/fonts](https://github.com/google/fonts) e a tabela de nomes dele cita

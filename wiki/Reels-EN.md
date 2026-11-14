@@ -11,7 +11,7 @@ run of the rig has happened yet.
 ## In short
 
 - **Claude only.** No image, video, voice or music API. Every pixel and every sound comes from code
-  that a seat runs on the box (`ffmpeg`, `resvg`, `jq`, Scala).
+  that a seat runs on the box (`ffmpeg`, `resvg`, Scala).
 - **The screenplay comes first.** One file, `screenplay.json`, is the source. `reel lint` checks its
   rules and `reel approve` records its SHA-256. With no valid approval, nothing after the screenplay
   runs.
