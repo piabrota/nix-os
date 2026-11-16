@@ -8,7 +8,8 @@ uma máquina pequena, em produção, e contra os objetivos do dono, e diz por qu
 testar ou por que ficou de fora. Como o Hermes roda aqui está no [`HERMES.ptBR.md`](HERMES.ptBR.md).
 
 **A régua.** Uma Hostinger KVM 1 (1 vCPU, 4 GB de RAM, o Hermes limitado a 1 GB), NixOS com tudo
-declarado no `hermes.nix`, o Claude Sonnet pela assinatura do dono e nenhum outro provedor, o
+declarado no `hermes.nix`, o `glm-5.3-flash` pela assinatura do OpenCode Go do dono e nenhum outro
+provedor, o
 Telegram e o Discord como chats, um token do GitHub só de leitura. Fica de fora: o que pede Node, Go,
 Docker ou navegador na máquina, uma API paga ou um painel web, o que manda dados para fora, e o que
 não tem licença OSI. Os objetivos que ela serve: o [marola](https://marola.dev) (balneabilidade e
@@ -74,9 +75,9 @@ Cada uma está no `hermes.nix`, com o motivo do lado.
 
 | Configuração | Aqui | Padrão | Por quê |
 |---|---|---|---|
-| `model.provider`, `model.default` | `anthropic`, `claude-sonnet-5-5` | | Sonnet pela assinatura |
-| `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Só Claude: nenhum outro provedor, nunca |
-| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `claude-haiku-5-5` | | Haiku para subagentes e três tarefas laterais baratas; Sonnet para o resto |
+| `model.provider`, `model.default` | `opencode-go`, `glm-5.3-flash` | | GLM 5.3 Flash pela assinatura do OpenCode Go |
+| `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Só OpenCode Go: nenhum outro provedor, nunca |
+| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `glm-5.3-flash` | | O mesmo modelo para subagentes, as três tarefas laterais baratas e todo o resto |
 | `delegation.max_concurrent_children`, `max_iterations`, `max_spawn_depth` | 2, 50, 1 | 10, 250, 1 | Poucos subagentes, para uma vCPU e a cota |
 | `agent.max_turns` | 60 | sem limite | Uma execução não fica em loop para sempre |
 | `goals.max_turns` | 6 | 20 | Um `/goal` (o loop Ralph) para depois de 6 turnos, até o `/goal resume` |
@@ -131,7 +132,7 @@ entradas, cada uma com merge de um mantenedor, fixada num commit completo e exam
   inbox`, uma lista só de leitura dos jobs do cron que falharam e dos subagentes parados),
   `telegram-business` (rascunhos de resposta para uma conta Telegram Business; inerte sem ela),
   `workflow-record` (grava um fluxo no navegador; inerte, sem navegador aqui) e `github-copilot` (um
-  provedor de modelo; inerte, só Anthropic).
+  provedor de modelo; inerte, só OpenCode Go).
 - ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, no
   catálogo): uma skill para jobs baratos do cron (`no_agent`, `wakeAgent`, `[SILENT]`). O script de
   diagnóstico dela pede `python3`, que o `PATH` do Hermes não tem aqui.

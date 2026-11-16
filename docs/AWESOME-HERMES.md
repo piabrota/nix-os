@@ -8,7 +8,7 @@ small, live machine and its owner's goals, and says why it is in, to try, or out
 here is in [`HERMES.md`](HERMES.md).
 
 **The yardstick.** A Hostinger KVM 1 (1 vCPU, 4 GB of RAM, Hermes capped at 1 GB), NixOS with
-everything declared in `hermes.nix`, Claude Sonnet through the owner's subscription and no other
+everything declared in `hermes.nix`, `glm-5.3-flash` through the owner's OpenCode Go subscription and no other
 provider, Telegram and Discord as the chats, a read-only GitHub token. Out: anything that needs Node, Go,
 Docker or a browser on the box, a paid API, a web dashboard, or that phones home; anything without
 an OSI licence. The goals it serves: [marola](https://marola.dev) (bathing water and beach safety
@@ -73,9 +73,9 @@ Each is in `hermes.nix`, with the reason next to it.
 
 | Setting | Here | Default | Why |
 |---|---|---|---|
-| `model.provider`, `model.default` | `anthropic`, `claude-sonnet-5-5` | | Sonnet through the subscription |
-| `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Claude only: no other provider, ever |
-| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `claude-haiku-5-5` | | Haiku for subagents and three cheap side tasks; Sonnet for everything else |
+| `model.provider`, `model.default` | `opencode-go`, `glm-5.3-flash` | | GLM 5.3 Flash through the owner's OpenCode Go subscription |
+| `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | OpenCode Go only: no other provider, ever |
+| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `glm-5.3-flash` | | The same model for subagents, the three cheap side tasks and everything else |
 | `delegation.max_concurrent_children`, `max_iterations`, `max_spawn_depth` | 2, 50, 1 | 10, 250, 1 | Small fan-out for one vCPU and the quota |
 | `agent.max_turns` | 60 | unlimited | A run cannot loop forever |
 | `goals.max_turns` | 6 | 20 | One `/goal` (the Ralph loop) stops after 6 turns until `/goal resume` |
@@ -128,7 +128,7 @@ rules). Prefer the catalog's commit when you pin a plugin from it.
   in the catalog), all four, each at its catalog commit, by the owner's choice: `inbox` (`hermes
   inbox`, a read-only list of failed cron jobs and stalled subagents), `telegram-business` (reply
   drafts for a Telegram Business account; inert without one), `workflow-record` (records a browser
-  workflow; inert, no browser here) and `github-copilot` (a model provider; inert, Anthropic only).
+  workflow; inert, no browser here) and `github-copilot` (a model provider; inert, OpenCode Go only).
 - ✅ [itpartypattaya/hermes-cron](https://github.com/itpartypattaya/hermes-cron) (MIT, v1.5.2, in
   the catalog): a skill for cheap cron jobs (`no_agent`, `wakeAgent`, `[SILENT]`). Its doctor
   script needs `python3`, which Hermes's `PATH` does not have here.
