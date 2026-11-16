@@ -46,6 +46,12 @@ in
       default = { "/nixos" = "https://github.com/piabrota/nix-os"; };
       description = "Exact paths that answer with a 302 to a URL.";
     };
+    redirect302 = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+      example = { "hffmnn.piabrota.art" = "https://h0ffmann.github.io/h0ffmann/"; };
+      description = "Names that answer with a 302 to a URL, each on a virtual host of its own. Each name needs its own DNS A record and its own certificate: it must point at the box before the deploy, or the ACME order fails and deploy-rs rolls the switch back.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -69,6 +75,14 @@ in
           enableACME = true;
           globalRedirect = cfg.domain;
         }))
+        # `redirect302` names answer with a 302 to their URL, on a virtual host of their own, with
+        # a certificate of their own: each name must point at the box before the deploy.
+        (mapAttrs'
+          (name: url: nameValuePair name (tls // {
+            enableACME = true;
+            locations."/".return = "302 ${url}";
+          }))
+          cfg.redirect302)
       ];
     };
 
