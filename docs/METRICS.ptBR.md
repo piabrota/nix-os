@@ -289,7 +289,9 @@ Medido na piabrota2, com 127 processos:
 As unidades (coletor, sonda, pull) rodam como `metrics` com:
 
 - `ProtectSystem=strict`, com `ReadWritePaths` só das duas pastas em `/run`.
-- `MemoryMax=64M`, `NoNewPrivileges`, conjunto de capabilities vazio e filtro de syscalls.
+- `MemoryMax=64M`, `NoNewPrivileges`, conjunto de capabilities vazio e filtro de syscalls (uma
+  chamada re-permitida depois do filtro: `sched_setscheduler`, que o watcher de processos do
+  runtime Scala Native faz ao criar o primeiro processo filho).
 - A sonda é a unidade de um host que abre conexão (o pull é a outra, na piabrota2): o sandbox
   é o mesmo, com `AF_INET` e `AF_INET6`.
 - `PrivateNetwork` no coletor. Por isso ele lê a rede do PID 1 (`/proc/1/net/dev` e `sockstat`),

@@ -306,7 +306,9 @@ Measured on piabrota2, with 127 processes:
 The units (collector, probe, pull) run as `metrics` with:
 
 - `ProtectSystem=strict`, with `ReadWritePaths` of the two `/run` folders only.
-- `MemoryMax=64M`, `NoNewPrivileges`, an empty capability set and a syscall filter.
+- `MemoryMax=64M`, `NoNewPrivileges`, an empty capability set and a syscall filter (one call
+  re-allowed after the filter: `sched_setscheduler`, which the Scala Native runtime's process
+  watcher makes at the first child process it spawns).
 - The probe is the one unit of a host that opens a connection (the pull is the other, on
   piabrota2): its sandbox is the same, with `AF_INET` and `AF_INET6`.
 - `PrivateNetwork` on the collector. So it reads the network of PID 1 (`/proc/1/net/dev` and
