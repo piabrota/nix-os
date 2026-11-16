@@ -321,7 +321,12 @@ let
     RestrictSUIDSGID = true;
     RestrictNamespaces = true;
     SystemCallArchitectures = "native";
-    SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
+    # sched_setscheduler is re-allowed after ~@resources: the Scala Native runtime's process
+    # watcher (java.lang.process) sets the thread priority at the first child process it spawns,
+    # and the call under ~@resources is SIGSYS, a core dump, on every unit that shells out
+    # (metrics-probe and metrics-pull since the scripts moved to Scala, 2026-11-16). Outside a
+    # filter the call fails silently, so this lets back one call that sets a normal priority.
+    SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" "sched_setscheduler" ];
     ReadWritePaths = [ outDir stateDir ];
     MemoryMax = "64M";
     TasksMax = 64;
