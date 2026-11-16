@@ -54,5 +54,29 @@ in
       expr = has "<title>无" files."paths-desktop.svg";
       expected = true;
     };
+    # A project with counts shows both numbers, with the tooltip; one without shows no line at all.
+    testCommitsInEveryMockup = {
+      expr =
+        let
+          withCounts = lib.filter (p: p ? commits) data.projects;
+          tip = "<title>${s.esc data.commitsTip}</title>";
+          tips = f: lib.length (lib.splitString tip f) - 1;
+        in
+        lib.all
+          (f: lib.all (p: has (data.commitsText p) f) withCounts && tips f == lib.length withCounts)
+          (builtins.attrValues files);
+      expected = true;
+    };
+    # Counts belong to the org's own repositories, named like the project: not hermes, not a personal repository.
+    testCommitsOnOwnRepositoriesOnly = {
+      expr =
+        map (p: p.name) (lib.filter (p: p ? commits) data.projects)
+        == map (p: p.name) (lib.filter (p: data.origin p == "own" && !(p ? repository)) data.projects);
+      expected = true;
+    };
+    testCommitsTipHasTheDay = {
+      expr = has "as of ${data.commitsAsOf}." data.commitsTip;
+      expected = true;
+    };
   };
 }

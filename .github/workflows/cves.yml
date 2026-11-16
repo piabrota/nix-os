@@ -22,7 +22,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # The same space as deploy.yml's build: the closure with omp and Hermes does not fit in the
+      # runner's 14 GB ("No space left on device" on 2026-11-03).
+      - name: Free disk space on the runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
       - uses: cachix/install-nix-action@v31
+      # Restore only: the newest store of deploy or ci, so the report does not compile what a deploy
+      # already built. It saves nothing, so it takes no space in the Actions cache quota.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-deploy-${{ github.sha }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          save: false
       - run: nix build .#nixosConfigurations.piabrota.config.system.build.toplevel --no-update-lock-file
       - name: vulnix (exit 2 means it found something; that is the report)
         run: |

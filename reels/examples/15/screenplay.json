@@ -1,0 +1,55 @@
+{
+  "schema": "reels.screenplay/1",
+  "slug": "marola-praia-15",
+  "title": "3 cidades, uma pergunta",
+  "format": 15,
+  "logline": "Em 15 segundos: a marola responde se a praia está boa, e quando não sabe diz sem dados.",
+  "audience": "Quem nada ou entra no mar em Florianópolis, Rio de Janeiro e Salvador",
+  "language": "pt-BR",
+  "loop": true,
+  "claims": [
+    { "id": "c1", "text": "A marola está no ar em Florianópolis, Rio de Janeiro e Salvador", "source": "marola.dev, página inicial (resumo do dono, 2026-11-03)", "status": "sourced" },
+    { "id": "c2", "text": "A marola usa dados públicos e tem código aberto", "source": "marola.dev, página inicial (resumo do dono, 2026-11-03)", "status": "sourced" }
+  ],
+  "look": { "style": "piabrota" },
+  "music": { "preset": "upbeat", "bpm": 128 },
+  "beats": [
+    {
+      "id": "b01", "t_in": 0, "t_out": 2.5, "role": "hook",
+      "visual": { "describe": "A huge red 3 counts up in the middle of the sheet, a label under it.", "scene": "big_number", "params": {} },
+      "text": ["3", "cidades com dados ao vivo"],
+      "sound": { "music": "on", "sfx": [{ "name": "hit", "at": 0.0 }] },
+      "transition": "cut",
+      "claims": ["c1"]
+    },
+    {
+      "id": "b02", "t_in": 2.5, "t_out": 6, "role": "setup",
+      "visual": { "describe": "A title card with the question and a quieter line under it.", "scene": "title_card", "params": { "subtitle": true } },
+      "text": ["Praia boa hoje?", "Veja antes de ir."],
+      "sound": { "music": "on", "sfx": [{ "name": "whoosh", "at": 0.0 }] },
+      "transition": "slideleft", "transition_s": 0.35
+    },
+    {
+      "id": "b03", "t_in": 6, "t_out": 10, "role": "turn",
+      "visual": { "describe": "Two lines slam in. The second has one word in red.", "scene": "kinetic_text", "params": {} },
+      "text": ["Sem dados?", "A gente *diz*."],
+      "sound": { "music": "on", "sfx": [{ "name": "hit", "at": 0.0 }] },
+      "transition": "fade", "transition_s": 0.4
+    },
+    {
+      "id": "b04", "t_in": 10, "t_out": 12.8, "role": "payoff",
+      "visual": { "describe": "Two bullets with red markers.", "scene": "bullet_reveal", "params": {} },
+      "text": ["Dados públicos", "Código aberto"],
+      "sound": { "music": "on", "sfx": [{ "name": "pop", "at": 0.3 }, { "name": "pop", "at": 0.9 }] },
+      "transition": "slideup", "transition_s": 0.35,
+      "claims": ["c2"]
+    },
+    {
+      "id": "b05", "t_in": 12.8, "t_out": 15, "role": "cta",
+      "visual": { "describe": "The address, big, then the picture fades to the empty sheet.", "scene": "outro_loop", "params": {} },
+      "text": ["marola.dev"],
+      "sound": { "music": "on", "sfx": [{ "name": "pop", "at": 0.2 }] },
+      "transition": "fade", "transition_s": 0.4
+    }
+  ]
+}

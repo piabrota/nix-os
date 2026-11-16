@@ -1,0 +1,8 @@
+name = "www"
+version = "1.0.0"
+description = "Writes a plain HTML view of the skills into docs/site/"
+licences = ["MPL-2.0"]
+gleam = ">= 1.19.0"
+
+[dependencies]
+gleam_stdlib = ">= 1.0.5 and < 2.0.0"

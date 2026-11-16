@@ -1,0 +1,39 @@
+# The piabrota theme of Hermes's web dashboard (hermes.piabrota.art): the dark tokens of
+# site/DESIGN.md. hermes.nix installs the file into HERMES_HOME/dashboard-themes/ and sets
+# dashboard.theme. The dashboard's Chat tab runs the TUI, which reads a skin and not this theme:
+# see hermes/skins/piabrota.yaml.
+
+name: piabrota
+label: piabrota
+description: A dark sheet, one red. The look of piabrota.art.
+
+palette:
+  background: "#0B0D12"     # --bg
+  midground: "#EDEFF3"      # --text
+  foreground:
+    hex: "#FFFFFF"
+    alpha: 0
+  warmGlow: "rgba(188, 35, 24, 0.24)"   # the logo's red, as the glow of the site's top band
+  noiseOpacity: 0.15
+
+typography:
+  fontSans: "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif"
+  fontMono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
+  fontDisplay: "'Fjalla One', 'Arial Narrow', sans-serif"
+  # The same link as the pages of www.piabrota.art (site/src/piabrota_site/page.gleam).
+  fontUrl: "https://fonts.googleapis.com/css2?family=Fjalla+One&family=Inter:wght@400;600&family=JetBrains+Mono&display=swap"
+  baseSize: "15px"
+  lineHeight: "1.55"
+
+layout:
+  radius: "12px"
+  density: comfortable
+
+# One accent. The palette gives the dashboard white for its primary colour; these keep the red.
+colorOverrides:
+  primary: "#BC2318"            # --accent
+  primaryForeground: "#FFFFFF"  # --on-accent
+  ring: "#FF6B5E"               # --accent-text
+  card: "#14171F"               # --surface
+  border: "#2A303C"             # --border
+  mutedForeground: "#9AA3B2"    # --muted

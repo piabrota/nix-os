@@ -1,0 +1,166 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "A fábrica de software: o Hermes encaminha, o OpenRig constrói e revisa, uma pessoa faz o merge",
+    "locale": "pt-BR",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "software-factory.html"
+  },
+  "lanes": [
+    {
+      "id": "people",
+      "label": "Pessoas"
+    },
+    {
+      "id": "hermes",
+      "label": "Hermes · piabrota2"
+    },
+    {
+      "id": "rig",
+      "label": "OpenRig · rig piabrota-dev"
+    },
+    {
+      "id": "gh",
+      "label": "GitHub"
+    },
+    {
+      "id": "ship",
+      "label": "Deploy"
+    }
+  ],
+  "mainPath": [
+    "owner",
+    "hermes",
+    "builder",
+    "reviewer"
+  ],
+  "nodes": [
+    {
+      "id": "owner",
+      "lane": "people",
+      "col": 1,
+      "type": "external",
+      "label": "o dono",
+      "sublabel": "Discord, Telegram",
+      "width": 170
+    },
+    {
+      "id": "hermes",
+      "lane": "hermes",
+      "col": 1,
+      "type": "backend",
+      "label": "Hermes",
+      "sublabel": "encaminha e confere",
+      "width": 170
+    },
+    {
+      "id": "builder",
+      "lane": "rig",
+      "col": 2,
+      "type": "backend",
+      "label": "seat builder",
+      "sublabel": "omp, escreve o código",
+      "width": 170
+    },
+    {
+      "id": "reviewer",
+      "lane": "rig",
+      "col": 3,
+      "type": "backend",
+      "label": "seat reviewer",
+      "sublabel": "omp, confere o diff",
+      "width": 170
+    },
+    {
+      "id": "pr",
+      "lane": "gh",
+      "col": 1,
+      "type": "backend",
+      "label": "pull request",
+      "sublabel": "hermes/*",
+      "width": 170
+    },
+    {
+      "id": "merge",
+      "lane": "gh",
+      "col": 2,
+      "type": "external",
+      "label": "merge humano",
+      "sublabel": "sempre",
+      "width": 170
+    },
+    {
+      "id": "deploy",
+      "lane": "ship",
+      "col": 2,
+      "type": "backend",
+      "label": "deploy.yml",
+      "sublabel": "magic rollback",
+      "width": 170
+    },
+    {
+      "id": "vps",
+      "lane": "ship",
+      "col": 3,
+      "type": "frontend",
+      "label": "as duas VPSs",
+      "sublabel": "piabrota, piabrota2",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "owner",
+      "to": "hermes",
+      "label": "tarefa"
+    },
+    {
+      "id": "e2",
+      "from": "hermes",
+      "to": "builder",
+      "label": "rig send"
+    },
+    {
+      "id": "e3",
+      "from": "builder",
+      "to": "reviewer",
+      "label": "delegates_to"
+    },
+    {
+      "id": "e4",
+      "from": "reviewer",
+      "to": "hermes",
+      "label": "parecer",
+      "role": "branch"
+    },
+    {
+      "id": "e5",
+      "from": "hermes",
+      "to": "pr",
+      "label": "commit, push"
+    },
+    {
+      "id": "e6",
+      "from": "pr",
+      "to": "merge",
+      "label": "revisão"
+    },
+    {
+      "id": "e7",
+      "from": "merge",
+      "to": "deploy",
+      "label": "main"
+    },
+    {
+      "id": "e8",
+      "from": "deploy",
+      "to": "vps",
+      "label": "deploy-rs"
+    }
+  ]
+}

@@ -61,6 +61,8 @@ impl<S: Send + Sync> FromRequestParts<S> for SignedIn {
         _state: &S,
     ) -> std::result::Result<Self, Self::Rejection> {
         let jar = CookieJar::from_headers(&parts.headers);
+        // No password set: `password()` is `None`, nothing matches, and every request is sent
+        // to the sign-in page. The wall stays shut.
         match (password(), jar.get(COOKIE)) {
             (Some(p), Some(c)) if same(c.value(), &token(&p)) => Ok(Self),
             _ => Err(Redirect::to("/notes/login")),
@@ -124,6 +126,8 @@ async fn login(
 ) -> Result<Response> {
     match password() {
         Some(p) if same(&form.password, &p) => {
+            // `http_only` keeps page scripts away from the cookie; `secure` needs the HTTPS that
+            // nginx ends in front of the app; the path keeps it off other pages of the site.
             let cookie = Cookie::build((COOKIE, token(&p)))
                 .path("/notes")
                 .http_only(true)
@@ -265,10 +269,12 @@ async fn delete(
     State(ctx): State<AppContext>,
     Path(id): Path<i64>,
 ) -> Result<Response> {
+    // No lookup first: deleting an id that is already gone changes nothing and is no error.
     Entity::delete_by_id(id).exec(&ctx.db).await?;
     Ok(to_list())
 }
 
+/// The routes of the notes pages, all under `/notes`.
 pub fn routes() -> Routes {
     Routes::new()
         .prefix("notes")

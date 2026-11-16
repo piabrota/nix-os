@@ -1,0 +1,19 @@
+# The side column's repositories: for each organization, its five public source repositories with
+# the most stars, the most recently pushed first on a tie. Read from GitHub's search API
+# (search/repositories, q="org:<org> fork:false archived:false is:public", sort=stars) on 2026-11-11.
+# org	repo	stars	source
+piabrota	gramatico	7	GitHub search API, read 2026-11-11
+piabrota	nix-os	3	GitHub search API, read 2026-11-11
+piabrota	pirsig	3	GitHub search API, read 2026-11-11
+piabrota	.github	2	GitHub search API, read 2026-11-11
+piabrota	room	1	GitHub search API, read 2026-11-11
+marola-dev	marola	19	GitHub search API, read 2026-11-11
+marola-dev	marola-site	1	GitHub search API, read 2026-11-11
+marola-dev	marola-research	1	GitHub search API, read 2026-11-11
+marola-dev	marola-skills	1	GitHub search API, read 2026-11-11
+marola-dev	marola-app	1	GitHub search API, read 2026-11-11
+ouroboric-dev	yggdrasil	1	GitHub search API, read 2026-11-11
+ouroboric-dev	asgard	1	GitHub search API, read 2026-11-11
+ouroboric-dev	odin	1	GitHub search API, read 2026-11-11
+ouroboric-dev	gleipnir	1	GitHub search API, read 2026-11-11
+ouroboric-dev	gungnir	1	GitHub search API, read 2026-11-11

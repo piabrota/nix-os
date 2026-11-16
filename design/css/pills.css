@@ -1,0 +1,11 @@
+/* Pills: a state or a tag, in words first, then a colour. Needs tokens.css. */
+.pb-pill {
+  display: inline-flex; align-items: center; padding: 5px 9px;
+  font: 600 11px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+  color: var(--tone, var(--muted)); border: 1px solid var(--tone, var(--border)); border-radius: 999px;
+}
+.pb-pill--ok { --tone: var(--ok); }
+.pb-pill--warn { --tone: var(--warn); }
+.pb-pill--none { --tone: var(--none); border-style: dashed; }
+.pb-pill--accent { --tone: var(--accent-text); }
+.pb-pill--mono { font-family: var(--mono); letter-spacing: 0; text-transform: none; }

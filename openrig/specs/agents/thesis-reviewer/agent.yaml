@@ -1,0 +1,35 @@
+# The reviewer seat of wave-forecaster-thesis. It runs on Claude Code: the norms land in the CLAUDE.md of
+# the seat's own folder, the box's first (OpenRig writes a Claude seat's guidance there, not in
+# AGENTS.md). The role goes in as a startup file below.
+name: thesis-reviewer
+version: "1.0"
+description: Runs the four gates, reads each section against its sources and records a verdict, and edits no prose
+
+defaults:
+  runtime: claude-code
+  model: claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../thesis-shared
+
+profiles:
+  default:
+    summary: Reviews each section and the whole work, and records verdicts
+    uses:
+      skills: []
+      guidance: [shared:norms, thesis-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

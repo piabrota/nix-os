@@ -1,0 +1,14 @@
+/* Prose: long text pages. Needs tokens.css. */
+.pb-prose { max-width: 70ch; margin: 0 auto; padding: 32px 20px 0; color: var(--text); font-size: 16px; line-height: 1.65; }
+.pb-prose h1 { font-size: clamp(2.2rem, 5vw, 3rem); line-height: 1.1; margin-bottom: 16px; }
+.pb-prose h2 { margin: 40px 0 12px; }
+.pb-prose h3 { margin: 28px 0 8px; }
+.pb-prose p, .pb-prose ul, .pb-prose ol { margin: 0 0 16px; }
+.pb-prose li { margin: 4px 0; }
+.pb-prose code { padding: 1px 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.pb-prose pre { margin: 0 0 16px; padding: 14px 16px; overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font: 400 13px/1.6 var(--mono); }
+.pb-prose pre code { padding: 0; background: none; border: 0; }
+.pb-prose blockquote { margin: 0 0 16px; padding: 0 0 0 16px; border-left: 3px solid var(--accent); color: var(--muted); }
+.pb-prose table { width: 100%; margin: 0 0 16px; border-collapse: collapse; font-size: 14px; }
+.pb-prose th, .pb-prose td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+.pb-prose th { font: 600 11px/1.4 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }

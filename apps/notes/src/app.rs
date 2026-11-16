@@ -1,3 +1,5 @@
+//! The Loco `Hooks` of the notes app: its name, routes and boot. Workers, tasks and seed are
+//! empty because the app is plain CRUD with no background job.
 use async_trait::async_trait;
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
@@ -15,6 +17,7 @@ use std::path::Path;
 
 use crate::{controllers, initializers, models::_entities::notes};
 
+/// The notes app. Loco builds and runs it through the `Hooks` below.
 pub struct App;
 
 #[async_trait]

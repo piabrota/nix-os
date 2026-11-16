@@ -1,0 +1,102 @@
+{
+  "interface": 1,
+  "name": "forecast-energy-demand",
+  "about": "The template interface of the thesis toolkit. A second template (CoppeTeX `ufrj.cls[grad]` + `ufrj-poli`, GPL-3, biblatex with ABNT styles) is added by a new folder with this file, its own overlay and pinned files; no command changes. The commands read only this file.",
+  "source": {
+    "repo": "h0ffmann/forecast-energy-demand",
+    "rev": "a9a35ee4223037469c0ed35b22ecf510417de86e",
+    "licence": "none in the repository; the owner wrote it and said to use it",
+    "files": ["docs/project/pt/project_main.tex", "docs/project/shared/thesis_pack.tex", "docs/project/shared/page.sty", "docs/project/shared/portland.sty", "docs/project/shared/fig/Polinew-eps-converted-to.pdf"]
+  },
+  "engine": { "name": "pdflatex", "flags": ["-no-shell-escape", "-interaction=nonstopmode", "-halt-on-error"] },
+  "bibliography": { "mode": "citeproc", "csl": "abnt-author-date.csl", "style": "author-date" },
+  "main_file": "pinned/pt/project_main.tex",
+  "documentclass_from": "pinned/pt/project_main.tex",
+  "pinned_dirs": ["shared"],
+  "overlay": {
+    "main": "overlay/main.latex",
+    "preamble": "overlay/preamble.tex",
+    "adds": [
+      "capa, folha de rosto and folha de aprovação filled from thesis.json (the pinned cover.tex has fixed text)",
+      "ficha catalográfica sheet (a placeholder: the card comes from the SiBI generator)",
+      "resumo and abstract sheets with reference and keywords, dedicatória and agradecimentos sheets",
+      "roman page numbers in the pre-textual part (the pinned \\frontmatter) and a sheet counter for the ficha",
+      "Times clone body font (TeX Gyre Termes), single spacing in quotes, captions and references, ABNT captions",
+      "the references chapter, appendices, lists of figures and tables"
+    ],
+    "keeps": "the margins, the 1.5 spacing and the page style of the pinned shared/page.sty and thesis_pack.tex"
+  },
+  "chapter_slots": {
+    "introducao": "cap1 (commented out in the pinned main file)",
+    "fundamentacao": "cap2 Fundamentação Teórica",
+    "relacionados": "cap3 Trabalhos Relacionados",
+    "desenvolvimento": "cap4 Desenvolvimento da Aplicação",
+    "resultados": "cap5 Resultados Experimentais",
+    "conclusoes": "cap6 Conclusões"
+  },
+  "default_sections": [
+    {
+      "id": "resumo", "kind": "pretextual", "role": "resumo", "order": 10,
+      "title": "Resumo", "cite_class": "none", "part": "resumo", "target_words": 200, "status": "todo",
+      "keywords": [],
+      "brief": "Resumo em português, um parágrafo, até 250 palavras: o problema (previsão de ondas e o custo do modelo WAVEWATCH III), o que foi feito (o porte das parcelas físicas para GPU, bit a bit), como foi medido e o resultado principal, com números do arquivo notes/facts.md. Sem citações. Preencha keywords (3 a 6) em thesis.json depois de escrever.",
+      "sources": []
+    },
+    {
+      "id": "abstract", "kind": "pretextual", "role": "abstract", "order": 20,
+      "title": "Abstract", "cite_class": "none", "part": "abstract", "target_words": 200, "status": "todo",
+      "keywords": [],
+      "brief": "The English abstract, one paragraph, up to 250 words, the same facts as the resumo (no new claim). Plain academic English. No citations.",
+      "sources": []
+    },
+    {
+      "id": "agradecimentos", "kind": "pretextual", "role": "agradecimentos", "order": 30,
+      "title": "Agradecimentos", "cite_class": "none", "part": "agradecimentos", "target_words": 100, "status": "omit", "optional": true,
+      "keywords": [],
+      "brief": "Opcional. Só o autor sabe a quem agradecer: escreva apenas o que estiver em notes/facts.md, nunca invente pessoas ou fatos.",
+      "sources": []
+    },
+    {
+      "id": "introducao", "kind": "textual", "role": "chapter", "order": 100,
+      "title": "Introdução", "cite_class": "medium", "part": "introducao", "target_words": 1200, "status": "todo",
+      "brief": "Contexto da previsão de ondas e do modelo espectral WAVEWATCH III, o custo computacional, a motivação do porte para GPU, o objetivo geral e os objetivos específicos, a contribuição e a organização do texto (sem repetir o título do capítulo na primeira frase).",
+      "sources": []
+    },
+    {
+      "id": "fundamentacao", "kind": "textual", "role": "chapter", "order": 110,
+      "title": "Fundamentação Teórica", "cite_class": "high", "part": "revisao", "target_words": 2500, "status": "todo",
+      "brief": "O que o leitor precisa para entender o trabalho: o espectro de ondas e a equação do balanço de ação de onda, os termos fonte e a propagação, a discretização numérica do WAVEWATCH III, e os conceitos de programação em GPU usados (hierarquia de memória, paralelismo de dados, reprodutibilidade bit a bit).",
+      "sources": []
+    },
+    {
+      "id": "relacionados", "kind": "textual", "role": "chapter", "order": 120,
+      "title": "Trabalhos Relacionados", "cite_class": "high", "part": "revisao", "target_words": 1800, "status": "todo",
+      "brief": "Trabalhos sobre portes de modelos oceânicos e atmosféricos para GPU, aceleração de modelos de onda e previsão de ondas com aprendizado de máquina; para cada grupo, o que fizeram, o que mediram e o que falta que este trabalho cobre.",
+      "sources": []
+    },
+    {
+      "id": "desenvolvimento", "kind": "textual", "role": "chapter", "order": 130,
+      "title": "Desenvolvimento do Porte para GPU", "cite_class": "low", "part": "metodologia", "target_words": 2500, "status": "todo",
+      "brief": "O que foi feito: a escolha das parcelas físicas, a arquitetura do porte (Rust e C++), como se garante o resultado bit a bit contra o código Fortran, o ambiente e os dados de teste. Só decisões e resultados que estejam em notes/facts.md.",
+      "sources": []
+    },
+    {
+      "id": "resultados", "kind": "textual", "role": "chapter", "order": 140,
+      "title": "Resultados Experimentais", "cite_class": "low", "part": "resultados", "target_words": 2000, "status": "todo",
+      "brief": "Os resultados medidos: igualdade bit a bit, tempo de execução e ganho sobre a CPU, uso de memória, em tabelas e figuras numeradas e citadas no texto, com a configuração do experimento. Fatos e análise em parágrafos separados; marque a análise com **[ANALYSIS]** até o autor revisar.",
+      "sources": []
+    },
+    {
+      "id": "conclusoes", "kind": "textual", "role": "chapter", "order": 150,
+      "title": "Conclusões", "cite_class": "low", "part": "conclusoes", "target_words": 800, "status": "todo",
+      "brief": "O que o trabalho mostrou frente aos objetivos da Introdução, as limitações e os trabalhos futuros. Nenhum resultado novo.",
+      "sources": []
+    },
+    {
+      "id": "apendices", "kind": "postextual", "role": "appendix", "order": 200,
+      "title": "Apêndices", "cite_class": "low", "part": "apendices", "target_words": 600, "status": "omit", "optional": true,
+      "brief": "Opcional. Detalhes que não cabem no texto: listagens, tabelas longas, derivações.",
+      "sources": []
+    }
+  ]
+}

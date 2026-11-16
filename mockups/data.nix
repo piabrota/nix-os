@@ -1,22 +1,32 @@
-# The facts of piabrota.art. The projects come from the org profile (piabrota/.github,
-# profile/README.md, 2026-10-30): their lanes in the "How it fits" figure, where each meets the web;
-# the mockups draw them. The board, the partners and the forks below are dated where they are.
+# The facts of piabrota.art, read on 2026-11-01. The projects come from the org profile
+# (piabrota/.github, profile/README.md) and dojo's REPOS.md, and their language, licence and last push
+# from GitHub; the mockups draw them. The philosophy comes from the profile's "Why it is open" and
+# piabrota/mu's DOGMA.md. The board, the partners and the forks below are dated where they are.
 # `path` is a path on piabrota.art; `site` an address elsewhere; `state` is live, coming or none;
-# `repo = false` when the project has no repository yet. site/data.nix writes the same facts as
+# `owner` when the repository is not the org's; `repository` when it is not named after the project. site/data.nix writes the same facts as
 # Gleam for the live site, so the mockups and the site cannot disagree.
 rec {
   # Where a project meets the web, as the cards and rows print it.
   where = p:
     if p ? path then "piabrota.art${p.path}"
-    else p.site or (if p.repo or true then "github.com/piabrota/${p.name}" else "no repository yet");
+    else p.site or (if owner p == "piabrota" then "github.com/piabrota/${p.name}" else "${owner p}/${p.name}");
 
   # What its address links to: a live path here, its own site, or its repository. "" for none,
   # and for a path here that is not live yet, so the address is never a link to somewhere else.
   href = p:
     if p ? path then (if p.state == "live" then p.path else "")
     else if p ? site then "https://${p.site}"
-    else if p.repo or true then "https://github.com/piabrota/${p.name}"
-    else "";
+    else "https://github.com/${owner p}/${p.name}";
+
+  # Whose repository it is: the org's, or a personal one that dojo pins.
+  owner = p: p.owner or "piabrota";
+  repo = p: "https://github.com/${owner p}/${p.repository or p.name}";
+  origin = p: if owner p == "piabrota" then "own" else "personal";
+
+  # A project's commit counts as the mockups print them (the site's pages say the same in four
+  # languages), and what they mean, for the tooltip.
+  commitsText = p: "${toString p.commits.human} human · ${toString p.commits.agent} agent";
+  commitsTip = "Commits on the default branch, as of ${commitsAsOf}. Agent: a bot account or the claude account. A commit that a person made with an agent's help counts as human.";
 
   org = {
     name = "piabrota";
@@ -24,85 +34,331 @@ rec {
     headline = "Open software, made in Rio de Janeiro.";
     lede = "Each project is its own repository, with its own README, licence and tests. The source is open, and so is the method.";
     contact = "mhoffmannfs [at] gmail.com";
-    links = [ "projects" "how it fits" "board" "partnerships" ];
+    links = [ "projects" "structure" "dogma" "board" "forks" ];
   };
 
+  # Projects that are not FOSS yet. They stay out of `projects`: no repository link, no place in the
+  # project tiles or the counts, and no place in the mockups. None today: chaceon went public.
+  # An empty list draws no lane.
+  closed = [ ];
+
   lanes = [
+    { id = "company"; label = "the company"; }
     { id = "think"; label = "think and write"; }
     { id = "host"; label = "warn and host"; }
     { id = "play"; label = "play"; }
+    { id = "incubating"; label = "incubating"; }
   ];
 
+  # The commits on the default branch of each project that is the org's own repository (`commits`
+  # on a project below; the personal repositories, and hermes, have none). `human` and `agent` are
+  # counted from GitHub's commit list, by the commit's author login: `agent` is a login that ends
+  # with `[bot]`, or is exactly `claude` (the account GitHub maps Claude Code's author to);
+  # `human` is every other commit. A commit that a person made with an agent's help under their own
+  # name counts as human, because the repository's rule is "no agent trail in a commit", so the
+  # count is a floor for agent work. The build has no network, so the numbers are typed here.
+  # Refresh: `just commit-counts`, paste its lines over the `commits` of each project, set
+  # `commitsAsOf` to the day, and open a pull request.
+  commitsAsOf = "2026-11-09";
+
+  # logo: the repository's own logo, at a pinned commit, never stored here. glyph: the text mark of a
+  # repository that has no logo yet, as the org profile prints it.
   projects = [
     {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-11 (description, languages,
+      # LICENSE and .zenodo.json at 74bc58e, the v0.2.0 tag). It has no logo of its own: the logo is
+      # the wave icon of its site, ww3-site/static/favicon.svg here, at a pinned commit.
+      name = "ww3-gpu";
+      owner = "h0ffmann";
+      logo = "https://raw.githubusercontent.com/piabrota/nix-os/fedbbf01da5b9d2a8395a3f6c008cbb6491dec1d/ww3-site/static/favicon.svg";
+      lane = "company";
+      blurb = "A bit-for-bit GPU port of WAVEWATCH III, the wave model, in C++, built by agentic coding and agentic research. Release v0.2.0 on 2026-11-11.";
+      lang = "C++, Shell, Python";
+      licence = "MIT";
+      pushed = "2026-11-11";
+      site = "wave.piabrota.art";
+      # Its paper on aiXiv, "Wave models on GPUs" (aixiv.online/abs/2611.01104, read 2026-11-11).
+      paper = "https://aixiv.online/abs/2611.01104";
+      state = "live";
+    }
+    {
+      name = "mu";
+      logo = "https://raw.githubusercontent.com/piabrota/mu/d8762696790b97e874cbd9a580ceb957ecb23c6e/docs/drawings/mu.svg";
+      lane = "company";
+      blurb = "The company chart: the dogma, the standards, the journal and the index of the org's repositories.";
+      lang = "Markdown, Bash";
+      licence = "CC BY 4.0, AGPL-3.0, MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 35; agent = 72; };
+      state = "none";
+    }
+    {
+      name = "dojo";
+      glyph = "道場";
+      lane = "company";
+      blurb = "The umbrella: every product as a submodule at a pinned commit, the routing table and its own tooling. It holds no product code.";
+      lang = "Bash";
+      licence = "MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 8; agent = 0; };
+      state = "none";
+    }
+    {
+      name = ".github";
+      logo = "https://avatars.githubusercontent.com/piabrota?s=128";
+      lane = "company";
+      blurb = "The org's profile, with the project table, the fabric figure and the funding links.";
+      lang = "Markdown";
+      licence = "MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 25; agent = 6; };
+      state = "none";
+    }
+    {
       name = "pirsig";
+      logo = "https://raw.githubusercontent.com/piabrota/pirsig/b7dd1da2ac886845b14bb90e5d8d34976cfc95cb/docs/drawings/pirsig.svg";
       lane = "think";
       blurb = "A second brain: PARA and a Zettelkasten slip-box in one place. Desktop app, REST API and the psg CLI.";
       lang = "Rust";
       licence = "MPL-2.0";
+      pushed = "2026-10-30";
+      commits = { human = 47; agent = 21; };
       path = "/pirsig";
       state = "coming";
     }
     {
       name = "gramatico";
+      logo = "https://raw.githubusercontent.com/piabrota/gramatico/d57371af30553ad66f63537e52c1f34112e2f86b/site/static/favicon.svg";
       lane = "think";
       blurb = "Rewrites technical text in Brazilian Portuguese so that it reads once. A Claude Code plugin.";
       lang = "Rust";
       licence = "MPL-2.0";
+      pushed = "2026-10-30";
+      commits = { human = 142; agent = 0; };
       site = "piabrota.github.io/gramatico";
       state = "live";
     }
     {
       name = "closed-source";
+      logo = "https://raw.githubusercontent.com/h0ffmann/closed-source/6b3aae557f69ab89ec747364311978928dd0ca71/site/static/icons/favicon.svg";
       lane = "think";
+      owner = "h0ffmann";
       blurb = "The god that failed: a book on why closed source failed as a protection, for science first.";
-      lang = "Markdown";
-      licence = "CC BY 4.0";
+      lang = "Markdown, Gleam";
+      licence = "CC BY 4.0, AGPL-3.0";
+      pushed = "2026-10-27";
       site = "h0ffmann.github.io/closed-source";
       state = "live";
     }
     {
+      name = "skills";
+      logo = "https://raw.githubusercontent.com/piabrota/skills/bcccf4950e100ed0ae25291143f963ee09390a08/docs/drawings/waza.svg";
+      lane = "think";
+      blurb = "A swiss army knife of agent skills.";
+      lang = "Gleam";
+      licence = "MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 22; agent = 23; };
+      site = "skills.piabrota.art";
+      state = "live";
+    }
+    {
+      # Not a repository of its own: Nous Research's agent, configured in nix-os (hermes.nix).
+      name = "hermes";
+      glyph = "☤";
+      lane = "think";
+      repository = "nix-os";
+      blurb = "Nous Research's Hermes Agent on the VPS, with Claude on Telegram and Discord. Its configuration, as plain YAML.";
+      lang = "Nix";
+      licence = "MIT, MPL-2.0";
+      pushed = "2026-11-03";
+      path = "/hermes";
+      state = "live";
+    }
+    {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-09. The glyph is the one
+      # its README header opens with; its banner is the logo proof already shows.
+      name = "awesome-neurosymbolic-ai";
+      glyph = "∀";
+      lane = "think";
+      owner = "h0ffmann";
+      blurb = "A curated list of frameworks, reasoners, papers, courses and benchmarks for neurosymbolic AI: neural learning with symbolic reasoning.";
+      lang = "Markdown, Python";
+      licence = "CC0-1.0";
+      pushed = "2026-11-08";
+      state = "none";
+    }
+    {
       name = "alerts";
+      logo = "https://raw.githubusercontent.com/piabrota/alerts/40d244f5e83bdb3700493de6612528982509f2a8/desktop/app/icons/icon.png";
       lane = "host";
       blurb = "Alerts from official sources only, to Discord and an Atom feed with CAP 1.2. First: floods in the south of Brazil.";
       lang = "Rust";
       licence = "MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 48; agent = 0; };
       path = "/alerts";
       state = "coming";
     }
     {
       name = "rax";
+      logo = "https://raw.githubusercontent.com/piabrota/rax/b87c790db8d8cd1537bd79176fead0a0f8960bc9/docs/drawings/cosmos.svg";
       lane = "host";
       blurb = "Rustic Agentic Runtime: a pure-Rust port of AX, the declarative orchestrator for agentic tasks.";
       lang = "Rust";
       licence = "MPL-2.0";
+      pushed = "2026-10-31";
+      commits = { human = 17; agent = 18; };
+      state = "none";
+    }
+    {
+      name = "agents";
+      glyph = "🤖";
+      lane = "host";
+      blurb = "Small agents that watch nix-os and its VPS, and report on GitHub as piabrota-ops. They open pull requests and never merge.";
+      lang = "Bash";
+      licence = "MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 21; agent = 0; };
       state = "none";
     }
     {
       name = "nix-os";
+      logo = "https://raw.githubusercontent.com/piabrota/nix-os/8975d2c9354c09e9cae27819efce009741ffe22e/docs/drawings/mu.svg";
       lane = "host";
       blurb = "The NixOS configuration of the small VPS that serves piabrota.art. Judged by its closure.";
       lang = "Nix";
       licence = "MPL-2.0";
+      pushed = "2026-10-31";
+      commits = { human = 104; agent = 63; };
       path = "/nixos";
       state = "live";
     }
     {
+      name = "astrbot_dw_ext_br_south_disaster";
+      logo = "https://raw.githubusercontent.com/h0ffmann/astrbot_dw_ext_br_south_disaster/a6675479bebcacb92b1d18f4931a7065a1f70178/extension.png";
+      lane = "host";
+      owner = "h0ffmann";
+      blurb = "South of Brazil (RS, SC, PR) disaster extension for AstrBot plugin astrbot_plugin_disaster_warning";
+      lang = "Python";
+      licence = "MPL-2.0";
+      pushed = "2026-10-31";
+      state = "none";
+    }
+    {
+      name = "astrbot_dw_ext_br_south_waterq";
+      logo = "https://raw.githubusercontent.com/h0ffmann/astrbot_dw_ext_br_south_waterq/12b71ac048ad29b83bfc6aaa0149e011c66886ce/extension.png";
+      lane = "host";
+      owner = "h0ffmann";
+      blurb = "Bathing water quality alerts for the South of Brazil (RS, SC, PR). An extension for astrbot_plugin_disaster_warning.";
+      lang = "Python";
+      licence = "MPL-2.0";
+      pushed = "2026-10-31";
+      state = "none";
+    }
+    {
       name = "ihero";
+      glyph = "🎶";
       lane = "play";
-      blurb = "A FOSS music player and game, in Rust. Coming.";
-      repo = false;
+      blurb = "A FOSS music player and game, in Rust. Coming: the repository holds only its licence.";
+      lang = "Rust, planned";
+      licence = "MPL-2.0";
+      pushed = "2026-11-01";
+      commits = { human = 1; agent = 0; };
+      state = "coming";
+    }
+    {
+      # Personal repository of aracyla; facts read from GitHub on 2026-11-08.
+      name = "ondecomer";
+      glyph = "🍴";
+      lane = "play";
+      repository = "onde-comer";
+      owner = "aracyla";
+      blurb = "A site that lists the restaurants of Brazil, with filters for category, location and more. For now it covers only the city of Rio de Janeiro.";
+      lang = "TypeScript";
+      licence = "Apache-2.0";
+      pushed = "2026-11-06";
+      site = "aracyla.github.io/onde-comer";
+      state = "live";
+    }
+    {
+      # Personal repository of h0ffmann, formerly named dogma; facts read from GitHub on 2026-11-09.
+      name = "proof";
+      owner = "h0ffmann";
+      logo = "https://raw.githubusercontent.com/h0ffmann/proof/361e50fb1cea81433d50c941db4f00363af2bd75/docs/logo/logo.svg";
+      lane = "incubating";
+      blurb = "Specifications written and proved in Lean 4, with Haskell and Rust implementations checked against them, and data experiments with papers.";
+      lang = "Lean, Python, Rust";
+      licence = "MPL-2.0";
+      pushed = "2026-11-09";
+      site = "proof.piabrota.art";
+      # Its paper on aiXiv, "A decision layer for contextual bandits, proved in Agda"
+      # (aixiv.online/abs/2611.01105, read 2026-11-11).
+      paper = "https://aixiv.online/abs/2611.01105";
+      state = "live";
+    }
+    {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-09.
+      name = "chaceon";
+      owner = "h0ffmann";
+      glyph = "🌊";
+      lane = "incubating";
+      blurb = "Rust port of WW3, the wave physics model used by ondaseventos.ufsc.br and NOAA.";
       lang = "Rust";
       licence = "MPL-2.0";
-      state = "coming";
+      pushed = "2026-11-09";
+      state = "none";
     }
   ];
 
-  # The board: the people who build piabrota, from their public GitHub profiles (2026-10-30).
-  # `site` is each one's own website.
+  # The services piabrota2 serves on their own names (README.md, "Addresses", 2026-11-06). The site
+  # links them from design A; the mockups do not draw them. `access` is public or login (the Hermes
+  # dashboard's basic-auth file). Their marks are drawn in site/src/piabrota_site/marks.gleam.
+  services = [
+    { name = "openrig"; label = "OpenRig"; host = "rig.piabrota.art"; access = "login"; blurb = "The web UI of OpenRig, the software factory's engine: the builder and reviewer seats, and their terminals."; }
+    { name = "metrics"; label = "metrics"; host = "metrics.piabrota.art"; access = "public"; blurb = "Processes, memory and vCPU of both hosts, read every 10 seconds."; }
+    { name = "room"; label = "room"; host = "room.piabrota.art"; access = "public"; blurb = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; }
+    { name = "grid"; label = "▲ grid"; host = "grid.piabrota.art"; access = "public"; blurb = "The room's tenth view on its own name: the Brazilian coast on triangles, with 24 h of sea and its temperature."; }
+    { name = "proof"; label = "proof"; host = "proof.piabrota.art"; access = "public"; blurb = "Every HTML page of h0ffmann/proof: specifications, Z3 reports and diagrams."; }
+    { name = "pirsig"; label = "pirsig"; host = "pirsig.piabrota.art"; access = "public"; blurb = "The video notes and the figures of piabrota/pirsig, the second brain."; }
+  ];
+
+  # The company's shape, as mu and dojo say it (2026-11-01).
+  structure = [
+    { name = "dojo"; role = "the common layer"; text = "The umbrella: every repository as a submodule at a pinned commit, and one routing table. It inherits the rules from mu, and it holds no product code."; href = "https://github.com/piabrota/dojo"; }
+    { name = "mu"; role = "the company chart"; text = "The dogma, the charter, the standards and the index of the repositories. It gives dojo the rules."; href = "https://github.com/piabrota/mu"; }
+    { name = "the products"; role = "each in its own repository"; text = "Each has its own README, licence and checks. A change to a product is made in that repository."; href = "#projects"; }
+    { name = "pirsig"; role = "the brain"; text = "Smart notes, PARA and a track record of the high-level decisions."; href = "https://github.com/piabrota/pirsig"; }
+  ];
+
+  # "Why it is open", word for word from the org profile.
+  why = [
+    { title = "Read it, use it, and build your own."; text = "You can have your own ideas by reading or using piabrota's repositories. They are live documentation, and proof of the human work behind the scenes, so that others can build their own."; }
+    { title = "Built with Claude Code, on the way to FOSS."; text = "Claude Code builds piabrota's projects most of the time, but we keep a permanent effort to make the piabrota platform [F]OSS."; }
+    { title = "A philosophy, not only a saving."; text = "Token optimization and open-source models, on Ollama and Ollaya, are how we build open-source software on open-source software, as agentic and as affordable as possible."; }
+  ];
+
+  # The ten invariants of piabrota/mu's DOGMA.md, shortened only where a list or a link would not fit.
+  dogma = [
+    { title = "Agents fix every error."; text = "An error a user or an owner reports is a goal. An agent takes it and closes it as a short-sized goal: one pull request."; }
+    { title = "No tests, unless proven."; text = "Write a test only when it is a proven regression guardrail: it reproduces a failure that happened, it fails without the fix, and it passes with it."; }
+    { title = "Judgement is decision-oriented."; text = "Agent output, evidence and a definition of done go to a decision model. It gives calibrated probabilities to a decision engine, with rules that humans define, and the final verdict is an agentic decision."; }
+    { title = "Humans own the rules."; text = "Humans write the rules of the decision engine and approve direction. Agents decide inside those rules, and stop and ask outside them. Humans merge."; }
+    { title = "The brain is the record."; text = "The company is managed in pirsig: smart notes, PARA, and a track record of every high-level decision with its outcome."; }
+    { title = "Open and reproducible by default."; text = "Every project is FOSS, in its own repository, with its own licence. The source is open, and so is the method. Rust comes first. Every plot is drawn with archify and every mockup with OpenPencil, from a source anyone can run again."; }
+    { title = "Credit what we take."; text = "Read before you borrow. Reuse work only as its licence allows, and keep its notices. A partner's name and logo stay theirs."; }
+    { title = "Guardrails only get stronger."; text = "Never weaken an approval point, a sandbox, a policy or a ruleset. Never read, print or store a secret."; }
+    { title = "Routines run anywhere."; text = "An agentic routine may run on a developer's personal computer, on local models (Ollama, Ollaya). Anthropic has first-class support (Claude Code, the Claude API), and so does Kimi."; }
+    { title = "Prod may break, for now."; text = "Breaking prod is not a problem, as long as it can be fixed quickly. What counts is the time to fix, not the number of breaks."; }
+  ];
+
+  # The board: the people who build piabrota, from the Board of the org profile and the org's
+  # members, who agree (2026-11-01). `site` is each one's own website, "" for none; h0ffmann's is
+  # hffmnn.piabrota.art (the owner, 2026-11-13).
   people = [
-    { login = "h0ffmann"; name = "Matheus Hoffmann"; about = "water animal, ai pilot"; place = "Florianópolis, Brazil"; site = "https://h0ffmann.github.io/h0ffmann/"; }
+    { login = "h0ffmann"; name = "Matheus Hoffmann"; about = "water animal"; place = "Florianópolis, Brazil"; site = "https://hffmnn.piabrota.art/"; }
     { login = "aracyla"; name = ""; about = "General purpose developer currently focused on frontend development."; place = "Brazil"; site = "https://aracyla.xyz"; }
+    { login = "robkler"; name = "Rôb Klér Soares da Silva Júnior"; about = "Senior Backend Engineer"; place = "Rio de Janeiro, Brazil"; site = ""; }
   ];
 
   # Partners, each with its logo as GitHub publishes it (the org's avatar); never stored here.
@@ -111,21 +367,25 @@ rec {
     { login = "ouroboric-dev"; name = "ouroboric"; about = "Open factories that improve themselves. Charter, standards, journal and brand."; site = "https://github.com/ouroboric-dev"; }
   ];
 
-  # Every fork under piabrota, as GitHub listed them on 30 October 2026
-  # (`gh repo list piabrota --fork`): 11, every one PUBLIC, because GitHub keeps a fork of a
+  # Every fork under piabrota, as GitHub listed them on 1 November 2026
+  # (`gh repo list piabrota --fork`): 14, every one PUBLIC, because GitHub keeps a fork of a
   # public repository public. started: the year its parent was created on GitHub. forked: the day the
-  # fork was made. The description is the fork's own, which GitHub copies from its parent.
+  # fork was made. licence: the parent's. sync: GitHub's compare of the default branches; no fork has
+  # commits of its own. The description is the fork's own, which GitHub copies from its parent.
   forks = [
-    { name = "core"; parent = "home-assistant/core"; started = "2013"; forked = "2026-10-26"; description = "Open source home automation that puts local control and privacy first."; }
-    { name = "rea"; parent = "morluto/rea"; started = "2026"; forked = "2026-10-26"; description = "Reverse engineer anything with agents, from app behavior down to native binaries."; }
-    { name = "archify"; parent = "tt-a1i/archify"; started = "2026"; forked = "2026-10-26"; description = "Turn any idea, plan, or codebase into a beautiful interactive diagram. An agent skill for Claude Code, Codex, and more."; }
-    { name = "prj-gd-engine"; parent = "mbracali/prj-gd-engine"; started = "2026"; forked = "2026-10-26"; description = "This repo contains re-implementations of guitar musical games"; }
-    { name = "ouroboric"; parent = "ouroboric-dev/ouroboric"; started = "2026"; forked = "2026-10-26"; description = "Ouroboric: open factories that improve themselves. Charter, standards, journal and brand."; }
-    { name = "edit"; parent = "fmhy/edit"; started = "2021"; forked = "2026-10-26"; description = "Make changes to FMHY"; }
-    { name = "graphify"; parent = "Graphify-Labs/graphify"; started = "2026"; forked = "2026-10-26"; description = "Turn any codebase, with its docs, SQL schemas, configs, and PDFs, into a queryable knowledge graph. A /graphify skill for Claude Code, Cursor, Codex, and Gemini CLI: local deterministic AST parsing, every edge explained, no vector store."; }
-    { name = "thc"; parent = "ekmett/thc"; started = "2015"; forked = "2026-10-26"; description = "The Turbo Haskell Compiler"; }
-    { name = "rust-cuda"; parent = "Rust-GPU/rust-cuda"; started = "2021"; forked = "2026-10-26"; description = "Ecosystem of libraries and tools for writing and executing fast GPU code fully in Rust."; }
-    { name = "naruto-unison"; parent = "naruto-unison/naruto-unison"; started = "2018"; forked = "2026-10-26"; description = "Naruto Unison"; }
-    { name = "OpenVoice"; parent = "myshell-ai/OpenVoice"; started = "2023"; forked = "2026-10-26"; description = "Instant voice cloning by MIT and MyShell. Audio foundation model."; }
+    { name = "archify"; parent = "tt-a1i/archify"; started = "2026"; forked = "2026-10-26"; lang = "JavaScript"; licence = "Apache-2.0"; sync = "14 behind upstream"; description = "Turn any idea, plan, or codebase into a beautiful interactive diagram. An agent skill for Claude Code, Codex, and more."; }
+    { name = "asgard"; parent = "ouroboric-dev/asgard"; started = "2026"; forked = "2026-11-01"; lang = "Python"; licence = "AGPL-3.0"; sync = "even with upstream"; description = "Asgard: the company factory, running on Yggdrasil. (Design phase.)"; }
+    { name = "axon"; parent = "danieltamas/axon"; started = "2026"; forked = "2026-10-30"; lang = "Rust"; licence = "MIT"; sync = "even with upstream"; description = "Axon reads the logs your AI coding-agent harnesses already write — Claude Code, Codex, OpenCode — and shows which harness, project, agent, and model is working, how fast, at what cost, and how much code it's producing."; }
+    { name = "bton"; parent = "danieltamas/bton"; started = "2026"; forked = "2026-10-30"; lang = "Swift"; licence = "MIT"; sync = "11 behind upstream"; description = "Bton runs your team's review flow with coding agents, from the macOS menu bar."; }
+    { name = "cloudroom"; parent = "davidondrej/cloudroom"; started = "2026"; forked = "2026-11-01"; lang = "TypeScript"; licence = "Apache-2.0"; sync = "2 behind upstream"; description = "cloudroom is the open-source platform to run 1,000+ agents productively"; }
+    { name = "core"; parent = "home-assistant/core"; started = "2013"; forked = "2026-10-26"; lang = "Python"; licence = "Apache-2.0"; sync = "810 behind upstream"; description = "Open source home automation that puts local control and privacy first."; }
+    { name = "graphify"; parent = "Graphify-Labs/graphify"; started = "2026"; forked = "2026-10-26"; lang = "Python"; licence = "Apache-2.0"; sync = "179 behind upstream"; description = "Turn any codebase, with its docs, SQL schemas, configs, and PDFs, into a queryable knowledge graph. A /graphify skill for Claude Code, Cursor, Codex, and Gemini CLI: local deterministic AST parsing, every edge explained, no vector store."; }
+    { name = "lean_kernel_verify"; parent = "facebookresearch/lean_kernel_verify"; started = "2026"; forked = "2026-10-31"; lang = "Python"; licence = "MIT"; sync = "even with upstream"; description = "Compiler-based safety checker for GPU kernels. It lowers the real compiler's IR into a small kernel IR and decides specs in Lean 4 (bounds, hangs, exactly-once writes, barrier protocol, races) with no hand-written model. Specs and frontends plug in independently; today Triton/TLX and CuTe DSL on NVIDIA Blackwell."; }
+    { name = "pgx"; parent = "pgrundev/pgx"; started = "2026"; forked = "2026-10-30"; lang = "Rust"; licence = "AGPL-3.0"; sync = "even with upstream"; description = "PGX — Lightweight Postgres for AI agents. Written in Rust. Thousands of isolated databases in one runtime. 🐘"; }
+    { name = "relay"; parent = "ronaknnathani/relay"; started = "2026"; forked = "2026-10-31"; lang = "Go"; licence = "MIT"; sync = "even with upstream"; description = "Skills to orchestrate coding agents to do long horizon tasks with little to no steering"; }
+    { name = "rust-cuda"; parent = "Rust-GPU/rust-cuda"; started = "2021"; forked = "2026-10-26"; lang = "Rust"; licence = "Apache-2.0"; sync = "even with upstream"; description = "Ecosystem of libraries and tools for writing and executing fast GPU code fully in Rust."; }
+    { name = "skills"; parent = "davidondrej/skills"; started = "2026"; forked = "2026-11-01"; lang = "Shell"; licence = "MIT"; sync = "even with upstream"; description = "access to david ondrej's personal agent skills"; }
+    { name = "TencentDB-Agent-Memory"; parent = "TencentCloud/TencentDB-Agent-Memory"; started = "2026"; forked = "2026-10-30"; lang = "TypeScript"; licence = "see upstream"; sync = "even with upstream"; description = "TencentDB Agent Memory is a team-level memory hub for AI Agents — turning conversations, docs, and code into four reusable memory assets (Chat Memory, Skill, LLM-Wiki, Code-Graph) that are governed, shared, and equipped across agents and frameworks."; }
+    { name = "yggdrasil"; parent = "ouroboric-dev/yggdrasil"; started = "2026"; forked = "2026-11-01"; lang = "Python"; licence = "AGPL-3.0"; sync = "even with upstream"; description = "Yggdrasil: an open software factory. Agents build, humans steer. (Design phase.)"; }
   ];
 }

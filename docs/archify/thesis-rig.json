@@ -1,0 +1,243 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "The thesis rig: an editor, a librarian, three writers and a reviewer, one toolkit, one PDF",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "thesis-rig.html"
+  },
+  "lanes": [
+    {
+      "id": "people",
+      "label": "People"
+    },
+    {
+      "id": "editor",
+      "label": "Plan · editor"
+    },
+    {
+      "id": "writing",
+      "label": "Writing · librarian, writers"
+    },
+    {
+      "id": "review",
+      "label": "Review · reviewer"
+    },
+    {
+      "id": "box",
+      "label": "Build box · thesis, no model, no network"
+    },
+    {
+      "id": "harness",
+      "label": "Harness"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p0",
+      "label": "0 Brief",
+      "fromCol": 0,
+      "toCol": 0
+    },
+    {
+      "id": "p1",
+      "label": "1 Plan",
+      "fromCol": 1,
+      "toCol": 1
+    },
+    {
+      "id": "p2",
+      "label": "2 Write",
+      "fromCol": 2,
+      "toCol": 2
+    },
+    {
+      "id": "p3",
+      "label": "3 Review",
+      "fromCol": 3,
+      "toCol": 3
+    },
+    {
+      "id": "p4",
+      "label": "4 Assemble",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "groups": [
+    {
+      "id": "nomodel",
+      "label": "thesis",
+      "lane": "box",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "owner",
+    "editor",
+    "librarian",
+    "writers",
+    "toolkit",
+    "reviewer",
+    "assemble",
+    "outbox",
+    "reader"
+  ],
+  "nodes": [
+    {
+      "id": "owner",
+      "lane": "people",
+      "col": 0,
+      "type": "external",
+      "label": "the owner",
+      "sublabel": "brief, facts, sources",
+      "width": 170
+    },
+    {
+      "id": "reader",
+      "lane": "people",
+      "col": 5,
+      "type": "external",
+      "label": "Hermes, the owner",
+      "sublabel": "read, sign, deposit",
+      "width": 170
+    },
+    {
+      "id": "editor",
+      "lane": "editor",
+      "col": 1,
+      "type": "backend",
+      "label": "editor",
+      "sublabel": "thesis new, thesis.json",
+      "width": 170
+    },
+    {
+      "id": "librarian",
+      "lane": "writing",
+      "col": 1,
+      "type": "backend",
+      "label": "librarian",
+      "sublabel": "the only seat with the web",
+      "width": 170
+    },
+    {
+      "id": "writers",
+      "lane": "writing",
+      "col": 2,
+      "type": "backend",
+      "label": "3 writers",
+      "sublabel": "one section each",
+      "width": 170
+    },
+    {
+      "id": "reviewer",
+      "lane": "review",
+      "col": 3,
+      "type": "security",
+      "label": "reviewer · 4 gates",
+      "sublabel": "pt-BR, slop, UFRJ, citations",
+      "width": 210
+    },
+    {
+      "id": "toolkit",
+      "lane": "box",
+      "col": 2,
+      "type": "frontend",
+      "label": "thesis toolkit",
+      "sublabel": "pandoc, Lua, template, TeX",
+      "width": 170
+    },
+    {
+      "id": "assemble",
+      "lane": "box",
+      "col": 4,
+      "type": "frontend",
+      "label": "assemble",
+      "sublabel": "editor: pdf-qa, ufrj-check",
+      "width": 170
+    },
+    {
+      "id": "outbox",
+      "lane": "box",
+      "col": 5,
+      "type": "database",
+      "label": "outbox",
+      "sublabel": "thesis.pdf, qa.json",
+      "width": 170
+    },
+    {
+      "id": "harness",
+      "lane": "harness",
+      "col": 2,
+      "type": "cloud",
+      "label": "6 Claude Code seats",
+      "sublabel": "openrig 2G, 2 at a time",
+      "width": 170
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "owner",
+      "to": "editor",
+      "label": "brief"
+    },
+    {
+      "id": "e2",
+      "from": "editor",
+      "to": "librarian",
+      "label": "thesis.json",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e3",
+      "from": "librarian",
+      "to": "writers",
+      "label": "sources/, refs.bib"
+    },
+    {
+      "id": "e4",
+      "from": "writers",
+      "to": "toolkit",
+      "label": "fetch, submit"
+    },
+    {
+      "id": "e5",
+      "from": "toolkit",
+      "to": "reviewer",
+      "label": "gates.md"
+    },
+    {
+      "id": "e6",
+      "from": "reviewer",
+      "to": "assemble",
+      "label": "verdict + hash"
+    },
+    {
+      "id": "e7",
+      "from": "assemble",
+      "to": "outbox",
+      "label": "publish"
+    },
+    {
+      "id": "e8",
+      "from": "outbox",
+      "to": "reader",
+      "label": "PDF"
+    },
+    {
+      "id": "e9",
+      "from": "harness",
+      "to": "toolkit",
+      "label": "PATH, deny rules",
+      "role": "branch"
+    }
+  ]
+}

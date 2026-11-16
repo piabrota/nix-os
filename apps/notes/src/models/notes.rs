@@ -1,3 +1,4 @@
+//! Behaviour on top of the generated `notes` entity.
 use sea_orm::entity::prelude::*;
 
 pub use super::_entities::notes::{ActiveModel, Entity, Model};

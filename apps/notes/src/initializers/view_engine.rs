@@ -1,3 +1,4 @@
+//! The Tera template engine of the notes pages.
 use async_trait::async_trait;
 use axum::{Extension, Router as AxumRouter};
 use loco_rs::{
@@ -16,6 +17,7 @@ impl Initializer for ViewEngineInitializer {
     }
 
     async fn after_routes(&self, router: AxumRouter, _ctx: &AppContext) -> Result<AxumRouter> {
+        // Added after the routes exist: handlers receive the engine as `ViewEngine<TeraView>`.
         let tera = engines::TeraView::build()?;
         Ok(router.layer(Extension(ViewEngine::from(tera))))
     }

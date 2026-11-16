@@ -1,0 +1,35 @@
+# The producer-editor seat of reels-fabric: owns the schedule and the final file. Approves the screenplay hash, builds the scenes and the cut, publishes after QA. Edits no screenplay.
+name: reels-producer-editor
+version: "1.0"
+description: Reviews the screenplay, approves its hash, then builds and publishes the reel
+
+defaults:
+  runtime: omp
+  model: anthropic/claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../reels-shared
+
+profiles:
+  default:
+    summary: Reviews and approves the screenplay, builds the scenes and the cut, publishes after QA
+    uses:
+      skills: []
+      # Both sets of norms land in the AGENTS.md of the seat's own folder, the box's first. The role
+      # goes in as a startup file below.
+      guidance: [shared:norms, reels-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

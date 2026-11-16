@@ -21,7 +21,12 @@ in
     dates = "weekly";
     options = "--delete-older-than 14d";
   };
-  nix.settings.auto-optimise-store = true;
+  # Collect garbage only when the disk is low: under 2 GiB free, Nix collects until 8 GiB are free.
+  nix.settings.min-free = 2 * 1024 * 1024 * 1024;
+  nix.settings.max-free = 8 * 1024 * 1024 * 1024;
+  # Deduplicate the store once a week, not on every path a deploy copies: on one vCPU the hashing
+  # slowed the activation and competed with the services.
+  nix.optimise.automatic = true;
   # The box never builds big things itself, but stop a stray build from eating all RAM.
   nix.settings.max-jobs = 1;
   nix.settings.cores = 1;

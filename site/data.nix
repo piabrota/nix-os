@@ -1,11 +1,15 @@
 # The facts of the site as Gleam (src/piabrota_site/data.gleam), written from mockups/data.nix,
 # the same facts the mockups draw. default.nix writes the file on every build; `just site-data`
 # writes it for local work. It is not committed.
-{ lib, data, measurementId ? "" }:
+{ lib, data, measurementId ? "", hermes ? null }:
 let
   str = s: "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
   state = { live = "Live"; coming = "Coming"; none = "NoSite"; };
   lane = l: "Lane(id: ${str l.id}, label: ${str l.label})";
+  commits = p:
+    if p ? commits
+    then "Some(Commits(human: ${toString p.commits.human}, agent: ${toString p.commits.agent}))"
+    else "None";
   project = p: lib.concatStringsSep ", " [
     "Project(name: ${str p.name}"
     "lane: ${str p.lane}"
@@ -14,21 +18,58 @@ let
     "licence: ${str p.licence}"
     "where: ${str (data.where p)}"
     "href: ${str (data.href p)}"
+    "repo: ${str (data.repo p)}"
+    "logo: ${str (p.logo or "")}"
+    "glyph: ${str (p.glyph or "")}"
+    "origin: ${str (data.origin p)}"
+    "pushed: ${str p.pushed}"
+    "commits: ${commits p}"
+    "paper: ${str (p.paper or "")}"
     "state: ${state.${p.state}})"
   ];
+  service = s: "Service(name: ${str s.name}, label: ${str s.label}, host: ${str s.host}, access: ${str s.access}, blurb: ${str s.blurb})";
+  closed = p: "Closed(name: ${str p.name}, glyph: ${str p.glyph}, lang: ${str p.lang}, blurb: ${str p.blurb})";
   person = p: "Person(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, place: ${str p.place}, site: ${str p.site})";
   partner = p: "Partner(login: ${str p.login}, name: ${str p.name}, about: ${str p.about}, site: ${str p.site})";
-  fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, description: ${str f.description})";
+  fork = f: "Fork(name: ${str f.name}, parent: ${str f.parent}, started: ${str f.started}, forked: ${str f.forked}, lang: ${str f.lang}, licence: ${str f.licence}, sync: ${str f.sync}, description: ${str f.description})";
+  layer = l: "Layer(name: ${str l.name}, role: ${str l.role}, text: ${str l.text}, href: ${str l.href})";
+  principle = x: "Principle(title: ${str x.title}, text: ${str x.text})";
+  # The strings of every language, from locale/<lang>.json. en.json holds the page's words; each other
+  # file holds the same keys, and the facts of mockups/data.nix in its own language. A key that one
+  # language lacks stops the build.
+  languages = [ "en" "pt-BR" "zh-CN" "ja-JP" ];
+  locale = l: builtins.fromJSON (builtins.readFile (./locale + "/${l}.json"));
+  keys = l: builtins.attrNames (locale l);
+  checked = lib.all
+    (l:
+      lib.subtractLists (keys l) (keys "en") == [ ]
+      && lib.subtractLists (keys l) (keys "pt-BR") == [ ]
+      && lib.subtractLists (keys "pt-BR") (keys l) == [ ]
+      || throw "site/locale/${l}.json has different keys")
+    (lib.remove "en" languages);
+  clause = l: k: "    ${str l}, ${str k} -> ${str (locale l).${k}}\n";
+  clauses = lib.concatMapStrings (l: lib.concatMapStrings (clause l) (keys l)) languages;
+  # site/hermes.nix's facts; with no Hermes, empty, and the page says so.
+  h = if hermes == null then { config = ""; service = ""; upstream = ""; release = ""; facts = [ ]; } else hermes;
+  fact = f: "#(${str f.label}, ${str f.value})";
   list = f: xs: "[\n" + lib.concatMapStrings (x: "  ${f x},\n") xs + "]";
 in
+assert checked;
 ''
   //// Written by site/data.nix from mockups/data.nix (the org profile). Do not edit: change
   //// mockups/data.nix and run `just site-data`.
+
+  import gleam/option.{type Option, None, Some}
 
   pub type State {
     Live
     Coming
     NoSite
+  }
+
+  /// Commits on a repository's default branch: `human` and `agent` (a bot login, or `claude`).
+  pub type Commits {
+    Commits(human: Int, agent: Int)
   }
 
   pub type Lane {
@@ -44,8 +85,24 @@ in
       licence: String,
       where: String,
       href: String,
+      repo: String,
+      logo: String,
+      glyph: String,
+      origin: String,
+      pushed: String,
+      commits: Option(Commits),
+      /// The project's paper (an aiXiv abstract page); "" for none.
+      paper: String,
       state: State,
     )
+  }
+
+  pub type Service {
+    Service(name: String, label: String, host: String, access: String, blurb: String)
+  }
+
+  pub type Closed {
+    Closed(name: String, glyph: String, lang: String, blurb: String)
   }
 
   pub type Person {
@@ -57,11 +114,36 @@ in
   }
 
   pub type Fork {
-    Fork(name: String, parent: String, started: String, forked: String, description: String)
+    Fork(name: String, parent: String, started: String, forked: String, lang: String, licence: String, sync: String, description: String)
   }
+
+  pub type Layer {
+    Layer(name: String, role: String, text: String, href: String)
+  }
+
+  pub type Principle {
+    Principle(title: String, text: String)
+  }
+
+  /// The day the commit counts of mockups/data.nix were read.
+  pub const commits_as_of = ${str data.commitsAsOf}
 
   /// The Google Analytics 4 measurement ID (piabrota.site.analytics.measurementId); "" for none.
   pub const analytics_id = ${str measurementId}
+
+  /// Hermes's configuration as hermes.nix sets it, in YAML (site/hermes.nix); "" with no Hermes.
+  pub const hermes_config = ${str h.config}
+
+  /// How nix-os runs Hermes: the unit, the package, the limits, in YAML.
+  pub const hermes_service = ${str h.service}
+
+  /// The upstream commit the flake pins.
+  pub const hermes_upstream = ${str h.upstream}
+
+  /// The upstream release (tag) the flake pins.
+  pub const hermes_release = ${str h.release}
+
+  pub const hermes_facts = ${list fact h.facts}
 
   pub const name = ${str data.org.name}
 
@@ -73,13 +155,30 @@ in
 
   pub const contact = ${str data.org.contact}
 
+  pub const structure = ${list layer data.structure}
+
+  pub const why = ${list principle data.why}
+
+  pub const dogma = ${list principle data.dogma}
+
   pub const lanes = ${list lane data.lanes}
 
   pub const projects = ${list project data.projects}
+
+  pub const services = ${list service data.services}
+
+  pub const closed = ${list closed data.closed}
 
   pub const people = ${list person data.people}
 
   pub const partners = ${list partner data.partners}
 
   pub const forks = ${list fork data.forks}
+
+  /// One string of one language, "" when that language has no such key.
+  pub fn locale(lang: String, key: String) -> String {
+    case lang, key {
+  ${clauses}    _, _ -> ""
+    }
+  }
 ''

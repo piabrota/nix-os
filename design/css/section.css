@@ -1,0 +1,16 @@
+/* Section: a numbered head (§ 01, § 02, counted here, never typed) with an optional count. Needs tokens.css. */
+.pb-main { counter-reset: pb-sec; }
+.pb-section { max-width: 1040px; margin: 0 auto; padding: 56px 20px 0; scroll-margin-top: 16px; }
+.pb-section__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.pb-section__lead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; min-width: 0; }
+.pb-section__title { margin: 0; font: 400 2rem/1.1 var(--display); counter-increment: pb-sec; overflow-wrap: anywhere; }
+.pb-section__title::before {
+  content: "§ " counter(pb-sec, decimal-leading-zero) "  ";
+  font: 400 .8rem/1 var(--mono); color: var(--accent-text); vertical-align: .55em; white-space: pre;
+}
+.pb-count { padding: 3px 7px; font: 400 11px/1 var(--mono); color: var(--text); border: 1px solid var(--border); border-radius: 999px; }
+.pb-note { font: 400 12px/1.4 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.pb-section__body { margin-top: 18px; }
+.pb-section__body > p { max-width: 70ch; margin: 0 0 16px; color: var(--muted); }
+.pb-sub { display: flex; align-items: center; gap: 10px; margin: 26px 0 14px; font: 600 12px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.pb-sub:first-child { margin-top: 0; }

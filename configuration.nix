@@ -1,6 +1,8 @@
-# NixOS system configuration for the Hostinger KVM template.
-# Built into a qcow2 by image.nix via nixpkgs' make-disk-image (no nixos-infect).
-{ lib, pkgs, modulesPath, ... }:
+# What every host here has in common: the Hostinger KVM template (boot, disk, cloud-init, the
+# guest agent, SSH) and the modules below. A host is hosts/<name>/default.nix, which imports this
+# file and adds what is its own: its name, and which roles it runs (the public web, Hermes, PGX).
+# The template is built into a qcow2 by image.nix via nixpkgs' make-disk-image (no nixos-infect).
+{ config, lib, pkgs, modulesPath, ... }:
 {
   imports = [
     # virtio_scsi/virtio_blk etc. in the initrd so the image boots on Proxmox.
@@ -8,11 +10,22 @@
     ./piabrota.nix
     ./tools.nix
     ./deploy.nix
+    # A read-only account for debugging from a coding agent's session (keys/observer.pub).
+    ./observer.nix
     ./loco.nix
     ./site.nix
-    ./apps.nix
-    # A trial of single-node Kubernetes (docs/KUBESOLO.md), turned on below.
-    ./kubesolo.nix
+    # A failed ACME order retries every 20 minutes, not once a day (docs/SITE.md, "Certificates").
+    ./acme-retry.nix
+    # A Postgres-compatible database (docs/PGX.md), off until a host turns it on.
+    ./pgx.nix
+    # Live metrics (docs/METRICS.md): a collector, a page and a pull, off until a host turns them on.
+    ./metrics.nix
+    # The eye as the icon of every vhost (favicon.nix): each vhost carries its locations.
+    ./favicon.nix
+    # A 24/7 lofi music bot in the Marola Discord server's voice channel (docs/LOFI.md); a host turns it on.
+    ./lofi.nix
+    # Clears, once, what KubeSolo (removed 2026-11-02) left on the box.
+    ./kubesolo-purge.nix
   ];
 
   # BIOS/SeaBIOS GRUB on the single legacy (MBR) disk. `device` is the VPS disk (scsi0),
@@ -49,6 +62,7 @@
   services.cloud-init.settings.ssh.emit_keys_to_console = false;
   # cloud-init owns IP assignment, so DHCP must be off (otherwise it races cloud-init).
   networking.useDHCP = lib.mkForce false;
+  # networking.hostName is per host (hosts/<name>/default.nix): the name Hostinger gave the VPS.
 
   # hVPS drives provisioning by running bare-name commands (sh, cloud-init, chpasswd, ...)
   # through the guest agent, which resolves them on the *agent's* PATH. NixOS gives services a
@@ -59,20 +73,30 @@
   # that hVPS verification invokes by bare name (e.g. `dig` for a DNS check).
   environment.systemPackages = with pkgs; [
     cloud-init
-    dnsutils   # dig, nslookup, host
-    nettools   # ifconfig, netstat, route (net-tools parity)
+    dnsutils # dig, nslookup, host
+    nettools # ifconfig, netstat, route (net-tools parity)
     curl
     wget
     nano
+    # `piabrota`: the scripts of scala/ as one native binary (about 19 MiB, glibc only), so the
+    # justfile and the workflows run them over SSH (`ssh box piabrota freeze`).
+    (pkgs.callPackage ./scala { })
   ];
   systemd.services.qemu-guest-agent.environment.PATH =
     lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/bin";
 
-  # The static site on www.piabrota.art (site.nix). DNS points both names at this box.
-  piabrota.site.enable = true;
-  # Single-node Kubernetes, on for a trial (kubesolo.nix, docs/KUBESOLO.md). Before the merge that
-  # turns it on, take a Hostinger snapshot; to undo, see the rollback in docs/KUBESOLO.md.
-  piabrota.kubesolo.enable = true;
+  # The static site (site.nix) is per host: only the host that DNS points at can get its certificate.
+
+  # A name that points at this box and has no vhost here gets no site. Without this server nginx
+  # answers with its first vhost: on 2026-11-09 skills.piabrota.art pointed at piabrota2, which
+  # does not serve it, and showed the room with the certificate of grid.piabrota.art. Plain HTTP:
+  # the connection is closed with no answer (444). HTTPS: the handshake is refused, so no
+  # certificate of another name is shown. Each real vhost keeps its own ACME challenge location.
+  services.nginx.virtualHosts."_" = lib.mkIf config.services.nginx.enable {
+    default = true;
+    rejectSSL = true;
+    locations."/".return = "444";
+  };
 
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkDefault "yes";

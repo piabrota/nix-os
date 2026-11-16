@@ -1,0 +1,96 @@
+# Commands piabrota-hermes may never run from its terminal, for the custom-dangerous-patterns
+# plugin (hermes.nix). A deny pattern blocks at once, with no approval prompt. These back up the
+# rules in SOUL.md: it pushes only hermes/* branches and opens pull requests, humans merge, nothing
+# is installed by hand, no secret is read. A ruleset on each default branch stops a push to it at
+# GitHub too. First match wins.
+deny_patterns:
+  # --- Writing to GitHub: Hermes pushes hermes/* branches and opens PRs; humans merge ---
+  # (SOUL.md rule 2, hermes-github.nix). A push must name its hermes/* branch: a bare `git push`
+  # is blocked, and so is any refspec that lands elsewhere, a force, a delete or a mass push.
+  - description: '[GITHUB_WRITE] git push with force, delete, mirror, all or tags'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b[^|;&]*(?:\s(?:-f|--force(?:-with-lease|-if-includes)?(?:=\S*)?|-d|--delete|--mirror|--all|--tags|--prune)\b|\s\+\S|\s:\S)'
+  - description: '[GITHUB_WRITE] git push that does not name a hermes/* branch'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b(?![^|;&]*[\s:/]hermes/[A-Za-z0-9._/-]+)'
+  - description: '[GITHUB_WRITE] git push to a branch other than hermes/*'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b[^|;&]*\s\S*:(?!(?:refs/heads/)?hermes/)'
+  - description: '[GITHUB_WRITE] git push with a second refspec that is not hermes/*'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgit\b(?:\s+(?:--?[a-zA-Z0-9_-]+(?:=[^\s]+)?(?:\s+[^\s-][^\s]*)?))*\s+push\b(?:\s+-\S+)*\s+[^\s-]\S*(?:\s+-\S+|\s+\S*hermes/\S*)*\s+(?!-)(?!\S*hermes/)[^\s|;&]+'
+  - description: '[GITHUB_WRITE] gh pr merge, review, close, reopen or lock'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+pr\s+(?:merge|review|close|reopen|lock|unlock)\b.*'
+  - description: '[GITHUB_WRITE] gh issue close, delete, transfer, lock or pin'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+issue\s+(?:close|reopen|delete|transfer|lock|unlock|pin|unpin)\b.*'
+  - description: '[GITHUB_WRITE] gh api with a write method or a request body'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '(?i)\bgh\s+api\b.*(?:\s(?:-X|--method)(?:=|\s+)?(?:POST|PUT|PATCH|DELETE)\b|\s-[fF]\s|\s--(?:raw-)?field\b|\s--input\b).*'
+  - description: '[GITHUB_WRITE] gh repo, release, workflow or run that writes'
+    enabled: true
+    group: GITHUB_WRITE
+    pattern: '\bgh\s+(?:repo\s+(?:create|delete|edit|fork|archive|unarchive|rename|sync|deploy-key)|release\s+(?:create|delete|edit|upload)|workflow\s+(?:run|enable|disable)|run\s+(?:rerun|cancel|delete)|secret|variable|label\s+(?:create|edit|delete))\b.*'
+
+  # --- Secrets: never read, print or store one (SOUL.md rule 1) ---
+  - description: '[SECRETS] the env files, auth.json or SSH keys'
+    enabled: true
+    group: SECRETS
+    pattern: '(?:hermes-secrets|\.hermes/\.env|(?:^|[\s/"''=])\.env\b|auth\.json|\.ssh/|\bid_(?:rsa|ed25519|ecdsa)\b)'
+  - description: '[SECRETS] dumping the environment'
+    enabled: true
+    group: SECRETS
+    pattern: '(?:^|[;&|]\s*)(?:env|printenv|export\s+-p|set)\s*(?:$|[;&|>])'
+
+  # --- The system belongs to Nix: changes go through a PR to piabrota/nix-os ---
+  - description: '[SYSTEM] sudo, rebuilds and unit control'
+    enabled: true
+    group: SYSTEM
+    pattern: '\b(?:sudo|doas|su\s+-|nixos-rebuild|switch-to-configuration|nix-env|nix\s+profile\s+install)\b.*|\bsystemctl\s+(?:start|stop|restart|reload|enable|disable|mask|kill|edit|daemon-reload)\b.*'
+
+  # --- Nothing installed or fetched to run: tools come pinned from Nix ---
+  - description: '[INSTALL] a script piped from the network into a shell'
+    enabled: true
+    group: INSTALL
+    pattern: '\b(?:curl|wget)\b.*\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b.*'
+  - description: '[INSTALL] package managers and runners that fetch code'
+    enabled: true
+    group: INSTALL
+    pattern: '\b(?:uvx|npx|pnpx|bunx)\b.*|\b(?:pip3?|npm|pnpm|yarn|bun|cargo|go|gem)\s+(?:install|add|get)\b.*|\buv\s+(?:pip\s+install|tool\s+(?:install|run)|add|run)\b.*|\bhermes\s+(?:pm|plugins?|skills)\s+install\b.*'
+
+  # --- OpenRig (openrig.nix): systemd runs the daemon; Hermes runs `rig` against 127.0.0.1 and nothing more ---
+  # Hermes may plan, start, stop and talk to rigs (rig up, down, ps, send, queue, capture). A restart
+  # of the daemon goes through a deploy, never through `rig daemon`; `rig setup` installs tools and
+  # edits ~/.tmux.conf. The first rule is the owner's (PR 124) and covers setup, start and daemon
+  # control; each rule below blocks something that the ones before it leave open: credentials,
+  # providers and connectors; every `rig host` command and any --host; a change to a seat's
+  # permission policy (the unit sets OPENRIG_YOLO=1, Hermes never does); and a pointer at another
+  # daemon or at the daemon's state. The skill hermes-rig lists what is allowed.
+  - description: '[OPENRIG] rig setup, rig start or daemon control'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:setup|start|daemon\s+(?:start|stop|restart))\b.*'
+  - description: '[OPENRIG] credentials, providers, MCP grants or connectors'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:auth\s+(?:save|switch)|provider\s+switch|mcp\s+(?:token\s+add|serve\b[^|;&]*--http)|slack\s+setup)\b.*'
+  - description: '[OPENRIG] rig host (pairing and remote hosts) and any rig command with --host'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+host\b.*|\brig\b[^|;&]*\s--host\b.*'
+  - description: '[OPENRIG] turning off a seat''s permission prompts or changing its policy'
+    enabled: true
+    group: OPENRIG
+    pattern: '\brig\s+(?:seat\s+set-permissions|policy\s+apply)\b.*|\brig\b[^|;&]*\s--(?:policy|permission-mode|codex-permissions|dangerously-interact|non-interruptive)\b.*|\bOPENRIG_YOLO\b'
+  - description: '[OPENRIG] a pointer at another daemon or at the daemon''s own state'
+    enabled: true
+    group: OPENRIG
+    pattern: '\bOPENRIG_(?:URL|HOME|DB|BIND_HOST)=|openrig-secrets|/var/lib/openrig\b'

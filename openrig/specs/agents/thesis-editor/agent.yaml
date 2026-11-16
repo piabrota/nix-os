@@ -1,0 +1,35 @@
+# The editor seat of wave-forecaster-thesis. It runs on Claude Code: the norms land in the CLAUDE.md of
+# the seat's own folder, the box's first (OpenRig writes a Claude seat's guidance there, not in
+# AGENTS.md). The role goes in as a startup file below.
+name: thesis-editor
+version: "1.0"
+description: Plans the thesis from the owner's brief, assembles the accepted sections and publishes the PDF
+
+defaults:
+  runtime: claude-code
+  model: claude-sonnet-5-5
+
+imports:
+  - ref: local:../shared
+  - ref: local:../thesis-shared
+
+profiles:
+  default:
+    summary: Fills thesis.json, assembles the PDF and reports to the owner
+    uses:
+      skills: []
+      guidance: [shared:norms, thesis-shared:norms]
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+      orientation: role
+    - path: startup/context.md
+      delivery_hint: send_text
+      required: true
+  actions: []

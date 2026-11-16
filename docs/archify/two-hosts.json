@@ -1,0 +1,189 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Two hosts: KVM 1 serves the public web, KVM 4 runs Hermes and OpenRig",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "output": "two-hosts.html"
+  },
+  "lanes": [
+    {
+      "id": "people",
+      "label": "Visitor"
+    },
+    {
+      "id": "dns",
+      "label": "Porkbun DNS"
+    },
+    {
+      "id": "kvm1",
+      "label": "VPS 1 · KVM 1 (piabrota)"
+    },
+    {
+      "id": "kvm4",
+      "label": "VPS 2 · KVM 4 (piabrota2)"
+    },
+    {
+      "id": "owner",
+      "label": "Owner"
+    }
+  ],
+  "mainPath": [
+    "browser",
+    "records"
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "lane": "people",
+      "col": 2,
+      "type": "external",
+      "label": "a browser",
+      "sublabel": "https",
+      "width": 140
+    },
+    {
+      "id": "records",
+      "lane": "dns",
+      "col": 2,
+      "type": "backend",
+      "label": "A records",
+      "sublabel": "one name, one host",
+      "width": 140
+    },
+    {
+      "id": "www",
+      "lane": "kvm1",
+      "col": 0,
+      "type": "frontend",
+      "label": "www.piabrota.art",
+      "sublabel": "site, /hermes, /figures",
+      "width": 140
+    },
+    {
+      "id": "apps",
+      "lane": "kvm1",
+      "col": 1,
+      "type": "backend",
+      "label": "/notes",
+      "sublabel": "Loco app, SQLite",
+      "width": 140
+    },
+    {
+      "id": "dash",
+      "lane": "kvm4",
+      "col": 2,
+      "type": "frontend",
+      "label": "hermes.piabrota.art",
+      "sublabel": "dashboard, basic auth",
+      "width": 140
+    },
+    {
+      "id": "gateway",
+      "lane": "kvm4",
+      "col": 3,
+      "type": "backend",
+      "label": "hermes-agent",
+      "sublabel": "gateway, cron, omp",
+      "width": 140
+    },
+    {
+      "id": "openrig",
+      "lane": "kvm4",
+      "col": 4,
+      "type": "backend",
+      "label": "openrig",
+      "sublabel": "2 omp seats",
+      "width": 140
+    },
+    {
+      "id": "rigui",
+      "lane": "kvm4",
+      "col": 5,
+      "type": "frontend",
+      "label": "rig.piabrota.art",
+      "sublabel": "OpenRig UI, basic auth",
+      "width": 140
+    },
+    {
+      "id": "chats",
+      "lane": "owner",
+      "col": 3,
+      "type": "external",
+      "label": "Telegram, Discord",
+      "sublabel": "the owner's chats",
+      "width": 140
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "browser",
+      "to": "records",
+      "label": "resolves",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e2",
+      "from": "records",
+      "to": "www",
+      "label": "www",
+      "toSide": "top",
+      "fromSide": "left"
+    },
+    {
+      "id": "e3",
+      "from": "records",
+      "to": "dash",
+      "label": "hermes",
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e4",
+      "from": "records",
+      "to": "rigui",
+      "label": "rig",
+      "role": "branch",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "from": "www",
+      "to": "apps",
+      "label": "serves"
+    },
+    {
+      "id": "e6",
+      "from": "dash",
+      "to": "gateway",
+      "label": "shares state"
+    },
+    {
+      "id": "e7",
+      "from": "gateway",
+      "to": "openrig",
+      "label": "drives"
+    },
+    {
+      "id": "e8",
+      "from": "rigui",
+      "to": "openrig",
+      "label": "proxies"
+    },
+    {
+      "id": "e9",
+      "from": "gateway",
+      "to": "chats",
+      "label": "polls"
+    }
+  ]
+}

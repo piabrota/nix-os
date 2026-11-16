@@ -2,30 +2,81 @@ name: ci
 
 on:
   # A change to Markdown only builds nothing: it cannot change the system.
+  # Not on a push to main: the pull request already ran these checks, and deploy.yml builds the
+  # system again on the merge (and saves main's cache for the next pull request).
   pull_request:
-    paths-ignore: ['**.md']
-  push:
-    branches: [main]
     paths-ignore: ['**.md']
   workflow_dispatch:
 
+# A new push to a pull request cancels the run of the push before it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+  # cache-nix-action deletes this workflow's older caches.
+  actions: write
 
 jobs:
-  flake:
-    name: flake check (builds the system)
+  # The fast checks, on every pull request: formatting, lints, the DeepWiki plan, the figures, the
+  # scripts' binary with its tests (scala/) and two small checks (the metrics page, the favicon).
+  lint:
+    name: lint (builds only the scripts' binary)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
-      - run: nix flake check --no-update-lock-file --print-build-logs
-      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix deploy.nix tools.nix loco.nix site.nix kubesolo.nix kubesolo/package.nix site/default.nix site/data.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
+      - run: nix run nixpkgs#nixpkgs-fmt -- --check flake.nix acme-retry.nix deploy.nix tools.nix loco.nix site.nix pgx.nix hermes.nix hermes-github.nix hermes-web.nix hosts/*/*.nix kubesolo-purge.nix observer.nix pgx/package.nix omp/package.nix pgx/test.nix site/default.nix site/data.nix site/hermes.nix apps.nix apps/notes/default.nix drawings/*.nix mockups/*.nix
       - run: nix run nixpkgs#statix -- check .
       - run: nix run nixpkgs#deadnix -- --fail .
-      - run: nix run nixpkgs#shellcheck -- scripts/*.sh
+      - name: the scripts' binary builds offline and passes its tests (scala/; stand-in programs, no network)
+        run: nix build --print-build-logs .#piabrota
+      - name: every piabrota.art name of the *.nix files is in scripts/domains.txt
+        run: ./result/bin/piabrota cert-check --coverage
+      - name: the metrics page's fetch, as the browser does it
+        run: ./result/bin/piabrota metrics-preview --check
+      - name: the metrics page and the favicon pass their checks (pure Nix rules; small builds)
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.metrics-page .#checks.x86_64-linux.favicon
+      - name: DeepWiki's page plan is within its limits (.devin/wiki.json)
+        run: ./result/bin/piabrota deepwiki-check
       - name: figures match their sources (offline; the pin is read from the index)
-        run: nix shell nixpkgs#just -c just figure-check
+        run: ./result/bin/piabrota figure-check
+
+  # The full `nix flake check` builds the system and runs the VM test (checks.pgx), about 10 minutes
+  # a run. The owner took it off pull requests on 2026-11-03: deploy.yml builds the system on each
+  # merge and stops before the VPS if the build fails. Run it by hand on a branch when a change
+  # needs it: `gh workflow run ci.yml --ref <branch>`.
+  flake:
+    name: flake check (builds the system)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The runner has about 14 GB free, and the Nix store (Hermes's build, with its own nixpkgs, and
+      # the restored cache) outgrew it on 2026-11-02 ("No space left on device"). The image's
+      # toolchains that nothing here uses give back about 20 GB.
+      - name: Free disk space on the runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+      - uses: cachix/install-nix-action@v31
+      # The runner starts with an empty /nix/store and cache.nixos.org has nothing built here, so
+      # without this every run compiles apps/notes (about 400 crates) again. The store is saved to GitHub's
+      # Actions cache after a successful run and restored at the start of the next: the newest cache
+      # of ci or deploy on this branch, else main's (a PR reads main's caches, not the reverse). Older
+      # caches of this workflow and branch are deleted after the save, to stay in the 10 GB quota.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-ci-${{ hashFiles('flake.lock', '**/*.nix', '**/Cargo.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-ci-
+          purge-created: 0
+          purge-primary-key: never
+          # Collect garbage down to 4 GiB before saving, so the cache stays small enough to restore.
+          gc-max-store-size-linux: 4G
+      - run: nix flake check --no-update-lock-file --print-build-logs
 
   justfiles:
     # Project rule: every justfile runs on the just that Ubuntu LTS ships through apt
@@ -34,8 +85,24 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - run: sudo apt-get update && sudo apt-get install -y just
-      - run: just --version
+      # The runner's apt mirror stops resolving at times ("Temporary failure resolving
+      # 'azure.archive.ubuntu.com'", PR #232, 2026-11-11). Try apt three times with a short timeout,
+      # then fall back to the same 1.21.0 from upstream's release, pinned by its checksum. The next
+      # step fails if the version is not 1.21.0, so the check never runs on another just.
+      - name: install Ubuntu's just (1.21.0)
+        run: |
+          apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20'
+          for i in 1 2 3; do
+            # shellcheck disable=SC2086
+            if sudo apt-get $apt_opts update && sudo apt-get $apt_opts install -y just; then exit 0; fi
+            echo "apt failed (try $i)"; sleep $((i * 10))
+          done
+          echo "::warning::apt could not install just; using the 1.21.0 release binary"
+          curl -fsSL --retry 5 -o /tmp/just.tgz \
+            https://github.com/casey/just/releases/download/1.21.0/just-1.21.0-x86_64-unknown-linux-musl.tar.gz
+          echo '3292fd257f2e2dfd4cb0d5650aa5e47d2c99cee1233446378eb45a7b045f3b30  /tmp/just.tgz' | sha256sum -c -
+          sudo tar -xzf /tmp/just.tgz -C /usr/local/bin just
+      - run: just --version | grep -Fx 'just 1.21.0'
       - name: parse every justfile
         run: |
           status=0

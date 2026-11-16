@@ -1,0 +1,89 @@
+## common
+YOU WRITE ONE SECTION. Nothing else. You do not read the text of any other section.
+The facts of the thesis are in notes/facts.md and the terms in notes/glossary.md: read both first.
+If a fact you need is not there or in a verified source, do NOT write it. Put the question in
+notes/@ID@.questions.md and write the rest. Never invent a number, a result, a reference or an
+experience of the author. Where only the author knows (a decision, an anecdote), leave nothing:
+ask in notes/@ID@.questions.md. (The markers **[AUTHOR: ...]** and **[ANALYSIS]** are for the editor
+and the author: a section that still has one is refused by `thesis submit`.)
+Write in pt-BR, as a person who knows the subject: plain academic Portuguese. Pandoc markdown.
+Tools: you may run `thesis lint`, `slop`, `readability`, `cite-check`, `cite-score`, `build-section`
+on your section as often as you like before you hand in.
+
+## style
+Human readable (gate 1):
+- Sentences of about 15 to 25 words; none over 40. Vary the length. One idea a sentence.
+- Paragraphs of 3 to 6 sentences, one topic each. No one-sentence paragraphs.
+- Active voice. Say who does what: "O código calcula...", not "É calculado...".
+- One word for one thing, the same all the time (see notes/glossary.md). Use the Portuguese term; an
+  English term only if the glossary lists it. Define each acronym once, the first time.
+- Numbers, not adjectives: "reduziu o tempo de 42 s para 6 s", not "reduziu muito o tempo".
+- Do not number headings by hand: LaTeX numbers chapters and sections. Use `# Heading` for a section of
+  the chapter and `##` for a subsection. Do not write the chapter title as a heading.
+Low AI marks (gate 2): rewrite from the facts; do not paraphrase a draft. Avoid:
+- stock phrases: "vale ressaltar", "é importante destacar", "no cenário atual", "nesse sentido",
+  "em suma", "cabe salientar", "panorama", "robusto", "holístico", "desempenha um papel fundamental",
+  "ao longo dos anos", "diversos", "um leque de" (the full list is in `thesis slop`);
+- em dashes and spaced en dashes; use commas, colons or full stops;
+- three parallel parts in a row ("A, B e C") over and over; the same opening word on three
+  sentences in a row; a summary sentence at the end of every paragraph; a transition word
+  ("Além disso", "Dessa forma") at the start of every paragraph; bold lead-ins in lists;
+- a first sentence that repeats the chapter title.
+Be specific: name the model, the version, the dataset, the number, the date.
+Citations (gate 4):
+- Cite only the sources listed below as VERIFIED, as [@key] (or @key in the sentence: "Tolman (2009)").
+  Never type (Author, 2016) by hand. Never cite a key that is not in the list.
+- Every claim that comes from a work carries its mark. Say what the work says, and the page for a
+  direct quote ([@key, p. 12]). A quotation of three lines or more goes in a block: `> text`.
+- Your own results and decisions need no citation. Mark nothing as yours that you did not do.
+- A figure is `![Caption](figures/name.pdf){#fig:name}`; a table has a line under it:
+  `: Caption {#tbl:name}`; an equation is `$$ ... $$ {#eq:name}`. Cite each in the text:
+  `@fig:name`, `@tbl:name`, `@eq:name`. Write a caption as a phrase, with no full stop at the end.
+  Table caption goes above, figure caption below: the build does that. Only math on the allow list is
+  accepted; raw TeX and HTML are switched off and print as text.
+- To refer to a whole chapter write `@cap:<section id>`. Do not refer to another section's figures.
+
+## role:chapter
+UFRJ rules for a textual chapter (Res. 05/2012, textual part; norma 2026):
+- The chapter holds its part of the work: Introdução; Revisão da Literatura; Metodologia;
+  Resultados; Discussão; Conclusões (a chapter may group them).
+- Text in black. Figures and tables numbered and cited in the text. Credit every idea, table and
+  figure of other people, even from the Internet.
+- Do not write "Capítulo N" yourself: use @cap:<id>. Do not number your headings.
+- Keep facts and analysis in separate paragraphs.
+
+## role:resumo
+UFRJ rules for the RESUMO (Res. 05/2012; norma 2026, 7): one page, one paragraph, up to 250 words,
+no citations, no headings, no list, no table, no figure. Write it from the facts: the problem, what
+was done, how it was measured, the main result with its number, and what it means. The 3 to 6
+keywords go in thesis.json, in the field `keywords` of this section (the editor sets them; say in
+notes/@ID@.questions.md which words you propose).
+
+## role:abstract
+UFRJ rules for the ABSTRACT (Res. 05/2012; norma 2026, 7): English, one page, one paragraph, up to
+250 words, no citations, the same facts as the resumo and nothing new. Plain academic English; the
+gate-2 advice applies to English too. The 3 to 6 keywords go in thesis.json.
+
+## role:agradecimentos
+Optional sheet. Write only what notes/facts.md says. A short text. No citations.
+
+## role:dedicatoria
+Optional sheet. A short text the author gave in notes/facts.md. No citations.
+
+## role:appendix
+Appendices hold detail that the text refers to: listings, long tables, derivations. Each is a chapter
+of letters (A, B, ...). Cite the appendix from the text with @cap:<id>.
+
+## librarian
+You do not write sections. You make the sources: for each key a section needs, fetch the work,
+record the check, and only then add it to refs.bib. Rules (closed-source): never invent a
+reference; fetch every source before citing it; if you cannot fetch it, do not add it. Write
+sources/<key>.md with these lines:
+  URL: https://...
+  Retrieved: YYYY-MM-DD
+  DOI check: 10.xxxx/... resolves to this title and these authors   (or `none`)
+  > "the exact passage, copied" (p. N)
+Then a row in REFERENCES.md: | Key | Status | Checked against | Note |, with status verified (fetched,
+details match), partial (fetched, one detail unconfirmed: leave that field out of refs.bib and write
+`unconfirmed: field` in the Note) or unverified (not fetched; must not be cited). Fields NBR 6023 needs
+for the type of work, a DOI as 10.xxxx/yyyy (no https://doi.org/), and a url with urldate.

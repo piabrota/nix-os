@@ -9,6 +9,8 @@ let
   hasApps = cfg.apps != { };
   onDomain = filterAttrs (_: a: a.domain != null) cfg.apps;
   onPath = filterAttrs (_: a: a.path != null) cfg.apps;
+  # `piabrota loco-backup STATE` (scala/scripts/Backups.scala).
+  locoBackup = (pkgs.callPackage ./scala { }).command { name = "loco-backup"; };
   proxy = app: {
     proxyPass = "http://127.0.0.1:${toString app.port}";
     proxyWebsockets = true;
@@ -179,13 +181,7 @@ in
             serviceConfig = sandbox // {
               Type = "oneshot";
             };
-            script = ''
-              mkdir -p ${state}/backup
-              if [ -f ${state}/db.sqlite ]; then
-                sqlite3 ${state}/db.sqlite ".backup '${state}/backup/db-$(date +%F).sqlite'"
-              fi
-              find ${state}/backup -name 'db-*.sqlite' -mtime +7 -delete
-            '';
+            script = "${lib.getExe locoBackup} ${state}";
           };
         })
       cfg.apps);
@@ -203,7 +199,7 @@ in
             (_: app: nameValuePair app.domain {
               enableACME = true;
               forceSSL = true;
-              locations."/" = proxy app;
+              locations = config.piabrota.favicon.locations // { "/" = proxy app; };
             })
             onDomain)
           # Apps on a path share the site's virtual host and certificate: the exact path and

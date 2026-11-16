@@ -12,7 +12,7 @@ import piabrota_site/parts
 pub fn view() -> Element(msg) {
   let #(here, away) = list.partition(data.projects, is_here)
   html.div([], [
-    parts.top("paths", [
+    parts.top("paths", "en", [
       html.div([], [
         parts.eyebrow("piabrota.art · " <> data.kicker),
         html.h1([], [
@@ -24,8 +24,9 @@ pub fn view() -> Element(msg) {
             "Some projects answer here, on a path of piabrota.art; the rest live on their own sites or in their repositories.",
           ),
         ]),
-        parts.status(),
-        parts.buttons(#("#ls", "List the paths ↓")),
+        parts.metrics("en"),
+        parts.status("en"),
+        parts.buttons(#("#ls", "List the paths ↓"), "en"),
       ]),
       // The drawing from docs/drawings/mu.svg, copied next to the page by default.nix.
       html.figure([attribute.class("drawing")], [
@@ -42,7 +43,11 @@ pub fn view() -> Element(msg) {
       html.section([attribute.class("wrap"), attribute.id("ls")], [
         parts.section_head("Paths", "ls, two places"),
         html.div(
-          [attribute.class("terminal"), attribute.aria_label("Listing")],
+          [
+            attribute.class("terminal"),
+            attribute.id("projects"),
+            attribute.aria_label("Listing"),
+          ],
           [
             html.div([attribute.class("term-bar")], [
               html.span([attribute.class("dots")], [
@@ -57,9 +62,9 @@ pub fn view() -> Element(msg) {
           ],
         ),
       ]),
-      ..community.sections()
+      ..community.sections("en")
     ]),
-    parts.foot("paths"),
+    parts.foot("paths", "en"),
   ])
 }
 
@@ -89,7 +94,9 @@ fn block(prompt: String, projects: List(Project)) -> Element(msg) {
           False, _ -> parts.address(p)
         },
         html.span([attribute.class("who")], [html.text(p.name)]),
-        parts.pill(p.state),
+        parts.pill(p.state, "en"),
+        parts.commits(p, "en"),
+        html.span([attribute.class("say")], [html.text(p.blurb)]),
       ])
     }),
   ])

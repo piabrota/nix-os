@@ -16,6 +16,17 @@ rec {
   text = x: y: as: s: el "text" ({ inherit x y; } // as) [ (esc s) ];
   g = el "g";
 
+  # A project's commit counts as one small text with a tooltip (`<title>`): the label in capitals,
+  # then "104 human · 63 agent". Nothing for a project with no counts. `as` styles the numbers.
+  commits = data: x: y: as: p:
+    if p ? commits then
+      el "text" ({ inherit x y; } // as) [
+        (el "title" { } [ (esc data.commitsTip) ])
+        (el "tspan" { font-family = "Inter, sans-serif"; font-weight = 600; font-size = 11; letter-spacing = 1; } [ "COMMITS" ])
+        (esc "  ${data.commitsText p}")
+      ]
+    else "";
+
   # Greedy word wrap at `n` characters a line.
   wrap = n: s:
     foldl'

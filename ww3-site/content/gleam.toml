@@ -1,0 +1,13 @@
+name = "ww3_gpu_content"
+version = "1.0.0"
+target = "javascript"
+description = "Writes the content module of the ww3-gpu site from the files of this repository"
+
+[javascript]
+runtime = "nodejs"
+
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

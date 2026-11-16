@@ -40,15 +40,19 @@ let
       bodyH = 44 + length bl * 22;
       tx = pad + (if wide then 80 else 44);
       rx = w - pad - colR;
+      # The counts add a line to the right column (wide) or below the licence (phone).
+      extra = if p ? commits then 22 else 0;
       meta =
         if wide then [
           (s.text rx (y + 36) { fill = fg; font-size = 13; font-family = mono; } (where p))
           (s.text rx (y + 60) { fill = stateCol p.state; font-size = 13; } "${stateLabel p.state} · ${p.licence}")
+          (s.commits data rx (y + 84) { fill = muted; font-size = 12; font-family = mono; } p)
         ] else [
           (s.text tx (y + bodyH + 28) { fill = fg; font-size = 12; font-family = mono; } (where p))
           (s.text tx (y + bodyH + 50) { fill = stateCol p.state; font-size = 12; } "${stateLabel p.state} · ${p.licence}")
+          (s.commits data tx (y + bodyH + 72) { fill = muted; font-size = 12; font-family = mono; } p)
         ];
-      h = (if wide then lib.max bodyH 70 else bodyH + 62) + 24;
+      h = (if wide then lib.max bodyH (70 + extra) else bodyH + 62 + extra) + 24;
     in
     {
       inherit h;

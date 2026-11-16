@@ -5,3 +5,8 @@ result
 secrets/
 result-*
 build/
+
+video-lab/out/
+.scala-build/
+.bsp/
+.scala-piabrota

@@ -1,0 +1,8 @@
+/* Footer: one quiet line and the sites. Needs tokens.css and the .pb-wrap rule of base.css. */
+.pb-footer { margin-top: 64px; padding: 28px 0 40px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+.pb-footer__in { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.pb-footer__in p { margin: 0; max-width: 60ch; }
+.pb-footer__nav { display: flex; flex-wrap: wrap; gap: 0 2px; }
+.pb-footer__nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; font: 400 12px/1 var(--mono); color: var(--muted); }
+.pb-footer__nav a:hover { color: var(--text); }
+.pb-footer__nav a[aria-current="page"] { color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 6px; }
