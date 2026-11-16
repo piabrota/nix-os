@@ -22,8 +22,8 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 |---|---|
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
 | Host | piabrota2 (KVM 4), a segunda VPS, desde a mudança do piabrota (KVM 1) no [MIGRATION-KVM4.md](MIGRATION-KVM4.md). O `hermes.nix` define o que não depende da máquina e deixa o resto nos padrões do upstream: o pacote `full`, 10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB. O `hosts/piabrota2` limita o gateway a `MemoryMax=8G` e `CPUWeight=50`. |
-| Pacote | O padrão do flake, `full`, uns 700 MB a mais (voz, Bedrock, Modal e afins). Ele soma os extras `anthropic` (o SDK da Anthropic), `messaging` (Telegram, Discord, Slack), `mcp` e `ddgs`. |
-| Modelo | `claude-sonnet-5-5` pelo provedor `anthropic`, com o `claude-haiku-5-5` para subagentes e três tarefas laterais baratas (veja "Ajustes de execução"), com a assinatura do dono: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`), como o piabrota/agents faz. Sem chave de API. |
+| Pacote | O padrão do flake, `full`, uns 700 MB a mais (voz, Bedrock, Modal e afins). Ele soma os extras `messaging` (Telegram, Discord, Slack), `mcp` e `ddgs`. O modelo roda no OpenCode Go, cujo relay fala o protocolo da OpenAI, e o SDK `openai` já vem nas dependências base do pacote, então nenhum extra de modelo é preciso. |
+| Modelo | `glm-5.3-flash` pelo provedor `opencode-go`, para a conversa principal, os subagentes e as três tarefas laterais baratas igualmente (veja "Ajustes de execução"), com a assinatura do dono: `OPENCODE_GO_API_KEY` no arquivo de segredos. O plano Go tem janelas de 5 horas, semanais e mensais. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
 | Limites | `MemoryMax=8G` (metade de 16 GB) e `CPUWeight=50` (metade da fatia das outras unidades) no gateway, para o sshd e um deploy terem espaço. A unidade do painel tem `MemoryMax=2G` ("O painel web"). |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
@@ -61,13 +61,13 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 
 | Ajuste | Valor | Por quê |
 |---|---|---|
-| `fallback_providers` (principal e `delegation`) | vazio | Só modelos Claude. Se a Anthropic falhar, o turno falha; ele nunca vai para outro provedor. |
-| `model.default` | `claude-sonnet-5-5` | O Sonnet é o modelo de alto nível: planeja, escreve, revisa e decide. |
-| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `claude-haiku-5-5` | O Haiku é o modelo de baixo nível: subagentes para leituras em paralelo e três tarefas laterais baratas (títulos, escolha de skill, o juiz do `/goal`). O Hermes não tem roteador por chamada: o Sonnet decide delegar, e o `hermes/SOUL.md` diz quando. Um subagente começa com um contexto novo em outro modelo, e o Sonnet confere a resposta. Por isso o Sonnet roda sozinho um grep, uma lista ou uma busca, e só delega três ou mais tarefas de leitura, ou a leitura de mais de uns 20 arquivos. A compressão, a aprovação de comandos perigosos e a revisão pós-turno ficam no Sonnet. |
+| `fallback_providers` (principal e `delegation`) | vazio | Só modelos do OpenCode Go. Se o relay do Go falhar, o turno falha; ele nunca vai para outro provedor. |
+| `model.default` | `glm-5.3-flash` | Um modelo para tudo: planeja, escreve, revisa e decide. É o nível rápido e barato do catálogo do Go, com a mesma janela de 1.000.000 de tokens dos modelos grandes do relay. |
+| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `glm-5.3-flash` | O mesmo modelo também cuida dos subagentes de leitura em paralelo e das três tarefas laterais baratas (títulos, escolha de skill, o juiz do `/goal`). O Hermes não tem roteador por chamada: o modelo decide delegar, e o `hermes/SOUL.md` diz quando. Ele roda sozinho um grep, uma lista ou uma busca, e só delega três ou mais tarefas de leitura, ou a leitura de mais de uns 20 arquivos. A compressão, a aprovação de comandos perigosos e a revisão pós-turno rodam nele também. |
 | `delegation` | até 2 filhos, 50 iterações cada, um nível | Pouca ramificação, para uma vCPU e a cota. |
 | `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, ligado | Um limite por execução e uma parada firme em laços de ferramentas. |
 | `goals.max_turns` | 6 (padrão 20) | O `/goal` é o loop Ralph do Hermes: ele continua uma tarefa sozinho até o juiz dizer que acabou. Cada turno pode usar até 60 chamadas ao modelo, então 6 turnos mantêm um objetivo dentro da cota; o `/goal resume` dá mais 6. |
-| `compression.threshold` | 0,40 (padrão 0,50) | O Hermes comprime a conversa quando o prompt chega a essa fração da janela de contexto. O Sonnet tem 1.000.000 de tokens, então 0,40 são cerca de 400.000 tokens. O Hermes só impõe o piso de 0,75 a janelas abaixo de 512 mil tokens, então um valor menor vale aqui. Cada compressão reescreve uma vez o prefixo do prompt em cache; todo turno seguinte custa menos, porque o contexto é menor. A compressão roda no Sonnet. Mude o valor no `hermes.nix`. Uma segunda rede, a higiene de sessão, age em 85 % e não é configurável. O núcleo não zera sessões ociosas; o plugin da comunidade `hermes-session-reset-policy` zera, e ele não está instalado. |
+| `compression.threshold` | 0,40 (padrão 0,50) | O Hermes comprime a conversa quando o prompt chega a essa fração da janela de contexto. O `glm-5.3-flash` tem 1.000.000 de tokens (models.dev, `opencode-go`), então 0,40 são cerca de 400.000 tokens. O Hermes só impõe o piso de 0,75 a janelas abaixo de 512 mil tokens, então um valor menor vale aqui. Cada compressão reescreve uma vez o prefixo do prompt em cache; todo turno seguinte custa menos, porque o contexto é menor. Mude o valor no `hermes.nix`. Uma segunda rede, a higiene de sessão, age em 85 % e não é configurável. O núcleo não zera sessões ociosas; o plugin da comunidade `hermes-session-reset-policy` zera, e ele não está instalado. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h no chat (as pessoas pausam), 5 min no cron e nos subagentes. |
 | `mcp.auto_reload_on_config_change` | desligado | Mudar a configuração não recarrega os servidores MCP (o que derrubaria o cache do prompt); só um deploy muda a configuração. |
 | `agent.agent_cache.max_size` | 16 | Menos agentes em cache, para poupar RAM. |
@@ -113,7 +113,7 @@ termina, o wrapper inicia o próprio gateway. O `SIGTERM` encerra a espera na ho
 
 ## Quem ele é
 
-O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no Claude Sonnet. O arquivo diz o
+O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no GLM 5.3 Flash. O arquivo diz o
 que ele tem e o que não tem, e traz regras tiradas do dogma do piabrota (`piabrota/mu`, `DOGMA.md`):
 ele nunca lê nem repete um segredo, nunca dá push nem faz merge, só aceita alertas de fontes
 oficiais e cita o que afirma. Ele tem uma regra fixa do dono: toda mensagem com notícia boa (uma melhoria, um conserto que
@@ -161,10 +161,10 @@ lê e envia), e está fixado por commit no `hermes.nix`:
 | [evidence-ledger-research](https://github.com/markoblogo/abvx-agent-skills) (MIT) | skill | Disciplina de fonte, data, unidade e célula de tabela quando ele tira números de boletins, PDFs e artigos. |
 | [tripwire](https://github.com/percyhendrux123-prog/hermes-tripwire) v0.1.1 (MIT) | plugin | Grava uma linha JSON para cada ação recusada (uma ferramenta bloqueada pela lista de bloqueio ou por outro hook, ou uma aprovação negada, cancelada ou expirada) em `/var/lib/hermes/.hermes/tripwire/events.jsonl`. Ele não guarda argumentos, resultados nem texto de mensagem, e não acessa a rede. Um arquivo `~/.hermes/tripwire/TEST_BLOCK` com `default <ferramenta>` bloqueia essa ferramenta, para testar um alerta; apague o arquivo para parar. |
 | [inbox](https://github.com/NousResearch/hermes-labs-plugins/tree/main/inbox) (MIT, Nous Research Labs) | plugin | `hermes inbox` (e `--json`): uma lista só de leitura dos jobs do cron que falharam ou estão pausados, dos subagentes parados, dos processos órfãos, do trabalho em andamento e das próximas execuções do cron. Só um comando de CLI: nenhuma ferramenta e nenhum hook no chat. |
-| [telegram-business](https://github.com/NousResearch/hermes-labs-plugins/tree/main/telegram-business) (MIT, Nous Research Labs) | plugin | Escreve rascunhos de resposta aos clientes de uma conta Telegram Business e só envia quando o dono toca em Send; `/biz` no Telegram. Não faz nada até uma conta Business (Telegram Premium) conectar o bot. Os rascunhos vão para o Sonnet. |
+| [telegram-business](https://github.com/NousResearch/hermes-labs-plugins/tree/main/telegram-business) (MIT, Nous Research Labs) | plugin | Escreve rascunhos de resposta aos clientes de uma conta Telegram Business e só envia quando o dono toca em Send; `/biz` no Telegram. Não faz nada até uma conta Business (Telegram Premium) conectar o bot. Os rascunhos vão para o modelo principal. |
 | [workflow-record](https://github.com/NousResearch/hermes-labs-plugins/tree/main/workflow-record) (MIT, Nous Research Labs) | plugin | `hermes record` grava um fluxo no navegador por CDP, e a skill dele deixa o `/learn` transformar a gravação em skill. Aqui não faz nada: a máquina não roda navegador. |
-| [github-copilot](https://github.com/NousResearch/hermes-labs-plugins/tree/main/github-copilot) (MIT, Nous Research Labs) | plugin | O GitHub Copilot como provedor de modelo. Aqui não faz nada: o modelo e os fallbacks só citam a Anthropic, e ele só chama o GitHub num perfil que escolheu o Copilot. |
-| [error-ledger, aux-ledger, approval-ledger, stop-ledger](https://github.com/olric3015/hermes-plugins) (MIT) | plugins | Registros locais, lidos no chat: `/errors` (chamadas à Anthropic que falharam, por causa), `/aux` (tokens das tarefas laterais do Haiku), `/approval-log` (quantas vezes cada regra da lista de bloqueio perguntou, e as respostas), `/stop-log` (turnos parados com `/stop` ou `/new`). Só metadados, nenhum texto de prompt, sem rede; cada arquivo é aparado depois de 2 MB. |
+| [github-copilot](https://github.com/NousResearch/hermes-labs-plugins/tree/main/github-copilot) (MIT, Nous Research Labs) | plugin | O GitHub Copilot como provedor de modelo. Aqui não faz nada: o modelo e os fallbacks só citam o OpenCode Go, e ele só chama o GitHub num perfil que escolheu o Copilot. |
+| [error-ledger, aux-ledger, approval-ledger, stop-ledger](https://github.com/olric3015/hermes-plugins) (MIT) | plugins | Registros locais, lidos no chat: `/errors` (chamadas de modelo que falharam, por causa), `/aux` (tokens das tarefas laterais do flash), `/approval-log` (quantas vezes cada regra da lista de bloqueio perguntou, e as respostas), `/stop-log` (turnos parados com `/stop` ou `/new`). Só metadados, nenhum texto de prompt, sem rede; cada arquivo é aparado depois de 2 MB. |
 | [progress-squash](https://github.com/pierrenode/hermes-progress-squash) (MIT) | plugin | Reduz a uma linha os redesenhos de uma barra de progresso na saída do terminal antes de o modelo lê-la. Sem rede, sem arquivos. |
 | [public-holidays](https://github.com/Akloenx123/hermes-public-holidays) (MIT) | plugin | Feriados e contas de dias úteis (inclusive do Brasil e dos estados), calculados em código, para os resumos do cron e os prazos. GET em `date.nager.at` com um código de país e um ano, sem chave. |
 | [gh-ref, wiki-ref](https://github.com/EloquentBrush0x/hermes-context-refs) (MIT) | plugins | `@gh:dono/repo#N` anexa uma issue ou um pull request público (GET anônimo em `api.github.com`); `@wiki:<título>` anexa uma seção da Wikipédia. Sem token, sem arquivos. |
@@ -234,8 +234,9 @@ pull request. O omp nunca faz push. Como ver e ajustar cada camada:
 - **O wrapper.** O `omp` no PATH do Hermes é um wrapper (`ompWrapped` no `hermes.nix`). Ele aponta
   o omp para `hermes/omp.yml` como overlay de configuração. O arquivo é só leitura na store e vale
   mais que o `config.yml` do próprio omp e que o `.omp/` de um repositório clonado. O wrapper passa
-  o `CLAUDE_CODE_OAUTH_TOKEN` como `ANTHROPIC_OAUTH_TOKEN`: a mesma assinatura e os mesmos limites
-  do Hermes. Ele também desliga o OpenTelemetry, os títulos e os kernels de eval.
+  o `CLAUDE_CODE_OAUTH_TOKEN` como `ANTHROPIC_OAUTH_TOKEN`: a assinatura do Claude do dono (o
+  próprio Hermes agora roda no OpenCode Go, então o token fica só para o omp e as cadeiras de rig).
+  Ele também desliga o OpenTelemetry, os títulos e os kernels de eval.
 - **A lista de bloqueio dele.** A lista de bloqueio e o tripwire do Hermes veem só o comando `omp`
   de fora. Por isso o `hermes/omp.yml` dá à ferramenta bash do omp as regras que importam: sem
   `git push`, sem `gh`, sem instalações, sem `sudo`, sem `curl` ou `wget`, sem leitura dos segredos
@@ -269,7 +270,10 @@ o piabrota/pirsig como pull requests em branches `hermes/*`. Eles precisam do yt
 Sem o arquivo de segredos, a ativação só avisa (`cannot read environmentFile`) e o gateway sobe sem
 plataforma nenhuma, rodando só as tarefas agendadas. Um deploy nunca falha por isso.
 
-1. Gere o token da assinatura no seu computador: `claude setup-token`.
+1. Gere a chave do OpenCode Go no seu computador: uma assinatura em
+   [opencode.ai](https://opencode.ai) e depois uma chave de API no console. Guarde também o token
+   do Claude se ele já está no arquivo: o wrapper do omp e as cadeiras do openrig.nix e do
+   paperclip.nix ainda o leem desse mesmo arquivo.
 2. Crie um bot na plataforma que você quer. No Telegram: fale com o
    [@BotFather](https://t.me/BotFather), `/newbot`, e guarde o token. Seu ID numérico vem do
    [@userinfobot](https://t.me/userinfobot).
@@ -278,7 +282,8 @@ plataforma nenhuma, rodando só as tarefas agendadas. Um deploy nunca falha por 
    ```console
    ssh h0ffmann@hermes.piabrota.art
    sudo install -m 600 /dev/stdin /var/lib/hermes-secrets/hermes.env
-   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
+   OPENCODE_GO_API_KEY=...
+   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...   # só enquanto o omp ou uma cadeira de rig ainda o usa
    TELEGRAM_BOT_TOKEN=123456:ABC...
    TELEGRAM_ALLOWED_USERS=<seu ID numérico>
    GITHUB_TOKEN=github_pat_...   # opcional: só leitura, para a skill github
@@ -532,7 +537,7 @@ para se o nome de um segredo passar. Os caminhos da store mantêm o nome e perde
 - [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent): `flake.nix`,
   `nix/nixosModules.nix`, `nix/moduleCommon.nix` (opções, a ativação que junta os
   `environmentFiles` no `.env`), `nix/packages.nix` (`minimal`, `full`, `messaging`),
-  `hermes_cli/auth.py` (o `CLAUDE_CODE_OAUTH_TOKEN` no provedor `anthropic`), `.env.example`, e
+  `hermes_cli/auth.py` (o `OPENCODE_GO_API_KEY` no provedor `opencode-go`), `.env.example`, e
   [a página de Nix](https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup), lidos em
   2026-11-02.
 - Visto rodando na máquina em 2026-11-03: a unit ativa, `MemoryMax` de 1 GiB, `CPUWeight` 50 e

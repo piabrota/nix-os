@@ -24,7 +24,7 @@ reads them from the evaluated system, so the page changes with every merge that 
 | Unit | `hermes-agent`, a systemd service from the NixOS module of Hermes's flake (the input `hermes-agent`, pinned in `flake.lock`). Native mode, not a container. |
 | Version | The release v0.23.1 (commit `3b42157`, 2026-11-09), pinned by tag in `flake.nix` and by commit in `flake.lock`. |
 | Host | `piabrota2`, the KVM 4 VPS (`hosts/piabrota2/default.nix`). |
-| Package | `full`, the default of Hermes's flake, plus the extras `anthropic`, `messaging`, `mcp` and `ddgs`. |
+| Package | `full`, the default of Hermes's flake, plus the extras `messaging`, `mcp` and `ddgs`. The model runs on OpenCode Go, whose relay speaks the OpenAI wire, and the `openai` SDK is already in the package's base dependencies. |
 | Limits | `MemoryMax=8G` (half the RAM) and `CPUWeight=50`: when the four cores are busy, sshd and the other units get twice Hermes's CPU share. |
 | Dashboard | `hermes.piabrota.art`, behind nginx, with TLS and basic auth. Unit `hermes-backend`, `MemoryMax=2G` (`hermes-web.nix`). |
 | OpenRig | `piabrota2` also runs OpenRig (unit `openrig`), which Hermes operates with the `rig` CLI and the skill `hermes-rig`. It is the engine of the software factory: see [Factory](Factory). |
@@ -36,13 +36,12 @@ reads them from the evaluated system, so the page changes with every merge that 
 
 ## The models
 
-Both models run on the owner's Claude subscription, never on an API key, and there is no fallback
-provider: if Anthropic fails, the turn fails.
+The models run on the OpenCode Go plan (`OPENCODE_GO_API_KEY` in the secrets file), and there is no
+fallback provider: if the Go relay fails, the turn fails.
 
 | Model | Does |
 |---|---|
-| `claude-sonnet-5-5` | The main model: it plans, writes, reviews and decides. It also does compression, the dangerous-command approval and the post-turn review. It runs a single grep, list or fetch itself. |
-| `claude-haiku-5-5` | Subagents for read-only fan-out only (three or more tasks, or more than about 20 files), and three side tasks: session titles, skill matching and the `/goal` judge. |
+| `glm-5.3-flash` | The one model, for everything: it plans, writes, reviews and decides. It also does compression, the dangerous-command approval and the post-turn review, the read-only fan-out subagents and the three side tasks (session titles, skill matching and the `/goal` judge). It is the Go catalog's cheap fast tier, with a 1,000,000-token window. It runs a single grep, list or fetch itself. |
 
 Subagents: at most 2 at a time, 50 iterations each, one level deep.
 

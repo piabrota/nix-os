@@ -50,7 +50,7 @@ let
   # workflow-record: `hermes record` records a browser workflow over CDP for /learn. Inert here:
   # the box runs no browser.
   # github-copilot: Copilot as a model provider. Inert: settings.model and the fallbacks name
-  # Anthropic only, and it calls GitHub only for a profile that chose Copilot.
+  # OpenCode Go only, and it calls GitHub only for a profile that chose Copilot.
   labsPlugins = rev: hash: pkgs.fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-labs-plugins";
@@ -72,10 +72,10 @@ let
   olric = catalogPlugin "olric3015" "hermes-plugins";
   refs = catalogPlugin "EloquentBrush0x" "hermes-context-refs";
   more = {
-    # /errors: failed Anthropic calls (rate limits, overloads, timeouts) by cause and day.
+    # /errors: failed model calls (rate limits, overloads, timeouts) by cause and day.
     error-ledger = olric "dd646070c662ebf1978e5623bf30d2d1f55f7bef"
       "sha256-+f1ps0RuVn4AOEjg7huIIXJKdDYCNW6paNSP6HWX9ho=";
-    # /aux: tokens and failures of the Haiku side tasks (titles, skills hub, goal judge).
+    # /aux: tokens and failures of the flash side tasks (titles, skills hub, goal judge).
     aux-ledger = olric "aee39a67b4ffb1ff786c417fb92f997a8c7663b7"
       "sha256-YtsrXUEzLC1wUarMijXNp2knC+2LA699u3Sd9rJiIFM=";
     # /approval-log: how often each deny-list rule asked, and the answers.
@@ -303,56 +303,59 @@ in
     package = lib.mkDefault (hermes-agent.packages.x86_64-linux.default.override {
       version = hermesVersion;
     });
-    # The extras every host uses, added to the package's own: Anthropic's SDK and the chat platforms
-    # (Telegram, Discord, Slack), already in `full`; mcp, the MCP client, without which mcpServers
-    # below do nothing; ddgs, DuckDuckGo search with no key (since v0.23.0 a web search provider
-    # that Hermes picks when no other web key is set, no longer an optional skill).
-    extraDependencyGroups = [ "anthropic" "messaging" "mcp" "ddgs" ];
-    # Claude through the owner's subscription: CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`) in the
-    # env file below, as piabrota/agents does. Never a key here: settings land in the store.
+    # The extras every host uses, added to the package's own: the chat platforms (Telegram,
+    # Discord, Slack), mcp, the MCP client, without which mcpServers below do nothing, and ddgs,
+    # DuckDuckGo search with no key (since v0.23.0 a web search provider that Hermes picks when no
+    # other web key is set, no longer an optional skill). The model is on OpenCode Go, whose relay
+    # speaks the OpenAI wire: the openai SDK is already in the package's base dependencies, so no
+    # model extra is needed.
+    extraDependencyGroups = [ "messaging" "mcp" "ddgs" ];
+    # OpenCode Go through the owner's subscription: OPENCODE_GO_API_KEY in the env file below.
+    # Never a key here: settings land in the store. The Go plan is a subscription with 5-hour,
+    # weekly and monthly windows; its catalog (models_catalog_static.py at the pinned commit)
+    # holds GLM, Kimi, MiniMax, DeepSeek, Qwen, gpt-5.6-luna and grok-4.5.
     settings.model = {
-      provider = "anthropic";
-      default = "claude-sonnet-5-5";
+      provider = "opencode-go";
+      default = "glm-5.3-flash";
     };
-    # Two Claude models, both on the subscription: Sonnet for judgment, Haiku for mechanical work.
-    # Sonnet is the main model: it plans, writes, reviews and decides. Haiku takes the subagents
-    # (delegate_task: read-only fan-out; SOUL.md keeps single greps on Sonnet, since a subagent's
-    # fresh context costs more than the grep) and three cheap side tasks (session titles, skill
-    # matching, the /goal judge). Compression, the dangerous-command approval and the
-    # post-turn review stay on Sonnet, because a wrong answer there costs more than the saving.
-    # Hermes has no per-call router: Sonnet chooses to delegate, so SOUL.md tells it when to.
-    # No fallback: if Anthropic fails, the turn fails rather than going to another provider.
+    # One model everywhere: glm-5.3-flash plans, writes, reviews, decides, and also takes the
+    # subagents (delegate_task: read-only fan-out) and three cheap side tasks (session titles,
+    # skill matching, the /goal judge). It is the Go catalog's cheap fast tier, with the same
+    # 1,000,000-token window as the big models on the relay. Compression, the dangerous-command
+    # approval and the post-turn review run on it too. Hermes has no per-call router: it chooses
+    # to delegate, so SOUL.md tells it when to.
+    # No fallback: if OpenCode Go fails, the turn fails rather than going to another provider.
     settings.fallback_providers = [ ];
     settings.auxiliary = {
       title_generation = {
-        provider = "anthropic";
-        model = "claude-haiku-5-5";
+        provider = "opencode-go";
+        model = "glm-5.3-flash";
       };
       skills_hub = {
-        provider = "anthropic";
-        model = "claude-haiku-5-5";
+        provider = "opencode-go";
+        model = "glm-5.3-flash";
       };
       # The judge of /goal (Hermes's Ralph loop): one short verdict after each turn.
       goal_judge = {
-        provider = "anthropic";
-        model = "claude-haiku-5-5";
+        provider = "opencode-go";
+        model = "glm-5.3-flash";
       };
     };
-    # Compress the conversation at 40 % of the context window, not 50 %. Sonnet has 1,000,000
-    # tokens, so this is about 400,000 tokens. Hermes floors the ratio at 0.75 only for windows
-    # under 512K, so 0.40 holds here. Trade-off: each compression rewrites the cached prompt prefix
-    # once, and every later turn is cheaper because the context is smaller. Compression stays on
-    # Sonnet (see above).
+    # Compress the conversation at 40 % of the context window, not 50 %. glm-5.3-flash has
+    # 1,000,000 tokens (models.dev, opencode-go), so this is about 400,000 tokens. Hermes floors
+    # the ratio at 0.75 only for windows under 512K, so 0.40 holds here. Trade-off: each
+    # compression rewrites the cached prompt prefix once, and every later turn is cheaper because
+    # the context is smaller.
     settings.compression.threshold = 0.40;
     # /goal continues a task on its own until the judge says done. The default budget is 20 turns,
-    # each up to agent.max_turns (60) model calls; 6 keeps one goal within the subscription's quota.
+    # each up to agent.max_turns (60) model calls; 6 keeps one goal within the Go plan's windows.
     # `/goal resume` continues for 6 more.
     settings.goals.max_turns = 6;
     settings.delegation = {
-      provider = "anthropic";
-      model = "claude-haiku-5-5";
+      provider = "opencode-go";
+      model = "glm-5.3-flash";
       fallback_providers = [ ];
-      # Shallow fan-out, for the subscription's quota. How many children run at once depends on
+      # Shallow fan-out, for the Go plan's windows. How many children run at once depends on
       # the machine: upstream's 10 on piabrota2.
       max_iterations = 50;
       max_spawn_depth = 1;
@@ -433,9 +436,11 @@ in
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix, as Paperclip's jq is.
     # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim).
     extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun ];
-    # Written by hand on the box, root only: CLAUDE_CODE_OAUTH_TOKEN and a platform's token and
-    # allowed users (docs/HERMES.md). Activation copies it into /var/lib/hermes/.hermes/.env;
-    # without it Hermes warns and the gateway starts with no platform, so a deploy never waits on it.
+    # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that
+    # openrig.nix and paperclip.nix copy from this same file (CLAUDE_CODE_OAUTH_TOKEN, still there
+    # for their seats), and a platform's token and allowed users (docs/HERMES.md). Activation
+    # copies it into /var/lib/hermes/.hermes/.env; without it Hermes warns and the gateway starts
+    # with no platform, so a deploy never waits on it.
     environmentFiles = [ "/var/lib/hermes-secrets/hermes.env" ];
     # Who it is and what it knows: its identity and rules (hermes/SOUL.md, from piabrota's dogma)
     # and a brief of the owner's projects, sources and jobs (hermes/AGENTS.md, which Hermes reads

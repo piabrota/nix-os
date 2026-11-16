@@ -25,7 +25,7 @@ muda o `hermes.nix`. Este wiki não copia esse YAML: leia lá.
 | Unidade | `hermes-agent`, um serviço systemd do módulo NixOS do flake do Hermes (o input `hermes-agent`, fixado no `flake.lock`). Modo nativo, sem contêiner. |
 | Versão | A release v0.23.1 (commit `3b42157`, de 2026-11-09), fixada por tag no `flake.nix` e por commit no `flake.lock`. |
 | Host | `piabrota2`, a VPS KVM 4 (`hosts/piabrota2/default.nix`). |
-| Pacote | `full`, o padrão do flake do Hermes, mais os extras `anthropic`, `messaging`, `mcp` e `ddgs`. |
+| Pacote | `full`, o padrão do flake do Hermes, mais os extras `messaging`, `mcp` e `ddgs`. O modelo roda no OpenCode Go, cujo relay fala o protocolo da OpenAI, e o SDK `openai` já vem nas dependências base do pacote. |
 | Limites | `MemoryMax=8G` (metade da RAM) e `CPUWeight=50`: com os quatro núcleos ocupados, o sshd e as outras unidades têm o dobro da parcela de CPU do Hermes. |
 | Painel | `hermes.piabrota.art`, atrás do nginx, com TLS e basic auth. Unidade `hermes-backend`, `MemoryMax=2G` (`hermes-web.nix`). |
 | OpenRig | A `piabrota2` também roda o OpenRig (unidade `openrig`), que o Hermes comanda com a CLI `rig` e a skill `hermes-rig`. É o motor da fábrica de software: veja [Fábrica](Fabrica). |
@@ -37,13 +37,12 @@ muda o `hermes.nix`. Este wiki não copia esse YAML: leia lá.
 
 ## Os modelos
 
-Os dois modelos rodam na assinatura do Claude do dono, nunca com uma chave de API, e não há
-provedor de reserva: se a Anthropic falha, o turno falha.
+Os modelos rodam no plano Go do OpenCode (`OPENCODE_GO_API_KEY` no arquivo de segredos), e não há
+provedor de reserva: se o relay do Go falha, o turno falha.
 
 | Modelo | Faz |
 |---|---|
-| `claude-sonnet-5-5` | O modelo principal: ele planeja, escreve, revisa e decide. Ele também faz a compressão, a aprovação de comando perigoso e a revisão depois do turno. Ele mesmo roda um grep, uma listagem ou uma busca isolada. |
-| `claude-haiku-5-5` | Subagentes só para leitura em leque (três tarefas ou mais, ou mais de uns 20 arquivos) e três tarefas laterais: os títulos das sessões, a escolha de skill e o juiz do `/goal`. |
+| `glm-5.3-flash` | O único modelo, para tudo: planeja, escreve, revisa e decide. Também faz a compressão, a aprovação de comando perigoso e a revisão depois do turno, os subagentes de leitura em leque e as três tarefas laterais (os títulos das sessões, a escolha de skill e o juiz do `/goal`). É o nível rápido e barato do catálogo do Go, com janela de 1.000.000 de tokens. Ele mesmo roda um grep, uma listagem ou uma busca isolada. |
 
 Subagentes: no máximo 2 ao mesmo tempo, 50 iterações cada, um nível de profundidade.
 
