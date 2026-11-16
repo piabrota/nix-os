@@ -82,14 +82,15 @@ A session cannot read the setup script, the variables or the secrets of an envir
 file does not record them. The environment needs no secret: the deploy runs on GitHub Actions,
 with the secrets of the `prod` environment.
 
-On 2026-10-29, a session found Ubuntu 24.04, `nix` 2.34, `gh`, `python3` and `cargo`. `just` and
-`shellcheck` were missing. To run `just check` in a session, put this in the setup script:
+On 2026-10-29, a session found Ubuntu 24.04, `nix` 2.34, `gh`, `python3` and `cargo`. `just` was
+missing (and `shellcheck`, which `just check` no longer runs). To run `just check` in a session,
+put this in the setup script:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 sudo apt-get update -qq
-sudo apt-get install -y -qq just shellcheck
+sudo apt-get install -y -qq just
 ```
 
 ⚠ This script has not run in a session. Ubuntu 24.04's `apt` installs `just` 1.21.0, the version

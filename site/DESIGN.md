@@ -15,6 +15,10 @@ A dark sheet, one red, and every state said in words before colour.
 ## Tokens
 
 Dark first; light when the visitor asks for it (`prefers-color-scheme`). Same names as picasso.
+The round switch at the end of the bar (☀ or ☾, `parts.theme`) gives the page the other scheme: a
+checkbox that `style.css` reads with `:has()`, so no script, and the choice lasts until the page
+changes. Its two blocks repeat the tokens; `scala/design/Kit.test.scala` checks them. Every page also says
+`<meta name="color-scheme" content="dark light">`, so a browser paints the right canvas first.
 
 | Token | Dark | Light | It means |
 |---|---|---|---|
@@ -24,6 +28,7 @@ Dark first; light when the visitor asks for it (`prefers-color-scheme`). Same na
 | `--text`, `--muted` | `#EDEFF3`, `#9AA3B2` | `#0B0D12`, `#4F5868` | text, and what is secondary |
 | `--accent` | `#BC2318` | `#BC2318` | the logo's red: the one filled button, the current design, the glow |
 | `--accent-text` | `#FF6B5E` | `#A51D14` | the same red where it must be read: links, the eyebrow, `§` numbers |
+| `--sea` | `#0B5FA5` | `#0B5FA5` | the sea: the fill of ww3-gpu's tile, the wave model (the owner, 2026-11-11). White on it is 6.6:1 |
 | `--ok`, `--warn`, `--none` | green, amber, grey | darker in light | a project's state: live, coming, no site yet |
 
 No other colour. A new colour is a new meaning, and it starts here.
@@ -59,9 +64,10 @@ font file is stored here.
   the top left corner, as on picasso.
 - Content is at most 1040 px wide, with 20 px gutters; below 760 px the drawing moves above the
   title, and below 420 px the buttons fill the row.
-- A: tiles in a grid of the profile's lanes, the incubating lane last; two tiles are filled, in
-  `--accent`, across the row: mu's (the company chart) and proof's (the incubating project).
-  B: the wordmark, and the inventory right after it. C: one terminal on `--surface`.
+- A: tiles in a grid of the profile's lanes, the incubating lane last; three tiles are filled,
+  across the row: ww3-gpu's in `--sea`, first, before mu's (the owner, 2026-11-11), then mu's
+  (the company chart) and proof's (the incubating project) in `--accent`.
+  B: the wordmark, and the tiles of A right after it. C: one terminal on `--surface`.
 - **/hermes** is not a design and has no place in the switcher: its hero carries the hermes mark
   (below, "Marks") where the others carry a drawing, its numbers are facts in mono, and its
   YAML sits in C's terminal, in a `<pre>` that scrolls sideways on a phone. It ends at the foot,
@@ -80,11 +86,11 @@ font file is stored here.
   two from 600 px, on 4 tracks; three from 960 px, on 6 tracks. A card spans 2 tracks, the cards of
   a row have one height, and the gap is 14 px both ways. The last row stretches: at 3 up, one card
   left takes the row and two share it in halves; at 2 up, one card left takes the row. The filled
-  tiles (mu, proof) take a row and are not counted. A plain tile that stretches turns to a row: the
+  tiles (ww3-gpu, mu, proof) take a row and are not counted. A plain tile that stretches turns to a row: the
   logo and the tags on the left, the name, the blurb and the footer on the right. The four layers
   are 1, 2 and 4 up; on the figures page the cards are 1 and 2 up, and an odd last card takes the
   row with its preview at the side. At 3 up the board's cards stack the avatar over the text.
-- **Commit counts**, on a tile (A), on a row of C's terminal and in the inventory: one quiet line,
+- **Commit counts**, on a tile (A and B) and on a row of C's terminal: one quiet line,
   the word `commits` in Inter, 11 px, uppercase, then `35 human · 72 agent` in JetBrains Mono, 12 px,
   both in `--muted`. No new colour. A tooltip says what the count is and the day it was read. A
   project with no counts shows no line and no zero. On a tile the line sits above the link that
@@ -95,6 +101,12 @@ font file is stored here.
 
 ## What every design shares
 
+The project tiles (A and B; C lists the same projects in its terminal, each with its blurb) are the
+one list of the projects: there is no second one. A tile holds the state pill, the language, the
+origin (`own` is the org's; `personal` is a repository that dojo pins and a person keeps), the name,
+the blurb, a quiet line with the licence, the address and the last push, a `repository ↗` link when
+the tile's own link goes to the project's site, the paper badge and the commit counts.
+
 Every design ends with the same sections, in this order (`src/piabrota_site/community.gleam`):
 
 - **Structure**: a card a layer, the chart, the umbrella, the products and the brain, each with its
@@ -102,11 +114,6 @@ Every design ends with the same sections, in this order (`src/piabrota_site/comm
 - **Why it is open**: the three reasons of the org profile, word for word.
 - **Dogma**: the ten invariants of piabrota/mu, shortened only where a list or a link would not fit.
   The list numbers them, in `--accent-text`.
-- **FOSS inventory**: one entry a project, closed-source's detail: the name, the state pill, the
-  blurb, four facts in a `<dl>` (origin, language, licence, last push; a fifth, the commit counts,
-  when the project has them), the repository link and the
-  address. The state colours the entry's 3 px edge. `own` is the org's; `personal` is a repository
-  that dojo pins and a person keeps.
 - **Board**: a card a person, with the avatar, the name (or the `@login`), the line from the org
   profile's Board, the GitHub pill (avatar and `@login`, mono) and, when the person has a website,
   the website pill (the host, in `--accent-text`, `↗`).
@@ -140,6 +147,15 @@ site under piabrota.art: the site, `skills.piabrota.art`, `/figures/`, `/notes`,
 other names. Its one source is `favicon/favicon.svg`. Change the mark there and in `parts.eye`
 together: `checks.favicon` compares them. No page stores or draws an icon of its own.
 
+## The link preview
+
+Every page names `/og.png` as its `og:image` and `twitter:image`, at `https://www.piabrota.art`
+(`page.origin`), with its size, an alt text, `og:title`, `og:description` and `og:url`. The image
+is `og/og.svg` drawn at 1200x627 (1.91:1, what LinkedIn asks for) by resvg on the builder, with the
+site's three faces (Fjalla One from Google's CDN, Inter and JetBrains Mono from nixpkgs); no font
+reaches the box. Without it LinkedIn takes the 180 px apple-touch-icon and shows it blurred.
+LinkedIn keeps a preview for days: after a change, ask again in its Post Inspector.
+
 ## Motion
 
 One entrance, and only when the reader allows motion: the hero rises 8 px. Hover lifts a card
@@ -149,7 +165,7 @@ One entrance, and only when the reader allows motion: the hero rises 8 px. Hover
 ## The kit
 
 `design/` owns the tokens for the sites built outside `site/` ([docs/DESIGN-KIT.md](../docs/DESIGN-KIT.md)):
-`design/css/tokens.css` repeats the table above, and `design/test.mjs` fails when it or this table
+`design/css/tokens.css` repeats the table above, and `scala/design/Kit.test.scala` fails when it or this table
 differs from `site/static/style.css`. Change a token in all three in one pull request. The kit also holds
 one small CSS module for each part of a page, the list of sites (`design/sites.nix`) and the brand bar
 that goes into pages from other repositories.
@@ -158,7 +174,7 @@ that goes into pages from other repositories.
 
 The same tokens and type dress four things that are not the site's Gleam pages:
 
-- **proof.piabrota.art and pirsig.piabrota.art**: the indexes are made by the kit (`proof-site/index.mjs`),
+- **proof.piabrota.art and pirsig.piabrota.art**: the indexes are made by the kit (`piabrota proof-index`, scala/design/Index.scala),
   with the hero, numbered sections and card grids of this file. The pages from h0ffmann/proof and
   piabrota/pirsig keep their own looks and get the brand bar.
 - **The figures** at `/figures/`: the index is a page frame like `/hosts/` in this `style.css`

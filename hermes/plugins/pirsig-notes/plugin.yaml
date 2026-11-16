@@ -1,7 +1,0 @@
-name: pirsig-notes
-version: 0.1.0
-description: Smart notes (gramatico's smart-note rules) from a chat, sent as a pull request to the pirsig brain
-author: piabrota
-provides_tools:
-  - pirsig_note_search
-  - pirsig_notes_submit

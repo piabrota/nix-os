@@ -30,6 +30,8 @@ It shows, for each host:
   partitions).
 - Pressure stall (PSI) of CPU, memory and IO: the share of the last 10 s that tasks waited
   (`some` / `full`).
+- At the top: the sites that answer (green) and those that do not (red), the commits, the deploys,
+  the apps installed and the NixOS version ("The headline", below).
 - What this generation runs: the counts of "The inventory", below.
 
 How to read the numbers:
@@ -41,6 +43,61 @@ How to read the numbers:
 
 It does not show: history beyond the samples in the tab (samples come per new file, every 10 s, so
 about 10 minutes), disk usage of filesystems other than `/`, network or IO per process or per interface, alerts, command lines.
+
+## The headline: sites, commits, deploys, apps, NixOS
+
+The top of each card has six numbers and a row of sites:
+
+| Label | What it is | Where it comes from |
+|---|---|---|
+| Domains up | sites that answered, of the host's sites; green when all answer, red when one does not | `piabrota metrics-probe`, every 60 s |
+| Visits 24 h | the pages that browsers got from the host's sites in the last 24 hours | nginx's `visits.log`, read by the probe every 60 s (see "Visits") |
+| Visitors 24 h | the different addresses that got those pages | the same |
+| Commits | commits on `main` of `piabrota/nix-os` | the GitHub API, at most once in 10 minutes |
+| Deploys | the generation of `/nix/var/nix/profiles/system`: one for each deploy that changed the system | the collector, from the link `system-<n>-link` |
+| Apps installed | the packages of `environment.systemPackages` (the `packages` count of the inventory) | Nix, at build time |
+| NixOS | the release, for example 26.05; the full version is in the tooltip | `/run/current-system/nixos-version` |
+
+Under them, each site of the host is a chip: green when it answers, red with the HTTP code (or
+"no answer") when it does not. A site is up when it gives any answer below HTTP 500: a 301 or a
+401 (a login) is an answer. The probe does not follow a redirect. When the probe's data is more than
+5 minutes older than the host's, the chips are grey and the count is not coloured. After the name,
+a chip shows the site's visitors of the last 24 hours; its tooltip has the visits.
+
+The sites are the same names that the inventory counts as `sites`: every nginx virtual host but
+`_` and the names that only redirect. Nix writes the list (`https://` when the host has TLS). The
+probe (`metrics-probe.timer`, oneshot `metrics-probe.service`) asks each name with one `curl` of at
+most 6 s, one after the other, and writes `/run/metrics-state/<name>.probe` (not served). The
+collector copies it into `domains` and `repo` (metrics/SCHEMA.md). The probe reads the commit count
+from the `Link` header of `GET /repos/piabrota/nix-os/commits?per_page=1`: the number of the last
+page is the count. Without a token GitHub allows 60 requests an hour from one address; the probe
+uses 6. When GitHub does not answer, the last count stays.
+
+## Visits
+
+What counts, with `visits.enable` on (both hosts):
+
+- **A visit** is one page that a browser got: a `GET` that nginx answered with a 200 and an HTML
+  type, or with a 304 for a path that ends in `/` or `.html`. An image, a script, the page's JSON
+  polls, a redirect, a 404 and a login wall (401) are not visits.
+- **Bots are not counted.** A User-Agent that is empty or that has one of the words of
+  `notBrowsers` in `metrics.nix` (`bot`, `crawl`, `spider`, `curl`, `python`, `probe`, ...) is a
+  program, not a browser. A scraper that sends a browser's User-Agent is counted: this is a filter
+  for crawlers that say what they are, as the bot block of robots.txt is.
+- **A visitor** is one address that got a page of the site. Two people behind one address are one
+  visitor; one person on two sites is a visitor of each, so the card's sum counts them twice.
+- **The window** is the last 24 hours, counted by the hour: the oldest hour leaves whole, so the
+  window is 24 to 25 hours.
+
+How: nginx writes one line for each visit to `/var/log/nginx/visits.log` (the time, the vhost's
+first name and the address; `access_log ... if=$metrics_visit` in `services.nginx.commonHttpConfig`).
+Everything else goes on to `access.log` as before: an `access_log` in the `http` block ends nginx's
+built-in default, so the module writes that line too. nginx's logrotate rule rotates both weekly.
+Each probe run reads only what was added since the last run (at most 16 MiB) and keeps the views by
+the hour and the last time of each address in `/run/metrics-state/<name>.visits` (0700, not
+served, gone at a reboot). After a reboot or a rotation it reads the file from its start, so a
+reboot loses nothing of the week. The probe reads nginx's logs through the group `nginx`
+(`SupplementaryGroups`) and writes nothing there. No daemon, no package: the same binary.
 
 ## The inventory
 
@@ -73,13 +130,15 @@ copies them into `inventory` (metrics/SCHEMA.md).
 | piabrota2 (KVM 4) | yes | yes | yes | no |
 | piabrota (KVM 1) | yes | no | no | yes |
 
-- The collector is `metrics/collect.sh` (POSIX sh and awk). The timer `metrics-collect.timer` runs
+- The collector is `piabrota metrics-collect` (`scala/metrics/Collect.scala`), a command of the
+  scripts' Scala Native binary (`scala/README.md`). The timer `metrics-collect.timer` runs
   it every 10 s (oneshot unit `metrics-collect.service`).
 - It writes `/run/metrics-web/<name>.json` atomically. The previous sample is in
   `/run/metrics-state/<name>.state` (not served).
 - The names are `piabrota` and `piabrota2` (option `piabrota.metrics.name`). Never the hostname:
   piabrota2's hostname is still `nixos`.
-- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df` and the inventory file in the store.
+- It reads only `/proc`, `/sys/fs/cgroup`, `/etc/passwd`, `df`, the inventory file in the store, the
+  probe's file, the link of the system profile and `/run/current-system/nixos-version`.
   Never a command line.
 - The JSON file is under 8 KB (schema v1).
 
@@ -102,6 +161,65 @@ no user data beyond process names, user names, and memory and CPU numbers. Its l
 send from piabrota2's address (a process on piabrota2, or a network position that can spoof) can
 read the file. IPv4 only. If piabrota2's address changes, change `allowFrom` in
 `hosts/piabrota/default.nix`.
+
+## For machines: all.json and /metrics
+
+The page's host (piabrota2) also serves every number in two forms that a program reads:
+
+| Address | Format | What is in it |
+|---|---|---|
+| https://metrics.piabrota.art/data/all.json | JSON | `{"v":1,"ts":..,"stale_after_s":30,"hosts":{"piabrota":{"age_s":..,"fresh":..,"data":{..}},"piabrota2":{..}}}`: each host's file as it is (metrics/SCHEMA.md), with its age |
+| https://metrics.piabrota.art/metrics | Prometheus text, version 0.0.4 | the same numbers as series named `piabrota_*`, each with a `host` label |
+| https://metrics.piabrota.art/data/piabrota.json, `/data/piabrota2.json` | JSON | one host's file, as before |
+
+`piabrota metrics-export` (`scala/metrics/Export.scala`) writes the first two in one run; the
+binary needs only glibc, so no Python or JVM runs on the box (AGENTS.md, "Resource budget", rule 4).
+The timer `metrics-export.timer` runs it with the collector's interval, in the collector's sandbox and with no
+network: it reads `/run/metrics-web/<name>.json` and writes `all.json` and `metrics.prom`
+beside them, each through a temp file and a rename. It leaves out a file that is not a JSON object,
+that is over 64 KiB or whose `host` is not its name. A number that is not finite is left out of
+`/metrics`. The option is
+`piabrota.metrics.export.enable`, on by default where `web.enable` is on.
+
+The Prometheus series:
+
+| Series | Labels | From |
+|---|---|---|
+| `piabrota_host_fresh`, `piabrota_sample_age_seconds`, `piabrota_sample_timestamp_seconds` | `host` | `ts`; fresh is an age of 30 s or less |
+| `piabrota_uptime_seconds`, `piabrota_vcpus`, `piabrota_load` | `window` | `uptime_s`, `vcpus`, `load` |
+| `piabrota_cpu_busy_percent` | `cpu` (`total`, `0`, `1`..) | `cpu` |
+| `piabrota_memory_bytes` | `kind` | `mem`, `mem_detail` |
+| `piabrota_root_filesystem_bytes` | `kind` | `disk` |
+| `piabrota_threads`, `piabrota_tasks`, `piabrota_forks_per_second`, `piabrota_context_switches_per_second`, `piabrota_open_files`, `piabrota_processes`, `piabrota_services_running` | `state` | `tasks`, `fds_open`, `procs_total`, `services_running` |
+| `piabrota_network_bytes_per_second`, `piabrota_network_bytes_total` | `direction` | `net` |
+| `piabrota_sockets` | `kind` | `sockets` |
+| `piabrota_disk_bytes_per_second`, `piabrota_disk_bytes_total` | `direction` | `disk_io` |
+| `piabrota_pressure_percent` | `resource`, `kind` | `pressure` |
+| `piabrota_inventory` | `item` | `inventory` |
+| `piabrota_deploy_generation`, `piabrota_nixos_info` | `version` | `system` |
+| `piabrota_sites`, `piabrota_probe_timestamp_seconds` | `state` | `domains` |
+| `piabrota_site_up`, `piabrota_site_http_code`, `piabrota_site_views_24h`, `piabrota_site_visitors_24h` | `site` | `domains.list` |
+| `piabrota_repo_commits` | `repo` | `repo` |
+| `piabrota_unit_memory_bytes`, `piabrota_unit_memory_max_bytes`, `piabrota_unit_memory_peak_bytes` | `unit` | `units` |
+| `piabrota_hosts`, `piabrota_export_timestamp_seconds` | none | the export itself |
+
+The top processes stay in the JSON only: a pid is a new series at each run. Nothing on the boxes
+scrapes `/metrics`; it is there for a Prometheus or a Grafana elsewhere. Both addresses have the
+page's rules: public, `no-store`, the rate limit and the agent block.
+
+## What is not measured
+
+- **Google Analytics.** `piabrota.site.analytics.measurementId` (site.nix) puts Google's tag on
+  www.piabrota.art, and it is empty on both hosts: no page loads the tag, and Google has no data.
+  To turn it on, a person makes a GA4 property and a web data stream for `https://www.piabrota.art`
+  at https://analytics.google.com (Admin, Create, Property, then Data streams, Web), and sets the
+  `G-...` ID in `hosts/piabrota/default.nix`. Reading its numbers back into this page needs a
+  service account with the Viewer role on the property and its JSON key on piabrota2, outside git;
+  no reader is in this repository yet. The nginx visits (above) count without it.
+- **The sites of other hosts.** GitHub Pages, Cloudflare or any name that nginx on the two boxes
+  does not serve is not probed and has no visits.
+- **History.** The page keeps the samples in the tab, and the files hold the last sample only. A
+  history needs a Prometheus that scrapes `/metrics`.
 
 ## DNS and access
 
@@ -180,13 +298,17 @@ Measured on piabrota2, with 127 processes:
 - At a 10 s cadence that is about 0.2 % of one vCPU (about 3 minutes of CPU a day: 8,640 runs).
 - On KVM 1 (1 vCPU) there are fewer processes, so it costs less.
 - The unit has `MemoryMax=64M` and a fixed system user, `metrics`.
+- The export (piabrota2 only), measured in a cloud container on the two live files of 2026-11-13:
+  0.04 s of CPU and 13 MB peak RSS a run, so about 0.4 % of one vCPU at 10 s. Not measured on the box.
 
 ## Hardening
 
-Both units run as `metrics` with:
+The units (collector, probe, pull) run as `metrics` with:
 
 - `ProtectSystem=strict`, with `ReadWritePaths` of the two `/run` folders only.
 - `MemoryMax=64M`, `NoNewPrivileges`, an empty capability set and a syscall filter.
+- The probe is the one unit of a host that opens a connection (the pull is the other, on
+  piabrota2): its sandbox is the same, with `AF_INET` and `AF_INET6`.
 - `PrivateNetwork` on the collector. So it reads the network of PID 1 (`/proc/1/net/dev` and
   `sockstat`), readable by any user, not its own empty `/proc/net`.
 - `LogLevelMax=warning`, so a run does not write journal lines.
@@ -203,12 +325,16 @@ All are off by default. All live under `piabrota.metrics`:
 | `name`, `label` | name of the data file and label on the page |
 | `collector.enable` | turns on the collector and the timer |
 | `collector.interval` | seconds between runs (2 to 300, default 10) |
+| `probe.enable`, `probe.interval` | the timer that asks each site for an answer (10 to 3600 s, default 60); needs the collector |
+| `visits.enable` | nginx logs each page a browser gets, and the probe counts the visits of the last 24 h of each site; needs the probe and nginx |
+| `probe.repo`, `probe.branch` | the repository and branch whose commits are counted (default `piabrota/nix-os`, `main`); an empty repo: no count |
 | `web.enable`, `web.domain`, `web.htpasswdFile` | the page on nginx, the domain and the optional login file (`null`, the default, means the page is public) |
 | `publish.enable`, `publish.allowFrom` | the KVM 1 location and the address that may read it |
 | `pull.enable`, `pull.url`, `pull.name` | the timer that fetches the file of the other host |
+| `export.enable` | the timer that writes `all.json` and `metrics.prom` ("For machines"); on by default with `web.enable` |
 | `inventory.bundledSkillDirs` | folders of skills that ship inside an agent, counted as `skills_bundled`; `hermes.nix` adds Hermes's own |
 
-Today: piabrota2 turns on collector, web and pull. piabrota turns on collector and publish.
+Today: piabrota2 turns on collector, probe, visits, web, pull and (with web) export. piabrota turns on collector, probe, visits and publish.
 
 ## Change the cadence
 
@@ -218,16 +344,17 @@ lower, or change that constant too.
 
 ## Tests and preview
 
-- `sh metrics/test/run.sh`: the collector, with a fixture `/proc` and cgroup tree. It prints
-  "N checks, M failed".
-- `sh metrics/test/page.sh`: the static rules of the page and an HTTP fetch with python3.
+- `scala/metrics/*.test.scala` (`just scala-test`, and the Nix build of the binary): the collector
+  and the probe, with a fixture `/proc` and cgroup tree and a fake curl, and the export: `all.json`
+  and `metrics.prom` from the fixtures, checked line by line against the text format.
+- `checks.metrics-page` (`metrics/test/page.nix`): the static rules of the page, in pure Nix, and
+  the fixtures through jq. `piabrota metrics-preview --check`: an HTTP fetch of the page and its
+  data. `just metrics-test` runs these two.
 - `checks.metrics`: four VMs (hub, edge, locked, client), plain HTTP, needs KVM:
   `nix build .#checks.x86_64-linux.metrics`.
 - Preview of the page with fixtures (healthy, stale, missing, hostile):
 
   ```console
-  sh metrics/test/preview.sh healthy 8080     # open http://127.0.0.1:8080/
+  nix run .#piabrota -- metrics-preview healthy 8080   # open http://127.0.0.1:8080/
   just metrics-preview healthy
   ```
-
-  Needs python3 and jq.

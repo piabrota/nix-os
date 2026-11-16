@@ -49,6 +49,60 @@ pub fn icon_test() {
 }
 
 // Every page names every project of the org profile, and says what it is or where it meets the web.
+// Every page names the 1200x627 link preview at an absolute https address, and its own address;
+// without og:image LinkedIn shows the 180 px apple-touch-icon, blurred.
+pub fn link_preview_test() {
+  list.each(
+    [
+      #("/", page.fabric()),
+      #("/index/", page.index()),
+      #("/paths/", page.paths()),
+      #("/hermes/", page.hermes()),
+      #("/hosts/", page.hosts()),
+      #("/pt-BR/", page.fabric_in("pt-BR")),
+      #("/ja-JP/", page.fabric_in("ja-JP")),
+    ],
+    fn(p) {
+      let #(path, html) = p
+      let address = "https://www.piabrota.art" <> path
+      assert string.contains(
+        html,
+        "content=\"https://www.piabrota.art/og.png\" property=\"og:image\"",
+      )
+      assert string.contains(
+        html,
+        "content=\"1200\" property=\"og:image:width\"",
+      )
+      assert string.contains(
+        html,
+        "content=\"627\" property=\"og:image:height\"",
+      )
+      assert string.contains(
+        html,
+        "content=\"" <> address <> "\" property=\"og:url\"",
+      )
+      assert string.contains(
+        html,
+        "href=\"" <> address <> "\" rel=\"canonical\"",
+      )
+      assert string.contains(html, "property=\"og:title\"")
+      assert string.contains(html, "property=\"og:description\"")
+      assert string.contains(
+        html,
+        "content=\"summary_large_image\" name=\"twitter:card\"",
+      )
+    },
+  )
+}
+
+// Both schemes, and a switch between them that needs no script (style.css reads it with :has()).
+pub fn theme_test() {
+  let html = page.fabric()
+  assert string.contains(html, "content=\"dark light\" name=\"color-scheme\"")
+  assert string.contains(html, "id=\"theme\"")
+  assert string.contains(html, "for=\"theme\"")
+}
+
 pub fn every_project_test() {
   assert data.projects != []
   list.each(pages(), fn(p) {
@@ -265,8 +319,7 @@ pub fn commits_test() {
       }
     })
   assert list.length(with) == 11
-  let fabric = page.fabric()
-  let paths = page.paths()
+  // Every design shows the line once a project: on a tile (A, B) or on a row of the terminal (C).
   list.each(pages(), fn(p) {
     list.each(with, fn(entry) {
       let #(_, c) = entry
@@ -278,22 +331,35 @@ pub fn commits_test() {
           <> " agent",
       )
     })
-    // The inventory, on every design, has one fact for each project with counts.
-    assert list.length(string.split(p.1, "<dt>commits</dt>"))
-      == list.length(with) + 1
-  })
-  // Design A's tiles and design C's rows carry the line and the tooltip.
-  list.each([fabric, paths], fn(html) {
-    assert list.length(string.split(html, "class=\"commits\""))
+    assert list.length(string.split(p.1, "class=\"commits\""))
       == list.length(with) + 1
     assert string.contains(
-      html,
+      p.1,
       "title=\"Commits on the default branch, as of "
         <> data.commits_as_of
         <> ".",
     )
   })
-  assert !string.contains(page.index(), "class=\"commits\"")
+}
+
+// The repositories show once: the tiles hold every fact, and there is no second list of them.
+pub fn projects_once_test() {
+  list.each(pages(), fn(p) {
+    assert !string.contains(p.1, "id=\"inventory\"")
+    assert !string.contains(p.1, "href=\"#inventory\"")
+    assert string.contains(p.1, "id=\"projects\"")
+    list.each(data.projects, fn(project) {
+      assert string.contains(p.1, string.replace(project.blurb, "'", "&#39;"))
+    })
+  })
+  list.each([page.fabric(), page.index()], fn(html) {
+    assert list.length(string.split(html, "class=\"tile\""))
+      == list.length(data.projects) + list.length(data.closed) + 1
+    list.each(data.projects, fn(project) {
+      assert string.contains(html, "href=\"" <> project.repo <> "\"")
+      assert string.contains(html, "last push " <> project.pushed)
+    })
+  })
 }
 
 // The labels come in every language; the numbers are the same in all four.

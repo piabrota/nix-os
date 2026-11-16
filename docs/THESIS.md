@@ -11,7 +11,7 @@ and cannot prove, and the deployment notes. The rest of the OpenRig setup is in
 `openrig/specs/agents/thesis-*/` and the option `piabrota.openrig.thesis.enable` of `openrig.nix`.
 
 **How to read it.** Each number comes from a file of this repository (`thesis/profile.json`, the
-scripts in `thesis/lib/`, the specs) or from the report of the run that built the toolkit
+command's code in `scala/thesis/`, the specs) or from the report of the run that built the toolkit
 (2026-11-05). `⚠` marks what nobody checked. "Not measured" means that nobody measured it. **No seat
 has run this rig yet.** What is proved is `thesis` on a sample thesis (see "What is proved and what is
 not").
@@ -51,7 +51,7 @@ Interactive page: <https://www.piabrota.art/figures/thesis-rig/>
 
 **Not shown.** The three writers are one box. The peers that exchange messages (`collaborates_with`), the list of the four gates (see the table below), the project files and the consent prompt of Claude Code.
 
-**Evidence.** [`docs/archify/thesis-rig.json`](archify/thesis-rig.json), the source of the figure; `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, `thesis/thesis`, `openrig.nix`. ⚠ No seat has run this rig: the arrows are the design, not a run.
+**Evidence.** [`docs/archify/thesis-rig.json`](archify/thesis-rig.json), the source of the figure; `openrig/specs/rigs/wave-forecaster-thesis/rig.yaml`, `scala/thesis/`, `openrig.nix`. ⚠ No seat has run this rig: the arrows are the design, not a run.
 
 </details>
 
@@ -76,8 +76,10 @@ every seat. They are not a sandbox. The hard sandbox is the one of the unit `ope
 
 ### The `thesis` command
 
-POSIX sh, `jq`, `awk`, pandoc and pdfLaTeX. No Python, no network, no model. Each command runs with a
-`PATH` that holds only these tools.
+`piabrota thesis` ([`scala/thesis/`](../scala/thesis/Thesis.scala)), a command of the scripts' binary
+(`scala/README.md`), with pandoc, pdfLaTeX, poppler-utils, coreutils and `time`. No Python, no
+network, no model. Each command runs with a `PATH` that holds only these tools (`thesis/default.nix`,
+`exclusivePath`).
 
 |Group|Commands|
 |---|---|
@@ -433,13 +435,13 @@ These notes are for the person who deploys: the owner, with Hermes when the owne
 
 **Proved** (run of 2026-11-05, no seat):
 
-- The real `thesis` on a sample thesis (15 pages, 8 sections, a PDF of about 100 KB):
-  `thesis/test/run.sh` gave **60 checks, 0 failed**. They cover names, parallel `fetch`, refusal of a
+- The real `thesis` on a sample thesis (15 pages, 8 sections, a PDF of about 100 KB): the shell
+  version's `thesis/test/run.sh` gave **60 checks, 0 failed**. They cover names, parallel `fetch`, refusal of a
   marker, `accept`, edit and `assemble`, `cite-check` with an unverified and a verified source, `slop`
   with a failure and with a pass, escaped raw TeX, the list of math macros, hostile characters,
   an emoji refused, a missing template file, TeX stopped by the timeout and `publish` without
   `--replace`.
-- `shellcheck` clean, and `nixpkgs-fmt`, `statix` and `deadnix` with no finding on the Nix files.
+- The shell version `shellcheck` clean, and `nixpkgs-fmt`, `statix` and `deadnix` with no finding on the Nix files.
 - The evaluation of `piabrota` (equal to `main`) and of `piabrota2`, with the option off and on.
 - In the tests: the assembly takes 2.5 to 3 s, and the largest process (pdfLaTeX) peaks at 135 MiB.
 - The names and paths of the specs match `thesis`: no mismatch.
@@ -457,6 +459,9 @@ These notes are for the person who deploys: the owner, with Hermes when the owne
 - The SiBI Manual, read only in snippets.
 - The growth of the system with `dix`, the size of the fetch and the Nix test `passthru.tests.run`
   (only `run.sh` against the built package ran).
+- The Scala port of 2026-11-14 (`scala/thesis/`): its black-box tests run in
+  `passthru.tests.run` (`thesis/default.nix`) on a sample project. ⚠ Not run for this page; no
+  check of the flake runs it.
 
 ## Limits and risks
 

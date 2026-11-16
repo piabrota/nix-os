@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="627" viewBox="0 0 1200 627">
+  <defs>
+    <radialGradient id="glow" cx="0.08" cy="-0.3" r="0.9" gradientTransform="scale(1 1.9)">
+      <stop offset="0" stop-color="#BC2318" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#BC2318" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="627" fill="#0B0D12"/>
+  <rect width="1200" height="627" fill="url(#glow)"/>
+  <g transform="translate(96 163) scale(3)">
+    <rect width="100" height="100" rx="22" fill="#BC2318"/>
+    <path d="M12 50 Q50 18 88 50 Q50 82 12 50Z" fill="#F7F3EA"/>
+    <circle cx="50" cy="50" r="14" fill="#2E9E4F"/>
+    <circle cx="50" cy="50" r="6" fill="#0B0D12"/>
+  </g>
+  <text x="468" y="202" font-family="Inter" font-weight="600" font-size="21" letter-spacing="3.8" fill="#FF6B5E">OPEN SOFTWARE FABRIC · MADE IN RJ</text>
+  <text x="462" y="336" font-family="Fjalla One" font-size="124" fill="#EDEFF3">piabrota</text>
+  <text x="468" y="398" font-family="Inter" font-size="34" fill="#EDEFF3">Open software, <tspan fill="#9AA3B2">made in Rio de Janeiro.</tspan></text>
+  <text x="468" y="464" font-family="JetBrains Mono" font-size="24" fill="#9AA3B2">www.piabrota.art</text>
+  <rect y="619" width="1200" height="8" fill="#BC2318"/>
+</svg>

@@ -27,6 +27,8 @@
             enable = true;
             interval = 2;
           };
+          probe.enable = true;
+          visits.enable = true;
           web = {
             enable = true;
             domain = "hub";
@@ -116,11 +118,20 @@
             node.succeed("systemctl is-active metrics-collect.timer")
             node.fail("systemctl is-failed metrics-collect.service")
 
+    with subtest("The probe asks the hub's site, and the collector shows the answer"):
+        hub.wait_until_succeeds("jq -e '.domains.list[] | select(.name == \"hub\") | .up and .code == 200' /run/metrics-web/piabrota2.json", timeout=60)
+        hub.succeed("jq -e '.domains.total == .domains.up and (.system.nixos | length) > 0' /run/metrics-web/piabrota2.json")
+        # The VM cannot reach GitHub: no count, and the unit does not fail.
+        hub.succeed("jq -e 'has(\"repo\") | not' /run/metrics-web/piabrota2.json")
+        hub.fail("systemctl is-failed metrics-probe.service")
+        hub.fail("ls -A /run/metrics-web | grep -q probe")
+
     with subtest("The collector's sandbox"):
         assert hub.succeed("systemctl show metrics-collect.service -p PrivateNetwork --value").strip() == "yes"
         hub.succeed("systemctl show metrics-collect.service -p MemoryMax --value | grep -qx 67108864")
         print(hub.succeed("systemd-analyze security metrics-collect.service --no-pager | tail -n 1"))
         print(hub.succeed("systemd-analyze security metrics-pull.service --no-pager | tail -n 1"))
+        print(hub.succeed("systemd-analyze security metrics-probe.service --no-pager | tail -n 1"))
 
     BROWSER = "-A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'"
     TAG = "noindex, nofollow, noarchive, noimageindex, noai, noimageai"
@@ -136,6 +147,19 @@
         client.succeed("curl -s http://hub/data/piabrota2.json | jq -e '.host == \"piabrota2\"'")
         client.succeed("curl -sI http://hub/data/piabrota2.json | grep -i '^cache-control: no-store'")
         client.succeed("curl -sI http://hub/data/piabrota2.json | grep -i '^x-frame-options: DENY'")
+
+    with subtest("Every host's numbers for machines: /data/all.json and /metrics"):
+        hub.wait_until_succeeds("jq -e '.hosts.piabrota2.fresh and .hosts.piabrota2.data.uptime_s > 0' /run/metrics-web/all.json", timeout=60)
+        client.succeed("curl -s http://hub/data/all.json | jq -e '.v == 1 and (.hosts | has(\"piabrota2\"))'")
+        assert code(client, "http://hub/metrics") == "200"
+        client.succeed("curl -sI http://hub/metrics | grep -i '^content-type: text/plain; version=0.0.4'")
+        client.succeed("curl -sI http://hub/metrics | grep -i '^cache-control: no-store'")
+        client.succeed("curl -s http://hub/metrics | grep -c '^piabrota_host_fresh{host=\"piabrota2\"} 1$'")
+        assert code(client, "-A GPTBot http://hub/metrics") == "403"
+        assert hub.succeed("systemctl show metrics-export.service -p PrivateNetwork --value").strip() == "yes"
+        hub.fail("systemctl is-failed metrics-export.service")
+        # Not on a host without the page.
+        edge.fail("systemctl cat metrics-export.service")
 
     with subtest("robots.txt tells every crawler to go away"):
         assert code(client, "http://hub/robots.txt") == "200"
@@ -163,6 +187,23 @@
         assert code(client, "-A 'LinkedInBot/1.0 (compatible; Mozilla/5.0)' http://hub/") == "200"
         assert code(client, "-A 'facebookexternalhit/1.1' http://hub/") == "200"
         assert code(client, "-H 'User-Agent:' http://hub/") == "200"  # no User-Agent
+
+    with subtest("A page a browser gets is a visit; a bot, a script or a JSON poll is not"):
+        hub.succeed("rm -f /run/metrics-state/piabrota2.visits && : > /var/log/nginx/visits.log")
+        for _ in range(3):
+            assert code(client, f"{BROWSER} http://hub/") == "200"
+        assert code(client, f"{BROWSER} http://hub/data/piabrota2.json") == "200"
+        assert code(client, f"{BROWSER} http://hub/nothing") == "404"
+        assert code(client, "http://hub/") == "200"  # curl
+        assert code(client, "-A 'Mozilla/5.0 (compatible; Googlebot/2.1)' http://hub/") == "200"
+        assert code(client, "-A GPTBot http://hub/") == "403"
+        assert hub.succeed("wc -l < /var/log/nginx/visits.log").strip() == "3"
+        hub.succeed("awk 'NF != 3 || $2 != \"hub\" { exit 1 }' /var/log/nginx/visits.log")
+        # The other requests still reach access.log, in the combined format.
+        hub.succeed("grep -q 'GET /nothing HTTP/1.1. 404' /var/log/nginx/access.log")
+        hub.wait_until_succeeds("jq -e '.domains.list[] | select(.name == \"hub\") | .views == 3 and .visitors == 1' /run/metrics-web/piabrota2.json", timeout=150)
+        hub.succeed("jq -e '.domains.views == 3 and .domains.visitors == 1' /run/metrics-web/piabrota2.json")
+        hub.fail("systemctl is-failed metrics-probe.service")
 
     with subtest("Every response carries X-Robots-Tag"):
         for path in ("/", "/data/piabrota2.json", "/robots.txt", "/favicon.svg"):

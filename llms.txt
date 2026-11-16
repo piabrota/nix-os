@@ -9,7 +9,7 @@ For Piabrota only, read the index of the site: https://www.piabrota.art/llms.txt
 ## Profile
 
 - [GitHub profile](https://github.com/h0ffmann): the profile page. Its source is https://github.com/h0ffmann/h0ffmann.
-- [Website](https://h0ffmann.github.io/h0ffmann/): the timeline, the works and how they connect.
+- [Website](https://hffmnn.piabrota.art/): his personal site, pure HTML, from h0ffmann/h0ffmann. GitHub Pages serves the same site at https://h0ffmann.github.io/h0ffmann/.
 - [Short CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/cv.pdf): one page.
 - [Long CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/cv.full.pdf): made from the profile README.
 - [LinkedIn](https://www.linkedin.com/in/mhoffmannbr/): the professional profile.

@@ -13,8 +13,9 @@
 # of the port rig (waveForecaster.alwaysOn): a human or Hermes runs `rig up` for the others. With
 # piabrota.openrig.marola.enable the seats of piabrota-dev also work on the two marola repositories,
 # with read tokens of marola-pr-bot (marola-bot.nix, docs/OPENRIG.md).
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, utils, ... }:
 let
+  scripts = pkgs.callPackage ./scala { };
   inherit (lib) mkEnableOption mkIf mkOption types;
   cfg = config.piabrota.openrig;
   pkg = cfg.package;
@@ -51,17 +52,17 @@ let
 
   # Runs as root (the `+` of ExecStartPre) at each start: copies the one line CLAUDE_CODE_OAUTH_TOKEN
   # of Hermes's secrets file, and nothing else, under the name ANTHROPIC_API_KEY, to a file that
-  # only the openrig user reads. The unit takes it as its EnvironmentFile. The step prints nothing
-  # and never runs with `set -x`: grep, tail and sed write to the file, and grep's errors go to
-  # /dev/null. The file is empty when the line or the source is missing.
-  claudeToken = pkgs.writeShellScript "openrig-claude-token" ''
-    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.gnused ]}
-    umask 077
-    grep '^CLAUDE_CODE_OAUTH_TOKEN=' /var/lib/hermes-secrets/hermes.env 2>/dev/null | tail -n 1 | sed 's/^CLAUDE_CODE_OAUTH_TOKEN=/ANTHROPIC_API_KEY=/' > ${tokenFile}.new
-    chown openrig:openrig ${tokenFile}.new
-    chmod 600 ${tokenFile}.new
-    mv ${tokenFile}.new ${tokenFile}
-  '';
+  # only the openrig user reads (`piabrota openrig-claude-token`). The unit takes it as its
+  # EnvironmentFile. The step prints nothing. The file is empty when the line or the source is missing.
+  claudeToken = utils.escapeSystemdExecArgs [
+    (lib.getExe (scripts.command {
+      name = "openrig-claude-token";
+      runtimeInputs = [ pkgs.coreutils ];
+      exclusivePath = true;
+    }))
+    "/var/lib/hermes-secrets/hermes.env"
+    tokenFile
+  ];
 
   seatTools = [ pkgs.tmux pkgs.bash pkgs.git pkgs.procps pkgs.lsof pkg pkg.nodejs seatOmp ];
 
@@ -100,53 +101,25 @@ let
   # git credential helper of the seats: the read-only token of the repository, from the path git
   # hands over (credential.useHttpPath). Nothing for another repository: git then goes on with no
   # password, which is enough for a public one. A clone names it by its profile path, not its store
-  # path: nix.gc deletes an old store path 14 days after a deploy that changes the helper.
-  seatCredential = pkgs.writeShellScriptBin "openrig-git-credential" ''
-    [ "''${1:-}" = get ] || exit 0
-    path=
-    while IFS='=' read -r key value; do
-      [ -z "$key" ] && break
-      [ "$key" = path ] && path=$value
-    done
-    path=''${path%.git}
-    file=${seatTokens}/''${path%%/*}--''${path#*/}
-    [ -n "$path" ] && [ -r "$file" ] || exit 0
-    echo username=x-access-token
-    echo "password=$(cat "$file")"
-  '';
+  # path: nix.gc deletes an old store path 14 days after a deploy that changes the helper. The token
+  # files are written by hermes-github.nix and marola-bot.nix in /run/openrig-github
+  # (`piabrota openrig-git-credential`).
+  seatCredential = scripts.command { name = "openrig-git-credential"; };
 
   # A seat's clone of chaceon: the credential helper stays in the clone's own config, so a later
   # fetch works, also after a deploy. WW3/ is public (metocean/WW3) and pinned by the superproject.
-  chaceonClone = pkgs.writeShellApplication {
+  chaceonClone = scripts.command {
     name = "chaceon-clone";
     runtimeInputs = [ pkgs.git ];
-    text = ''
-      dir=''${1:-chaceon}
-      git clone --filter=blob:none \
-        --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
-        https://github.com/h0ffmann/chaceon.git "$dir"
-      git -C "$dir" submodule update --init --depth 1 WW3 || git -C "$dir" submodule update --init WW3
-    '';
   };
 
   # A seat's clone of a marola repository (marola.repos): the pattern of chaceonClone. The token
   # comes from seatCredential, which reads the file of marola-bot.nix; with no file git goes on
   # with no password, which is enough for a public repository. Any other name is refused.
-  marolaClone = pkgs.writeShellApplication {
+  marolaClone = scripts.command {
     name = "marola-clone";
     runtimeInputs = [ pkgs.git ];
-    text = ''
-      [ $# -ge 1 ] || { echo "usage: marola-clone <marola-front|marola-back|owner/name> [dir]" >&2; exit 2; }
-      name=''${1#marola-dev/}
-      case "$name" in
-        ${lib.concatMapStringsSep "|" (r: lib.escapeShellArg (lib.removePrefix "marola-dev/" r)) marola.repos}) ;;
-        *) echo "marola-clone: $1 is not one of: ${toString marola.repos}" >&2; exit 2 ;;
-      esac
-      dir=''${2:-$name}
-      git clone --filter=blob:none \
-        --config credential.helper=/etc/profiles/per-user/openrig/bin/openrig-git-credential --config credential.useHttpPath=true \
-        "https://github.com/marola-dev/$name.git" "$dir"
-    '';
+    env.MAROLA_REPOS = toString marola.repos;
   };
 
   # The `claude` of a Claude seat (the port rig, docs/RUNTIMES.md). The unit gives every seat
@@ -157,16 +130,13 @@ let
   # does what omp's does: the sk-ant-oat token moves from ANTHROPIC_API_KEY to CLAUDE_CODE_OAUTH_TOKEN,
   # and what outranks it goes, for Claude's process only. Anything else in that variable (an API key)
   # is dropped and never passed on, so Claude cannot bill an API key by accident. choom: as omp's.
-  seatClaude = pkgs.writeShellApplication {
+  seatClaude = scripts.command {
     name = "claude";
-    text = ''
-      unset ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY
-      case "''${ANTHROPIC_API_KEY:-}" in
-        sk-ant-oat*) export CLAUDE_CODE_OAUTH_TOKEN="''${CLAUDE_CODE_OAUTH_TOKEN:-$ANTHROPIC_API_KEY}" ;;
-      esac
-      unset ANTHROPIC_API_KEY
-      exec ${pkgs.util-linux}/bin/choom -n 500 -- ${lib.getExe pkgs.claude-code} "$@"
-    '';
+    subcommand = "seat-claude";
+    env = {
+      SEAT_CLAUDE_BIN = lib.getExe pkgs.claude-code;
+      SEAT_CHOOM = "${pkgs.util-linux}/bin/choom";
+    };
   };
 
   # The deny rules of a Claude seat, from the rules of an omp seat. Every `match` of `bash.patterns` in
@@ -273,123 +243,12 @@ let
   # the owner's exception to no GUI (2026-11-08), behind its own option and only that package.
   reelsTools = [ (pkgs.callPackage ./reels { }) pkgs.ffmpeg-headless pkgs.jq ] ++ lib.optionals rf.blender.enable [ pkgs.blender ];
 
-  # The keeper of the port rig, run by the unit openrig-wf-keeper. Every `rig` call goes to the
-  # daemon at OPENRIG_URL (rigCli sets it). It never starts a daemon, sends no task and answers no
-  # prompt. The rig's output is not printed: it is not needed, and `rig ps --full` shows tokens.
-  # The only state is $STATE_DIRECTORY/attempts: the epoch second of each start, one per line.
-  # A line starting with <3> or <4> is logged by journald as an error or a warning.
-  wfKeeper = pkgs.writeShellApplication {
+  # The keeper of the port rig, run by the unit openrig-wf-keeper (`piabrota openrig-wf-keeper`,
+  # scala/scripts/WfKeeper.scala). Every `rig` call goes to the daemon at OPENRIG_URL (rigCli sets
+  # it). It never starts a daemon, sends no task and answers no prompt.
+  wfKeeper = scripts.command {
     name = "openrig-wf-keeper";
-    runtimeInputs = [ rigCli pkgs.jq pkgs.coreutils ];
-    text = ''
-      rig_name=wave-forecaster-dev
-      spec=/etc/openrig/specs/rigs/wave-forecaster-dev/rig.yaml
-      attempts="$STATE_DIRECTORY/attempts"
-      window=3600
-      max_attempts=3
-
-      # A rig list or a node list is a bare array; an envelope has it in `.entries`.
-      list() { jq -c 'if type == "object" then .entries else . end'; }
-
-      if ! out=$(rig status 2>&1); then
-        echo "rig status failed, the daemon does not answer: nothing done"
-        exit 0
-      fi
-      case $out in
-        *"Daemon running"*) ;;
-        *)
-          echo "daemon not running: nothing done"
-          exit 0
-          ;;
-      esac
-
-      if ! rigs=$(rig ps --json | list); then
-        echo "<4>rig ps failed: nothing done"
-        exit 0
-      fi
-
-      other=$(jq -r --arg n "$rig_name" \
-        '[.[] | select(.isArchived != true and .name != $n and (.runningCount // 0) > 0) | .name] | first // empty' <<<"$rigs")
-      if [ -n "$other" ]; then
-        echo "another rig runs: $other, skipped"
-        exit 0
-      fi
-
-      state=$(jq -r --arg n "$rig_name" \
-        '[.[] | select(.name == $n and .isArchived != true)] | first | .status // "missing"' <<<"$rigs")
-
-      case $state in
-        running)
-          attention=$(jq -r --arg n "$rig_name" \
-            '[.[] | select(.name == $n and .isArchived != true)] | first | .attentionCount // 0' <<<"$rigs")
-          if [ "$attention" -gt 0 ]; then
-            echo "<4>$rig_name runs, $attention seat(s) need attention: rig ps --nodes --rig $rig_name"
-          else
-            echo "$rig_name runs"
-          fi
-          exit 0
-          ;;
-        partial)
-          if ! nodes=$(rig ps --nodes --rig "$rig_name" --json | list); then
-            echo "<4>$rig_name is partial and rig ps --nodes failed: nothing done"
-            exit 0
-          fi
-          down=$(jq -r '[.[] | select(.lifecycleState != "running") | "\(.logicalId)=\(.lifecycleState)"] | join(", ")' <<<"$nodes")
-          echo "<4>$rig_name is partial, seats not running: $down. Nothing changed."
-          exit 0
-          ;;
-        stopped)
-          if ! nodes=$(rig ps --nodes --rig "$rig_name" --json | list); then
-            echo "<4>rig ps --nodes failed: nothing done"
-            exit 0
-          fi
-          if jq -e 'length > 0 and all(.[]; .intentionallyStopped == true)' <<<"$nodes" >/dev/null; then
-            echo "$rig_name was stopped on purpose (rig down): not started"
-            exit 0
-          fi
-          ;;
-        missing) ;;
-        *)
-          echo "<4>$rig_name has the status '$state': nothing done"
-          exit 0
-          ;;
-      esac
-
-      # Back-off: keep the attempts of the last hour, and stop at max_attempts of them.
-      now=$(date +%s)
-      count=0
-      kept=""
-      if [ -f "$attempts" ]; then
-        while read -r t || [ -n "$t" ]; do
-          case $t in
-            "" | *[!0-9]*) continue ;;
-          esac
-          if [ $((now - t)) -le "$window" ]; then
-            count=$((count + 1))
-            kept="$kept$t"$'\n'
-          fi
-        done <"$attempts"
-      fi
-      if [ "$count" -ge "$max_attempts" ]; then
-        echo "<3>$rig_name is $state and $count start attempts failed or ended in the last hour: not trying. Read: journalctl -u openrig; rig ps --nodes --rig $rig_name"
-        exit 1
-      fi
-      printf '%s%s\n' "$kept" "$now" >"$attempts"
-
-      echo "$rig_name is $state: starting it"
-      if [ "$state" = stopped ] && rig up "$rig_name" --existing >/dev/null 2>&1; then
-        echo "$rig_name restored from its snapshot (--existing)"
-        exit 0
-      fi
-      if rig up "$spec" >/dev/null 2>&1; then
-        echo "$rig_name started from $spec"
-        exit 0
-      else
-        code=$?
-      fi
-      echo "<3>$rig_name did not start: rig up exited with $code. Read: rig up $rig_name --existing"
-      exit 1
-    '';
+    runtimeInputs = [ rigCli ];
   };
 in
 {

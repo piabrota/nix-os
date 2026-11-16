@@ -15,15 +15,17 @@ other two:
 | C · paths, at `/paths/` | ![Design C, paths, dark](images/site-paths-desktop-dark.png) | ![Design C, paths, light](images/site-paths-desktop-light.png) | ![Design C, paths, phone](images/site-paths-mobile-dark.png) |
 
 Design A is built as [closed-source's site](https://h0ffmann.github.io/closed-source/) is: numbers in
-the hero, tiles with tags, a bar of anchors, then detail in sections. Every design ends with the same
+the hero, tiles with tags, a bar of anchors, then detail in sections. The tiles are the one list of
+the projects: each holds the blurb, the state, the language, the origin, the licence, the address, the
+last push, the repository link and, when the project has them, the commit counts. Designs A and B
+show them; C lists the same projects, with their blurbs, in its terminal. Every design ends with the same
 sections: the **structure** (mu, the company chart; dojo, the umbrella; the products; pirsig, the
-brain), **why it is open**, the **dogma** (the ten invariants of piabrota/mu), the **FOSS inventory**
-(every project with its origin, language, licence, last push and links), the **board** (each person
+brain), **why it is open**, the **dogma** (the ten invariants of piabrota/mu), the **board** (each person
 with a GitHub pill and their website, when they have one), the **partners** (marola.dev and
 ouroboric, with their logos) and the **forks**, a PUBLIC inventory of every fork under piabrota, as
 h0ffmann/h0ffmann lists its own:
 
-![Design A, the whole page, dark: the tiles, then the structure, the dogma, the inventory, the board, the partners and the forks](images/site-fabric-full-dark.png)
+![Design A, the whole page, dark: the tiles, then the structure, the dogma, the board, the partners and the forks](images/site-fabric-full-dark.png)
 
 All three wear picasso's look in piabrota's colours, dark first and light when the visitor asks
 for it; the rules are [`site/DESIGN.md`](../site/DESIGN.md). The pages load the sister sites'
@@ -77,7 +79,7 @@ went on). Fix DNS, then see the end of this section.
 Then merge the PR that turns the site on, or run the `deploy` workflow again if it already
 failed.
 
-The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave`, `closed` and the others under `piabrota.art`)
+The names that piabrota2 serves (`proof`, `pirsig`, `grid`, `wave`, `closed`, `hffmnn` and the others under `piabrota.art`)
 each need one `A` record on their host name, with piabrota2's address, before the deploy that
 turns them on.
 
@@ -91,17 +93,18 @@ starts with a self-signed certificate, and browsers refuse it. See "Certificates
 ## Certificates
 
 Every name under piabrota.art is listed in `scripts/domains.txt`, with the host that serves it.
-A new vhost adds its line in the same PR: CI (`scripts/cert-check.sh --coverage`) fails when a
+A new vhost adds its line in the same PR: CI (`piabrota cert-check --coverage`) fails when a
 `*.nix` file names a piabrota.art name that the list does not have.
 
 `certs.yml` checks the certificate of every live name from outside, as a browser does, every six
-hours and two minutes after each deploy: curl must connect with no warning, and the certificate
+hours and two minutes after each deploy: the TLS handshake must pass with no warning, and the certificate
 must have more than 14 days left. The run summary has one row per name; a red run mails the
 owner. `just certs` runs the same check from any machine (`just certs proof.piabrota.art` for one).
 
 When an order fails (the name has no record yet, or points at the other host), NixOS keeps its
 self-signed stand-in, issued by `minica`. `acme-retry.nix` makes `acme-order-renew-<name>.service`
-retry every 20 minutes, at most 9 times in 6 hours (3 failed validations an hour, under Let's
+retry every 20 minutes (a transient timer started by `OnFailure=`, not `Restart=`: a unit waiting
+to restart counts as failed in every deploy, and deploy-rs then rolls the host back), at most 9 times in 6 hours (3 failed validations an hour, under Let's
 Encrypt's limit of 5); then the daily `acme-renew-<name>.timer` takes over. So once the record is
 right, the real certificate comes within about 20 minutes of the next failed order. The retry
 starts only after an order fails: a certificate that was already a stand-in before a deploy
@@ -114,7 +117,7 @@ just remote-cert-renew skills.piabrota.art    # piabrota: this name, even if it 
 just remote-cert-renew all h0ffmann srv2125808.hstgr.cloud   # piabrota2
 ```
 
-`scripts/cert-renew.sh` runs as root on the box (over SSH and `sudo`). It finds each certificate
+`piabrota cert-renew` (`scala/scripts/CertRenew.scala`) runs as root on the box (over SSH and `sudo`). It finds each certificate
 in `/var/lib/acme` that is self-signed (`minica`) or ends within 14 days, starts its
 `acme-order-renew-<name>.service` (no other unit) and prints the new issuer, or `FAIL` with the
 `dig` and `journalctl` commands to run next. An agent never runs it. `DEPLOY_HOST` and
@@ -165,6 +168,7 @@ as well:
 | proof.piabrota.art, pirsig.piabrota.art | none on the pages of proof and pirsig | serves the eye there |
 | wave.piabrota.art | `/favicon.svg`, ww3-gpu's own (`ww3-site/static/`) | nothing: the site keeps its icon |
 | closed.piabrota.art | `/icons/favicon.svg`, closed-source's own | nothing: the site keeps its icon |
+| hffmnn.piabrota.art | `/icons/favicon.svg`, h0ffmann/h0ffmann's own | nothing: the site keeps its icon |
 | OpenRig | `data:,` (an empty icon) | `sub_filter` swaps the link in its HTML for the eye; `checks.openrig-icon` fails if a bump changes the literal |
 
 None of the three sets its icon from JavaScript. `checks.favicon` tests the files and that the SVG
@@ -176,13 +180,13 @@ equals `parts.eye`.
 are built from pinned commits by `proof-site/`, which shares the steps and the archify gate between
 the two (`proof-site/common.nix`). The index of each name is made by the design kit
 ([DESIGN-KIT.md](DESIGN-KIT.md)) from a list of the pages that the build computes
-(`proof-site/manifest.mjs`, `proof-site/index.mjs`). The brand bar of the kit goes into every other page.
+(`piabrota proof-manifest` and `piabrota proof-index`, in `scala/design/`). The brand bar of the kit goes into every other page.
 The two names:
 
 - `proof.piabrota.art` (`proof-site/default.nix`, option `domain`): h0ffmann/proof's own browsable
   index (its `site/default.nix`, built here with this flake's nixpkgs) under `/proof/`, and an
   index at `/` that lists its pages and gives its lines of Lean 4, Agda and Z3 code at the pin.
-  `proof-site/loc.mjs` counts them from the pinned source with the rule of that repository's own
+  `piabrota proof-loc` (`scala/design/Loc.scala`) counts them from the pinned source with the rule of that repository's own
   badge: a line that is not blank and not only a comment, `vendor/` left out; Z3 is the Scala of
   `z3-scala/`.
 - `pirsig.piabrota.art` (`proof-site/pirsig.nix`, option `pirsig.domain`): piabrota/pirsig's
@@ -229,7 +233,7 @@ A figure is not shrunk to the text column; it passes the column's edges, and is 
 when it is wider than the room beside the side column, open or folded, so it always fits. A click on a figure opens its interactive
 Archify page at `https://h0ffmann.github.io/ww3-gpu/figures/<slug>/`, which ww3-gpu's `pages.yml`
 publishes. The pages are not built here: Archify checks each drawing against the Git history of
-ww3-gpu, and the fetched source has none. The side column also lists five repositories of
+ww3-gpu, and the fetched source has none. The side column has a publishers list, which the "how to cite" section repeats: the Zenodo record by its concept DOI, then the preprint's aiXiv and arXiv records, read from the `isDocumentedBy` preprints of `.zenodo.json`; a record it does not list yet is shown as pending, with no link. The side column also lists five repositories of
 piabrota, marola-dev and ouroboric-dev, the rows of `ww3-site/data/orgs.tsv` (the most stars, the
 most recent push first on a tie; the file names its date), each under its logo. A logo is a
 trademark and never a file here: it loads from its owner's repository at a pinned commit
@@ -238,6 +242,8 @@ trademark and never a file here: it loads from its owner's repository at a pinne
 ([@isovector](https://github.com/isovector)), a serif text column and a dark side column, here on the left, written
 anew in `ww3-site/static/style.css`; the foot of every page credits it.
 
+The side column opens with the logo of ww3-gpu, the wave of `ww3-site/static/favicon.svg`, and its
+links are the neon green of ww3-gpu (`--proof`, `#3DFF96`, in its `DESIGN.md`).
 The side column is on the left and the reader can fold it: a checkbox before it holds the state
 and the ☰ label at its top is the button, with no JavaScript. On a wide screen it is open until
 the reader folds it to a strip; on a phone it is a bar at the top until the reader opens it.
@@ -250,7 +256,7 @@ has a key the page does not ask for. The zh-CN and ja-JP pages keep their banner
 until a native reader checks them. A fact read from ww3-gpu keeps its own language.
 
 `ww3-pin.yml` looks at ww3-gpu's `main` every hour and opens or moves one PR labelled `ww3-pin`
-(`scripts/ww3-pin.sh`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
+(`piabrota pins one ww3`, `just ww3-pin [rev]` by hand), which also counts the commits up to the new
 pin. The site changes when the owner merges it.
 A change to the page itself (a section, a sentence, the style) is a PR here; a new sentence also
 needs its key in each file of `ww3-site/locales/`, or the content generator stops the build.
@@ -271,23 +277,47 @@ module from the paper, then the Gleam tests, the esbuild bundle and the prerende
 output is the page, `app.js`, `style.css`, the drawings, the icon and the three PDFs, with no store
 reference. nginx (`closed.nix`) serves it as static files on piabrota2.
 
-Three things differ from the Pages build, because the sandbox has no network and the source has no
+The three PDFs are built too, from the same commit, as its `just build` does: pandoc with
+pandoc-crossref and citeproc, then XeLaTeX twice, with the TeX set of picasso's paper lab plus
+`babel-portuges`. The title-page logo (marola's, the only one since closed-source dropped
+ouroboric's) is fetched by the hash in the paper's `metadata.md` and converted with
+`rsvg-convert`. A page and a paper from two commits would disagree: the paper of 6e5ab43 already
+had no chemo-rx section, which the v0.3.4 release PDFs still carry.
+
+Two things differ from the Pages build, because the sandbox has no network and the source has no
 `.git`:
 
-- The three PDFs are the release assets of the tag at the pinned commit (`release` in
-  `default.nix`, each with its hash), not built again with XeLaTeX.
 - The version DOIs come from `closed-site/zenodo.json`, Zenodo's reply cut to the fields the
-  generator reads, not from Zenodo at build time. Fetch it again when the pin passes a release.
+  generator reads, not from Zenodo at build time. Fetch it again when closed-source makes a release.
 - The revision and the commit count come from `rev` and `commits` in `default.nix`, through a
   stand-in `git` that answers only those two questions. Pages' `links.json` is not built.
 
+At 7682e90, `index.html`, `app.js`, `style.css` and the drawings are byte-identical to Pages, and
+each PDF has the same text and page count (the bytes differ by the build date).
+
 To move the pin: change `rev`, `commits` (`git rev-list --count <rev>`) and `hash` (`nix hash path`
-on `git archive <rev>`), and `release` with the PDF hashes when a new tag has them. `just
-closed-site` builds it into `./result-closed-site`.
+on `git archive <rev>`), and the logos when `metadata.md` changes them. `just closed-site` builds it
+into `./result-closed-site`. The site does not follow closed-source's `main` by itself: a new
+commit there shows here only after a PR here moves the pin.
 
 The first version of this vhost (#217) passed each request to Pages, but piabrota2 timed out on
 every connection to Pages (the 502 that `certs.yml` saw on 2026-11-11), so the box now keeps its
 own copy. The name needs its DNS `A` record at piabrota2's address ([DNS on Porkbun](#dns-on-porkbun)).
+
+## The profile site at hffmnn.piabrota.art
+
+The website of h0ffmann/h0ffmann, the owner's profile, which GitHub Pages also serves at
+h0ffmann.github.io/h0ffmann. It is HTML only, with no Gleam and no JavaScript (the owner,
+2026-11-13): that repository's `www/build.py` writes it from `www/content/*.md` into `www/dist`,
+and commits it. `hffmnn-site/default.nix` copies `www/dist` as it is at a pinned commit, with no
+build step; it fails when the directory has no `index.html` or has a `<script>`. nginx
+(`hffmnn.nix`) serves it as static files on piabrota2, like closed.
+
+To move the pin: `piabrota pins one hffmnn [rev]` (`rev` and `hash`). `just hffmnn-site` builds
+it into `./result-hffmnn-site`. The name needs its DNS `A` record at piabrota2's address
+([DNS on Porkbun](#dns-on-porkbun)). The record is `A hffmnn 187.41.117.18`, TTL 600, at Porkbun
+since 2026-11-13, the same address as `grid`, `wave` and `closed`. Before it, the vhost was off and
+the name answered with a TLS error (no certificate for the name) and an HTTP 503.
 
 ## The ▲ grid at grid.piabrota.art
 
@@ -356,7 +386,7 @@ is served as `text/plain; charset=utf-8`.
 `https://www.piabrota.art/figures/` serves each figure of `docs/archify/` as one self-contained
 [archify](https://github.com/tt-a1i/archify) page: it zooms, follows the visitor's light or dark
 setting, and calls no third party. `/figures/<slug>/` is the English page, `/figures/pt-BR/<slug>/`
-the pt-BR mirror, and `/figures/` lists them. The README and the wiki link each figure to its page.
+the pt-BR mirror, and `/figures/` lists them. `docs/FIGURES.md` and the wiki link each figure to its page.
 
 **The index.** `/figures/` has the page frame of `/hosts/`: the brand, the language links, the
 design switcher, a hero and the foot, in the site's `style.css`. It shows one card for each figure:
@@ -404,7 +434,7 @@ there at a pinned commit, in English or pt-BR, and no copy lives here. `structur
 ## Closed projects
 
 `closed` in `mockups/data.nix` lists a project that is not FOSS yet. It gets a tile in design A, with no
-link. It stays out of the FOSS inventory, the counts and the mockups. The list is empty today, and an
+link. It stays out of the counts and the mockups. The list is empty today, and an
 empty list draws no lane. chaceon was the last entry: it is public now, so it is in `projects`, with a
 link to its repository.
 
@@ -412,8 +442,8 @@ link to its repository.
 
 Each project in an own repository of the org (`origin` `own`, no `repository` override; so not hermes
 and not a personal project) has `commits = { human = N; agent = M; };` in `mockups/data.nix`, and the
-file has one `commitsAsOf`. Design A shows them in the tile, design C in the row, and every design in
-the inventory entry, in the four languages (`commits.*` in `site/locale/<lang>.json`). A project with
+file has one `commitsAsOf`. Designs A and B show them in the tile and design C in the row, in the four
+languages (`commits.*` in `site/locale/<lang>.json`). A project with
 no `commits` shows nothing. The tooltip says what the count is and the day it was read.
 
 - Rule: a commit is agent when its GitHub author login ends with `[bot]` or is exactly `claude`.
@@ -422,7 +452,7 @@ no `commits` shows nothing. The tooltip says what the count is and the day it wa
   The repository's rule is "no agent trail in a commit", so the agent number is a floor.
 - The page never calls the network. The numbers are typed in `data.nix`, like `pushed`.
 - Refresh: `just commit-counts` prints one line for each project. Paste the lines, set `commitsAsOf`,
-  run `just mockups`, and open a pull request. `just commit-counts-test` tests the rule with a stub `gh`.
+  run `just mockups`, and open a pull request. `CommitCounts.test.scala` tests the rule with a stub `gh` (`just scala-test`).
   [MOCKUPS.md](MOCKUPS.md#commit-counts) has the same rule.
 
 ## Languages

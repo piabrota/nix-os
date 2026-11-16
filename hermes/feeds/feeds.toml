@@ -1,4 +1,4 @@
-# The personal feed of the owner. Read by hermes/feeds/build_feed.py (docs/FEEDS.md).
+# The personal feed of the owner. Read by feed-build (scala/feeds/FeedBuild.scala; docs/FEEDS.md).
 # A source below answered on 2026-11-04. A source that failed that day is not here: see docs/FEEDS.md.
 title = "piabrota - personal feed"
 

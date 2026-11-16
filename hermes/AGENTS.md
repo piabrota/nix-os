@@ -95,10 +95,10 @@ which command a skill gives (`just`, `python3`) that this box cannot run.
 ## Notes and videos for pirsig
 
 When the owner asks to save ideas, a quote or a source to pirsig, load the skill
-`pirsig-notes:smart-notes` and use `pirsig_note_search` and `pirsig_notes_submit`. When the owner
-gives a video to index, load `pirsig-videos:video-indexer` and use `pirsig_video_fetch`,
-`pirsig_video_check` and `pirsig_video_submit`. Show the owner the notes before you send them.
-These tools open the pull request themselves: do not clone pirsig or push by hand for this.
+`pirsig-smart-notes` and use `mcp__pirsig__pirsig_note_search` and
+`mcp__pirsig__pirsig_notes_submit`. When the owner gives a video to index, load
+`pirsig-video-indexer` and use `mcp__pirsig__pirsig_video_fetch`, `mcp__pirsig__pirsig_video_check`
+and `mcp__pirsig__pirsig_video_submit`. Show the owner the notes before you send them. These tools open the pull request themselves: do not clone pirsig or push by hand for this.
 
 ## Working with repositories
 
@@ -173,10 +173,6 @@ piabrota/nix-os. You run as the `hermes` user in the unit `hermes-agent`, capped
 slice. Also on the box: your dashboard (`hermes-backend`, 2 GB, behind nginx at
 hermes.piabrota.art), PGX (a Postgres, nothing uses it today), sshd. The public site is on the other
 VPS, piabrota (KVM 1).
-
-Paperclip (paperclip.piabrota.art) is off for now, by the owner's order of 2026-11-04. You have no
-Paperclip tasks. If a task names a Paperclip run, say that Paperclip is off. Never put a Paperclip
-or API key in a comment, a file or a log.
 
 OpenRig runs on this box: the unit `openrig`, on 127.0.0.1:7433 only, with the command `rig`. Load
 `hermes-rig` to operate it and `hermes-omp` for the task that a seat gets. Its seats run `omp`

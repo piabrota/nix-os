@@ -70,5 +70,5 @@ The skill `manim-video` says how to make a good animation (story, scenes, style)
 
 ## Verify
 
-Run `sh scripts/smoke.sh`. It renders `scripts/smoke.py` in a temporary folder and prints the
+Run `manim-smoke`. It renders `scripts/smoke.py` in a temporary folder and prints the
 size of the video. If it fails, read the last 20 lines of its output and report them.

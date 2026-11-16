@@ -36,8 +36,7 @@ Measured on piabrota2 on 2026-11-04, unless noted.
 - `ffmpeg` on the box has `libx264`, `libx265`, `libsvtav1`, `libvpx-vp9`, `libass`, `libfreetype`,
   and the filters `drawtext`, `subtitles`, `zoompan`, `xfade`, `loudnorm`, `sidechaincompress`.
 - Disk: 157 GB free. The Nix store is cleaned each week.
-- `allowUnfree` is off. No Docker, no browser, no heavy resident service on the box. Node is the owner's
-  exception for Paperclip only.
+- `allowUnfree` is off. No Docker, no browser, no heavy resident service on the box.
 - An agent never deploys. Install tools with `nix shell nixpkgs#<name>` first. A change of the system
   is a normal pull request, and the owner merges it.
 
@@ -123,9 +122,6 @@ time, and never a decision or a diff. Hermes checks every result.
 run longer than 10 minutes, Hermes checks `systemctl show hermes-agent -p NRestarts` and
 `gh run list --workflow deploy.yml --limit 1`. It does not start while a deploy is in progress. The
 owner does not merge a pull request of `nix-os` during a run.
-
-**Paperclip** (optional, after pull request 119): one `showrunner` agent on `hermes_gateway` and one
-`engineer` agent on `pi_local`, with a budget cap for each. This is not needed for phases 0 to 3.
 
 **The owner** picks the niche, approves the sources, reviews each video at stage 9, and merges.
 
@@ -238,9 +234,9 @@ Smoke checks, in this order. Each prints a number, and none is a formal test:
 
 ## 13. The dummy pipeline
 
-`video-lab/dummy/run.sh` makes a 30 s, 1280x720 video from nothing but `ffmpeg` and `ffprobe`:
+`piabrota video-dummy` (`scala/scripts/VideoDummy.scala`) makes a 28 s, 1280x720 video from nothing but `ffmpeg` and `ffprobe`:
 five scenes of a moving gradient with text, one tone per scene as the voice, a soft subtitle track, a
 cross fade, and a loudness pass. It writes `video-lab/out/dummy/dummy.mp4` and `report.json` (duration,
 size, streams, wall time, peak memory). It is a check that the render path works, nothing more. Run it with
-`just video-dummy`, or with `nix shell nixpkgs#ffmpeg -c sh video-lab/dummy/run.sh` on a machine
+`just video-dummy`, or with `nix shell nixpkgs#ffmpeg -c nix run .#piabrota -- video-dummy` on a machine
 without `ffmpeg`.

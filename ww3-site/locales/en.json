@@ -55,5 +55,7 @@
   "figures.page": "interactive page",
   "side.toggle": "hide or show the side column",
   "side.languages": "languages",
-  "banner": ""
+  "banner": "",
+  "side.publishers": "publishers",
+  "publishers.pending": "pending"
 }

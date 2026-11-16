@@ -89,6 +89,15 @@ pub fn row_test() {
     ))
 }
 
+pub fn on_host_test() {
+  let ids = [
+    "https://aixiv.online/abs/2611.01104",
+    "https://wave.piabrota.art/",
+  ]
+  assert c.on_host(ids, "aixiv.online") == "https://aixiv.online/abs/2611.01104"
+  assert c.on_host(ids, "arxiv.org") == ""
+}
+
 pub fn lit_test() {
   assert c.lit("a \"quote\" and \\ back\nslash")
     == "\"a \\\"quote\\\" and \\\\ back\\nslash\""
@@ -99,6 +108,7 @@ pub fn empty_list_test() {
     c.render(
       #("t", "s"),
       "d",
+      #("", ""),
       "r",
       "",
       "x",

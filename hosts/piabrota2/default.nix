@@ -1,8 +1,8 @@
 # piabrota2: the Hostinger KVM 4 VPS (4 vCPU and 16 GB RAM by Hostinger's plan list; `just remote-specs`
 # gives the real figures), the second host. It runs Hermes: the full Hermes (upstream's `full`
 # package and upstream's defaults), its GitHub App, its web dashboard on hermes.piabrota.art, PGX
-# and OpenRig, which Hermes operates. Paperclip is off for now (see below). It does not serve
-# www.piabrota.art: that name points at piabrota.
+# and OpenRig, which Hermes operates. It does not serve www.piabrota.art: that name points at
+# piabrota.
 #
 # Its setup from an empty VPS is docs/DEPLOY.md, "A second host"; the move of Hermes from piabrota
 # is docs/MIGRATION-KVM4.md. Nothing is cloned or built on the VPS.
@@ -14,9 +14,6 @@
     ../../hermes-github.nix
     # The dashboard behind nginx, TLS and basic auth. hermes.piabrota.art must point at this box.
     ../../hermes-web.nix
-    # Paperclip, off for now: the import stays, so `enable = true` below turns it back on.
-    # paperclip.piabrota.art must point at this box before that.
-    ../../paperclip.nix
     # OpenRig (openrig.nix): loopback only, no DNS, no port.
     ../../openrig.nix
     # The room (piabrota/room) on room.piabrota.art, which must point at this box.
@@ -28,6 +25,11 @@
     ../../ww3.nix
     # The website of h0ffmann/closed-source on closed.piabrota.art, which must point at this box.
     ../../closed.nix
+    # The website of h0ffmann/h0ffmann (the owner's profile) on hffmnn.piabrota.art, which must point at
+    # this box.
+    ../../hffmnn.nix
+    # marola-site (marola-dev/marola-site): the Haskell server behind nginx (docs/MAROLA-SITE.md).
+    ../../marola-site.nix
     # tyler-durden-bot (tyler-durden-bot.nix): a Hermes webhook route that summarizes large pull
     # requests on h0ffmann/proof. tyler.piabrota.art must point at this box before it is on.
     ../../tyler-durden-bot.nix
@@ -50,8 +52,6 @@
   piabrota.pgx.enable = true;
   # The lofi bot (lofi.nix, docs/LOFI.md). Idle until its token and IDs are on the box.
   piabrota.lofi.enable = true;
-  # Off since 2026-11-04 by the owner's order; docs/PAPERCLIP.md says how to turn it on.
-  piabrota.paperclip.enable = false;
   # Hermes operates it with `rig` and the skill hermes-rig; docs/OPENRIG.md.
   piabrota.openrig.enable = true;
   # The web UI at rig.piabrota.art, behind the dashboard's login (docs/OPENRIG.md, "The web UI").
@@ -87,6 +87,26 @@
   piabrota.ww3.enable = true;
   # The website of h0ffmann/closed-source at a pinned commit (closed-site/), at closed.piabrota.art.
   piabrota.closedSource.enable = true;
+  # The website of h0ffmann/h0ffmann at a pinned commit (hffmnn-site/), at hffmnn.piabrota.art.
+  # hffmnn.piabrota.art has its A record at this box since 2026-11-13 (seen from outside, TTL 600).
+  # It was off before that: without the record the ACME order failed at activation and deploy-rs
+  # rolled every piabrota2 deploy back (deploys of #241, #242, #243).
+  piabrota.hffmnn.enable = true;
+  # marola-site at a pinned commit (marola-site/default.nix), on marola.dev and marola.piabrota.art,
+  # both served here; www.marola.dev redirects. No Cloudflare (the owner, 2026-11-13). Each name's A
+  # record must point at this box before the deploy that serves it (docs/MAROLA-SITE.md).
+  piabrota.marolaSite = {
+    enable = true;
+    domain = "marola.dev";
+    aliases = [ "marola.piabrota.art" ];
+    redirects = [ "www.marola.dev" ];
+    # The boards are built here four times a day (marola-site.nix, docs/MAROLA-SITE.md). The
+    # token file /etc/marola/ghcr-token must be on the box, or each build fails at the pull.
+    boards.build.enable = true;
+    # marola-app main's latest image, jvm-7061a08 (CI run 39499882444), with the same --site and
+    # board schema as marola-site's pin. Drop it when marola-site's pin moves past it.
+    boards.build.image = "ghcr.io/marola-dev/marola-app:jvm-7061a08@sha256:7656c11b9e429059913310f5e934a6dd82028d33974cffdb3c5ee2c5e2a7d286";
+  };
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
   piabrota.tylerDurden.enable = false;
@@ -96,6 +116,10 @@
     name = "piabrota2";
     label = "piabrota2 (KVM 4)";
     collector.enable = true;
+    # Up or down for each site of this host, and the commit count of piabrota/nix-os.
+    probe.enable = true;
+    # The visits of each site in the last 24 h, from a log of the pages browsers got (docs/METRICS.md, "Visits").
+    visits.enable = true;
     web.enable = true;
     pull = {
       enable = true;

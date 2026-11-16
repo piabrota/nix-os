@@ -1,43 +1,47 @@
-# The owner's Hermes plugins
+# The owner's pirsig tools for Hermes
 
-Two Hermes plugins send work from a chat to the pirsig brain
+One MCP server, `pirsig`, sends work from a chat to the pirsig brain
 ([piabrota/pirsig](https://github.com/piabrota/pirsig)) as pull requests. The owner writes in
 Discord; Hermes writes the notes, checks them and opens one pull request; the owner reads it and
 merges. English only, by the owner's order.
 
-| Plugin | Tools | Bundled skill | Writes to |
-|---|---|---|---|
-| `pirsig-notes` | `pirsig_note_search`, `pirsig_notes_submit` | `pirsig-notes:smart-notes` | `brain/Inbox/<id>-<slug>.md` |
-| `pirsig-videos` | `pirsig_video_fetch`, `pirsig_video_check`, `pirsig_video_submit` | `pirsig-videos:video-indexer` | `brain/Videos/<date>-<slug>/` |
+| Tools (`mcp__pirsig__...`) | Skill | Writes to |
+|---|---|---|
+| `pirsig_note_search`, `pirsig_notes_submit` | `pirsig-smart-notes` | `brain/Inbox/<id>-<slug>.md` |
+| `pirsig_video_fetch`, `pirsig_video_check`, `pirsig_video_submit` | `pirsig-video-indexer` | `brain/Videos/<date>-<slug>/` |
 
-The code is in `hermes/plugins/`: one directory per plugin, `common/brain.py` (the checkout of the
-brain and the pull request, shared by both), and `tests/`. `hermes.nix` copies `brain.py` into
-each plugin's directory at build time (`ownPlugin`), so each one stays a self-contained plugin
-directory, as the module wants.
+The server is `piabrota pirsig-mcp`, a command of the scripts' binary
+([`scala/pirsig/`](../scala/pirsig/Mcp.scala)): MCP over stdio, the notes tools in `Notes.scala`,
+the video tools in `Videos.scala`, and `Brain.scala` (the checkout of the brain and the pull
+request, shared by both). `hermes.nix` declares it in `mcpServers.pirsig` with `git`, `gh` and
+`yt-dlp` on its PATH, so the model sees its tools as `mcp__pirsig__<tool>`. The two skills are in
+`hermes/skills/pirsig-smart-notes/` and `hermes/skills/pirsig-video-indexer/`.
+
+Until 2026-11-14 the same tools were two Python plugins, `pirsig-notes` and `pirsig-videos`, in
+`hermes/plugins/`. The port keeps their tool names, their answers and their data directories
+(`$HERMES_HOME/plugin-data/pirsig-notes`, `.../pirsig-videos`), so a checkout on the box stays
+valid.
 
 ## One repository or three
 
-**Keep both plugins here, in this repository, for now.** Reasons:
+**Keep the server here, in this repository, for now.** Reasons:
 
-- They have one consumer, this box. Hermes on another machine, or another person, does not use
-  them yet.
-- A plugin in its own repository is a pin by commit in `hermes.nix`: each change is two pull
-  requests (the plugin, then the pin bump). Here it is one, and it deploys with the merge.
-- The two share their git and pull-request code. Two repositories would copy it; one repository
-  keeps one copy.
+- It has one consumer, this box. Hermes on another machine, or another person, does not use
+  it yet.
+- A server in its own repository is a pin by commit in `hermes.nix`: each change is two pull
+  requests (the server, then the pin bump). Here it is one, and it deploys with the merge.
+- The notes and video tools share their git and pull-request code (`Brain.scala`).
 - The guardrails stay in one review: the deny list (`hermes/dangerous-patterns.yaml`), the
   GitHub App (`hermes-github.nix`) and the code that pushes are read together.
 
-**When to move them out:** when a second machine or person wants them, or when they need their own
-release cycle. Then move them together to one repository (for example `piabrota/hermes-pirsig`,
-two plugin directories and `common/`), not to one repository each, and pin it by commit like the
-community plugins. The directory layout already fits that move: `extraPlugins` takes a fetched
-directory the same way.
+**When to move it out:** when a second machine or person wants it, or when it needs its own
+release cycle. Then move `scala/pirsig/` and the two skills together to one repository (for
+example `piabrota/hermes-pirsig`), and pin it by commit like the community add-ons.
 
 ## How a note gets into pirsig
 
 1. The owner asks in chat: "save this as notes in pirsig".
-2. Hermes loads `pirsig-notes:smart-notes` (gramatico's smart-note rules, piabrota/gramatico at
+2. Hermes loads the skill `pirsig-smart-notes` (gramatico's smart-note rules, piabrota/gramatico at
    `d57371a`): one idea per note, own words, the title as a claim, `status: unverified` until a
    source is read, people by nickname.
 3. `pirsig_note_search` finds existing notes to link to. Every note links to another note with a
@@ -69,10 +73,11 @@ The port gave the same result as `node scripts/videos.mjs check` on pirsig's ind
 
 ## Guardrails
 
-- A plugin pushes only a new `hermes/*` branch (`hermes/notes-<slug>`, `hermes/video-<slug>`, with
+- A tool pushes only a new `hermes/*` branch (`hermes/notes-<slug>`, `hermes/video-<slug>`, with
   `-2`, `-3` when the name is taken) and only opens a pull request. It never merges. The deny list
-  sees only the terminal tool, so `brain.py` checks the branch itself.
-- A plugin writes only under `brain/` and never changes a file that is already in the repository.
+  sees only the terminal tool, not the processes of an MCP server, so `Brain.scala` checks the
+  branch itself.
+- A tool writes only under `brain/` and never changes a file that is already in the repository.
 - The tool descriptions and skills say: only when the owner asks, and only after the owner saw the
   notes. SOUL.md rule 2 still applies.
 - The pull request text is a fixed English template. The notes themselves are in the owner's
@@ -84,21 +89,23 @@ The port gave the same result as `node scripts/videos.mjs check` on pirsig's ind
   cache.nixos.org, 128 MiB of it a Python 3.13 that Hermes's own Python does not share (Hermes's
   flake has its own nixpkgs). The light build has no ffmpeg. Not measured with `dix` on the system.
 - The brain checkout: shallow and sparse (`brain/`, `.claude/agents/`), about 3 MiB of files, one
-  per plugin under `/var/lib/hermes/.hermes/plugin-data/`.
+  per tool family under `/var/lib/hermes/.hermes/plugin-data/` (the names of the old plugins).
+- The server is one `piabrota` process, a child of Hermes in its cgroup, while Hermes runs. Its
+  memory was not measured.
 - Memory: yt-dlp runs only during a fetch, one video at a time, inside Hermes's 1 GB.
 
 ## Checks
 
-- `checks.hermes-plugins` (`nix build .#checks.x86_64-linux.hermes-plugins`) and
-  `just hermes-plugins-test` run `hermes/plugins/tests/`: the smart-note rules, the files and their
-  links, the video checks, and a pull request end to end against a local bare repository with a
+- `scala/pirsig/*.test.scala`, run by `just scala-test` and by the Nix build of the binary
+  (`nix build .#piabrota`): the MCP messages, the smart-note rules, the files and their links, the
+  video checks, and a pull request end to end against a local bare repository with a
   stub `gh`.
 
 ## Not checked
 
-- The plugins under the real Hermes gateway (`hermes plugins doctor`): no Hermes build was run for
-  this change. The calls follow the plugin guide at the pinned hermes-agent commit
-  (`register_tool`, `register_skill`, `get_config`, `plugins.plugin_storage`).
+- The server under the real Hermes gateway: no Hermes build was run for the port to MCP. The
+  server answers `initialize`, `tools/list` and `tools/call` over stdio, as `Mcp.test.scala` drives
+  it.
 - yt-dlp from the VPS: YouTube can refuse a data-centre address, and yt-dlp warns when it has no
   JavaScript runtime. The tool then fails and says so.
 - That the piabrota-hermes App is installed on piabrota/pirsig with contents and pull-request

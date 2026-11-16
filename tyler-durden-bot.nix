@@ -18,6 +18,12 @@ let
   webhookPath = "/p/${profile}/webhooks/${route}";
   tokens = "/run/tyler-durden-bot";
   secrets = "/var/lib/tyler-durden-secrets/app.env";
+  scripts = pkgs.callPackage ./scala { };
+  # The settings of `piabrota tyler-durden-token` (scala/scripts/GithubTokens.scala).
+  tokenConfig = pkgs.writeText "tyler-durden-token.json" (builtins.toJSON {
+    inherit (cfg) repository;
+    inherit tokens home profile;
+  });
 
   # piabrota/agents at a pinned commit (public). A new commit is a PR here.
   agents = pkgs.fetchFromGitHub {
@@ -179,49 +185,8 @@ in
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       unitConfig.ConditionPathExists = secrets;
-      path = with pkgs; [ coreutils curl gnused jq openssl ];
-      script = ''
-        set -u
-        umask 077
-        # GH_APP_ID and GH_APP_PRIVATE_KEY_B64 (the .pem, base64 on one line).
-        GH_APP_ID=$(sed -n 's/^GH_APP_ID=//p' "$CREDENTIALS_DIRECTORY/app")
-        key=$(mktemp)
-        trap 'rm -f "$key"' EXIT
-        sed -n 's/^GH_APP_PRIVATE_KEY_B64=//p' "$CREDENTIALS_DIRECTORY/app" | base64 -d >"$key"
-        b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-        now=$(date +%s)
-        header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
-        payload=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now - 60)) $((now + 540)) "$GH_APP_ID" | b64url)
-        jwt="$header.$payload.$(printf '%s.%s' "$header" "$payload" | openssl dgst -sha256 -sign "$key" | b64url)"
-        api() { curl -fsS --max-time 20 -H "Accept: application/vnd.github+json" "$@"; }
-
-        repo=${cfg.repository}
-        if ! id=$(api -H "Authorization: Bearer $jwt" "https://api.github.com/repos/$repo/installation" | jq -er .id); then
-          echo "tyler-durden-bot is not installed on $repo, or GitHub refused the App's JWT"
-          exit 0
-        fi
-        body=$(jq -cn --arg r "''${repo#*/}" '{repositories: [$r], permissions: {pull_requests: "write"}}')
-        if ! token=$(api -X POST -H "Authorization: Bearer $jwt" -d "$body" \
-          "https://api.github.com/app/installations/$id/access_tokens" | jq -er .token); then
-          echo "$repo: GitHub refused a token"
-          exit 0
-        fi
-        printf '%s' "$token" >"${tokens}/.token"
-        chown root:hermes "${tokens}/.token"
-        chmod 0640 "${tokens}/.token"
-        mv "${tokens}/.token" "${tokens}/token"
-
-        dir=${home}/profiles/${profile}
-        install -d -o hermes -g hermes -m 0750 "$dir"
-        {
-          printf 'GH_TOKEN=%s\n' "$token"
-          grep '^CLAUDE_CODE_OAUTH_TOKEN=' "$CREDENTIALS_DIRECTORY/hermes" || true
-        } >"$dir/.env.new"
-        chown hermes:hermes "$dir/.env.new"
-        chmod 0600 "$dir/.env.new"
-        mv "$dir/.env.new" "$dir/.env"
-        echo "$repo: token for one hour"
-      '';
+      path = with pkgs; [ coreutils curl openssl ];
+      script = "${lib.getExe (scripts.command { name = "tyler-durden-token"; })} ${tokenConfig}";
       serviceConfig = {
         Type = "oneshot";
         LoadCredential = [

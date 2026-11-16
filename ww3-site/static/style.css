@@ -76,8 +76,10 @@ nav {
 .toggle:checked + nav > :not(.toggle-label) { display: none; }
 .toggle:checked + nav .toggle-label { margin: 0; }
 .banner { margin: 16px 0 0; padding: 8px 12px; border: 1px solid #000; font-family: "Mulish", system-ui, sans-serif; font-size: 0.8em; }
-nav a { color: #d0d; }
+/* The highlight of the side column is the neon green of ww3-gpu (--proof in its DESIGN.md). */
+nav a { color: #3dff96; }
 nav .brand { margin: 16px 0 80px; text-align: center; font-size: 1.86em; line-height: 1.23; font-weight: 700; text-transform: uppercase; }
+nav .brand img { display: block; margin: 0 auto 10px; }
 nav .brand a { color: #fff; }
 nav p { margin: 0 0 1.15em; text-align: justify; }
 nav h2 { font-size: 1em; margin: 0; text-transform: uppercase; }

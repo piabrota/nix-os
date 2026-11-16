@@ -40,8 +40,8 @@ terminal, of what answers on piabrota.art and where the rest lives. It is the sm
 
 ## Commit counts
 
-Each project that lives in the org's own repository shows two numbers on its card (A), row (B and C)
-and in its inventory entry: the commits on the default branch, human and agent. `commits` of each
+Each project that lives in the org's own repository shows two numbers on its card (A and B) and
+its row (C): the commits on the default branch, human and agent. `commits` of each
 project in `mockups/data.nix` holds them, and `commitsAsOf` holds the day they were read. A project
 with no `commits` (hermes, the personal repositories) shows nothing. The build has no network, so
 the numbers change only when someone refreshes them.

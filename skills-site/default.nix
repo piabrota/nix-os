@@ -10,8 +10,8 @@ let
   skills = fetchFromGitHub {
     owner = "piabrota";
     repo = "skills";
-    rev = "e19bd4db29b699181dffb3886abc9843705e639f";
-    hash = "sha256-w9HKrciBi3PRJhoGYRBw04/3+r9CVeUFxXOaci1LuD8=";
+    rev = "118064e2d8cb0d43ed73d79ddbd51ca0c0ecb772";
+    hash = "sha256-Z0ED4ede2Qi+prO2OCRBkqtcIv0lg/dtof0xdyf0aak=";
   };
   # Every hex package manifest.toml locks, at its checksum, so the build runs offline.
   hex = map

@@ -1,4 +1,4 @@
-//// Design B, "index": the wordmark, then the FOSS inventory and the rest with nothing before them.
+//// Design B, "index": the wordmark, then the project tiles and the rest with nothing before them.
 //// Served at /index/.
 
 import gleam/int
@@ -24,10 +24,10 @@ pub fn view() -> Element(msg) {
         html.p([attribute.class("lede")], [html.text(data.lede)]),
         parts.metrics("en"),
         parts.status("en"),
-        parts.buttons(#("#inventory", "Read the inventory ↓"), "en"),
+        parts.buttons(#("#projects", "See the projects ↓"), "en"),
       ]),
     ]),
-    html.main([], community.sections("en")),
+    html.main([], [community.projects("en"), ..community.sections("en")]),
     parts.foot("index", "en"),
   ])
 }

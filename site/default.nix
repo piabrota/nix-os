@@ -1,8 +1,8 @@
 # The site, prerendered: Gleam and Lustre (src/) run once on the builder and write the three pages
-# (A at index.html, B at index/, C at paths/, Hermes's configuration at hermes/, the two hosts at hosts/); the output is those pages, static/ and the 无
-# drawing, nothing else. The facts come from ../mockups/data.nix, written as Gleam by data.nix. allowedReferences = [ ] fails the build if the
+# (A at index.html, B at index/, C at paths/, Hermes's configuration at hermes/, the two hosts at hosts/); the output is those pages, static/, the 无
+# drawing and the link preview og.png (og/og.svg, drawn by resvg), nothing else. The facts come from ../mockups/data.nix, written as Gleam by data.nix. allowedReferences = [ ] fails the build if the
 # output names any store path, so gleam, node and the hex packages never reach the VPS closure.
-{ lib, stdenvNoCC, fetchurl, gleam, nodejs, measurementId ? "", hermes ? null }:
+{ lib, stdenvNoCC, fetchurl, gleam, nodejs, resvg, inter, jetbrains-mono, measurementId ? "", hermes ? null }:
 let
   manifest = lib.importTOML ./manifest.toml;
   dataGleam = import ./data.nix { inherit lib measurementId hermes; data = import ../mockups/data.nix; };
@@ -15,15 +15,20 @@ let
       };
     })
     manifest.packages;
+  # The link preview's display face; nixpkgs has no Fjalla One. Builder only, like the other two.
+  fjalla = fetchurl {
+    url = "https://fonts.gstatic.com/s/fjallaone/v16/Yq6R-LCAWCX3-6Ky7FAFnOY.ttf";
+    hash = "sha256-7IhiZLRprAKZu/vwW2+DEMRGsTMbsmP3vC10eYdGkq0=";
+  };
 in
 stdenvNoCC.mkDerivation {
   pname = "piabrota-site";
   inherit (lib.importTOML ./gleam.toml) version;
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [ ./gleam.toml ./manifest.toml ./src ./test ./static ];
+    fileset = lib.fileset.unions [ ./gleam.toml ./manifest.toml ./src ./test ./static ./og ];
   };
-  nativeBuildInputs = [ gleam nodejs ];
+  nativeBuildInputs = [ gleam nodejs resvg ];
   inherit dataGleam;
   passAsFile = [ "dataGleam" ];
 
@@ -71,6 +76,10 @@ stdenvNoCC.mkDerivation {
     cp -R static/. $out/
     cp ${../docs/drawings/mu.svg} $out/mu.svg
     cp ${../docs/img/two-hosts.png} $out/hosts/two-hosts.png
+    # og:image of every page: 1200x627, the size LinkedIn and X ask for (page.gleam's og_image).
+    resvg --skip-system-fonts --use-font-file ${fjalla} \
+      --use-font-file ${inter}/share/fonts/truetype/Inter.ttc \
+      --use-fonts-dir ${jetbrains-mono}/share/fonts og/og.svg $out/og.png
     runHook postInstall
   '';
 

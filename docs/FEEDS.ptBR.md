@@ -1,17 +1,17 @@
 # O feed pessoal
 
-`hermes/feeds/build_feed.py` monta um feed só com as fontes do dono e dá uma nota a cada item, conforme os interesses dele.
-Não usa agente nem modelo. Usa apenas a biblioteca padrão do Python 3.11 ou mais novo (`tomllib`).
+O `piabrota feed-build` ([`scala/feeds/`](../scala/feeds/FeedBuild.scala)) monta um feed só com as fontes do dono e dá uma nota a cada item, conforme os interesses dele.
+Não usa agente nem modelo. Busca as fontes com o `curl`.
 
-O `hermes.nix` instala o script como `scripts/feed-build.py` e as fontes como `feeds/feeds.toml`, dentro de `HERMES_HOME`.
+O `hermes.nix` instala o comando como `scripts/feed-build.sh` e as fontes como `feeds/feeds.toml`, dentro de `HERMES_HOME`.
 Um cron `no_agent` posta o que o script imprime. Este repositório não cria esse cron. Peça ao Hermes que o crie.
 
 ## Como rodar
 
 ```console
-just feeds-test    # testes unitários, offline
+just scala-test    # os testes unitários de todos os scripts, estes inclusive, offline
 just feeds-build   # todas as fontes, imprime o resumo, não grava nada, precisa de rede
-python3 hermes/feeds/build_feed.py --config hermes/feeds/feeds.toml --out /tmp/feed --no-state
+nix run .#piabrota -- feed-build --config hermes/feeds/feeds.toml --out /tmp/feed --no-state
 ```
 
 - `--dry-run`: imprime o resumo e não grava nada. Não lê o estado.
@@ -74,7 +74,7 @@ A chave de fonte `exclude_terms = ["canary"]` descarta o item com um termo no t�
 3. Defina `id` (único), `group` (um `id` de `[[group]]`), `kind`, `weight` (1 a 5) e `limit`.
 4. Fonte `feed` e fonte `apple_chart` precisam de `url`. Fonte `github_search` precisa de `query`. A busca aceita `{d7}`, `{d14}` e `{d30}`.
 5. Chaves opcionais: `max_age_days`, `pinned`, `pinned_keep`, `requires_match` e `genres` (para o ranking).
-6. Rode `just feeds-test`. Um teste confere se o `feeds.toml` está completo.
+6. Rode `just scala-test`. Um teste confere se o `feeds.toml` está completo.
 
 Para incluir um interesse, crie uma tabela `[[interest]]` com `name`, `origin` (`chat` ou `profile`), `weight` e `terms`. Inclua a linha dele na tabela acima.
 Um feed de podcast pode ter 5 MB. O script lê só o primeiro 1,5 MB, então um feed longo não é problema.

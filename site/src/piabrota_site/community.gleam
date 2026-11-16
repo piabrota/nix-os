@@ -1,5 +1,5 @@
-//// What every design shares: the anchor bar, the structure, why it is open, the dogma, the FOSS
-//// inventory, the board (the people, each with a GitHub pill and their website), the partners (each
+//// What every design shares: the project tiles, the anchor bar, the structure, why it is open, the
+//// dogma, the board (the people, each with a GitHub pill and their website), the partners (each
 //// with its logo as GitHub publishes it), and the forks, a PUBLIC inventory in the manner of
 //// h0ffmann/h0ffmann. Every fact is in mockups/data.nix.
 
@@ -10,7 +10,8 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import piabrota_site/data.{
-  type Fork, type Layer, type Partner, type Person, type Principle, type Project,
+  type Closed, type Fork, type Layer, type Partner, type Person, type Principle,
+  type Project,
 }
 import piabrota_site/i18n
 import piabrota_site/parts
@@ -21,7 +22,6 @@ pub fn sections(lang: String) -> List(Element(msg)) {
     structure(lang),
     why(lang),
     dogma(lang),
-    inventory(lang),
     board(lang),
     partners(lang),
     forks(lang),
@@ -46,7 +46,7 @@ fn anchors(lang: String) -> Element(msg) {
     [
       html.div([attribute.class("wrap")], {
         use id <- list.map([
-          "structure", "why", "dogma", "inventory", "board", "partners", "forks",
+          "projects", "structure", "why", "dogma", "board", "partners", "forks",
         ])
         html.a([attribute.href("#" <> id)], [
           html.text(i18n.t(lang, "nav." <> id)),
@@ -128,79 +128,160 @@ fn dogma(lang: String) -> Element(msg) {
   ])
 }
 
-/// Every FOSS project, with each fact in words: closed-source's detail, one entry a project.
-fn inventory(lang: String) -> Element(msg) {
-  html.section([attribute.class("wrap"), attribute.id("inventory")], [
-    head(lang, "inventory"),
-    html.p([attribute.class("sub")], [
-      html.text(
-        int.to_string(list.length(data.projects))
-        <> i18n.t(lang, "sub.inventory"),
-      ),
-    ]),
-    html.ol(
-      [attribute.class("inventory")],
-      list.map(data.projects, entry(_, lang)),
+/// Every FOSS project as a tile, in the lanes of the profile's "How it fits" figure. A tile holds
+/// every fact of the project: one place for the repositories, not two.
+pub fn projects(lang: String) -> Element(msg) {
+  html.section([attribute.class("wrap"), attribute.id("projects")], [
+    parts.section_head(
+      i18n.t(lang, "head.projects"),
+      i18n.t(lang, "note.projects"),
     ),
+    html.p([attribute.class("sub")], [
+      html.text(i18n.t(lang, "sub.projects")),
+    ]),
+    ..list.append(
+      list.map(data.lanes, fn(lane) {
+        let projects = parts.in_lane(lane.id)
+        html.div([attribute.class("lane")], [
+          html.h3([], [
+            html.text(i18n.fact(lang, "lane." <> lane.id, lane.label)),
+            html.span([attribute.class("count")], [
+              html.text(int.to_string(list.length(projects))),
+            ]),
+          ]),
+          html.ul([attribute.class("tiles")], list.map(projects, tile(_, lang))),
+        ])
+      }),
+      closed_lane(lang),
+    )
   ])
 }
 
-fn entry(p: Project, lang: String) -> Element(msg) {
-  let fact = fn(term, value) {
-    html.div([], [
-      html.dt([], [html.text(term)]),
-      html.dd([], [html.text(value)]),
-    ])
+/// The projects that are not FOSS yet. Their tiles link nowhere: the repositories are private.
+/// With none, there is no lane.
+fn closed_lane(lang: String) -> List(Element(msg)) {
+  case data.closed {
+    [] -> []
+    closed -> [
+      html.div([attribute.class("lane")], [
+        html.h3([], [
+          html.text(i18n.t(lang, "closed.lane")),
+          html.span([attribute.class("count")], [
+            html.text(int.to_string(list.length(closed))),
+          ]),
+        ]),
+        html.ul(
+          [attribute.class("tiles")],
+          list.map(closed, closed_tile(_, lang)),
+        ),
+      ]),
+    ]
   }
+}
+
+fn closed_tile(p: Closed, lang: String) -> Element(msg) {
+  html.li([attribute.class("tile"), attribute.data("name", p.name)], [
+    html.div([attribute.class("tile-top")], [
+      html.span(
+        [attribute.class("project-logo glyph"), attribute.aria_hidden(True)],
+        [html.text(p.glyph)],
+      ),
+      html.div([attribute.class("tile-tags")], [
+        html.span([], [html.text(i18n.t(lang, "closed.tag"))]),
+        html.span([], [html.text(p.lang)]),
+      ]),
+    ]),
+    html.h4([], [html.text(p.name)]),
+    html.p([attribute.class("blurb")], [
+      html.text(i18n.fact(lang, "project." <> p.name, p.blurb)),
+    ]),
+  ])
+}
+
+/// A tile: the tags, the name, the blurb. The name's link covers the whole tile, as on
+/// closed-source; `tile_href` always has somewhere to go.
+fn tile(p: Project, lang: String) -> Element(msg) {
   html.li(
     [
-      attribute.class("entry"),
+      attribute.class("tile"),
       attribute.data("state", parts.state_class(p.state)),
+      attribute.data("name", p.name),
     ],
     [
-      html.div([attribute.class("card-head")], [
-        html.div([attribute.class("card-name")], [
-          parts.logo(p),
-          html.h3([], [html.text(p.name)]),
+      html.div([attribute.class("tile-top")], [
+        parts.logo(p),
+        html.div([attribute.class("tile-tags")], [
+          parts.pill(p.state, lang),
+          html.span([], [html.text(p.lang)]),
+          html.span([], [html.text(i18n.t(lang, "origin." <> p.origin))]),
         ]),
-        parts.pill(p.state, lang),
+      ]),
+      html.h4([], [
+        html.a([attribute.class("tile-link"), attribute.href(tile_href(p))], [
+          html.text(p.name),
+        ]),
       ]),
       html.p([attribute.class("blurb")], [
         html.text(i18n.fact(lang, "project." <> p.name, p.blurb)),
       ]),
-      html.dl(
-        [],
-        list.append(
-          [
-            fact(
-              i18n.t(lang, "term.origin"),
-              i18n.t(lang, "origin." <> p.origin),
-            ),
-            fact(i18n.t(lang, "term.language"), p.lang),
-            fact(i18n.t(lang, "term.licence"), p.licence),
-            fact(i18n.t(lang, "term.push"), p.pushed),
-          ],
-          case parts.commits_counts(p, lang) {
-            Error(Nil) -> []
-            Ok(counts) -> [
-              html.div([], [
-                html.dt([], [html.text(i18n.t(lang, "commits.label"))]),
-                html.dd([attribute.title(parts.commits_tip(lang))], [
-                  html.text(counts),
-                ]),
-              ]),
-            ]
-          },
+      html.span([attribute.class("meta")], [
+        html.text(
+          p.licence
+          <> " · "
+          <> p.where
+          <> " · "
+          <> i18n.t(lang, "term.push")
+          <> " "
+          <> p.pushed,
         ),
-      ),
-      html.div([attribute.class("links")], [
-        html.a([attribute.href(p.repo), attribute.rel("noopener")], [
-          html.text(i18n.t(lang, "link.repository")),
-        ]),
-        parts.address(p),
       ]),
+      repository(p, lang),
+      paper(p, lang),
+      parts.commits(p, lang),
     ],
   )
+}
+
+/// The paper badge, "aiXiv 2611.01105", linked to its abstract page; nothing without a paper.
+fn paper(p: Project, lang: String) -> Element(msg) {
+  case string.split_once(p.paper, "/abs/") {
+    Error(Nil) -> element.none()
+    Ok(#(_, id)) ->
+      html.a(
+        [
+          attribute.class("paper"),
+          attribute.href(p.paper),
+          attribute.title(i18n.t(lang, "paper.title")),
+        ],
+        [
+          html.span([attribute.class("paper-label")], [html.text("aiXiv")]),
+          html.text(" " <> id),
+        ],
+      )
+  }
+}
+
+/// The repository, when the tile's own link goes to the project's site instead.
+fn repository(p: Project, lang: String) -> Element(msg) {
+  case tile_href(p) == p.repo {
+    True -> element.none()
+    False ->
+      html.a(
+        [
+          attribute.class("repo"),
+          attribute.href(p.repo),
+          attribute.rel("noopener"),
+        ],
+        [html.text(i18n.t(lang, "link.repository"))],
+      )
+  }
+}
+
+fn tile_href(p: Project) -> String {
+  case p.href {
+    "" -> p.repo
+    href -> href
+  }
 }
 
 /// The avatar GitHub publishes for a login, at twice the drawn size for sharp screens.

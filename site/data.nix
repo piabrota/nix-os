@@ -24,6 +24,7 @@ let
     "origin: ${str (data.origin p)}"
     "pushed: ${str p.pushed}"
     "commits: ${commits p}"
+    "paper: ${str (p.paper or "")}"
     "state: ${state.${p.state}})"
   ];
   service = s: "Service(name: ${str s.name}, label: ${str s.label}, host: ${str s.host}, access: ${str s.access}, blurb: ${str s.blurb})";
@@ -90,6 +91,8 @@ assert checked;
       origin: String,
       pushed: String,
       commits: Option(Commits),
+      /// The project's paper (an aiXiv abstract page); "" for none.
+      paper: String,
       state: State,
     )
   }

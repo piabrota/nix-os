@@ -86,14 +86,10 @@
         toplevel = self.nixosConfigurations.piabrota.config.system.build.toplevel;
         toplevel-piabrota2 = self.nixosConfigurations.piabrota2.config.system.build.toplevel;
         # The favicon build: the three files exist, the ICO and the PNG are well formed, and the SVG
-        # is the drawing of parts.eye (favicon/test.sh). The output has no store reference.
-        favicon = pkgs.runCommand "favicon-check" { nativeBuildInputs = [ pkgs.libxml2 ]; } ''
-          sh ${./favicon/test.sh} ${self.packages.${system}.favicon} ${pkgs.lib.fileset.toSource {
-            root = ./.;
-            fileset = pkgs.lib.fileset.unions [ ./site/src/piabrota_site/parts.gleam ./figures-site/default.nix ./skills-site/src/www.gleam ];
-          }}
-          touch $out
-        '';
+        # is the drawing of parts.eye (favicon/check.nix). The output has no store reference.
+        favicon = pkgs.callPackage ./favicon/check.nix { inherit (self.packages.${system}) favicon; };
+        # metrics/index.html and its fixtures (metrics/test/page.nix).
+        metrics-page = pkgs.callPackage ./metrics/test/page.nix { };
         # OpenRig's index.html still says `<link rel="icon" href="data:," />`, the literal that
         # openrig.nix swaps for the eye. If an upstream bump changes it, the swap does nothing.
         openrig-icon =
@@ -164,13 +160,6 @@
           art=${self.packages.${system}.mu-art}
           diff -u ${./docs/drawings/mu.svg} $art/mu.svg || { echo 'run `just drawing`' >&2; exit 1; }
           diff -u ${./docs/drawings/mu.desmos.json} $art/mu.desmos.json || { echo 'run `just drawing`' >&2; exit 1; }
-          touch $out
-        '';
-        # The unit tests of the owner's Hermes plugins (hermes/plugins/), with git and a stub gh.
-        hermes-plugins = pkgs.runCommand "hermes-plugins-test"
-          { nativeBuildInputs = [ pkgs.python3 pkgs.git ]; } ''
-          export HOME=$TMPDIR PYTHONDONTWRITEBYTECODE=1
-          cd ${./hermes/plugins}/tests && python3 -m unittest -v test_plugins
           touch $out
         '';
         # The dashboard bundle still holds the docs address that hermes-web.nix swaps for
@@ -341,10 +330,15 @@
         # the optional login, the pull and the published location (metrics/test.nix). Needs KVM to
         # run in reasonable time.
         metrics = pkgs.testers.runNixOSTest ./metrics/test.nix;
+        # The scripts' binary and its tests (scala/).
+        piabrota = self.packages.${system}.piabrota;
       };
 
       packages.${system} = {
         inherit (pkgs) deploy-rs;
+        # Every script of this repository, in Scala 3, as one native binary (scala/); its tests
+        # run in the build. A module takes a command of it with `(pkgs.callPackage ./scala { }).command`.
+        piabrota = pkgs.callPackage ./scala { };
         # The PGX release, patched for the store (pgx/package.nix); not in nixpkgs.
         pgx = pkgs.callPackage ./pgx/package.nix { };
         # The eye as favicon.svg, favicon.ico and apple-touch-icon.png (favicon/): served on every vhost.
@@ -364,6 +358,8 @@
         ww3-site = self.nixosConfigurations.piabrota2.config.piabrota.ww3.root;
         # The website of h0ffmann/closed-source (closed-site/), at a pinned commit: served at closed.piabrota.art.
         closed-site = self.nixosConfigurations.piabrota2.config.piabrota.closedSource.root;
+        # The website of h0ffmann/h0ffmann (hffmnn-site/), at a pinned commit: served at hffmnn.piabrota.art.
+        hffmnn-site = self.nixosConfigurations.piabrota2.config.piabrota.hffmnn.root;
         # The site's facts as Gleam, from mockups/data.nix (`just site-data`; the build writes its own).
         site-data = pkgs.writeText "data.gleam"
           (import ./site/data.nix {
@@ -387,6 +383,11 @@
         # npx for the OpenPencil MCP server (.mcp.json). Never on the VPS.
         site = pkgs.mkShell {
           packages = [ pkgs.gleam pkgs.nodejs pkgs.just ];
+        };
+        # Work on scala/ (`just scala`, `just scala-test`, `just scala-lock`): the same scala-cli,
+        # clang and JDK as the Nix build.
+        scala = pkgs.mkShell {
+          packages = with self.packages.${system}.piabrota.toolchain; [ scalaCli jdk pkgs.clang pkgs.which pkgs.just ];
         };
       };
 

@@ -3,6 +3,13 @@
   "hits": [
    {
     "conceptdoi": "10.5281/zenodo.23333656",
+    "doi": "10.5281/zenodo.24182034",
+    "metadata": {
+     "version": "v0.4.0"
+    }
+   },
+   {
+    "conceptdoi": "10.5281/zenodo.23333656",
     "doi": "10.5281/zenodo.23679470",
     "metadata": {
      "version": "v0.3.4"

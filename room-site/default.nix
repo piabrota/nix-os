@@ -3,16 +3,16 @@
 # allowedReferences = [ ] fails the build if it names a store path, so node and the npm
 # packages never reach the VPS closure. A new commit of piabrota/room shows on the site only
 # after a PR here changes rev, hash and npmDepsHash: `.github/workflows/room-pin.yml` opens that PR
-# by itself when room's main moves (`scripts/room-pin.sh`, `just room-pin`).
+# by itself when room's main moves (`piabrota pins one room`, `just room-pin`).
 { buildNpmPackage, fetchFromGitHub, nodejs_22 }:
 buildNpmPackage {
   pname = "piabrota-room";
-  version = "0-unstable-2026-11-11";
+  version = "0-unstable-2026-11-15";
   src = fetchFromGitHub {
     owner = "piabrota";
     repo = "room";
-    rev = "74e806d96edfcd4f6713cbdd3a405dc30c165b12";
-    hash = "sha256-InPanPqIQ2v869G3Mf/49i4g+KAs5zh+8hW+4qPDhrc=";
+    rev = "06866f90689c35ed7149ed368fabf6fc84e1b808";
+    hash = "sha256-6vE6OQDeHEZC4plRMxeIx01kna1PBYtwxA+dQ5UVnzk=";
   };
   # The hash of package-lock.json's packages: `nix run nixpkgs#prefetch-npm-deps -- package-lock.json`.
   npmDepsHash = "sha256-/uqbxk0gN7bIosBtSKr8xF6XG4H3TaJf9LGADFd2muQ=";

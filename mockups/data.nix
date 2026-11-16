@@ -34,11 +34,11 @@ rec {
     headline = "Open software, made in Rio de Janeiro.";
     lede = "Each project is its own repository, with its own README, licence and tests. The source is open, and so is the method.";
     contact = "mhoffmannfs [at] gmail.com";
-    links = [ "structure" "dogma" "inventory" "board" "forks" ];
+    links = [ "projects" "structure" "dogma" "board" "forks" ];
   };
 
   # Projects that are not FOSS yet. They stay out of `projects`: no repository link, no place in the
-  # FOSS inventory or its counts, and no place in the mockups. None today: chaceon went public.
+  # project tiles or the counts, and no place in the mockups. None today: chaceon went public.
   # An empty list draws no lane.
   closed = [ ];
 
@@ -64,6 +64,23 @@ rec {
   # logo: the repository's own logo, at a pinned commit, never stored here. glyph: the text mark of a
   # repository that has no logo yet, as the org profile prints it.
   projects = [
+    {
+      # Personal repository of h0ffmann; facts read from GitHub on 2026-11-11 (description, languages,
+      # LICENSE and .zenodo.json at 74bc58e, the v0.2.0 tag). It has no logo of its own: the logo is
+      # the wave icon of its site, ww3-site/static/favicon.svg here, at a pinned commit.
+      name = "ww3-gpu";
+      owner = "h0ffmann";
+      logo = "https://raw.githubusercontent.com/piabrota/nix-os/fedbbf01da5b9d2a8395a3f6c008cbb6491dec1d/ww3-site/static/favicon.svg";
+      lane = "company";
+      blurb = "A bit-for-bit GPU port of WAVEWATCH III, the wave model, in C++, built by agentic coding and agentic research. Release v0.2.0 on 2026-11-11.";
+      lang = "C++, Shell, Python";
+      licence = "MIT";
+      pushed = "2026-11-11";
+      site = "wave.piabrota.art";
+      # Its paper on aiXiv, "Wave models on GPUs" (aixiv.online/abs/2611.01104, read 2026-11-11).
+      paper = "https://aixiv.online/abs/2611.01104";
+      state = "live";
+    }
     {
       name = "mu";
       logo = "https://raw.githubusercontent.com/piabrota/mu/d8762696790b97e874cbd9a580ceb957ecb23c6e/docs/drawings/mu.svg";
@@ -275,6 +292,9 @@ rec {
       licence = "MPL-2.0";
       pushed = "2026-11-09";
       site = "proof.piabrota.art";
+      # Its paper on aiXiv, "A decision layer for contextual bandits, proved in Agda"
+      # (aixiv.online/abs/2611.01105, read 2026-11-11).
+      paper = "https://aixiv.online/abs/2611.01105";
       state = "live";
     }
     {
@@ -307,7 +327,7 @@ rec {
   structure = [
     { name = "dojo"; role = "the common layer"; text = "The umbrella: every repository as a submodule at a pinned commit, and one routing table. It inherits the rules from mu, and it holds no product code."; href = "https://github.com/piabrota/dojo"; }
     { name = "mu"; role = "the company chart"; text = "The dogma, the charter, the standards and the index of the repositories. It gives dojo the rules."; href = "https://github.com/piabrota/mu"; }
-    { name = "the products"; role = "each in its own repository"; text = "Each has its own README, licence and checks. A change to a product is made in that repository."; href = "#inventory"; }
+    { name = "the products"; role = "each in its own repository"; text = "Each has its own README, licence and checks. A change to a product is made in that repository."; href = "#projects"; }
     { name = "pirsig"; role = "the brain"; text = "Smart notes, PARA and a track record of the high-level decisions."; href = "https://github.com/piabrota/pirsig"; }
   ];
 
@@ -333,9 +353,10 @@ rec {
   ];
 
   # The board: the people who build piabrota, from the Board of the org profile and the org's
-  # members, who agree (2026-11-01). `site` is each one's own website, "" for none.
+  # members, who agree (2026-11-01). `site` is each one's own website, "" for none; h0ffmann's is
+  # hffmnn.piabrota.art (the owner, 2026-11-13).
   people = [
-    { login = "h0ffmann"; name = "Matheus Hoffmann"; about = "water animal"; place = "Florianópolis, Brazil"; site = "https://h0ffmann.github.io/h0ffmann/"; }
+    { login = "h0ffmann"; name = "Matheus Hoffmann"; about = "water animal"; place = "Florianópolis, Brazil"; site = "https://hffmnn.piabrota.art/"; }
     { login = "aracyla"; name = ""; about = "General purpose developer currently focused on frontend development."; place = "Brazil"; site = "https://aracyla.xyz"; }
     { login = "robkler"; name = "Rôb Klér Soares da Silva Júnior"; about = "Senior Backend Engineer"; place = "Rio de Janeiro, Brazil"; site = ""; }
   ];

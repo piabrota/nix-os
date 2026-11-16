@@ -146,6 +146,12 @@ fn side(l: String, home: String) -> Element(msg) {
     ),
     html.p([attribute.class("brand")], [
       html.a([attribute.href(home <> "./")], [
+        html.img([
+          attribute.src(up(l) <> home <> "favicon.svg"),
+          attribute.alt(""),
+          attribute.width(72),
+          attribute.height(72),
+        ]),
         html.text("ww3"),
         html.br([]),
         html.text("gpu"),
@@ -157,9 +163,10 @@ fn side(l: String, home: String) -> Element(msg) {
     html.h2([], [html.text(t(l, "side.links"))]),
     html.ul([], [
       item(repo, t(l, "links.repository")),
-      item("https://doi.org/" <> content.doi, "DOI " <> content.doi),
       item(home <> "lineage/", t(l, "lineage.title")),
     ]),
+    html.h2([], [html.text(t(l, "side.publishers"))]),
+    html.ul([], publishers(l)),
     html.h2([], [html.text(t(l, "side.on_this_page"))]),
     html.ul([], [
       item(home <> "#research", t(l, "research.title")),
@@ -204,7 +211,7 @@ pub const logos = [
   #("piabrota", "https://avatars.githubusercontent.com/piabrota?s=128"),
   #(
     "marola-dev",
-    "https://raw.githubusercontent.com/marola-dev/marola/d0d576ea014335acbc190a09ce9fcbe0f89a391d/docs/assets/logo.svg",
+    "https://raw.githubusercontent.com/marola-dev/marola/19fdf0df9533aa22f25ae3024ab2abf61de73dab/docs/assets/logo-v2/marola-logo-v2.svg",
   ),
   #(
     "ouroboric-dev",
@@ -561,6 +568,34 @@ fn person(p: Person) -> Element(msg) {
   ])
 }
 
+/// Where the work is published: the Zenodo record by its concept DOI, then the preprint's aiXiv
+/// and arXiv records, each read from .zenodo.json; one it does not list yet is shown as pending,
+/// with no link.
+fn publishers(l: String) -> List(Element(msg)) {
+  let record = fn(name, url) {
+    let entry = case url {
+      "" -> [html.text(t(l, "publishers.pending"))]
+      _ -> [a(url, last_segment(url))]
+    }
+    html.li([], [html.text(name <> ": "), ..entry])
+  }
+  [
+    html.li([], [
+      html.text("Zenodo: "),
+      a("https://doi.org/" <> content.doi, "DOI " <> content.doi),
+    ]),
+    record("aiXiv", content.aixiv),
+    record("arXiv", content.arxiv),
+  ]
+}
+
+fn last_segment(url: String) -> String {
+  case list.last(string.split(url, "/")) {
+    Ok(id) -> id
+    Error(Nil) -> url
+  }
+}
+
 fn cite(l: String) -> Element(msg) {
   let release = case content.latest_release {
     "" -> []
@@ -568,7 +603,7 @@ fn cite(l: String) -> Element(msg) {
   }
   section("cite", t(l, "cite.title"), [
     p(t(l, "cite.about")),
-    html.p([], [a("https://doi.org/" <> content.doi, content.doi)]),
+    html.ul([], publishers(l)),
     p(content.record_title),
     ..list.append(release, [
       html.ul([], list.map(content.people, person)),

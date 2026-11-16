@@ -55,5 +55,7 @@
   "figures.page": "交互页面",
   "side.toggle": "隐藏或显示侧栏",
   "side.languages": "语言",
-  "banner": "这个页面是机器翻译的，还没有母语读者检查过。有不一致时，以英文为准。"
+  "banner": "这个页面是机器翻译的，还没有母语读者检查过。有不一致时，以英文为准。",
+  "side.publishers": "发表",
+  "publishers.pending": "待提交"
 }

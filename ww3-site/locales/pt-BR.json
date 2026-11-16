@@ -55,5 +55,7 @@
   "figures.page": "página interativa",
   "side.toggle": "esconder ou mostrar a coluna lateral",
   "side.languages": "idiomas",
-  "banner": ""
+  "banner": "",
+  "side.publishers": "publicações",
+  "publishers.pending": "pendente"
 }
