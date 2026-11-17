@@ -118,18 +118,8 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::notice::${{ matrix.node }} has no address secret yet; not deployed (docs/DEPLOY.md, \"A second host\")."
           fi
-      - uses: cachix/install-nix-action@v31
-        if: steps.host.outputs.ready == 'true'
-      # The store the build job saved for this commit; deploy-rs then finds the system built and
-      # only copies it. If that cache is missing, the newest deploy cache keeps the rebuild small.
-      - uses: nix-community/cache-nix-action@v7
-        if: steps.host.outputs.ready == 'true'
-        with:
-          primary-key: nix-${{ runner.os }}-deploy-${{ github.sha }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-deploy-
-          save: false
-
-      # DEPLOY_KNOWN_HOSTS holds one line per host.
+      # DEPLOY_KNOWN_HOSTS holds one line per host. Before install-nix-action so the `always()`
+      # summary step at the end can still reach the host when a step in between fails.
       - name: SSH key and pinned host key
         if: steps.host.outputs.ready == 'true'
         env:
@@ -140,6 +130,17 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - uses: cachix/install-nix-action@v31
+        if: steps.host.outputs.ready == 'true'
+      # The store the build job saved for this commit; deploy-rs then finds the system built and
+      # only copies it. If that cache is missing, the newest deploy cache keeps the rebuild small.
+      - uses: nix-community/cache-nix-action@v7
+        if: steps.host.outputs.ready == 'true'
+        with:
+          primary-key: nix-${{ runner.os }}-deploy-${{ github.sha }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-deploy-
+          save: false
 
       # A merge that changes hermes-agent.service makes the switch reload or restart Hermes. Before
       # that, copy the system to the host (deploy-rs then finds it there, so the switch follows in
@@ -169,6 +170,8 @@ jobs:
         env:
           SSH_USER: ${{ inputs.ssh_user || 'deploy' }}
         run: |
+          ssh -o BatchMode=yes "$SSH_USER@$DEPLOY_HOST" \
+            'sudo systemctl stop metrics-pull.timer metrics-probe.timer "systemd-coredump@*.service" metrics-pull.service metrics-probe.service 2>/dev/null || true'
           nix run .#deploy-rs -- ".#${{ matrix.node }}" \
             --hostname "$DEPLOY_HOST" \
             --ssh-user "$SSH_USER" \

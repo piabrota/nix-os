@@ -266,9 +266,10 @@ in
       description = "Cut marola's base map tiles file";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
+      restartIfChanged = false;
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = utils.escapeSystemdExecArgs [
+        ExecStart = "-" + utils.escapeSystemdExecArgs [
           (lib.getExe tilesBuilder)
           tiles
           tilesStamp
@@ -292,6 +293,7 @@ in
       description = "Start marola-tiles when the base map pin, the areas or the builder change";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
       # The builder too: a fix to it reruns the cut even when the pin and the areas stay.
       restartTriggers = [ tilesStamp tilesBuilder ];
       serviceConfig = {

@@ -619,6 +619,7 @@ in
     systemd.services.openrig-wf-keeper = mkIf wf.alwaysOn.enable {
       description = "Keep the OpenRig rig wave-forecaster-dev up";
       after = [ "openrig.service" ];
+      restartIfChanged = false;
       environment.HOME = "/var/lib/openrig-wf-keeper";
       serviceConfig = {
         Type = "oneshot";
