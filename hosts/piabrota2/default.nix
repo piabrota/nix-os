@@ -106,6 +106,10 @@
     # marola-app main's latest image, jvm-7061a08 (CI run 39499882444), with the same --site and
     # board schema as marola-site's pin. Drop it when marola-site's pin moves past it.
     boards.build.image = "ghcr.io/marola-dev/marola-app:jvm-7061a08@sha256:7656c11b9e429059913310f5e934a6dd82028d33974cffdb3c5ee2c5e2a7d286";
+    # The first build of a day runs at 01:01 America/Sao_Paulo, so the board's `today` is right
+    # after midnight local time; the other runs keep the same minute (04:01, 10:01, 16:01 UTC).
+    # Brazil has no DST, so the UTC times hold all year (the owner, 2026-11-17).
+    boards.build.calendar = "*-*-* 04,10,16,22:01:00 UTC";
   };
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
