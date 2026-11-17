@@ -328,6 +328,7 @@ let
     # filter the call fails silently, so this lets back one call that sets a normal priority.
     SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" "sched_setscheduler" ];
     ReadWritePaths = [ outDir stateDir ];
+    LimitCORE = 0;
     MemoryMax = "64M";
     TasksMax = 64;
     CPUWeight = 20;
@@ -487,8 +488,12 @@ in
         message = "piabrota.metrics.collector needs piabrota.metrics.name.";
       }];
 
+      # A deploy must not stop a running timer oneshot and start it again in the switch: the next
+      # timer tick runs the new unit, and a slow or failing run (or a 60 s core dump from an older
+      # generation) would hold switch-to-configuration past deploy-rs's rollback timeout.
       systemd.services.metrics-collect = {
         description = "Write this host's metrics file";
+        restartIfChanged = false;
         environment = {
           METRICS_NAME = cfg.name;
           METRICS_LABEL = if cfg.label == "" then cfg.name else cfg.label;
@@ -519,6 +524,7 @@ in
       # A short curl to each site, one after the other, and one to GitHub in 10 minutes.
       systemd.services.metrics-probe = {
         description = "Ask this host's sites for an answer";
+        restartIfChanged = false;
         # curl for the sites and GitHub, stat (coreutils) for the visits log.
         path = [ pkgs.coreutils pkgs.curl ];
         environment = {
@@ -574,6 +580,7 @@ in
       # host files of the served folder and writes two more.
       systemd.services.metrics-export = {
         description = "Write every host's metrics as all.json and metrics.prom";
+        restartIfChanged = false;
         environment = {
           OUT_DIR = outDir;
           METRICS_STALE = "30";
@@ -595,6 +602,7 @@ in
 
       systemd.services.metrics-pull = {
         description = "Fetch ${cfg.pull.name}'s metrics file";
+        restartIfChanged = false;
         path = [ pkgs.curl ];
         environment = {
           METRICS_PULL_URL = cfg.pull.url;
