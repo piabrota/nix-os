@@ -359,8 +359,9 @@ de uma hora. A
 unit `hermes-github-token` gera esses tokens a cada 45 minutos para piabrota, marola-dev e
 h0ffmann, com os direitos de contents, pull requests e issues (não workflows). O `git` recebe o
 token por um credential helper que escolhe a conta pelo dono do repositório, e o `gh` também.
-O Hermes só dá push em branches `hermes/*`: o `hermes/dangerous-patterns.yaml` bloqueia merges e
-todo outro push, e um ruleset em cada branch padrão bloqueia o push nele no próprio GitHub. Sem o
+O Hermes pode dar push em qualquer branch (pedido do dono, 2026-11-20): o `hermes/dangerous-patterns.yaml`
+continua bloqueando merges, force-push, exclusões de branch e pushes em massa, e um ruleset em cada
+branch padrão bloqueia o push nele no próprio GitHub. Sem o
 arquivo da chave, a unit não faz nada. Em dois repositórios do marola o Hermes age como
 marola-pr-bot[bot] quando `piabrota.openrig.marola.enable` está ligado (`marola-bot.nix`,
 [OPENRIG.md](OPENRIG.md), em inglês).

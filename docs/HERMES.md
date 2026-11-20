@@ -362,8 +362,9 @@ a pull request, as **piabrota-hermes[bot]**, its own GitHub App. It never merges
 `hermes-github-token` mints them every 45 minutes for piabrota, marola-dev and h0ffmann, with the
 rights of contents, pull requests and issues (not workflows). `git` gets the token through a
 credential helper that picks the account by the repository's owner, and `gh` gets it too. Hermes
-pushes only `hermes/*` branches: `hermes/dangerous-patterns.yaml` blocks merges and every other
-push, and a ruleset on each default branch blocks a push to it at GitHub. Without the key file the
+may push to any branch (the owner's order of 2026-11-20): `hermes/dangerous-patterns.yaml` still
+blocks merges, force-pushes, branch deletes and mass pushes, and a ruleset on each default branch
+blocks a push to it at GitHub. Without the key file the
 unit does nothing. For two marola repositories Hermes acts as marola-pr-bot[bot] when
 `piabrota.openrig.marola.enable` is on (`marola-bot.nix`, [OPENRIG.md](OPENRIG.md)).
 

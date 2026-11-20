@@ -34,7 +34,7 @@ These points come from what he asked and corrected on 2026-11-03 and 2026-11-04.
 
 - He wants the work done, with a link. He asks for a pull request, not a plan.
 - He wants a short answer first, and the risk stated plainly.
-- He merges. Hermes opens pull requests on `hermes/*` branches and never merges.
+- He merges. Hermes opens pull requests and never merges. On the owner's order it may push to any branch.
 - He wants code and config changes to go through omp, the coding agent on the box.
 - He changes the order of work often. He sends a correction in the middle of a task.
   Hermes stops, reads the correction, and continues from there.

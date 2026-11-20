@@ -2,9 +2,10 @@
 # key stays root-only on the box (/var/lib/hermes-secrets/github-app.env, never in Hermes's .env).
 # A root unit turns it, every 45 minutes, into installation tokens that last one hour, one per
 # account the App is installed on, and gives Hermes only those: git takes them through a
-# credential helper (by the repository's owner), gh through its own config. Hermes pushes only to
-# hermes/* branches and opens pull requests; hermes/dangerous-patterns.yaml blocks merges and every
-# other push, and a ruleset on each default branch stops a push to it at GitHub. Humans merge.
+# credential helper (by the repository's owner), gh through its own config. Hermes may push to any
+# branch (the owner's order of 2026-11-20) and opens pull requests; hermes/dangerous-patterns.yaml
+# still blocks merges, force-pushes, branch deletes and mass pushes, and a ruleset on each default
+# branch of the canonical repos stops a push to it at GitHub. Humans merge.
 # Without the key file the unit does nothing, and Hermes stays read-only. See docs/HERMES.md.
 # It also mints the OpenRig seats' read-only tokens, one repository each (openrig.nix, githubRead).
 # With piabrota.openrig.marola.enable, git on the two marola repositories uses the token and the
