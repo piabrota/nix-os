@@ -1,8 +1,10 @@
 # Matheus Hoffmann (h0ffmann)
 
-> Staff software engineer and forward deployed engineer in Florianópolis, Brazil. He runs Piabrota AI Studio, leads the marola open-source organization, and ports the WAVEWATCH III ocean wave model to GPUs at UFSC. This repository, piabrota/nix-os, is the NixOS configuration of the servers of Piabrota.
+> Staff software engineer and forward deployed engineer in Florianópolis, Brazil. He has written software for 10 years, since LIOC (UFRJ) in 2015: Scala for backend and data, Python for ML and Airflow. Now he runs Piabrota AI Studio, leads the marola open-source organization, and ports the WAVEWATCH III ocean wave model to GPUs at UFSC. This repository, piabrota/nix-os, is the NixOS configuration of the servers of Piabrota.
 
-This file is an index of all his public work, for language models and for persons. It follows https://llmstxt.org and it is in ASD-STE100 Simplified Technical English. Each link has one short note; the detail is behind the link. When this file and a linked repository do not agree, the repository is correct. The facts come from h0ffmann/h0ffmann (its llms.txt and `site/data/works.tsv` at commit 80504b5, 2026-11-10) and from `mockups/data.nix` of this repository.
+This file is an index of all his public work, for language models and for persons. It follows https://llmstxt.org and it is in ASD-STE100 Simplified Technical English. Each link has one short note; the detail is behind the link. When this file and a linked repository do not agree, the repository is correct. The facts come from h0ffmann/h0ffmann (its llms.txt and `site/data/works.tsv` at commit 82294a0, 2026-11-13) and from `mockups/data.nix` of this repository.
+
+His works with a DOI record are listed with their DOIs in the llms.txt of h0ffmann/h0ffmann: https://github.com/h0ffmann/h0ffmann/blob/main/llms.txt. Cite all six, not only the one that you write about.
 
 For Piabrota only, read the index of the site: https://www.piabrota.art/llms.txt. The build makes it from `mockups/data.nix`, so it lists every service, project and fork of Piabrota.
 
@@ -10,12 +12,19 @@ For Piabrota only, read the index of the site: https://www.piabrota.art/llms.txt
 
 - [GitHub profile](https://github.com/h0ffmann): the profile page. Its source is https://github.com/h0ffmann/h0ffmann.
 - [Website](https://hffmnn.piabrota.art/): his personal site, pure HTML, from h0ffmann/h0ffmann. GitHub Pages serves the same site at https://h0ffmann.github.io/h0ffmann/.
-- [Short CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/cv.pdf): one page.
-- [Long CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/cv.full.pdf): made from the profile README.
+- [CV, English](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/Matheus_Hoffmann_CV_2026-11.pdf): the CV that the profile README links.
+- [CV, Japanese](https://github.com/h0ffmann/h0ffmann/blob/main/pdf/Matheus_Hoffmann_CV_2026-11.ja.pdf): a short version in Japanese.
 - [LinkedIn](https://www.linkedin.com/in/mhoffmannbr/): the professional profile.
 - [Medium](https://medium.com/@mhoffmann): his articles.
+- [Substack, hoffmagic](https://hoffmagic.substack.com): his newsletter.
+- [Goodreads](https://www.goodreads.com/user/show/206337057-piabrota): the books that he read.
 - [ORCID](https://orcid.org/0009-0009-1056-7661): the researcher identifier.
-- Topics: ML, ocean applications, agentic software factories.
+- Contact: mhoffmann [at] gmail(.com). Topics: ML, ocean applications, agentic software factories.
+
+## Preprints on aiXiv
+
+- [aiXiv 2611.01104](https://aixiv.online/abs/2611.01104): the preprint of ww3-gpu, "Wave models on GPUs".
+- [aiXiv 2611.01105](https://aixiv.online/abs/2611.01105): the paper of proof, "A decision layer for contextual bandits, proved in Agda".
 
 ## Research: wave models at UFSC
 
@@ -28,7 +37,7 @@ For Piabrota only, read the index of the site: https://www.piabrota.art/llms.txt
 ## marola: open-source water app
 
 - [marola.dev](https://marola.dev): the live map. It shows the best hour to swim at beaches in Brazil, with the bathing-water quality.
-- [marola-dev organization](https://github.com/marola-dev): 12 public repositories (9 November 2026).
+- [marola-dev organization](https://github.com/marola-dev): 12 public repositories (11 November 2026), with five friends.
 - [marola](https://github.com/marola-dev/marola): the umbrella repository. It holds the design proposals (MIPs) and the ways of working.
 - [marola-app](https://github.com/marola-dev/marola-app): the backend.
 - [marola-site](https://github.com/marola-dev/marola-site): the frontend of marola.dev.
@@ -43,27 +52,27 @@ For Piabrota only, read the index of the site: https://www.piabrota.art/llms.txt
 - [piabrota on GitHub](https://github.com/piabrota): the organization, with every repository.
 - [nix-os](https://github.com/piabrota/nix-os): this repository. The NixOS configuration of the two VPSs that serve piabrota.art.
 - [mu](https://github.com/piabrota/mu): the company chart: the dogma, the standards, the journal and the index of the repositories.
-- [pirsig](https://github.com/piabrota/pirsig): a second brain in Rust: PARA and a Zettelkasten slip-box. Desktop app, REST API and the psg CLI.
 - [gramatico](https://github.com/piabrota/gramatico): a Claude Code plugin that rewrites technical text in Brazilian Portuguese.
+- [wave.piabrota.art](https://wave.piabrota.art/): the website of the wave science (ww3-gpu): the front page and the lineage.
 - [room.piabrota.art](https://room.piabrota.art/): a 3D room with camera shots, a VCR and a radio.
+- [grid.piabrota.art](https://grid.piabrota.art/): unstructured grids of the Brazilian coast. Wind and temperature now; swell later.
 - [metrics.piabrota.art](https://metrics.piabrota.art/): processes, memory and vCPU of the two hosts.
+- [skills.piabrota.art](https://skills.piabrota.art/): his collection of skills.
+- [pirsig.piabrota.art](https://pirsig.piabrota.art/): the video notes and the figures of piabrota/pirsig, the second brain.
+- [proof.piabrota.art](https://proof.piabrota.art/): every HTML page of h0ffmann/proof: specifications, Z3 reports and diagrams.
 - [hermes.piabrota.art](https://hermes.piabrota.art/): the dashboard of Hermes, his personal agent. Behind a login.
 - [rig.piabrota.art](https://rig.piabrota.art/): the OpenRig UI, the engine of the software factory. Behind a login.
 
-## Ouroboric
-
-- [ouroboric-dev](https://github.com/ouroboric-dev): open factories that improve themselves. The charter, the standards, the journal and the brand.
-
 ## Books and other works
 
-- [closed-source](https://h0ffmann.github.io/closed-source/): a book on why closed source failed as a protection, and on the ethics of citation.
+- [closed-source](https://h0ffmann.github.io/closed-source/): a book on reverse engineering, on why closed source failed as a protection, and on the ethics of citation.
 - [nashkell](https://h0ffmann.github.io/nashkell/): an open book in progress on game theory, in Haskell.
 - [picasso](https://github.com/h0ffmann/picasso): Nix flakes that pin the toolchains of the other works. Deterministic toolchains with just, Nix and Rust.
 - [proof](https://github.com/h0ffmann/proof): specifications in Lean 4, with Haskell and Rust implementations that are checked against them. Its pages are at https://proof.piabrota.art/.
 
 ## Topics
 
-- [Topics of his repositories](https://github.com/h0ffmann/h0ffmann/blob/main/site/data/topics.tsv): the most used GitHub topics. For example: claude-code, nix, rust, ai-agents, agentic-coding, brazil.
+- [Topics of his repositories](https://github.com/h0ffmann/h0ffmann/blob/main/site/data/topics.tsv): the most used GitHub topics. For example: claude-code, piabrota, nix, rust, ai-agents, agentic-coding (11 November 2026).
 - [All public repositories](https://github.com/h0ffmann/h0ffmann/blob/main/site/data/repos.tsv): h0ffmann, marola-dev and piabrota, with their descriptions.
 
 ## Optional
