@@ -431,12 +431,12 @@ installs and secrets: `hermes/omp.yml` for an omp seat, `managed-settings.json` 
 The Claude rules are `Bash(...)` and `Read(...)` rules, translated from `omp.yml`. Claude Code checks
 deny rules before its permission mode, so they hold in bypass mode, but they are no sandbox: a
 program that a seat starts can read what a rule names. The unit's sandbox is the hard layer. Rules
-of `omp.yml` that a Claude seat cannot have: regex rules of `hermes/dangerous-patterns.yaml` (a push
-to a branch other than `hermes/*`, `rig` with `--host` or `--policy`), the path of the daemon's state
+of `omp.yml` that a Claude seat cannot have: regex rules of `hermes/dangerous-patterns.yaml` (a
+force-push or a branch delete, `rig` with `--host` or `--policy`), the path of the daemon's state
 (a seat's folder is under it), and any limit on `WebFetch` (omp's own fetch is not limited either).
 
 **chaceon's own rules that this box changes.** chaceon names an agent's branch
-`goal/<id>-<slug>`. Hermes can push only `hermes/*`, so the seats use `hermes/wf-<slug>`. chaceon
+`goal/<id>-<slug>`. The seats use `hermes/wf-<slug>`. chaceon
 asks for an agent `Co-Authored-By` trailer; Hermes's commits carry none. The owner decides whether
 chaceon's `AGENTS.md` accepts both.
 

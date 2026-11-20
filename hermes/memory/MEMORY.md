@@ -78,9 +78,9 @@ back the limits of the old host. The cutover copies the state without that file.
 - KVM 4 had run Hermes before, so its old `state.db` could mix with the copied one. Move it aside first.
 - Cron jobs run in a user scope and survive `systemctl stop hermes-agent`. Stop the user manager too.
 
-**A fix pull request whose base is another branch.** Hermes can push only `hermes/*` branches. A fix for a
-`claude/*` pull request goes in a `hermes/*` pull request with that branch as base. If the base merges first,
-the fix does not reach `main`. #89 and #91 had the base of #87. Check that their changes are in `main`.
+**A fix pull request whose base is another branch.** Hermes may push to any branch (the owner's order
+of 2026-11-20). A fix for a `claude/*` pull request goes in a pull request based on that branch. If the base
+merges first, the fix does not reach `main`. #89 and #91 had the base of #87. Check that their changes are in `main`.
 
 **`AGENTS.md` above 32,000 characters.** Hermes cuts a context file at 32,000 characters and drops the middle.
 For the nix-os file that middle held "Do not break the machine" and "Resource budget". The file had 34,482
@@ -92,7 +92,7 @@ context again and spends the owner's quota. Start a new session (`/new`) after a
 ## 5. Working rules that came out of the work
 
 - Humans merge. Hermes never merges, approves or closes a pull request.
-- Hermes pushes only `hermes/*` branches, and never force-pushes.
+- Hermes may push to any branch (the owner's order of 2026-11-20), and never force-pushes.
 - A pull request that deploys says so in its first lines.
 - A pull request says what was tested and what was not. A parse is not a build. A build is not a run.
 - The deny list is active since #104. It blocks a compound command that contains a `git push`. Run
@@ -130,7 +130,7 @@ context again and spends the owner's quota. Start a new session (`/new`) after a
   Lesson: trust the script, not the report. Use a script to check structure, then read the diff for meaning.
 
 **GitHub.**
-- `gh` runs as the App `piabrota-hermes[bot]`. It can read, comment, push `hermes/*` and open pull requests.
+- `gh` runs as the App `piabrota-hermes[bot]`. It can read, comment, push any branch and open pull requests.
 - A comment signs with the line `— piabrota-hermes (Claude Sonnet, Claude Code on the piabrota VPS)`.
 - A review with `suggestion` blocks lets the owner apply a fix in one click.
 

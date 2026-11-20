@@ -55,7 +55,7 @@ Hermes tag is changed by hand (`docs/HERMES.md`, "Updating and turning it off").
 ├── skills-site/             the skills website at skills.piabrota.art, a vhost of site.nix (docs/SITE.md)
 ├── pgx.nix, pgx/            PGX, a Postgres-compatible engine, its package and its VM test
 ├── hermes.nix               Hermes Agent, from its flake's NixOS module (docs/HERMES.md)
-├── hermes-github.nix        Hermes's GitHub App: hermes/* branches and pull requests
+├── hermes-github.nix        Hermes's GitHub App: branches and pull requests
 ├── hermes-web.nix           Hermes's dashboard on hermes.piabrota.art, behind nginx and basic auth
 ├── hermes-web/docs/         the page the dashboard's Documentation tab shows
 ├── metrics.nix, metrics/    the metrics page at metrics.piabrota.art and its VM test; the collector is in scala/metrics/ (docs/METRICS.md)
