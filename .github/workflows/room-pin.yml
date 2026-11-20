@@ -75,6 +75,7 @@ jobs:
         env:
           REV: ${{ steps.look.outputs.rev }}
         run: |
+          set -o pipefail
           nix run .#piabrota -- pins one room "$REV" | tee pin.log
           sed -n 's/^\(old\|new\)=/\1=/p' pin.log >>"$GITHUB_OUTPUT"
           echo "size=$(du -sh result-room/ | cut -f1)" >>"$GITHUB_OUTPUT"
