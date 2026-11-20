@@ -30,23 +30,26 @@ object OmpSettings:
   /** OMP_CEILING for no time ceiling (a seat). */
   val noCeiling = "none"
 
-  /** omp with its ceiling, choom, its config overlay and its token. omp reads ANTHROPIC_OAUTH_TOKEN;
-    * Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the same subscription; a subscription token that
-    * OpenRig's runner passes as ANTHROPIC_API_KEY moves to ANTHROPIC_OAUTH_TOKEN, so omp never
-    * sends it as an API key. The wrapper's settings are unset again.
+  /** The Claude credential variables omp must never see: its models name opencode-go only, and a
+    * stale Claude token in the caller's environment must not make another provider selectable.
     */
-  def exec(s: OmpSettings, tokens: ClaudeTokens, args: List[String]): Exec =
-    val oauth = tokens.anthropicOauth.orElse(tokens.claudeOauth)
-    val (token, unset) = (oauth, tokens.subscriptionKey) match
-      case (None, Some(key)) => (key, List(anthropicApiKey))
-      case _                 => (oauth.getOrElse(""), Nil)
+  val claudeVars: List[String] = List(claudeOauth, anthropicOauth, anthropicApiKey, anthropicAuth)
+
+  /** omp with its ceiling, choom, its config overlay and its key. omp reads OPENCODE_API_KEY for
+    * opencode-go (docs/providers.md at v18.16.0); Hermes's key is OPENCODE_GO_API_KEY (hermes.env).
+    * The key is set only when the caller has it: an OpenRig seat gets OPENCODE_API_KEY from the
+    * runner itself (pi-runner-protocol.ts at v0.7.7, only for a seat whose model is
+    * `opencode-go/<id>`), and the wrapper must not overwrite it with a missing value. The wrapper's
+    * settings are unset again.
+    */
+  def exec(s: OmpSettings, opencode: Option[String], args: List[String]): Exec =
     val limit =
       if s.ceiling == noCeiling then Nil
       else List(s.timeout, "--signal=TERM", "--kill-after=30s", s.ceiling)
     Exec(limit ++ Choom.args(s.choom) ++ List(s.bin, "--append-system-prompt", s.append) ++ args,
-      set = Map("PI_CONFIG_FILES" -> s.config, anthropicOauth -> token, "OTEL_SDK_DISABLED" -> "true",
-        "PI_NO_TITLE" -> "1", "PI_PY" -> "0", "PI_JS" -> "0"),
-      unset = unset ++ names)
+      set = Map("PI_CONFIG_FILES" -> s.config) ++ opencode.map(opencodeKey -> _).toMap
+        ++ Map("OTEL_SDK_DISABLED" -> "true", "PI_NO_TITLE" -> "1", "PI_PY" -> "0", "PI_JS" -> "0"),
+      unset = claudeVars ++ names)
 
 /** seat-claude's wrapper settings (openrig.nix). */
 final case class SeatClaudeSettings(bin: String, choom: String)
@@ -79,7 +82,11 @@ object SeatClone:
   /** A name or `marola-dev/name` without the org. */
   def marolaName(s: String): String = s.stripPrefix(s"$marolaOrg/")
 
-/** openrig-claude-token's DEST: Hermes's Claude token as the seats' ANTHROPIC_API_KEY, or empty. */
-object SeatClaudeToken:
+/** openrig-seat-tokens' DEST: the seats' credentials from Hermes's secrets file, or empty — the
+  * Claude token of the Claude Code seats as ANTHROPIC_API_KEY, and the OpenCode Go key of the omp
+  * seats as OPENCODE_API_KEY.
+  */
+object SeatTokens:
   def render(source: Seq[String]): String =
-    lastValue(source, claudeOauth).map(token => s"$anthropicApiKey=$token\n").getOrElse("")
+    lastValue(source, claudeOauth).map(token => s"$anthropicApiKey=$token\n").getOrElse("") +
+      lastValue(source, opencodeGo).map(key => s"$opencodeKey=$key\n").getOrElse("")

@@ -6,7 +6,7 @@ description: Checks one port or integration of h0ffmann/chaceon against the Fort
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared

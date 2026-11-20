@@ -136,10 +136,9 @@ pkgs.callPackage ./omp/wrapper.nix {
 ```
 
 O wrapper carrega o `hermes/omp.yml` sozinho, então o seat tem as mesmas regras de bloqueio de uma
-execução do Hermes. O runner do OpenRig passa ao omp só a `ANTHROPIC_API_KEY`, e só para um modelo
-`anthropic/<id>`. O wrapper move um token da assinatura (`sk-ant-oat...`) dessa variável para a
-`ANTHROPIC_OAUTH_TOKEN`. O seat recebe a chave só depois de dois opt-ins: a unit nomeia a variável
-em `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST`, e o modelo do seat é `anthropic/<id>`. Os seats
+execução do Hermes. O runner do OpenRig passa ao omp só a `OPENCODE_API_KEY`, e só para um modelo
+`opencode-go/<id>`. O seat recebe a chave só depois de dois opt-ins: a unit nomeia a variável
+em `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST`, e o modelo do seat é `opencode-go/<id>`. Os seats
 rodam sem pedido de aprovação porque o rig define `permission_policy: builtin:yolo`; o
 `OPENRIG_YOLO=1` da unit não faz isso. As outras configurações da unit do openrig
 (`OPENRIG_NO_KERNEL=1`, o socket do tmux, o `lsof`) e o motivo de cada uma estão em
@@ -170,12 +169,12 @@ Hermes não conseguem afrouxá-lo. Uma lista no overlay substitui a lista de uma
 
 - **Código melhor, mais raciocínio.** Mude `defaultThinkingLevel` no `hermes/omp.yml`. Os valores
   aceitos são `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` e `auto`. Hoje é `high`. Para
-  uma execução só, use `--thinking`. O custo é mais da sua cota do Claude.
+  uma execução só, use `--thinking`. O custo é mais das janelas do seu plano do OpenCode Go.
 - **Um modelo mais forte ou mais barato para um trabalho.** Mude `modelRoles.<papel>` no
   `hermes/omp.yml`. Os papéis `default`, `slow` e `plan` levam o trabalho principal. O papel `task` é
   o papel dos subagentes que editam código. Os papéis `smol`, `tiny`, `commit`, `memory`, `advisor` e
-  `judge` são papéis laterais e baratos. Hoje os quatro primeiros usam o Sonnet e os outros usam o
-  Haiku. Use só modelos `anthropic/...`: a sua assinatura é o único provedor.
+  `judge` são papéis laterais e baratos. Hoje todo papel usa `opencode-go/glm-5.3-flash`. Use só
+  modelos `opencode-go/...`: o seu plano do OpenCode Go é o único provedor.
 - **Resultado melhor em um repositório.** Escreva `.omp/RULES.md` (regras curtas e rígidas) e
   `.omp/AGENTS.md` (contexto) nesse repositório.
 - **Resultado melhor em uma tarefa.** Escreva um arquivo de tarefa melhor. Diga o critério de pronto

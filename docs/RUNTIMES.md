@@ -209,12 +209,13 @@ rules of its own (`hermes/omp.yml`) that a cloned repository cannot loosen. A ru
   agent_ref: "local:../../agents/builder"
   profile: default
   runtime: omp
-  model: anthropic/claude-sonnet-5-5   # `anthropic/<id>`: the form for which the runner passes the key
+  model: opencode-go/glm-5.3-flash   # `opencode-go/<id>`: the form for which the runner passes the key
   cwd: /var/lib/openrig/work
 ```
 
-**Credentials here.** The unit gives every seat `ANTHROPIC_API_KEY`, which holds the subscription
-token. The wrapper moves it to `ANTHROPIC_OAUTH_TOKEN`
+**Credentials here.** The unit gives a seat `OPENCODE_API_KEY` when its model is `opencode-go/<id>`
+(the OpenCode Go key, renamed from Hermes's `OPENCODE_GO_API_KEY`), and `ANTHROPIC_API_KEY` when its
+model is `anthropic/<id>`
 ([`OPENRIG.md`](OPENRIG.md), "The token of the seats").
 
 **On this box.** Works. `piabrota-dev` and `wave-forecaster-dev-integrate` use it. The port rig used

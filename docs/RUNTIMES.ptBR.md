@@ -213,12 +213,14 @@ próprias (`hermes/omp.yml`) que um repositório clonado não afrouxa. Uma execu
   agent_ref: "local:../../agents/builder"
   profile: default
   runtime: omp
-  model: anthropic/claude-sonnet-5-5   # `anthropic/<id>`: a forma para a qual o runner passa a chave
+  model: opencode-go/glm-5.3-flash   # `opencode-go/<id>`: a forma para a qual o runner passa a chave
   cwd: /var/lib/openrig/work
 ```
 
-**Credenciais aqui.** A unit dá a todo seat a `ANTHROPIC_API_KEY`, que guarda o token da assinatura. O
-wrapper a move para `ANTHROPIC_OAUTH_TOKEN` ([`OPENRIG.md`](OPENRIG.md), "The token of the seats").
+**Credenciais aqui.** A unit dá a um seat a `OPENCODE_API_KEY` quando o modelo dele é
+`opencode-go/<id>` (a chave do OpenCode Go, renomeada da `OPENCODE_GO_API_KEY` do Hermes), e a
+`ANTHROPIC_API_KEY` quando o modelo é `anthropic/<id>` ([`OPENRIG.md`](OPENRIG.md), "The token of
+the seats").
 
 **Nesta máquina.** Funciona. `piabrota-dev` e `wave-forecaster-dev-integrate` o usam. A rig de port
 o usava até este PR.

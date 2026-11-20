@@ -27,11 +27,13 @@ object Wrappers:
   /** `piabrota omp [args...]` (omp/wrapper.nix): oh-my-pi with its own read-only config overlay
     * (OMP_CONFIG, as PI_CONFIG_FILES) and the rules OMP_APPEND appended to its system prompt.
     * OMP_CEILING is a `timeout` duration for the whole run (SIGTERM, SIGKILL 30 s later), or `none`.
-    * OMP_BIN, OMP_TIMEOUT and OMP_CHOOM are the programs. `OmpSettings.exec` says what moves.
+    * OMP_BIN, OMP_TIMEOUT and OMP_CHOOM are the programs. `OmpSettings.exec` says what moves:
+    * OPENCODE_GO_API_KEY (Hermes's env file) becomes omp's OPENCODE_API_KEY.
     */
   def omp(args: List[String]): Int =
     val List(config, append, ceiling, bin, timeout, choom) = OmpSettings.names.map(setting): @unchecked
-    Util.exec(OmpSettings.exec(OmpSettings(config, append, ceiling, bin, timeout, choom), claudeTokens(), args))
+    Util.exec(OmpSettings.exec(OmpSettings(config, append, ceiling, bin, timeout, choom),
+      env(EnvNames.opencodeGo), args))
 
   /** `piabrota seat-claude [args...]` (openrig.nix): the `claude` of a Claude seat (SEAT_CLAUDE_BIN,
     * under SEAT_CHOOM as omp's). The unit gives every seat ANTHROPIC_API_KEY for the omp seats, which
@@ -41,17 +43,17 @@ object Wrappers:
     val List(bin, choom) = SeatClaudeSettings.names.map(setting): @unchecked
     Util.exec(SeatClaudeSettings.exec(SeatClaudeSettings(bin, choom), claudeTokens(), args))
 
-  /** `piabrota openrig-claude-token SOURCE DEST` (openrig.nix, ExecStartPre as root): the last line
-    * CLAUDE_CODE_OAUTH_TOKEN= of SOURCE (Hermes's secrets), and nothing else, as ANTHROPIC_API_KEY=
-    * in DEST, which only the openrig user reads; DEST is empty when the line or the source is
-    * missing. It prints nothing.
+  /** `piabrota openrig-seat-tokens SOURCE DEST` (openrig.nix, ExecStartPre as root): the last line
+    * OPENCODE_GO_API_KEY= and the last line CLAUDE_CODE_OAUTH_TOKEN= of SOURCE (Hermes's secrets),
+    * and nothing else, as OPENCODE_API_KEY= and ANTHROPIC_API_KEY= in DEST, which only the openrig
+    * user reads; DEST is empty when both lines or the source are missing. It prints nothing.
     */
-  def openrigClaudeToken(args: List[String]): Int = args match
+  def openrigSeatTokens(args: List[String]): Int = args match
     case List(source, dest) =>
       val lines = scala.util.Try(os.read.lines(os.Path(source, os.pwd))).toOption.toList.flatten
-      Util.put(os.Path(dest, os.pwd), SeatClaudeToken.render(lines), Owner.openrig, Mode.OwnerOnly)
+      Util.put(os.Path(dest, os.pwd), SeatTokens.render(lines), Owner.openrig, Mode.OwnerOnly)
       0
-    case _ => die("usage: piabrota openrig-claude-token SOURCE DEST", 2)
+    case _ => die("usage: piabrota openrig-seat-tokens SOURCE DEST", 2)
 
   /** `piabrota chaceon-clone [dir]` (openrig.nix): a seat's clone of h0ffmann/chaceon, with the
     * credential helper in the clone's own config, so a later fetch works after a deploy too. WW3/ is

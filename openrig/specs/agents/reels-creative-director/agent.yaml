@@ -5,7 +5,7 @@ description: Writes the screenplay of one reel, then its shotlist and storyboard
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared

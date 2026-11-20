@@ -33,7 +33,7 @@ val commands: List[Command] = List(
   Command("marola-gh", "gh as marola-pr-bot, for the commands that propose and read only", Wrappers.marolaGh),
   Command("omp", "oh-my-pi for Hermes and the seats: its config, its token, a time ceiling, choom", Wrappers.omp),
   Command("seat-claude", "the claude of a Claude seat: the subscription token moved, API keys dropped", Wrappers.seatClaude),
-  Command("openrig-claude-token", "copies Hermes's Claude token to OpenRig's env file (root)", Wrappers.openrigClaudeToken),
+  Command("openrig-seat-tokens", "copies Hermes's OpenCode Go key and Claude token to OpenRig's env file (root)", Wrappers.openrigSeatTokens),
   Command("chaceon-clone", "a seat's clone of h0ffmann/chaceon with the seat credential helper", Wrappers.chaceonClone),
   Command("marola-clone", "a seat's clone of a marola repository with the seat credential helper", Wrappers.marolaClone),
   Command("openrig-wf-keeper", "keeps the port rig wave-forecaster-dev up, with a back-off", WfKeeper.run),

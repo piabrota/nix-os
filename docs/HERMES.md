@@ -242,9 +242,9 @@ and tune each layer: [HERMES-OMP.md](HERMES-OMP.md).
   move it, so a new release is a PR that changes `version` and `hash`. The VPS builds nothing.
 - **The wrapper.** `omp` on Hermes's PATH is a wrapper (`ompWrapped` in `hermes.nix`). It points
   omp at `hermes/omp.yml` as a config overlay, which is read-only in the store and outranks omp's
-  own `config.yml` and a cloned repository's `.omp/`. It passes `CLAUDE_CODE_OAUTH_TOKEN` as
-  `ANTHROPIC_OAUTH_TOKEN`, the owner's Claude subscription (Hermes itself now runs on OpenCode Go,
-  so the token is for omp and the rig seats only), and turns off
+  own `config.yml` and a cloned repository's `.omp/`. It passes `OPENCODE_GO_API_KEY` as
+  `OPENCODE_API_KEY` (omp's name for the OpenCode Go key, docs/providers.md at v18.16.0), unsets
+  the Claude credential variables, and turns off
   OpenTelemetry, titles and the eval kernels.
 - **Its own deny list.** Hermes's deny list and tripwire see only the outer `omp` command. So
   `hermes/omp.yml` gives omp's bash tool the rules that matter: no `git push`, no `gh`, no
@@ -254,17 +254,18 @@ and tune each layer: [HERMES-OMP.md](HERMES-OMP.md).
 - **Memory.** omp runs in Hermes's cgroup (`MemoryMax=8G`). LSP, the Python and JS kernels, the
   memory backend, the advisor and the browser are off. The wrapper starts omp with
   `choom -n 500`, so the kernel's OOM killer stops omp before the gateway.
-- **Models.** Sonnet (`claude-sonnet-5-5`) for the work and for the subagents (`task`), Haiku
-  (`claude-haiku-4-5`) for the side roles (`smol`, `commit`, `tiny`, `memory`, `advisor`,
-  `judge`). The thinking level is pinned to `high`. There is no fallback, so no role reaches
+- **Models.** `glm-5.3-flash` through `opencode-go` for the work, for the subagents (`task`) and
+  for the side roles (`smol`, `commit`, `tiny`, `memory`, `advisor`,
+  `judge`) — the same model and plan as the Hermes gateway. The thinking level is pinned to
+  `high`. There is no fallback, so no role reaches
   another provider or a local model.
 - **Prompt.** The wrapper appends `hermes/omp-append-system.md` to omp's system prompt: small
   diffs, a stated check, no claim of done without output, no commit or push. omp reads the file
   at that path, and a path on the command line turns off its search for `APPEND_SYSTEM.md`, so a
   cloned repository cannot replace these rules (`main.ts` and `system-prompt.ts` at v18.16.0).
 
-Not checked before the merge: omp's memory peak on the box, and that a `claude setup-token` token
-works as `ANTHROPIC_OAUTH_TOKEN`. After the deploy, run one task and read
+Not checked before the merge: omp's memory peak on the box, and that the OpenCode Go key works
+through omp's `OPENCODE_API_KEY`. After the deploy, run one task and read
 `systemctl show hermes-agent -p MemoryPeak`.
 
 ## The owner's pirsig tools
@@ -304,7 +305,7 @@ starts with no platform, running only the scheduled jobs. A deploy never fails b
    ssh h0ffmann@hermes.piabrota.art
    sudo install -m 600 /dev/stdin /var/lib/hermes-secrets/hermes.env
    OPENCODE_GO_API_KEY=...
-   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...   # only while omp or a rig seat still uses it
+   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...   # only the Claude Code seats of OpenRig read it
    TELEGRAM_BOT_TOKEN=123456:ABC...
    TELEGRAM_ALLOWED_USERS=<your numeric ID>
    GITHUB_TOKEN=github_pat_...   # optional: read-only, for the github skill

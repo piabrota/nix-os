@@ -5,7 +5,7 @@ description: Reviews the screenplay, approves its hash, then builds and publishe
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared

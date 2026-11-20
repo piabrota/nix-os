@@ -6,7 +6,7 @@ description: Wires one ported package of h0ffmann/chaceon into the source-term l
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared

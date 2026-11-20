@@ -13,9 +13,9 @@ piabrota's words; it copies no OpenRig text. Paths are under `packages/daemon/sr
   `path` does not reach the pane: see the last row of the table below.
 - The runner gives omp a **deny-by-default environment** (`buildPiChildEnv`): `PATH`, `HOME`,
   `USER`, `LOGNAME`, `SSH_AUTH_SOCK`, `TERM`, `LANG`, `LC_ALL`, `SHELL`, `TMPDIR`, the
-  `OPENRIG_*` identity variables, and one provider key. For Anthropic that key is
-  `ANTHROPIC_API_KEY`, and only when the seat's model is `anthropic/<id>`. `CLAUDE_CODE_OAUTH_TOKEN`,
-  `ANTHROPIC_OAUTH_TOKEN` and `PI_CONFIG_FILES` do not reach omp.
+  `OPENRIG_*` identity variables, and one provider key. For OpenCode Go that key is
+  `OPENCODE_API_KEY`, and only when the seat's model is `opencode-go/<id>`. `OPENCODE_GO_API_KEY`,
+  `CLAUDE_CODE_OAUTH_TOKEN` and `PI_CONFIG_FILES` do not reach omp.
 - `HOME` of omp is the seat's own directory under `$OPENRIG_HOME/state/omp/`, so omp never reads
   Hermes's `~/.omp`.
 - `--approval-mode` is `yolo` only when the seat has a `full_bypass` permission policy, which
@@ -34,9 +34,9 @@ piabrota's words; it copies no OpenRig text. Paths are under `packages/daemon/sr
 | omp with piabrota's rules and no time ceiling | `pkgs.callPackage ./omp/wrapper.nix { ceiling = null; appendSystemPrompt = ./hermes/omp-seat-append-system.md; }` in `seatTools` | the wrapper loads `hermes/omp.yml` itself, so the overlay survives the runner's environment filter; the default 35 min ceiling would kill a seat |
 | the subscription token for the seats | the token as `ANTHROPIC_API_KEY` in the unit's root-only `EnvironmentFile` | the only Anthropic variable the runner passes; the wrapper moves an `sk-ant-oat` value to `ANTHROPIC_OAUTH_TOKEN`, so omp signs in as a subscription, not as an API key |
 | seats that can use their tools | `permission_policy: builtin:yolo` at the rig level of `openrig/specs/rigs/piabrota-dev/rig.yaml` | OpenRig gives a rig with no policy the floor, and `OPENRIG_YOLO=1` does not widen it (`rigspec-instantiator.ts`, `permission-account.ts`). The policy selects `--approval-mode yolo` (`pi-runner-protocol.ts`). A policy wins over the variable. The owner decided this in PR 124 and again on 2026-11-05. omp's own deny rules in `hermes/omp.yml` still refuse push, `gh`, installs, secrets and `rig` control |
-| a daemon that may pass the key | `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY` in the unit | the daemon setting `recovery.provider_auth_env_allowlist`: the first opt-in. It names the variable, never a value. Other variables stay out of the seats |
+| a daemon that may pass the key | `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=OPENCODE_API_KEY,ANTHROPIC_API_KEY` in the unit | the daemon setting `recovery.provider_auth_env_allowlist`: the first opt-in. It names the variables (comma-separated), never a value. Other variables stay out of the seats |
 | a daemon with no kernel rig | `OPENRIG_NO_KERNEL=1` (or `rig daemon start --no-kernel`) | the kernel rig boots only on Claude Code or Codex (`domain/kernel-boot.ts`); this box has neither, so without it the daemon reports `auth_blocked` |
-| a model the runner forwards a key for | `model: anthropic/claude-sonnet-5-5` on each member of the rig, and in each omp AgentSpec | the second opt-in: no `provider/` prefix, no key in the seat. `rig ps` showed `not-declared` with only the AgentSpec default, so the member names it. A seat that stops with "No default model selected" got no key |
+| a model the runner forwards a key for | `model: opencode-go/glm-5.3-flash` on each member of the rig, and in each omp AgentSpec | the second opt-in: no `provider/` prefix, no key in the seat. `rig ps` showed `not-declared` with only the AgentSpec default, so the member names it. A seat that stops with "No default model selected" got no key |
 | a tmux socket it can create | `RuntimeDirectory=openrig` and `TMUX_TMPDIR=/run/openrig`, or `PrivateTmp=true` | under `ProtectSystem=strict` tmux needs a writable socket directory (`adapters/tmux.ts`, `session_unconfirmed`) |
 | `lsof` | `pkgs.lsof` in the one `seatTools` list (unit `path` and per-user profile) | the database-conflict check calls it (`daemon-db-path.ts`); without it the daemon warns and goes on |
 | `git` | `pkgs.git` in `seatTools` | omp's work in a seat is git work |

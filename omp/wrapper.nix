@@ -2,7 +2,9 @@
 # docs/HERMES.md, "omp"). Hermes's
 # deny list and tripwire see only the outer `omp` command, so omp gets its own rules: hermes/omp.yml,
 # a read-only config overlay. This wrapper is the only omp on Hermes's PATH. omp reads
-# ANTHROPIC_OAUTH_TOKEN; Hermes's token is CLAUDE_CODE_OAUTH_TOKEN, the same subscription. omp runs
+# OPENCODE_API_KEY for opencode-go (docs/providers.md at v18.16.0); Hermes's key is
+# OPENCODE_GO_API_KEY (hermes.env), and `piabrota omp` moves it. The Claude credential variables are
+# unset, so a stale Claude token never makes another provider selectable. omp runs
 # in its caller's cgroup: choom makes the kernel's OOM killer pick omp before the gateway.
 #
 # `ceiling`: a hard stop of `timeout` for every run, whatever flags the caller gives: a restart
@@ -12,10 +14,10 @@
 # `appendSystemPrompt`: the rules appended to omp's system prompt; a seat takes
 # hermes/omp-seat-append-system.md.
 #
-# OpenRig's runner gives omp a deny-by-default environment: of the Anthropic credentials it passes
-# only ANTHROPIC_API_KEY, and only for a seat whose model is `anthropic/...` (pi-runner-protocol.ts at
-# v0.7.7). A subscription token (sk-ant-oat...) in that variable is moved to ANTHROPIC_OAUTH_TOKEN, so
-# omp signs in with the subscription and never sends it as an API key.
+# OpenRig's runner gives omp a deny-by-default environment: of the OpenCode credentials it passes
+# only OPENCODE_API_KEY, and only for a seat whose model is `opencode-go/...` (pi-runner-protocol.ts
+# at v0.7.7). The wrapper sets OPENCODE_API_KEY only when the caller has OPENCODE_GO_API_KEY, so it
+# never overwrites the key a seat's runner already passed.
 { pkgs
 , ceiling ? "35m"
 , appendSystemPrompt ? ../hermes/omp-append-system.md

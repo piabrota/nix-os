@@ -50,13 +50,14 @@ let
     appendSystemPrompt = ./hermes/omp-seat-append-system.md;
   };
 
-  # Runs as root (the `+` of ExecStartPre) at each start: copies the one line CLAUDE_CODE_OAUTH_TOKEN
-  # of Hermes's secrets file, and nothing else, under the name ANTHROPIC_API_KEY, to a file that
-  # only the openrig user reads (`piabrota openrig-claude-token`). The unit takes it as its
-  # EnvironmentFile. The step prints nothing. The file is empty when the line or the source is missing.
-  claudeToken = utils.escapeSystemdExecArgs [
+  # Runs as root (the `+` of ExecStartPre) at each start: copies the one line OPENCODE_GO_API_KEY
+  # and the one line CLAUDE_CODE_OAUTH_TOKEN of Hermes's secrets file, and nothing else, under the
+  # names OPENCODE_API_KEY and ANTHROPIC_API_KEY, to a file that only the openrig user reads
+  # (`piabrota openrig-seat-tokens`). The unit takes it as its EnvironmentFile. The step prints
+  # nothing. A line that is missing simply stays out of the file.
+  seatTokens = utils.escapeSystemdExecArgs [
     (lib.getExe (scripts.command {
-      name = "openrig-claude-token";
+      name = "openrig-seat-tokens";
       runtimeInputs = [ pkgs.coreutils ];
       exclusivePath = true;
     }))
@@ -528,12 +529,14 @@ in
         # the guard of the Claude seats. No kernel rig: OpenRig's own agent seats are not wanted here.
         OPENRIG_YOLO = "1";
         OPENRIG_NO_KERNEL = "1";
-        # The daemon setting recovery.provider_auth_env_allowlist. It names the variable only, never a
-        # value. The value stays in the unit's root-only EnvironmentFile. A seat whose model is
-        # `anthropic/<id>` then gets the key (the double opt-in of OpenRig). Other variables stay out.
-        # A Claude seat gets it too, as every seat does: its `claude` (seatClaude) moves it to
+        # The daemon setting recovery.provider_auth_env_allowlist. It names the variables only,
+        # never a value (comma-separated, startup.ts at v0.7.7). The values stay in the unit's
+        # root-only EnvironmentFile. A seat whose model is `opencode-go/<id>` then gets
+        # OPENCODE_API_KEY, and a seat whose model is `anthropic/<id>` gets ANTHROPIC_API_KEY: the
+        # double opt-in of OpenRig, one key per seat. Other variables stay out. A Claude Code seat
+        # gets ANTHROPIC_API_KEY too, as every seat does: its `claude` (seatClaude) moves it to
         # CLAUDE_CODE_OAUTH_TOKEN and drops it from Claude's own environment.
-        OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST = "ANTHROPIC_API_KEY";
+        OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST = "OPENCODE_API_KEY,ANTHROPIC_API_KEY";
         # tmux's socket goes here (a private 0700 directory of the unit), not in /tmp.
         TMUX_TMPDIR = "/run/openrig";
         # The system user has no login shell; tmux and the seats need a real one.
@@ -562,7 +565,7 @@ in
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
         # reads the EnvironmentFile after this step. The daemon holds the key in its environment;
         # the runner passes it on to each seat.
-        ExecStartPre = [ "-+${claudeToken}" ];
+        ExecStartPre = [ "-+${seatTokens}" ];
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";

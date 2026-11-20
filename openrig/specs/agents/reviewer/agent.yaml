@@ -6,7 +6,7 @@ description: Reviews the builder's diff by evidence
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared
