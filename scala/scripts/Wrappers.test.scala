@@ -6,7 +6,7 @@ import piabrota.lib.TestKit
 class WrappersTest extends munit.FunSuite:
   private val show = """#!/bin/sh
 echo "args: $*"
-for v in GH_TOKEN PI_CONFIG_FILES ANTHROPIC_OAUTH_TOKEN ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN OMP_BIN SEAT_CHOOM; do
+for v in GH_TOKEN PI_CONFIG_FILES OPENCODE_API_KEY ANTHROPIC_OAUTH_TOKEN ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN OMP_BIN SEAT_CHOOM; do
   eval "[ -n \"\${$v+x}\" ] && echo \"$v=\$$v\""
 done
 exit 0
@@ -77,7 +77,7 @@ exit 0
     assertEquals(out, "")
     assertEquals(os.read(dir / ".env"), "ANTHROPIC_API_KEY=new\nOPENCODE_API_KEY=go\n")
     assertEquals(os.perms(dir / ".env").toString, "rw-------")
-    os.write(dir / "hermes.env", "CLAUDE_CODE_OAUTH_TOKEN=c\n")
+    os.write.over(dir / "hermes.env", "CLAUDE_CODE_OAUTH_TOKEN=c\n")
     run(Seq("openrig-seat-tokens", (dir / "hermes.env").toString, (dir / ".env").toString))
     assertEquals(os.read(dir / ".env"), "ANTHROPIC_API_KEY=c\n")
     run(Seq("openrig-seat-tokens", (dir / "missing").toString, (dir / ".env").toString))
