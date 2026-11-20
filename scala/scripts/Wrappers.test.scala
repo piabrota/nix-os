@@ -6,7 +6,7 @@ import piabrota.lib.TestKit
 class WrappersTest extends munit.FunSuite:
   private val show = """#!/bin/sh
 echo "args: $*"
-for v in GH_TOKEN PI_CONFIG_FILES OPENCODE_API_KEY ANTHROPIC_OAUTH_TOKEN ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN OMP_BIN SEAT_CHOOM; do
+for v in GH_TOKEN PI_CONFIG_FILES OPENCODE_GO_API_KEY OPENCODE_API_KEY ANTHROPIC_OAUTH_TOKEN ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN OMP_BIN SEAT_CHOOM; do
   eval "[ -n \"\${$v+x}\" ] && echo \"$v=\$$v\""
 done
 exit 0
@@ -24,6 +24,17 @@ exit 0
   private def run(args: Seq[String], env: Map[String, String] = Map.empty) =
     val r = TestKit.piabrota(args, env = clean ++ env, fakes = Some(fakes))
     (r.exitCode, r.out.text(), r.err.text())
+
+  // Regression for the omp break of 2026-11-20 (PR 302): omp gained OPENCODE_API_KEY, the show
+  // fake did not echo it, and both omp tests failed on CI. The fake must echo every variable
+  // the wrappers move that the tests assert on; the model is the source of truth. A wrapper
+  // change that the tests rely on now fails here, not on CI.
+  test("the show fake echoes every wrapper variable the tests assert on"):
+    val asserted = OmpSettings.claudeVars.toSet ++ Set(EnvNames.opencodeGo, EnvNames.opencodeKey,
+      "GH_TOKEN", "PI_CONFIG_FILES", "OMP_BIN", "SEAT_CHOOM")
+    val echoed = show.linesIterator.drop(2).next().stripPrefix("for v in ").stripSuffix("; do")
+      .split(" ").toSet
+    assertEquals(asserted -- echoed, Set.empty[String], echoed)
 
   test("marola-gh lets through what proposes, with the bot's token"):
     val tokens = os.temp.dir()
