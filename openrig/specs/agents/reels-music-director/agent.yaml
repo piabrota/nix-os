@@ -5,7 +5,7 @@ description: Makes the music and the mix of one reel to its timeline
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared

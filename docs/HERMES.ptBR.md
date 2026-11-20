@@ -235,9 +235,9 @@ pull request. O omp nunca faz push. Como ver e ajustar cada camada:
 - **O wrapper.** O `omp` no PATH do Hermes é um wrapper (`ompWrapped` no `hermes.nix`). Ele aponta
   o omp para `hermes/omp.yml` como overlay de configuração. O arquivo é só leitura na store e vale
   mais que o `config.yml` do próprio omp e que o `.omp/` de um repositório clonado. O wrapper passa
-  o `CLAUDE_CODE_OAUTH_TOKEN` como `ANTHROPIC_OAUTH_TOKEN`: a assinatura do Claude do dono (o
-  próprio Hermes agora roda no OpenCode Go, então o token fica só para o omp e as cadeiras de rig).
-  Ele também desliga o OpenTelemetry, os títulos e os kernels de eval.
+  o `OPENCODE_GO_API_KEY` como `OPENCODE_API_KEY` (o nome do omp para a chave do OpenCode Go,
+  docs/providers.md na v18.16.0) e desliga as variáveis de credencial do Claude. Ele também
+  desliga o OpenTelemetry, os títulos e os kernels de eval.
 - **A lista de bloqueio dele.** A lista de bloqueio e o tripwire do Hermes veem só o comando `omp`
   de fora. Por isso o `hermes/omp.yml` dá à ferramenta bash do omp as regras que importam: sem
   `git push`, sem `gh`, sem instalações, sem `sudo`, sem `curl` ou `wget`, sem leitura dos segredos
@@ -246,18 +246,18 @@ pull request. O omp nunca faz push. Como ver e ajustar cada camada:
 - **Memória.** O omp roda no cgroup do Hermes (`MemoryMax=8G`). O LSP, os kernels de Python e JS,
   o backend de memória, o advisor e o navegador estão desligados. O wrapper inicia o omp com
   `choom -n 500`, então o OOM killer do kernel para o omp antes do gateway.
-- **Modelos.** O Sonnet (`claude-sonnet-5-5`) para o trabalho e para os subagentes (`task`), e o
-  Haiku (`claude-haiku-4-5`) para os papéis laterais (`smol`, `commit`, `tiny`, `memory`,
-  `advisor`, `judge`). O nível de raciocínio fica fixo em `high`. Não há fallback, então nenhum
-  papel chega a outro provedor ou a um modelo local.
+- **Modelos.** O `glm-5.3-flash` pelo `opencode-go` para o trabalho, para os subagentes (`task`) e
+  para os papéis laterais (`smol`, `commit`, `tiny`, `memory`, `advisor`, `judge`) — o mesmo modelo
+  e o mesmo plano do gateway do Hermes. O nível de raciocínio fica fixo em `high`. Não há fallback,
+  então nenhum papel chega a outro provedor ou a um modelo local.
 - **Prompt.** O wrapper acrescenta o `hermes/omp-append-system.md` ao prompt de sistema do omp:
   diffs pequenos, uma verificação declarada, nenhuma afirmação de "pronto" sem saída, nenhum commit
   nem push. O omp lê o arquivo nesse caminho, e um caminho na linha de comando desliga a busca dele
   por `APPEND_SYSTEM.md`, então um repositório clonado não troca essas regras (`main.ts` e
   `system-prompt.ts` na v18.16.0).
 
-Não conferido antes do merge: o pico de memória do omp na máquina, e se um token de
-`claude setup-token` funciona como `ANTHROPIC_OAUTH_TOKEN`. Depois do deploy, rode uma tarefa e
+Não conferido antes do merge: o pico de memória do omp na máquina, e se a chave do OpenCode Go
+funciona pelo `OPENCODE_API_KEY` do omp. Depois do deploy, rode uma tarefa e
 leia `systemctl show hermes-agent -p MemoryPeak`.
 
 ## As ferramentas pirsig do dono
@@ -300,7 +300,7 @@ plataforma nenhuma, rodando só as tarefas agendadas. Um deploy nunca falha por 
    ssh h0ffmann@hermes.piabrota.art
    sudo install -m 600 /dev/stdin /var/lib/hermes-secrets/hermes.env
    OPENCODE_GO_API_KEY=...
-   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...   # só enquanto o omp ou uma cadeira de rig ainda o usa
+   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...   # só as cadeiras de Claude Code do OpenRig o leem
    TELEGRAM_BOT_TOKEN=123456:ABC...
    TELEGRAM_ALLOWED_USERS=<seu ID numérico>
    GITHUB_TOKEN=github_pat_...   # opcional: só leitura, para a skill github

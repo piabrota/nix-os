@@ -133,10 +133,9 @@ pkgs.callPackage ./omp/wrapper.nix {
 ```
 
 The wrapper loads `hermes/omp.yml` itself, so a seat has the same deny rules as a Hermes run.
-OpenRig's runner passes only `ANTHROPIC_API_KEY` to omp, and only for a model `anthropic/<id>`.
-The wrapper moves a subscription token (`sk-ant-oat...`) from that variable to
-`ANTHROPIC_OAUTH_TOKEN`. A seat gets the key only after two opt-ins: the unit names the variable in
-`OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST`, and the seat's model is `anthropic/<id>`. The seats
+OpenRig's runner passes only `OPENCODE_API_KEY` to omp, and only for a model `opencode-go/<id>`.
+A seat gets the key only after two opt-ins: the unit names the variable in
+`OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST`, and the seat's model is `opencode-go/<id>`. The seats
 run without approval prompts because the rig sets `permission_policy: builtin:yolo`; the unit's
 `OPENRIG_YOLO=1` does not do it. The other settings of the openrig unit (`OPENRIG_NO_KERNEL=1`, the
 tmux socket, `lsof`) and the reasons for them are in the skill's
@@ -166,12 +165,12 @@ loosen it. An array in the overlay replaces the array of a lower layer.
 
 - **Better code, more reasoning.** Change `defaultThinkingLevel` in `hermes/omp.yml`. The accepted
   values are `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` and `auto`. Today it is `high`.
-  For one run, use `--thinking`. The cost is more of your Claude quota.
+  For one run, use `--thinking`. The cost is more of your OpenCode Go plan's windows.
 - **A stronger or cheaper model for one job.** Change `modelRoles.<role>` in `hermes/omp.yml`.
   The roles `default`, `slow` and `plan` carry the main work. The role `task` is the subagent role
   that edits code. The roles `smol`, `tiny`, `commit`, `memory`, `advisor` and `judge` are cheap side
-  roles. Today the first four use Sonnet and the others use Haiku. Use only `anthropic/...` models:
-  your subscription is the only provider.
+  roles. Today every role uses `opencode-go/glm-5.3-flash`. Use only `opencode-go/...` models:
+  your OpenCode Go subscription is the only provider.
 - **Better results for one repository.** Write `.omp/RULES.md` (short, hard rules) and
   `.omp/AGENTS.md` (background) in that repository.
 - **Better results for one task.** Write a better task file. Name the done criterion and the exact

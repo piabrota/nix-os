@@ -59,15 +59,15 @@ class ModelTest extends munit.FunSuite:
 
   private val omp = OmpSettings("/c", "/a", "35m", "/omp", "/timeout", "/choom")
 
-  test("omp: the ceiling, choom and the token"):
-    val e = OmpSettings.exec(omp, ClaudeTokens(None, Some("sk-ant-oat-h"), None), List("-p"))
+  test("omp: the ceiling, choom and the key"):
+    val e = OmpSettings.exec(omp, Some("go-key"), List("-p"))
     assertEquals(e.cmd, List("/timeout", "--signal=TERM", "--kill-after=30s", "35m", "/choom", "-n", "500", "--",
       "/omp", "--append-system-prompt", "/a", "-p"))
-    assertEquals(e.set("ANTHROPIC_OAUTH_TOKEN"), "sk-ant-oat-h")
-    assertEquals(e.unset, OmpSettings.names)
-    val seat = OmpSettings.exec(omp.copy(ceiling = "none"), ClaudeTokens(None, None, Some("sk-ant-oat-s")), Nil)
+    assertEquals(e.set("OPENCODE_API_KEY"), "go-key")
+    assertEquals(e.unset, OmpSettings.claudeVars ++ OmpSettings.names)
+    val seat = OmpSettings.exec(omp.copy(ceiling = "none"), None, Nil)
     assertEquals(seat.cmd.head, "/choom")
-    assertEquals((seat.set("ANTHROPIC_OAUTH_TOKEN"), seat.unset.head), ("sk-ant-oat-s", "ANTHROPIC_API_KEY"))
+    assert(!seat.set.contains("OPENCODE_API_KEY") && seat.unset.head == "CLAUDE_CODE_OAUTH_TOKEN")
 
   test("seat-claude: the subscription token moves, an API key does not"):
     val s = SeatClaudeSettings("/claude", "/choom")
@@ -77,11 +77,13 @@ class ModelTest extends munit.FunSuite:
     assertEquals((api.set, api.cmd.last), (Map.empty[String, String], "--help"))
     assert(api.unset.contains("ANTHROPIC_API_KEY"))
 
-  test("marola-gh and openrig-claude-token"):
+  test("marola-gh and openrig-seat-tokens"):
     assert(MarolaGh.allows(List("pr", "create", "--fill")))
     assert(!MarolaGh.allows(List("pr", "merge")) && !MarolaGh.allows(List("--repo", "x", "pr", "create")))
-    assertEquals(SeatClaudeToken.render(List("CLAUDE_CODE_OAUTH_TOKEN=a", "CLAUDE_CODE_OAUTH_TOKEN=b")), "ANTHROPIC_API_KEY=b\n")
-    assertEquals(SeatClaudeToken.render(Nil), "")
+    assertEquals(SeatTokens.render(List("CLAUDE_CODE_OAUTH_TOKEN=a", "CLAUDE_CODE_OAUTH_TOKEN=b",
+      "OPENCODE_GO_API_KEY=go")), "ANTHROPIC_API_KEY=b\nOPENCODE_API_KEY=go\n")
+    assertEquals(SeatTokens.render(List("OPENCODE_GO_API_KEY=go")), "OPENCODE_API_KEY=go\n")
+    assertEquals(SeatTokens.render(Nil), "")
 
   test("restart-services: the arguments"):
     assertEquals(RestartArgs.parse(Nil), Right(RestartArgs(Selection.All, false, false)))

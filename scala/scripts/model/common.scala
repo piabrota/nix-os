@@ -50,6 +50,10 @@ object EnvNames:
   val anthropicOauth = "ANTHROPIC_OAUTH_TOKEN"
   val anthropicApiKey = "ANTHROPIC_API_KEY"
   val anthropicAuth = "ANTHROPIC_AUTH_TOKEN"
+  // OpenCode Go: Hermes's name for the key (hermes.env), and omp's and OpenRig's name for it
+  // (oh-my-pi docs/providers.md at v18.16.0; pi-runner-protocol.ts at v0.7.7).
+  val opencodeGo = "OPENCODE_GO_API_KEY"
+  val opencodeKey = "OPENCODE_API_KEY"
   val ghToken = "GH_TOKEN"
   val credentialsDirectory = "CREDENTIALS_DIRECTORY"
 

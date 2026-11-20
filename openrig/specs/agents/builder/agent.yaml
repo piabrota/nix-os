@@ -1,5 +1,5 @@
 # The builder seat: writes and tests the code of one task. It runs on omp, on the model below: the
-# form anthropic/<id> is the one for which OpenRig's runner passes the key to omp
+# form opencode-go/<id> is the one for which OpenRig's runner passes the key to omp
 # (hermes/skills/hermes-omp/references/openrig-seats.md). The rules of its tools come from the omp
 # configuration of the box (hermes/omp.yml).
 name: builder
@@ -8,7 +8,7 @@ description: Writes and tests code for one task
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared

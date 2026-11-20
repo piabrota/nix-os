@@ -100,7 +100,7 @@ Steps 2 to 5 **will** run this way. They have not run yet.
 |Path|`tmux`, `bash`, `git`, `ps`, `lsof`, `node`, `rig` and the seat `omp`. NixOS adds `coreutils`, `findutils`, `grep`, `sed`.|
 |Seat `omp`|`omp/wrapper.nix` with `ceiling = null` and `hermes/omp-seat-append-system.md`: the one wrapper of the repository, as PR 124 decided. Its rules (`hermes/omp.yml`) are the guard of a seat.|
 |Permissions|The rig sets `permission_policy: builtin:yolo`: the seats run without approval prompts. This is the owner's decision in PR 124. `OPENRIG_YOLO=1` in the unit does not do it: a rig with no policy gets the floor, and a policy wins over the variable. The deny rules of `hermes/omp.yml` stay in force. Hermes cannot change it: its deny list blocks `OPENRIG_YOLO` and the permission commands of `rig`.|
-|Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=ANTHROPIC_API_KEY`: the name only. The value stays in the root-only `EnvironmentFile`. A seat whose model is `anthropic/<id>` gets the key. A Claude Code seat gets it too, as every seat does, and its `claude` (`seatClaude`) turns it into `CLAUDE_CODE_OAUTH_TOKEN`, because Claude Code ranks `ANTHROPIC_API_KEY` above that token. No other variable reaches a seat.|
+|Seat key|The unit sets `OPENRIG_RECOVERY_PROVIDER_AUTH_ENV_ALLOWLIST=OPENCODE_API_KEY,ANTHROPIC_API_KEY`: the names only. The values stay in the root-only `EnvironmentFile`. A seat whose model is `opencode-go/<id>` gets `OPENCODE_API_KEY`; a seat whose model is `anthropic/<id>` gets `ANTHROPIC_API_KEY`. A Claude Code seat gets `ANTHROPIC_API_KEY` too, as every seat does, and its `claude` (`seatClaude`) turns it into `CLAUDE_CODE_OAUTH_TOKEN`, because Claude Code ranks `ANTHROPIC_API_KEY` above that token. No other variable reaches a seat.|
 |Marola bots|With `piabrota.openrig.marola.enable` (on at piabrota2), the rig `piabrota-dev` also serves marola-front and marola-back, and Hermes acts as `marola-pr-bot[bot]` on those two repositories only. `marola-bot.nix` mints the tokens. The merge bot of MIP-0086 is not used. See "marola-front and marola-back".|
 |Hermes|A `rig` command in the packages of `hermes-agent`. It sets `OPENRIG_URL=http://127.0.0.1:7433` and runs the real `rig`.|
 |Sandbox|`NoNewPrivileges`, `CapabilityBoundingSet=""`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`, `ProtectKernel*`, `ProtectProc=invisible`, `RestrictNamespaces`, `LockPersonality`, `SystemCallFilter=@system-service ~@privileged` with `EPERM`, and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`.|
@@ -122,13 +122,14 @@ deny list blocks `OPENRIG_URL=`, `OPENRIG_HOME=` and `/var/lib/openrig` in Herme
 
 The seats use the Claude subscription of the owner, as Hermes does. The flow:
 
-1. At each start of the unit, a root step (`ExecStartPre=-+...`) copies one line,
-   `CLAUDE_CODE_OAUTH_TOKEN=...`, from `/var/lib/hermes-secrets/hermes.env` to
-   `/var/lib/openrig-secrets/.env`, and renames the variable to `ANTHROPIC_API_KEY` with `sed` on
-   that line. Only the `openrig` user reads that file (mode 0600, folder 0700). The step prints
-   nothing and does not run with `set -x`.
-2. The unit reads the file with `EnvironmentFile=-`. The runner passes `ANTHROPIC_API_KEY` to the
-   seat, and the wrapper moves the value to `ANTHROPIC_OAUTH_TOKEN`
+1. At each start of the unit, a root step (`ExecStartPre=-+...`) copies two lines,
+   `OPENCODE_GO_API_KEY=...` and `CLAUDE_CODE_OAUTH_TOKEN=...`, from
+   `/var/lib/hermes-secrets/hermes.env` to `/var/lib/openrig-secrets/.env`, renamed to
+   `OPENCODE_API_KEY` and `ANTHROPIC_API_KEY` (`piabrota openrig-seat-tokens`). Only the `openrig`
+   user reads that file (mode 0600, folder 0700). The step prints nothing.
+2. The unit reads the file with `EnvironmentFile=-`. The runner passes `OPENCODE_API_KEY` to a
+   seat whose model is `opencode-go/<id>` and `ANTHROPIC_API_KEY` to a seat whose model is
+   `anthropic/<id>`
    ([the reference](../hermes/skills/hermes-omp/references/openrig-seats.md)).
 3. If the line or the source file is missing, the file is empty. The unit still starts. The seats
    then fail to log in.
@@ -302,7 +303,7 @@ openrig/specs/
   rigs/reels-fabric/rig.yaml           # pod "crew": creative-director, producer-editor, artist-3d, music-director, qa
 ```
 - `rig.yaml` has one pod, `dev`, with the members `builder`, `front-builder` and `reviewer`. All use
-  the runtime `omp`, the model `anthropic/claude-sonnet-5-5` and the folder `/var/lib/openrig/work`.
+  the runtime `omp`, the model `opencode-go/glm-5.3-flash` and the folder `/var/lib/openrig/work`.
   `front-builder` uses the agent `builder`. An edge `delegates_to` goes from each builder to
   `reviewer`. The rig sets `permission_policy: builtin:yolo`
   (see "Design").
@@ -310,9 +311,9 @@ openrig/specs/
   `startup/context.md` to the seat as text. The norms land in the `AGENTS.md` of the working folder.
 - `shared` holds only the norms. An `omp` seat projects no plugin and no runtime resource, and the
   shared pool of OpenRig's own specs is for Claude Code and Codex seats.
-- Each `agent.yaml` sets `model: anthropic/claude-sonnet-5-5` in `defaults`, and each member of
+- Each `agent.yaml` sets `model: opencode-go/glm-5.3-flash` in `defaults`, and each member of
   `rig.yaml` sets the same `model`: with only the default, `rig ps` showed `not-declared`. The
-  roles of `hermes/omp.yml` (Haiku for side tasks) still apply inside the seat.
+  roles of `hermes/omp.yml` still apply inside the seat.
 - The seats cannot push: `omp.yml` denies `git push`, `gh` and `sudo`. The norms say so.
 
 **To add an agent.** Make a folder `openrig/specs/agents/<name>/` with an `agent.yaml` that imports
@@ -357,7 +358,7 @@ The block wave-forecaster-dev runs the port of WAVEWATCH III (WW3) from Fortran 
 same loop for Claude Code seats on the owner's machine (its `rigs/` folder, PR 20 of
 h0ffmann/chaceon). The port rig `wave-forecaster-dev` now runs its two seats on Claude Code
 (`runtime: claude-code`, `claude-sonnet-5-5`, a pure Claude Code harness). The integrate rig stays on
-`omp`, on `anthropic/claude-sonnet-5-5`. Both follow the protocol of piabrota-dev otherwise:
+`omp`, on `opencode-go/glm-5.3-flash`. Both follow the protocol of piabrota-dev otherwise:
 `builtin:yolo`, the box norms first, two seats per rig, and Hermes as the operator who commits,
 pushes and opens the pull request. `wf-auditor` serves both rigs: the port rig's member entry sets its runtime, and
 the shared agent keeps omp as its default.
@@ -544,7 +545,7 @@ changes. The agents, the guidance, the bot tokens and the outbox are the same.
 
 |Setup|Rig|Seats|Runtime|
 |---|---|---|---|
-|A|`piabrota-dev` (exists)|builder, front-builder, reviewer|`omp`, `anthropic/claude-sonnet-5-5`|
+|A|`piabrota-dev` (exists)|builder, front-builder, reviewer|`omp`, `opencode-go/glm-5.3-flash`|
 |B|`piabrota-dev-claude` (new)|builder, front-builder, reviewer|`claude-code`, `claude-sonnet-5-5`|
 
 Setup B needs `piabrota.openrig.marola.claude.enable` (on at piabrota2). It adds `claude`,
@@ -621,7 +622,7 @@ screenplay is approved. The guide is [`REELS.md`](REELS.md), and the wiki's `Ree
 
 |Part|Setting|
 |---|---|
-|Rig|`openrig/specs/rigs/reels-fabric/rig.yaml`: one pod, `crew`, a film crew of five seats (`creative-director`, `producer-editor`, `artist-3d`, `music-director`, `qa`), all on `omp`, `anthropic/claude-sonnet-5-5`, `builtin:yolo`. The edges form a chain with no cycle: creative director to producer-editor and to artist-3d, producer-editor to music director and to QA. The executive producer is the owner, a human, not a seat.|
+|Rig|`openrig/specs/rigs/reels-fabric/rig.yaml`: one pod, `crew`, a film crew of five seats (`creative-director`, `producer-editor`, `artist-3d`, `music-director`, `qa`), all on `omp`, `opencode-go/glm-5.3-flash`, `builtin:yolo`. The edges form a chain with no cycle: creative director to producer-editor and to artist-3d, producer-editor to music director and to QA. The executive producer is the owner, a human, not a seat.|
 |Option|`piabrota.openrig.reels.enable`. Off at piabrota2. The specs are in `/etc/openrig/specs` as a definition only. `piabrota.openrig.reels.blender.enable` (off) adds `pkgs.blender`, headless, for the 3D shots: the owner's exception to "no GUI" (2026-11-08). It needs the first option. Cycles on the CPU only: EEVEE crashes on this box.|
 |Tools|The toolkit `reel` (`reels/`, built by `reels/default.nix`) with `ffmpeg-headless` and `jq`, in the profile of the user `openrig` and in the unit's `path`. Two font files (Inter and Fjalla One) are the owner's exception to "no fonts".|
 |Folders|`/var/lib/openrig/work/reels-fabric/{creative-director,producer-editor,artist-3d,music-director,qa}` (the seats' own folders), `projects` (shared, one folder for each slug) and `out` (the renders), all `StateDirectory`.|

@@ -5,7 +5,7 @@ description: Makes the 3D shots of one reel with Blender, headless, on the CPU
 
 defaults:
   runtime: omp
-  model: anthropic/claude-sonnet-5-5
+  model: opencode-go/glm-5.3-flash
 
 imports:
   - ref: local:../shared
