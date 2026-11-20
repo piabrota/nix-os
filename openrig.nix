@@ -55,7 +55,7 @@ let
   # names OPENCODE_API_KEY and ANTHROPIC_API_KEY, to a file that only the openrig user reads
   # (`piabrota openrig-seat-tokens`). The unit takes it as its EnvironmentFile. The step prints
   # nothing. A line that is missing simply stays out of the file.
-  seatTokens = utils.escapeSystemdExecArgs [
+  seatTokenStep = utils.escapeSystemdExecArgs [
     (lib.getExe (scripts.command {
       name = "openrig-seat-tokens";
       runtimeInputs = [ pkgs.coreutils ];
@@ -565,7 +565,7 @@ in
         # `-` lets the daemon start if this step fails: the token is only for the seats. systemd
         # reads the EnvironmentFile after this step. The daemon holds the key in its environment;
         # the runner passes it on to each seat.
-        ExecStartPre = [ "-+${seatTokens}" ];
+        ExecStartPre = [ "-+${seatTokenStep}" ];
         EnvironmentFile = "-${tokenFile}";
         User = "openrig";
         Group = "openrig";
