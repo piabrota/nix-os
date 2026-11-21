@@ -66,6 +66,15 @@ let
     github-copilot = labsPlugins "346cfe972f72b6a966e84c1004cf8742554b193d"
       "sha256-Z+mJyWn0bFuuQuHB3doI3XqXs3hDcpL6g/gLkaaSNwA=";
   };
+  # hermes-smart-router: auto model selection on OpenCode Go (complex -> GLM-5.3,
+  # simple -> DeepSeek V4.1 Flash). Pinned by commit; needs the three core patches
+  # below applied to the hermes-agent package.
+  smartRouter = pkgs.fetchFromGitHub {
+    owner = "ymkthr";
+    repo = "hermes-smart-router";
+    rev = "cf44bac12bcffd31f77d5db37510d6dca3b6785f";
+    hash = "sha256-00000000000000000000000000000000000000000000000000000000000=";
+  };
   # More from the catalog, each at its catalog commit, all MIT and pure Python: local ledgers and
   # small helpers that cost no model call.
   catalogPlugin = owner: repo: rev: hash: pkgs.fetchFromGitHub { inherit owner repo rev hash; };
@@ -315,9 +324,15 @@ in
     # refuses every plugin whose requires_hermes is higher, among them the deny list and tripwire.
     # hermesVersion is the release that the input `hermes-agent` pins in flake.lock: change it in
     # the same pull request as the pin (and the badge in README.md).
-    package = lib.mkDefault (hermes-agent.packages.x86_64-linux.default.override {
+    package = lib.mkDefault ((hermes-agent.packages.x86_64-linux.default.override {
       version = hermesVersion;
-    });
+    }).overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [
+        "${smartRouter}/patches/01-turn-context-model-override.patch"
+        "${smartRouter}/patches/02-conversation-loop-switch-model.patch"
+        "${smartRouter}/patches/03-delegate-tool-per-task-model.patch"
+      ];
+    }));
     # The extras every host uses, added to the package's own: the chat platforms (Telegram,
     # Discord, Slack), mcp, the MCP client, without which mcpServers below do nothing, and ddgs,
     # DuckDuckGo search with no key (since v0.23.0 a web search provider that Hermes picks when no
@@ -329,9 +344,12 @@ in
     # Never a key here: settings land in the store. The Go plan is a subscription with 5-hour,
     # weekly and monthly windows; its catalog (models_catalog_static.py at the pinned commit)
     # holds GLM, Kimi, MiniMax, DeepSeek, Qwen, gpt-5.6-luna and grok-4.5.
+    # Auto model (hermes-smart-router): complex turns route to glm-5.3, simple turns to
+    # deepseek-v4.1-flash. Base model is the fallback when routing returns nothing; keep it
+    # cheap so a failed router never burns the GLM quota.
     settings.model = {
       provider = "opencode-go";
-      default = "glm-5.3-flash";
+      default = "deepseek-v4.1-flash";
     };
     # One model everywhere: glm-5.3-flash plans, writes, reviews, decides, and also takes the
     # subagents (delegate_task: read-only fan-out) and three cheap side tasks (session titles,
@@ -358,16 +376,16 @@ in
     settings.auxiliary = {
       title_generation = {
         provider = "opencode-go";
-        model = "glm-5.3-flash";
+        model = "deepseek-v4.1-flash";
       };
       skills_hub = {
         provider = "opencode-go";
-        model = "glm-5.3-flash";
+        model = "deepseek-v4.1-flash";
       };
       # The judge of /goal (Hermes's Ralph loop): one short verdict after each turn.
       goal_judge = {
         provider = "opencode-go";
-        model = "glm-5.3-flash";
+        model = "deepseek-v4.1-flash";
       };
     };
     # Compress the conversation at 40 % of the context window, not 50 %. glm-5.3-flash has
@@ -382,7 +400,7 @@ in
     settings.goals.max_turns = 6;
     settings.delegation = {
       provider = "opencode-go";
-      model = "glm-5.3-flash";
+      model = "deepseek-v4.1-flash";
       fallback_providers = [
         {
           provider = "opencode-go";
@@ -406,6 +424,7 @@ in
       hermesGuide
       pluginGuard
       superpowers
+      smartRouter
     ] ++ lib.mapAttrsToList subPlugin (labs // more);
     settings.plugins.enabled = [
       "custom-dangerous-patterns"
@@ -415,6 +434,7 @@ in
       "hermes-guide"
       "hermes-plugin-guard"
       "superpowers"
+      "smart-router"
     ] ++ builtins.attrNames (labs // more);
     environment.HERMES_CUSTOM_PATTERNS_PATH = "${./hermes/dangerous-patterns.yaml}";
     # Limits from the list's operational playbooks, for a subscription's quota (the fan-out limits
@@ -506,6 +526,34 @@ in
       exec ${scripts.command { name = "feed-build"; runtimeInputs = [ pkgs.curl ]; }}/bin/feed-build "$@"
     '';
     hermesHomeFiles."feeds/feeds.toml" = ./hermes/feeds/feeds.toml;
+    # hermes-smart-router config: auto model routing (complex -> glm-5.3,
+    # simple/trivial -> deepseek-v4.1-flash). Loaded from plugins/smart-router/config/config.yaml.
+    hermesHomeFiles."plugins/smart-router/config/config.yaml" = ''
+      provider: opencode-go
+      main_turn_routing:
+        enabled: true
+        fallback_to_llm: true
+        classifier_model: deepseek-v4.1-flash
+        classifier_provider: opencode-go
+      delegation_routing:
+        enabled: true
+      health:
+        cooldown_seconds: 60
+        max_consecutive_errors: 3
+      tier_map:
+        architecture:
+          - glm-5.3
+        complex:
+          - glm-5.3
+        medium:
+          - glm-5.3
+        simple:
+          - deepseek-v4.1-flash
+        trivial:
+          - deepseek-v4.1-flash
+      default_model: deepseek-v4.1-flash
+      log_level: info
+    '';
     # The skills-export no_agent cron job (daily 01:45) runs this: it copies Hermes's skills into a
     # pull request on piabrota/skills.
     hermesHomeFiles."scripts/export-skills.sh" = cronScript exportSkills;
