@@ -60,7 +60,7 @@ quota. The survey of each key at the pinned commit is in [`AWESOME-HERMES.md`](A
 
 | Setting | Value | Why |
 |---|---|---|
-| `fallback_providers` (main and `delegation`) | empty | OpenCode Go models only. If the Go relay fails, the turn fails; it never goes to another provider. |
+| `fallback_providers` (main and `delegation`) | Beam Free (XHigh), then Qwen 3.6 Plus | OpenCode Go models only. When GLM 5.3 Flash fails, Hermes tries Beam Free (free tier, XHigh reasoning) for that turn, then Qwen 3.6 Plus. Each new message starts with GLM again. |
 | `model.default` | `glm-5.3-flash` | One model for everything: it plans, writes, reviews and decides. It is the Go catalog's cheap fast tier, with the same 1,000,000-token window as the big models on the relay. |
 | `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `glm-5.3-flash` | The same model also takes the subagents for read-only fan-out and three cheap side tasks (titles, skill matching, the `/goal` judge). Hermes has no per-call router: the model decides to delegate, and `hermes/SOUL.md` says when. It runs a single grep, list or fetch itself and delegates only three or more read-only tasks, or a read of more than about 20 files. Compression, the dangerous-command approval and the post-turn review run on it too. |
 | `delegation` | at most 2 children, 50 iterations each, one level deep | Small fan-out, for one vCPU and the quota. |
@@ -69,6 +69,7 @@ quota. The survey of each key at the pinned commit is in [`AWESOME-HERMES.md`](A
 | `compression.threshold` | 0.40 (default 0.50) | Hermes compresses the conversation when the prompt reaches this share of the context window. `glm-5.3-flash` has 1,000,000 tokens (models.dev, `opencode-go`), so 0.40 is about 400,000 tokens. Hermes floors the ratio at 0.75 only for windows under 512K tokens, so a lower value holds here. Each compression rewrites the cached prompt prefix once; every later turn costs less because the context is smaller. Change the value in `hermes.nix`. A second net, session hygiene, fires at 85 % and is not configurable. Core does not reset idle sessions; the community plugin `hermes-session-reset-policy` does, and it is not installed. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h for chat (people pause), 5 min for cron and subagents. |
 | `mcp.auto_reload_on_config_change` | off | A config change does not reload the MCP servers (which would drop the prompt cache); only a deploy changes the config. |
+| Qwen Code CLI | on PATH, YOLO approval mode | `pkgs.qwen-code` ships in Hermes's `extraPackages`; `/var/lib/hermes/.qwen/settings.json` is written on activation with `tools.approvalMode: "yolo"`, so Qwen Code never prompts for file edits or shell commands. |
 | `agent.agent_cache.max_size` | 16 | Fewer cached agents, to save RAM. |
 | `code_execution.max_session_kernels` | 1 | One code kernel at a time. |
 | `sessions` | prune after 45 days, then vacuum `state.db` | Disk. |

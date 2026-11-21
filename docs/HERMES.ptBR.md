@@ -61,7 +61,7 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 
 | Ajuste | Valor | Por quê |
 |---|---|---|
-| `fallback_providers` (principal e `delegation`) | vazio | Só modelos do OpenCode Go. Se o relay do Go falhar, o turno falha; ele nunca vai para outro provedor. |
+| `fallback_providers` (principal e `delegation`) | Beam Free (XHigh), depois Qwen 3.6 Plus | Só modelos do OpenCode Go. Quando o GLM 5.3 Flash falha, o Hermes tenta o Beam Free (nível gratuito, raciocínio XHigh) naquele turno e depois o Qwen 3.6 Plus. Cada mensagem nova começa de novo no GLM. |
 | `model.default` | `glm-5.3-flash` | Um modelo para tudo: planeja, escreve, revisa e decide. É o nível rápido e barato do catálogo do Go, com a mesma janela de 1.000.000 de tokens dos modelos grandes do relay. |
 | `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `glm-5.3-flash` | O mesmo modelo também cuida dos subagentes de leitura em paralelo e das três tarefas laterais baratas (títulos, escolha de skill, o juiz do `/goal`). O Hermes não tem roteador por chamada: o modelo decide delegar, e o `hermes/SOUL.md` diz quando. Ele roda sozinho um grep, uma lista ou uma busca, e só delega três ou mais tarefas de leitura, ou a leitura de mais de uns 20 arquivos. A compressão, a aprovação de comandos perigosos e a revisão pós-turno rodam nele também. |
 | `delegation` | até 2 filhos, 50 iterações cada, um nível | Pouca ramificação, para uma vCPU e a cota. |
