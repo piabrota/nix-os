@@ -339,8 +339,22 @@ in
     # 1,000,000-token window as the big models on the relay. Compression, the dangerous-command
     # approval and the post-turn review run on it too. Hermes has no per-call router: it chooses
     # to delegate, so SOUL.md tells it when to.
-    # No fallback: if OpenCode Go fails, the turn fails rather than going to another provider.
-    settings.fallback_providers = [ ];
+    # Beam Free (XHigh) as the backover: when GLM 5.3 Flash fails (rate limits, server
+    # errors, auth failures, connection drops), Hermes switches to Beam Free with its xhigh
+    # reasoning level for that turn, then retries GLM on the next message. Beam Free is the
+    # free tier on the same OpenCode Go relay, so no new key is needed (OPENCODE_GO_API_KEY
+    # covers both). The fallback is turn-scoped: each new message starts with GLM again.
+    settings.fallback_providers = [
+      {
+        provider = "opencode-go";
+        model = "beam-free";
+      }
+    ];
+    # XHigh reasoning for the fallback model: GLM runs at its default effort, Beam Free at
+    # its maximum. The per-model override beats the global default (medium) for this model.
+    settings.agent.reasoning_overrides = {
+      "beam-free" = "xhigh";
+    };
     settings.auxiliary = {
       title_generation = {
         provider = "opencode-go";
@@ -369,7 +383,12 @@ in
     settings.delegation = {
       provider = "opencode-go";
       model = "glm-5.3-flash";
-      fallback_providers = [ ];
+      fallback_providers = [
+        {
+          provider = "opencode-go";
+          model = "beam-free";
+        }
+      ];
       # Shallow fan-out, for the Go plan's windows. How many children run at once depends on
       # the machine: upstream's 10 on piabrota2.
       max_iterations = 50;
