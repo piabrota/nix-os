@@ -161,6 +161,12 @@ let
   });
   # The Scala commands of this repository (scala/README.md); each one below is a program of its own.
   scripts = pkgs.callPackage ./scala { };
+  # Qwen Code settings for the hermes user: auto-approve every tool call (YOLO mode),
+  # so Qwen Code never prompts for file edits or shell commands. Shipped as a store
+  # file and copied into /var/lib/hermes/.qwen/settings.json on activation (below).
+  qwenSettings = pkgs.writeText "hermes-qwen-settings.json" (builtins.toJSON {
+    tools.approvalMode = "yolo";
+  });
   # The kvm4-health skill's command (hermes/skills/kvm4-health, scala/hermes/Kvm4Health.scala), with
   # the tools it reads with on its PATH, for chat and for the watchdog cron job below.
   kvm4Health = scripts.command {
@@ -349,6 +355,10 @@ in
         provider = "opencode-go";
         model = "beam-free";
       }
+      {
+        provider = "opencode-go";
+        model = "qwen3.6-plus";
+      }
     ];
     # XHigh reasoning for the fallback model: GLM runs at its default effort, Beam Free at
     # its maximum. The per-model override beats the global default (medium) for this model.
@@ -388,6 +398,10 @@ in
           provider = "opencode-go";
           model = "beam-free";
         }
+        {
+          provider = "opencode-go";
+          model = "qwen3.6-plus";
+        }
       ];
       # Shallow fan-out, for the Go plan's windows. How many children run at once depends on
       # the machine: upstream's 10 on piabrota2.
@@ -422,6 +436,10 @@ in
     # update checks or shared metrics (Nix owns updates; nothing goes to Nous). The machine's
     # limits (memory, CPU, parallel work) are per host.
     settings.agent.max_turns = 60;
+    # Fail over to the fallback providers on the first transient error instead of retrying GLM
+    # three times (the default), which delayed the switch to Beam Free by minutes. Auth
+    # failures and not-found still switch immediately; transient errors now switch immediately too.
+    settings.agent.api_max_retries = 0;
     # How long a reload (reloadTriggers, below) waits for work in flight before it stops the
     # gateway anyway. The default, 30 min, keeps Hermes deaf to new messages for too long after a
     # deploy; a run of 60 turns took about 3 min on 2026-11-03.
@@ -473,8 +491,7 @@ in
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix.
     # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim), and
     # manim-smoke renders its smoke scene.
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun manimSmoke ];
-    # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that the omp
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun manimSmoke pkgs.qwen-code ];    # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that the omp
     # wrapper and openrig.nix copy from this same file (CLAUDE_CODE_OAUTH_TOKEN, still there for
     # omp and the rig seats), and a platform's token and allowed users (docs/HERMES.md). Activation
     # copies it into /var/lib/hermes/.hermes/.env; without it Hermes warns and the gateway starts
@@ -533,6 +550,8 @@ in
     "d /var/lib/hermes-secrets 0700 root root -"
     "d /var/lib/hermes/workspace/omp-tasks 0770 hermes hermes -"
     "d /var/lib/hermes/.hermes/feeds 2770 hermes hermes -"
+    "d /var/lib/hermes/.qwen 0770 hermes hermes -"
+    "C+ /var/lib/hermes/.qwen/settings.json 0660 hermes hermes - ${qwenSettings}"
   ];
   # h0ffmann is NOT in the `hermes` group, on purpose. Upstream refuses the gateway control socket
   # when the group of a group-writable home has another member, and then the dashboard Chat tab
