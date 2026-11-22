@@ -436,6 +436,10 @@ in
     # update checks or shared metrics (Nix owns updates; nothing goes to Nous). The machine's
     # limits (memory, CPU, parallel work) are per host.
     settings.agent.max_turns = 60;
+    # Fail over to the fallback providers on the first transient error instead of retrying GLM
+    # three times (the default), which delayed the switch to Beam Free by minutes. Auth
+    # failures and not-found still switch immediately; transient errors now switch immediately too.
+    settings.agent.api_max_retries = 0;
     # How long a reload (reloadTriggers, below) waits for work in flight before it stops the
     # gateway anyway. The default, 30 min, keeps Hermes deaf to new messages for too long after a
     # deploy; a run of 60 turns took about 3 min on 2026-11-03.
