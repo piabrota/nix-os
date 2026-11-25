@@ -73,7 +73,7 @@ sudo wc -c /etc/marola/ghcr-token                        # 0 means nothing was p
 sudo systemctl start marola-boards-build; journalctl -u marola-boards-build -n 40 --no-pager
 ```
 
-The start waits for the whole build (up to 45 minutes). Each run tries twice, and a run that fails
+The start waits for the whole build (up to 90 minutes: four areas on one core take about 45, and the timeout that was 45 killed the run of 2026-11-25 10:41 at exactly 45 minutes). Each run tries twice, and a run that fails
 still publishes the areas it finished. A failed run does not leave the unit failed (`ExecStart=-`), so a
 deploy that starts it is not rolled back. A deploy never stops or restarts a running build
 (`restartIfChanged = false`), since a restart would hold the switch for the whole build; read the exit code in the journal (`status=125/n/a, ignoring`

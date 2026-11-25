@@ -232,7 +232,7 @@ in
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       # A deploy must not stop a running build and start it again: the start of a oneshot waits for
-      # the whole build (up to 45 minutes), and deploy-rs rolls back when its confirmation times out.
+      # the whole build (up to 90 minutes), and deploy-rs rolls back when its confirmation times out.
       # The new definition applies at the next timer or kick start.
       restartIfChanged = false;
       serviceConfig = {
@@ -251,7 +251,7 @@ in
         StateDirectory = [ "marola-boards-build" "marola-boards" ];
         RuntimeDirectory = "marola-boards-build";
         RuntimeDirectoryMode = "0700";
-        TimeoutStartSec = "45min";
+        TimeoutStartSec = "90min";
       } // optionalAttrs (bcfg.tokenFile != null) {
         LoadCredential = "ghcr-token:${bcfg.tokenFile}";
       };
