@@ -35,10 +35,6 @@ let
     runtimeInputs = [ pkgs.bash pkgs.coreutils pkgs.gnused pkgs.curl pkgs.nodejs_24 pkgs.pmtiles pkgs.tippecanoe ];
   };
   bcfg = cfg.boards.build;
-  # The boards' stamp: the app image and the areas file. A deploy that moves either starts a
-  # build, so a new area in the pin's site/areas.json gets its boards and its entry in the served
-  # areas.json at once, not at the next timer run.
-  boardsStamp = builtins.hashString "sha256" (bcfg.image + builtins.readFile cfg.package.areas);
   # The boards as marola-site's site.yml builds them, here instead of on the self-hosted runner:
   # the app image marola-site pins, `--site` over its areas.json, no LLM. piabrota2 is in Brazil
   # (LACNIC: BR), and INEA and INEMA answer only Brazilian addresses. The beach lists stay in the
@@ -312,7 +308,7 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      restartTriggers = [ boardsStamp ];
+      restartTriggers = [ bcfg.image cfg.package.areas ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
