@@ -4,22 +4,22 @@
 # It lives in the store, read-only: omp cannot edit its own guardrails. Keys from omp's
 # docs/settings.md at v18.16.0.
 
-# OpenCode Go only, through the owner's subscription, as Hermes: glm-5.3-flash for the work and for
-# the subagents (`task`), which edit code, and for the side roles (smol, commit, tiny, memory,
-# advisor, judge). Without these, `tiny`, `memory` and `judge` pick other providers or local
-# models. omp reads OPENCODE_API_KEY for opencode-go (docs/providers.md at v18.16.0); the wrapper
-# sets it from Hermes's OPENCODE_GO_API_KEY.
+# OpenCode Go only, through the owner's subscription, as Hermes: deepseek-v4.1-flash for the work
+# and for the subagents (`task`), which edit code, and for the side roles (smol, commit, tiny,
+# memory, advisor, judge). Without these, `tiny`, `memory` and `judge` pick other providers or
+# local models. omp reads OPENCODE_API_KEY for opencode-go (docs/providers.md at v18.16.0); the
+# wrapper sets it from Hermes's OPENCODE_GO_API_KEY.
 modelRoles:
-  default: opencode-go/glm-5.3-flash
-  slow: opencode-go/glm-5.3-flash
-  plan: opencode-go/glm-5.3-flash
-  smol: opencode-go/glm-5.3-flash
-  task: opencode-go/glm-5.3-flash
-  commit: opencode-go/glm-5.3-flash
-  tiny: opencode-go/glm-5.3-flash
-  memory: opencode-go/glm-5.3-flash
-  advisor: opencode-go/glm-5.3-flash
-  judge: opencode-go/glm-5.3-flash
+  default: opencode-go/deepseek-v4.1-flash
+  slow: opencode-go/deepseek-v4.1-flash
+  plan: opencode-go/deepseek-v4.1-flash
+  smol: opencode-go/deepseek-v4.1-flash
+  task: opencode-go/deepseek-v4.1-flash
+  commit: opencode-go/deepseek-v4.1-flash
+  tiny: opencode-go/deepseek-v4.1-flash
+  memory: opencode-go/deepseek-v4.1-flash
+  advisor: opencode-go/deepseek-v4.1-flash
+  judge: opencode-go/deepseek-v4.1-flash
   web: web/duckduckgo
 
 # The default is `high`. This line pins it, so an upstream default cannot move it.

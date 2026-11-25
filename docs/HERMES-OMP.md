@@ -169,7 +169,7 @@ loosen it. An array in the overlay replaces the array of a lower layer.
 - **A stronger or cheaper model for one job.** Change `modelRoles.<role>` in `hermes/omp.yml`.
   The roles `default`, `slow` and `plan` carry the main work. The role `task` is the subagent role
   that edits code. The roles `smol`, `tiny`, `commit`, `memory`, `advisor` and `judge` are cheap side
-  roles. Today every role uses `opencode-go/glm-5.3-flash`. Use only `opencode-go/...` models:
+  roles. Today every role uses `opencode-go/deepseek-v4.1-flash`. Use only `opencode-go/...` models:
   your OpenCode Go subscription is the only provider.
 - **Better results for one repository.** Write `.omp/RULES.md` (short, hard rules) and
   `.omp/AGENTS.md` (background) in that repository.
