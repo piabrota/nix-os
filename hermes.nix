@@ -5,7 +5,7 @@
 # Every host gets this file. It sets what does not depend on the machine and leaves the rest at
 # upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
-{ config, lib, pkgs, utils, hermes-agent, ... }:
+{ config, lib, pkgs, utils, hermes-agent, nixpkgs, ... }:
 let
   # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.1 is 3b42157.
   hermesVersion = "0.23.1";
@@ -309,8 +309,12 @@ let
   # The `omp` wrapper (omp/wrapper.nix): the only omp on Hermes's PATH.
   ompWrapped = pkgs.callPackage ./omp/wrapper.nix { };
   # The `dsh` wrapper (dsh/wrapper.nix): DeepSeek Harness with the OpenCode Go
-  # route and the read-only rules, for the hermes-dsh skill.
-  dshWrapped = pkgs.callPackage ./dsh/wrapper.nix { };
+  # route and the read-only rules, for the hermes-dsh skill. The package comes
+  # from the stable nixpkgs input: services.hermes-agent pins its own unstable
+  # nixpkgs, which does not have deepseek-harness.
+  dshWrapped = pkgs.callPackage ./dsh/wrapper.nix {
+    dsh = nixpkgs.legacyPackages.${pkgs.system}.deepseek-harness;
+  };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings

@@ -26,7 +26,7 @@
       # plus what is the host's own.
       mkHost = name: extraModules: nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit hermes-agent; };
+        specialArgs = { inherit hermes-agent nixpkgs; };
         modules = [ ./hosts/${name} ] ++ extraModules;
       };
       # deploy-rs: CI builds the closure, copies it over SSH and activates it. If the box
@@ -303,7 +303,7 @@
         # ACME, the backup timer) build in CI before a real app needs them. Never deployed.
         loco-example = (nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit hermes-agent; };
+          specialArgs = { inherit hermes-agent nixpkgs; };
           modules = [
             ./hosts/piabrota
             {

@@ -13,11 +13,11 @@
 # `ceiling`: the hard stop of `timeout` for every run, like omp's. null turns it
 # off for a caller that lives as long as a seat.
 { pkgs
+, dsh ? pkgs.deepseek-harness
 , ceiling ? "35m"
 , appendSystemPrompt ? ../hermes/dsh-append-system.md
 }:
 let
-  dsh = pkgs.deepseek-harness;
   # The profile patch is JSON because JSON is YAML and the rules below are a
   # string with newlines: no YAML quoting to get wrong. The order is the order
   # in which the layers apply; the system-prompt entry wins over the headless
