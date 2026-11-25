@@ -155,7 +155,7 @@ O que cada seat lê e escreve:
 |`crew-music-director@reels-fabric`|O roteiro e as indicações de `sound` dele|`build/audio/` pelo `reel music` e pelo `reel mix`, `review/sound.md`|
 |`crew-qa@reels-fabric`|`reel.mp4`, `qa.json`, os quadros, o roteiro|`out/<slug>/qa.json` e `qa/` pelo `reel qa`, `review/qa.md`|
 
-Os cinco seats rodam `omp` em `opencode-go/glm-5.3-flash`, sem pedidos de aprovação
+Os cinco seats rodam `omp` em `opencode-go/deepseek-v4.1-flash`, sem pedidos de aprovação
 (`permission_policy: builtin:yolo`, como nas outras rigs). Um membro pode rodar `runtime: claude-code`
 com uma linha (veja [`RUNTIMES.ptBR.md`](RUNTIMES.ptBR.md)). As arestas são `delegates_to` e formam
 uma cadeia sem ciclo: `creative-director` para `producer-editor`, `creative-director` para

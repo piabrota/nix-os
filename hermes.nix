@@ -337,19 +337,19 @@ in
     # holds GLM, Kimi, MiniMax, DeepSeek, Qwen, gpt-5.6-luna and grok-4.5.
     settings.model = {
       provider = "opencode-go";
-      default = "glm-5.3-flash";
+      default = "deepseek-v4.1-flash";
     };
-    # One model everywhere: glm-5.3-flash plans, writes, reviews, decides, and also takes the
+    # One model everywhere: deepseek-v4.1-flash plans, writes, reviews, decides, and also takes the
     # subagents (delegate_task: read-only fan-out) and three cheap side tasks (session titles,
     # skill matching, the /goal judge). It is the Go catalog's cheap fast tier, with the same
     # 1,000,000-token window as the big models on the relay. Compression, the dangerous-command
     # approval and the post-turn review run on it too. Hermes has no per-call router: it chooses
     # to delegate, so SOUL.md tells it when to.
-    # Beam Free (XHigh) as the backover: when GLM 5.3 Flash fails (rate limits, server
+    # Beam Free (XHigh) as the backover: when DeepSeek V4.1 Flash fails (rate limits, server
     # errors, auth failures, connection drops), Hermes switches to Beam Free with its xhigh
-    # reasoning level for that turn, then retries GLM on the next message. Beam Free is the
+    # reasoning level for that turn, then retries DeepSeek on the next message. Beam Free is the
     # free tier on the same OpenCode Go relay, so no new key is needed (OPENCODE_GO_API_KEY
-    # covers both). The fallback is turn-scoped: each new message starts with GLM again.
+    # covers both). The fallback is turn-scoped: each new message starts with DeepSeek again.
     settings.fallback_providers = [
       {
         provider = "opencode-go";
@@ -360,7 +360,7 @@ in
         model = "qwen3.6-plus";
       }
     ];
-    # XHigh reasoning for the fallback model: GLM runs at its default effort, Beam Free at
+    # XHigh reasoning for the fallback model: DeepSeek runs at its default effort, Beam Free at
     # its maximum. The per-model override beats the global default (medium) for this model.
     settings.agent.reasoning_overrides = {
       "beam-free" = "xhigh";
@@ -368,19 +368,19 @@ in
     settings.auxiliary = {
       title_generation = {
         provider = "opencode-go";
-        model = "glm-5.3-flash";
+        model = "deepseek-v4.1-flash";
       };
       skills_hub = {
         provider = "opencode-go";
-        model = "glm-5.3-flash";
+        model = "deepseek-v4.1-flash";
       };
       # The judge of /goal (Hermes's Ralph loop): one short verdict after each turn.
       goal_judge = {
         provider = "opencode-go";
-        model = "glm-5.3-flash";
+        model = "deepseek-v4.1-flash";
       };
     };
-    # Compress the conversation at 40 % of the context window, not 50 %. glm-5.3-flash has
+    # Compress the conversation at 40 % of the context window, not 50 %. deepseek-v4.1-flash has
     # 1,000,000 tokens (models.dev, opencode-go), so this is about 400,000 tokens. Hermes floors
     # the ratio at 0.75 only for windows under 512K, so 0.40 holds here. Trade-off: each
     # compression rewrites the cached prompt prefix once, and every later turn is cheaper because
@@ -392,7 +392,7 @@ in
     settings.goals.max_turns = 6;
     settings.delegation = {
       provider = "opencode-go";
-      model = "glm-5.3-flash";
+      model = "deepseek-v4.1-flash";
       fallback_providers = [
         {
           provider = "opencode-go";
@@ -436,7 +436,7 @@ in
     # update checks or shared metrics (Nix owns updates; nothing goes to Nous). The machine's
     # limits (memory, CPU, parallel work) are per host.
     settings.agent.max_turns = 60;
-    # Fail over to the fallback providers on the first transient error instead of retrying GLM
+    # Fail over to the fallback providers on the first transient error instead of retrying DeepSeek
     # three times (the default), which delayed the switch to Beam Free by minutes. Auth
     # failures and not-found still switch immediately; transient errors now switch immediately too.
     settings.agent.api_max_retries = 0;

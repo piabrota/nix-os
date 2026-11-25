@@ -25,13 +25,13 @@ pods:
         agent_ref: "local:../../agents/wf-integrator"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work/wave-forecaster-dev/integrator
       - id: auditor
         agent_ref: "local:../../agents/wf-auditor"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         # The same folder as the port rig's auditor: the two rigs never run together.
         cwd: /var/lib/openrig/work/wave-forecaster-dev/auditor
     edges:

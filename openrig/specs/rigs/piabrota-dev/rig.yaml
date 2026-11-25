@@ -34,14 +34,14 @@ pods:
         runtime: omp
         # The member names the model too. With only the AgentSpec default, `rig ps` showed
         # not-declared. anthropic/<id> is the form for which the runner passes the key.
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         # Made by the unit (StateDirectory in openrig.nix). A seat makes its clone here.
         cwd: /var/lib/openrig/work
       - id: front-builder
         agent_ref: "local:../../agents/builder"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work
       - id: reviewer
         agent_ref: "local:../../agents/reviewer"
@@ -49,7 +49,7 @@ pods:
         runtime: omp
         # The member names the model too. With only the AgentSpec default, `rig ps` showed
         # not-declared. anthropic/<id> is the form for which the runner passes the key.
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work
     edges:
       # Each builder asks the reviewer to check its diff. The builders start first.

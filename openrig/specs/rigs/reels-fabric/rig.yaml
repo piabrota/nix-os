@@ -9,7 +9,7 @@
 #                       piabrota.openrig.reels.blender.enable is on; see docs/REELS.md).
 #   Music director:     the procedural music and the mix.
 #   QA:                 checks the file against the screenplay. A seat that made the work never checks it.
-# The toolkit is `reel` (reels/, docs/REELS.md). glm-5.3-flash is the only model: no image, video, voice or
+# The toolkit is `reel` (reels/, docs/REELS.md). deepseek-v4.1-flash is the only model: no image, video, voice or
 # music service, no network. Every seat runs omp, as in piabrota-dev; a member can switch to
 # `runtime: claude-code` with one line (docs/RUNTIMES.md). The rig can also merge producer-editor and
 # music-director into one seat, if memory allows: one member with both roles, and no edge between them.
@@ -92,32 +92,32 @@ pods:
         agent_ref: "local:../../agents/reels-creative-director"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         # Its own folder (StateDirectory in openrig.nix): the norms land in its AGENTS.md.
         cwd: /var/lib/openrig/work/reels-fabric/creative-director
       - id: producer-editor
         agent_ref: "local:../../agents/reels-producer-editor"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work/reels-fabric/producer-editor
       - id: artist-3d
         agent_ref: "local:../../agents/reels-artist-3d"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work/reels-fabric/artist-3d
       - id: music-director
         agent_ref: "local:../../agents/reels-music-director"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work/reels-fabric/music-director
       - id: qa
         agent_ref: "local:../../agents/reels-qa"
         profile: default
         runtime: omp
-        model: opencode-go/glm-5.3-flash
+        model: opencode-go/deepseek-v4.1-flash
         cwd: /var/lib/openrig/work/reels-fabric/qa
     # A chain with no cycle. Returns are `rig send`, not edges.
     edges:

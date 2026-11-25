@@ -209,7 +209,7 @@ rules of its own (`hermes/omp.yml`) that a cloned repository cannot loosen. A ru
   agent_ref: "local:../../agents/builder"
   profile: default
   runtime: omp
-  model: opencode-go/glm-5.3-flash   # `opencode-go/<id>`: the form for which the runner passes the key
+  model: opencode-go/deepseek-v4.1-flash   # `opencode-go/<id>`: the form for which the runner passes the key
   cwd: /var/lib/openrig/work
 ```
 
