@@ -491,7 +491,7 @@ in
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix.
     # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim), and
     # manim-smoke renders its smoke scene.
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun manimSmoke pkgs.qwen-code ];    # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that the omp
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun manimSmoke pkgs.qwen-code ]; # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that the omp
     # wrapper and openrig.nix copy from this same file (CLAUDE_CODE_OAUTH_TOKEN, still there for
     # omp and the rig seats), and a platform's token and allowed users (docs/HERMES.md). Activation
     # copies it into /var/lib/hermes/.hermes/.env; without it Hermes warns and the gateway starts
