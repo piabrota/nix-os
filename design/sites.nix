@@ -16,6 +16,7 @@
     { id = "room"; label = "room"; url = "https://room.piabrota.art/"; host = "room.piabrota.art"; line = "piabrota/room: a 3D room with camera shots, a VCR, a window on Rio and piabrota RADIO."; access = "public"; }
     { id = "grid"; label = "grid"; url = "https://grid.piabrota.art/"; host = "grid.piabrota.art"; line = "The room on its own name, opened on the grid: the Brazilian coast on triangles."; access = "public"; }
     { id = "metrics"; label = "metrics"; url = "https://metrics.piabrota.art/"; host = "metrics.piabrota.art"; line = "Processes, memory and vCPU of both hosts, read every 10 seconds."; access = "public"; }
+    { id = "marola"; label = "marola"; url = "https://marola.piabrota.art/"; host = "marola.piabrota.art"; line = "The marola map and its pages, the same site as marola.dev."; access = "public"; }
     { id = "hermes"; label = "hermes"; url = "https://hermes.piabrota.art/"; host = "hermes.piabrota.art"; line = "The Hermes dashboard. It needs the login."; access = "login"; }
     { id = "rig"; label = "rig"; url = "https://rig.piabrota.art/"; host = "rig.piabrota.art"; line = "The OpenRig web UI. It needs the login."; access = "login"; }
   ];
