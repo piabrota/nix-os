@@ -103,6 +103,7 @@ setsid "${DSH_BIN:-dsh}" "${args[@]}" "$@" - <"$task" >"$fifo" 2>&1 &
 run_pid=$!
 echo "$run_pid" >"$pidfile"
 
+# shellcheck disable=SC2329 # called by the trap below
 on_signal() {
   : >"$stopfile"
   kill -TERM -- "-$run_pid" 2>/dev/null || kill -TERM "$run_pid" 2>/dev/null || true
