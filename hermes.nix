@@ -183,6 +183,19 @@ let
     name = "omp-run";
     runtimeInputs = [ ompWrapped ompStream ];
   };
+  # The hermes-dsh skill's stream filter and runner. DSH's headless profile prints
+  # one JSON event per line; dsh-stream turns them into the same plain lines as
+  # omp-stream, and dsh-run runs one task in the background and stops it by name.
+  dshStream = pkgs.writeShellApplication {
+    name = "dsh-stream";
+    runtimeInputs = [ pkgs.jq pkgs.gnused ];
+    text = builtins.readFile ./hermes/dsh-stream.sh;
+  };
+  dshRun = pkgs.writeShellApplication {
+    name = "dsh-run";
+    runtimeInputs = [ pkgs.coreutils pkgs.util-linux ];
+    text = builtins.readFile ./hermes/dsh-run.sh;
+  };
   # The hermes-manim skill's smoke render (scala/hermes/ManimSmoke.scala). The scene stays a file of
   # the skill: it is written in manim's Python API, which only Python reads.
   manimSmoke = scripts.command {
@@ -295,6 +308,9 @@ let
     ownerSkillPaths);
   # The `omp` wrapper (omp/wrapper.nix): the only omp on Hermes's PATH.
   ompWrapped = pkgs.callPackage ./omp/wrapper.nix { };
+  # The `dsh` wrapper (dsh/wrapper.nix): DeepSeek Harness with the OpenCode Go
+  # route and the read-only rules, for the hermes-dsh skill.
+  dshWrapped = pkgs.callPackage ./dsh/wrapper.nix { };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings
@@ -491,7 +507,7 @@ in
     # rig (OpenRig's CLI, for the hermes-rig skill) is added by openrig.nix.
     # manim renders animations for the hermes-manim skill (hermes/skills/hermes-manim), and
     # manim-smoke renders its smoke scene.
-    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun manimSmoke pkgs.qwen-code ]; # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that the omp
+    extraPackages = [ pkgs.gh pkgs.jq pkgs.ast-grep pkgs.yt-dlp-light manim ompWrapped kvm4Health ompStream ompRun dshWrapped dshStream dshRun manimSmoke pkgs.qwen-code ]; # Written by hand on the box, root only: OPENCODE_GO_API_KEY, the Claude token that the omp
     # wrapper and openrig.nix copy from this same file (CLAUDE_CODE_OAUTH_TOKEN, still there for
     # omp and the rig seats), and a platform's token and allowed users (docs/HERMES.md). Activation
     # copies it into /var/lib/hermes/.hermes/.env; without it Hermes warns and the gateway starts
@@ -549,6 +565,8 @@ in
   systemd.tmpfiles.rules = [
     "d /var/lib/hermes-secrets 0700 root root -"
     "d /var/lib/hermes/workspace/omp-tasks 0770 hermes hermes -"
+    "d /var/lib/hermes/workspace/dsh-tasks 0770 hermes hermes -"
+    "d /var/lib/hermes/.dsh 0770 hermes hermes -"
     "d /var/lib/hermes/.hermes/feeds 2770 hermes hermes -"
     "d /var/lib/hermes/.qwen 0770 hermes hermes -"
     "C+ /var/lib/hermes/.qwen/settings.json 0660 hermes hermes - ${qwenSettings}"
