@@ -15,8 +15,12 @@ metadata:
 
 `omp` ([oh-my-pi](https://github.com/can1357/oh-my-pi), v18.16.0) is a coding agent on this box.
 It is better than your own tools at large edits in a repository: exact edits, AST search, many
-files at once. It uses Claude Sonnet through the same subscription as you, so every run counts
-against the owner's limits.
+files at once. It uses the configured OpenCode Go model, so every run counts against the owner's
+limits.
+
+**On `deepseek-v4.1-flash` (the default), use `hermes-dsh` instead.** DSH is DeepSeek's own
+harness and uses the model's native tool and cache protocol. This skill is for the other models:
+when the owner changes the model, omp is the coding worker.
 
 `omp` on your PATH is a wrapper (piabrota/nix-os `hermes.nix`). Its rules are in a read-only file
 (`hermes/omp.yml`) that you and omp cannot change. omp cannot push, call `gh`, install packages,
@@ -26,11 +30,12 @@ the commit, the push and the pull request.
 
 ## When to use it
 
-Use omp for every task that writes or reviews code, config or scripts: implement, fix, refactor,
-review a pull request or a diff. The size of the change does not matter: a one-line fix goes
-through omp too. Do not write code with your own file tools. You do the steps omp cannot do: the
-branch, the commit, the push, the pull request, and a small slip you find in its diff (a blank line,
-a typo): fix it yourself and say so.
+Use omp for every task that writes or reviews code, config or scripts when the model is not
+`deepseek-v4.1-flash`: implement, fix, refactor, review a pull request or a diff. On DeepSeek
+Flash, `hermes-dsh` is the worker. The size of the change does not matter: a one-line fix goes
+through the worker too. Do not write code with your own file tools. You do the steps the worker
+cannot do: the branch, the commit, the push, the pull request, and a small slip you find in its
+diff (a blank line, a typo): fix it yourself and say so.
 
 Do not use omp for chat, notes, research, a question you can answer by reading a file, or a
 change to a Markdown file that has no code. Do those yourself and say that omp did not run.

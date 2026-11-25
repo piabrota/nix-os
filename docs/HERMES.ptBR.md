@@ -216,16 +216,35 @@ um servidor ou uma nuvem), e tudo que pede Node, API paga ou painel web, ou não
 lista cobre alertas brasileiros, balneabilidade ou ciência do mar: essas são skills próprias do
 piabrota, ainda por escrever.
 
-## omp, o trabalhador de código
+## dsh, o trabalhador de código no DeepSeek Flash
+
+O [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`, MIT; o pacote
+`deepseek-harness` do nixpkgs) é o agente de código do próprio DeepSeek. Enquanto o modelo é o
+`deepseek-v4.1-flash` (o padrão), o Hermes passa a ele toda tarefa que escreve ou revisa código
+pela skill `hermes-dsh`. O wrapper é o `dshWrapped` (`dsh/wrapper.nix`): aponta o dsh para a rota
+OpenCode Go `https://opencode.ai/inference/go/openai/v1`, modelo `deepseek-v4.1-flash`, raciocínio
+`high`, move o `OPENCODE_GO_API_KEY` para `OPENCODE_API_KEY` e entrega um patch de perfil só de
+leitura montado a partir de `hermes/dsh-append-system.md`. As tarefas ficam em
+`/var/lib/hermes/workspace/dsh-tasks/`; o console é o `dsh-run`, e o `dsh-stream` transforma os
+eventos JSON em linhas do chat. Uma execução ocupa cerca de 300 MiB e dura no máximo 35 minutos.
+
+O dsh roda no sandbox `workspace-write` dele e com `--approval-policy never`; as regras da tarefa
+carregam as proibições (nada de commit, push, `gh`, instalação, `sudo`, segredos). Diferente do omp,
+o dsh não tem uma lista de bloqueio de bash no estilo do `omp.yml`: a lista do Hermes vê apenas o
+comando externo `dsh`, então o sandbox e as regras da tarefa são a proteção. O procedimento é
+`hermes/skills/hermes-dsh/SKILL.md`. O modelo, o raciocínio e o provedor ficam em
+`dsh/wrapper.nix`; mudar ali é um deploy.
+
+## omp, o trabalhador de código nos outros modelos
 
 O [oh-my-pi](https://github.com/can1357/oh-my-pi) (omp, MIT, da Stencil Labs, um fork do Pi de
-Mario Zechner) é um agente de código de terminal, em Bun com partes nativas em Rust. O Hermes passa
-a ele toda tarefa que escreve ou revisa código pela skill `hermes-omp`
-(`hermes/skills/hermes-omp/SKILL.md`, a terceira entrada de `skills.external_dirs`): o Hermes cria
-um branch `hermes/*`, escreve a tarefa num arquivo em `/var/lib/hermes/workspace/omp-tasks/`, roda
-`omp -p --max-time 15m` na cópia de trabalho, lê o diff e então ele mesmo faz o commit, o push e o
-pull request. O omp nunca faz push. Como ver e ajustar cada camada:
-[HERMES-OMP.ptBR.md](HERMES-OMP.ptBR.md).
+Mario Zechner) é um agente de código de terminal, em Bun com partes nativas em Rust. Quando o
+modelo não é o `deepseek-v4.1-flash`, o Hermes passa a ele toda tarefa que escreve ou revisa código
+pela skill `hermes-omp` (`hermes/skills/hermes-omp/SKILL.md`, a terceira entrada de
+`skills.external_dirs`): o Hermes cria um branch `hermes/*`, escreve a tarefa num arquivo em
+`/var/lib/hermes/workspace/omp-tasks/`, roda `omp -p --max-time 15m` na cópia de trabalho, lê o
+diff e então ele mesmo faz o commit, o push e o pull request. O omp nunca faz push. Como ver e
+ajustar cada camada: [HERMES-OMP.ptBR.md](HERMES-OMP.ptBR.md).
 
 - **Versão.** O `omp/package.nix` usa o binário de release da tag `v18.16.0` (`omp-linux-x64`,
   fixado pelo hash), e não o flake. Do código-fonte, o omp é um build de Rust (fat LTO) e bun2nix

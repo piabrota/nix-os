@@ -227,12 +227,31 @@ hermes-lcm and the memory providers (too heavy for 1 GB, or a server or a cloud)
 that needs Node, a paid API or a web dashboard, or has no licence. Nothing on the list covers
 Brazilian alerts, bathing water or ocean science: those are piabrota's own skills to write.
 
-## omp, the coding worker
+## dsh, the coding worker on DeepSeek Flash
+
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`, MIT; the nixpkgs
+`deepseek-harness`) is DeepSeek's own coding agent. While the model is `deepseek-v4.1-flash` (the
+default), Hermes hands it every task that writes or reviews code through the `hermes-dsh` skill.
+The wrapper is `dshWrapped` (`dsh/wrapper.nix`): it points dsh at the OpenCode Go route
+`https://opencode.ai/inference/go/openai/v1`, model `deepseek-v4.1-flash`, reasoning `high`, moves
+`OPENCODE_GO_API_KEY` to `OPENCODE_API_KEY`, and gives it a read-only profile patch built from
+`hermes/dsh-append-system.md`. The task files are in `/var/lib/hermes/workspace/dsh-tasks/`; the
+console is `dsh-run`, with `dsh-stream` turning its JSON events into chat lines. A run takes about
+300 MiB and lives at most 35 minutes.
+
+DSH runs under its own `workspace-write` sandbox and `--approval-policy never`; the task rules
+carry the prohibitions (no commit, push, `gh`, install, `sudo`, secrets). Unlike omp, DSH has no
+omp-style bash deny list: Hermes's deny list sees only the outer `dsh` command, so the sandbox and
+the task rules are the guardrail. The procedure is `hermes/skills/hermes-dsh/SKILL.md`. The model,
+reasoning and provider are in `dsh/wrapper.nix`; a change there is a deploy.
+
+## omp, the coding worker on the other models
 
 [oh-my-pi](https://github.com/can1357/oh-my-pi) (omp, MIT, Stencil Labs, a fork of Mario Zechner's
-Pi) is a terminal coding agent on Bun with Rust natives. Hermes hands it every task that writes or
-reviews code through the `hermes-omp` skill (`hermes/skills/hermes-omp/SKILL.md`, the third
-`skills.external_dirs` entry): Hermes makes a `hermes/*` branch, writes the task to a file in
+Pi) is a terminal coding agent on Bun with Rust natives. When the model is not
+`deepseek-v4.1-flash`, Hermes hands it every task that writes or reviews code through the
+`hermes-omp` skill (`hermes/skills/hermes-omp/SKILL.md`, the third `skills.external_dirs` entry):
+Hermes makes a `hermes/*` branch, writes the task to a file in
 `/var/lib/hermes/workspace/omp-tasks/`, runs `omp -p --max-time 15m` in the working tree, reads
 the diff, and then commits, pushes and opens the pull request itself. omp never pushes. How to see
 and tune each layer: [HERMES-OMP.md](HERMES-OMP.md).

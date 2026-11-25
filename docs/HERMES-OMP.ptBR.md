@@ -1,12 +1,15 @@
-# omp, o trabalhador de código padrão: ver e ajustar
+# omp, o trabalhador de código nos outros modelos: ver e ajustar
 
 English: [HERMES-OMP.md](HERMES-OMP.md) (este arquivo vem primeiro; o inglês é o espelho).
 
 ## A regra
 
-Toda tarefa que escreve ou revisa código, configuração ou scripts passa pelo omp (oh-my-pi). O
-Hermes escreve um arquivo de tarefa e roda o omp. O Hermes lê o diff. Depois o Hermes faz o commit,
-o push de um branch `hermes/*` e abre o pull request.
+Quando o modelo não é o `deepseek-v4.1-flash`, toda tarefa que escreve ou revisa código,
+configuração ou scripts passa pelo omp (oh-my-pi). No DeepSeek Flash (o padrão), o trabalhador é o
+[`dsh`](HERMES.ptBR.md#dsh-o-trabalhador-de-código-no-deepseek-flash), o harness do próprio
+DeepSeek. Este documento é o lado do omp. O Hermes escreve um arquivo de tarefa e roda o omp. O
+Hermes lê o diff. Depois o Hermes faz o commit, o push de um branch `hermes/*` e abre o pull
+request.
 
 O Hermes não escreve código com as próprias ferramentas de arquivo. O omp nunca faz push e nunca
 chama o `gh`.
@@ -15,7 +18,7 @@ O Hermes edita à mão só em dois casos: um arquivo Markdown sem código, e um 
 do omp. No segundo caso, o Hermes avisa no chat. O omp não roda para conversa, notas ou pesquisa.
 
 O procedimento é a skill `hermes-omp`: [`hermes/skills/hermes-omp/SKILL.md`](../hermes/skills/hermes-omp/SKILL.md).
-A configuração está em [HERMES.ptBR.md](HERMES.ptBR.md#omp-o-trabalhador-de-código). A skill também é
+A configuração está em [HERMES.ptBR.md](HERMES.ptBR.md#omp-o-trabalhador-de-código-nos-outros-modelos). A skill também é
 um comando: `/hermes-omp` no Telegram e `/skill` no Discord.
 
 ## O que você vê no chat
