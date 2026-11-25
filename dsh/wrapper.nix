@@ -1,9 +1,9 @@
 # DeepSeek Harness (dsh), the coding worker for Hermes on deepseek-v4.1-flash
-# (hermes/skills/hermes-dsh, docs/HERMES.md, "dsh"). The package is nixpkgs'
-# `deepseek-harness`; this wrapper adds the OpenCode Go route, the read-only
-# profile patch, the key move and the timeout. The patch is in the store, so the
-# agent cannot loosen it; the rules appended to the system prompt are
-# hermes/dsh-append-system.md.
+# (hermes/skills/hermes-dsh, docs/HERMES.md, "dsh"). The package is the pinned
+# npm tarball in dsh/package.nix; this wrapper adds the OpenCode Go route, the
+# read-only profile patch, the key move and the timeout. The patch is in the
+# store, so the agent cannot loosen it; the rules appended to the system prompt
+# are hermes/dsh-append-system.md.
 #
 # DSH reads OPENCODE_API_KEY for the custom provider; Hermes's key is
 # OPENCODE_GO_API_KEY (hermes.env), and the wrapper moves it without overwriting
@@ -13,7 +13,7 @@
 # `ceiling`: the hard stop of `timeout` for every run, like omp's. null turns it
 # off for a caller that lives as long as a seat.
 { pkgs
-, dsh ? pkgs.deepseek-harness
+, dsh ? pkgs.callPackage ./package.nix { }
 , ceiling ? "35m"
 , appendSystemPrompt ? ../hermes/dsh-append-system.md
 }:

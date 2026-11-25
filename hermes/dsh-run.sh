@@ -2,9 +2,10 @@
 # dsh-run: one background DeepSeek Harness task, and a way to stop it.
 #
 #   dsh-run <name> [dsh flags]   runs `dsh --profile headless --json
-#                                [flags] - < dsh-tasks/<name>.md` through
-#                                dsh-stream, then prints how the run ended and
-#                                dsh-tasks/<name>.progress
+#                                --permission-mode workspace-write
+#                                --approval-policy never [flags] - < dsh-tasks/<name>.md`
+#                                through dsh-stream, then prints how the run
+#                                ended and dsh-tasks/<name>.progress
 #   dsh-run --stop <name>        stops that run and waits until it has ended
 #
 # Hermes starts a background command as `bash -lic`, with no terminal. Like
@@ -13,11 +14,10 @@
 # tcsetattr line. DSH_TASKS is the task folder, by default
 # /var/lib/hermes/workspace/dsh-tasks.
 #
-# The sandbox is DSH's: the wrapper sets DSH_PERMISSION_MODE=workspace-write, so
-# writes are confined to the working tree, and the task file carries the same
-# prohibitions as hermes/dsh-append-system.md. The 0.2.1 headless profile has no
-# --permission-mode or --approval-policy flag; the sandbox is the policy. DSH has
-# no omp-style bash deny list; Hermes's deny list sees only this command.
+# The sandbox is DSH's: workspace-write confines writes to the working tree,
+# --approval-policy never rejects a call that needs a person, and the task file
+# carries the same prohibitions as hermes/dsh-append-system.md. DSH has no
+# omp-style bash deny list; Hermes's deny list sees only this command.
 
 usage="usage: dsh-run <name> [dsh flags] | dsh-run --stop <name>"
 tasks="${DSH_TASKS:-/var/lib/hermes/workspace/dsh-tasks}"
@@ -92,7 +92,10 @@ fifo="$(mktemp -u "$tasks/.dsh-run.XXXXXX.fifo")"
 mkfifo "$fifo"
 
 shift
-args=(--profile headless --json)
+args=(--profile headless --json --permission-mode workspace-write --approval-policy never)
+if git_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
+  args+=(--add-dir "$git_common")
+fi
 
 dsh-stream <"$fifo" &
 stream_pid=$!

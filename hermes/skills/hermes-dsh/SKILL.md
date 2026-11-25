@@ -55,9 +55,8 @@ Before a second run, run `kvm4-health` and start it only if the `units` line of 
 `WARN` or `CRIT`. Each run also spends the owner's OpenCode Go quota: run two at once only when the
 owner waits on both. A `nix build` that dsh starts runs in `nix-daemon`, not in your unit.
 
-dsh runs with DSH's `workspace-write` sandbox: writes are confined to the working tree. The wrapper
-sets `DSH_PERMISSION_MODE=workspace-write`; the 0.2.1 headless profile has no `--approval-policy`
-flag, so the sandbox and the task rules are the policy. The task file and
+dsh runs with DSH's `workspace-write` sandbox: writes are confined to the working tree, and
+`--approval-policy never` refuses a call that would need a person. The task file and
 `hermes/dsh-append-system.md` carry the same prohibitions as omp: no commit, push, `gh`, install,
 `sudo`, `curl`, or secret reading. dsh has no omp-style bash deny list; Hermes's deny list sees
 only the outer `dsh` command, so the sandbox and the task rules are the guardrail. Never copy
@@ -94,9 +93,11 @@ The owner can also start it by name: the skill is the command `/hermes-dsh` (Tel
    terminal(command="dsh-run <a-few-words>", workdir="/var/lib/hermes/workspace/<repo>", background=true, notify=true, heartbeat=120)
    ```
 
-   `dsh-run <name> [dsh flags]` runs `dsh --profile headless --json [flags] - <
-   dsh-tasks/<name>.md` through `dsh-stream`, and at the end prints how the run ended and the
-   progress file `dsh-tasks/<name>.progress`. Put only dsh flags after the name.
+   `dsh-run <name> [dsh flags]` runs `dsh --profile headless --json --permission-mode
+   workspace-write --approval-policy never [flags] - < dsh-tasks/<name>.md` through `dsh-stream`,
+   and at the end prints how the run ended and the progress file
+   `dsh-tasks/<name>.progress`. It adds the shared Git directory with `--add-dir` when the working
+   tree is a Git checkout. Put only dsh flags after the name.
 
    `dsh-stream` turns each event into one plain line: `dsh: start in <cwd>`, `> <tool>: <input>`,
    `< <status>: <result>`, `dsh says: <text>`, and at the end `dsh: done (<reason>)`. A line that is

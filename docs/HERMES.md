@@ -239,11 +239,10 @@ The wrapper is `dshWrapped` (`dsh/wrapper.nix`): it points dsh at the OpenCode G
 console is `dsh-run`, with `dsh-stream` turning its JSON events into chat lines. A run takes about
 300 MiB and lives at most 35 minutes.
 
-DSH runs under its own `workspace-write` sandbox (the wrapper sets `DSH_PERMISSION_MODE`); the
-0.2.1 headless profile has no approval flag, so the sandbox and the task rules are the policy. The
-task rules carry the prohibitions (no commit, push, `gh`, install, `sudo`, secrets). Unlike omp,
-DSH has no omp-style bash deny list: Hermes's deny list sees only the outer `dsh` command, so the
-sandbox and the task rules are the guardrail. The procedure is `hermes/skills/hermes-dsh/SKILL.md`. The model,
+DSH runs under its own `workspace-write` sandbox and `--approval-policy never`; the task rules
+carry the prohibitions (no commit, push, `gh`, install, `sudo`, secrets). Unlike omp, DSH has no
+omp-style bash deny list: Hermes's deny list sees only the outer `dsh` command, so the sandbox and
+the task rules are the guardrail. The procedure is `hermes/skills/hermes-dsh/SKILL.md`. The model,
 reasoning and provider are in `dsh/wrapper.nix`; a change there is a deploy.
 
 ## omp, the coding worker on the other models

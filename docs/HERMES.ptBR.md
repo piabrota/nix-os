@@ -228,11 +228,10 @@ leitura montado a partir de `hermes/dsh-append-system.md`. As tarefas ficam em
 `/var/lib/hermes/workspace/dsh-tasks/`; o console é o `dsh-run`, e o `dsh-stream` transforma os
 eventos JSON em linhas do chat. Uma execução ocupa cerca de 300 MiB e dura no máximo 35 minutos.
 
-O dsh roda no sandbox `workspace-write` dele (o wrapper define `DSH_PERMISSION_MODE`); o perfil
-headless 0.2.1 não tem flag de aprovação, então o sandbox e as regras da tarefa são a política. As
-regras da tarefa carregam as proibições (nada de commit, push, `gh`, instalação, `sudo`, segredos).
-Diferente do omp, o dsh não tem uma lista de bloqueio de bash no estilo do `omp.yml`: a lista do
-Hermes vê apenas o comando externo `dsh`, então o sandbox e as regras da tarefa são a proteção. O procedimento é
+O dsh roda no sandbox `workspace-write` dele e com `--approval-policy never`; as regras da tarefa
+carregam as proibições (nada de commit, push, `gh`, instalação, `sudo`, segredos). Diferente do omp,
+o dsh não tem uma lista de bloqueio de bash no estilo do `omp.yml`: a lista do Hermes vê apenas o
+comando externo `dsh`, então o sandbox e as regras da tarefa são a proteção. O procedimento é
 `hermes/skills/hermes-dsh/SKILL.md`. O modelo, o raciocínio e o provedor ficam em
 `dsh/wrapper.nix`; mudar ali é um deploy.
 

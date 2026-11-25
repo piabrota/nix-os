@@ -5,7 +5,7 @@
 # Every host gets this file. It sets what does not depend on the machine and leaves the rest at
 # upstream's defaults: the full Hermes. A small host would cut it in its own file (git history has
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
-{ config, lib, pkgs, utils, hermes-agent, nixpkgs, ... }:
+{ config, lib, pkgs, utils, hermes-agent, ... }:
 let
   # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.1 is 3b42157.
   hermesVersion = "0.23.1";
@@ -193,7 +193,7 @@ let
   };
   dshRun = pkgs.writeShellApplication {
     name = "dsh-run";
-    runtimeInputs = [ pkgs.coreutils pkgs.util-linux ];
+    runtimeInputs = [ pkgs.coreutils pkgs.util-linux pkgs.git ];
     text = builtins.readFile ./hermes/dsh-run.sh;
   };
   # The hermes-manim skill's smoke render (scala/hermes/ManimSmoke.scala). The scene stays a file of
@@ -309,12 +309,10 @@ let
   # The `omp` wrapper (omp/wrapper.nix): the only omp on Hermes's PATH.
   ompWrapped = pkgs.callPackage ./omp/wrapper.nix { };
   # The `dsh` wrapper (dsh/wrapper.nix): DeepSeek Harness with the OpenCode Go
-  # route and the read-only rules, for the hermes-dsh skill. The package comes
-  # from the stable nixpkgs input: services.hermes-agent pins its own unstable
-  # nixpkgs, which does not have deepseek-harness.
-  dshWrapped = pkgs.callPackage ./dsh/wrapper.nix {
-    dsh = nixpkgs.legacyPackages.${pkgs.system}.deepseek-harness;
-  };
+  # route and the read-only rules, for the hermes-dsh skill. The package is
+  # dsh/package.nix (0.2.2-rc.5); nixpkgs' deepseek-harness is 0.2.1-alpha.3,
+  # whose headless profile lacks the permission flags the runner uses.
+  dshWrapped = pkgs.callPackage ./dsh/wrapper.nix { };
   optionalSkills = pkgs.runCommand "hermes-optional-skills" { allowedReferences = [ ]; } (''
     mkdir $out
   '' + lib.concatMapStrings
