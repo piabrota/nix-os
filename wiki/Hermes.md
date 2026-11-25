@@ -42,7 +42,7 @@ provedor de reserva: se o relay do Go falha, o turno falha.
 
 | Modelo | Faz |
 |---|---|
-| `glm-5.3-flash` | O único modelo, para tudo: planeja, escreve, revisa e decide. Também faz a compressão, a aprovação de comando perigoso e a revisão depois do turno, os subagentes de leitura em leque e as três tarefas laterais (os títulos das sessões, a escolha de skill e o juiz do `/goal`). É o nível rápido e barato do catálogo do Go, com janela de 1.000.000 de tokens. Ele mesmo roda um grep, uma listagem ou uma busca isolada. |
+| `deepseek-v4.1-flash` | O único modelo, para tudo: planeja, escreve, revisa e decide. Também faz a compressão, a aprovação de comando perigoso e a revisão depois do turno, os subagentes de leitura em leque e as três tarefas laterais (os títulos das sessões, a escolha de skill e o juiz do `/goal`). É o nível rápido e barato do catálogo do Go, com janela de 1.000.000 de tokens. Ele mesmo roda um grep, uma listagem ou uma busca isolada. |
 
 Subagentes: no máximo 2 ao mesmo tempo, 50 iterações cada, um nível de profundidade.
 

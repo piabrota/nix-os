@@ -5,7 +5,7 @@ description: Reviews the screenplay, approves its hash, then builds and publishe
 
 defaults:
   runtime: omp
-  model: opencode-go/glm-5.3-flash
+  model: opencode-go/deepseek-v4.1-flash
 
 imports:
   - ref: local:../shared

@@ -8,7 +8,7 @@ description: Writes and tests code for one task
 
 defaults:
   runtime: omp
-  model: opencode-go/glm-5.3-flash
+  model: opencode-go/deepseek-v4.1-flash
 
 imports:
   - ref: local:../shared

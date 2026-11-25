@@ -33,7 +33,7 @@ deploy replaces it. Ask the owner for a change that is not yours to make.
 |`guidance/role.md`|The role. It is delivered as a startup file with `delivery_hint: send_text` and `orientation: role`, so one seat's role never replaces another's in the shared `AGENTS.md`.|
 |`startup/context.md`|Text sent after the seat is ready: the limits of the box.|
 
-The model of a seat is `defaults.model` in its `agent.yaml` (`opencode-go/glm-5.3-flash`, the form
+The model of a seat is `defaults.model` in its `agent.yaml` (`opencode-go/deepseek-v4.1-flash`, the form
 for which the runner passes the key; see the
 [reference](../../hermes-omp/references/openrig-seats.md)). The tool rules of a seat do not come
 from the spec. They come from `hermes/omp.yml`, through the seat's `omp` wrapper.

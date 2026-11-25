@@ -213,7 +213,7 @@ próprias (`hermes/omp.yml`) que um repositório clonado não afrouxa. Uma execu
   agent_ref: "local:../../agents/builder"
   profile: default
   runtime: omp
-  model: opencode-go/glm-5.3-flash   # `opencode-go/<id>`: a forma para a qual o runner passa a chave
+  model: opencode-go/deepseek-v4.1-flash   # `opencode-go/<id>`: a forma para a qual o runner passa a chave
   cwd: /var/lib/openrig/work
 ```
 

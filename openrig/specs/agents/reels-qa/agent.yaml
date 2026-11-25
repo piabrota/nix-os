@@ -5,7 +5,7 @@ description: Checks one finished reel against its screenplay
 
 defaults:
   runtime: omp
-  model: opencode-go/glm-5.3-flash
+  model: opencode-go/deepseek-v4.1-flash
 
 imports:
   - ref: local:../shared

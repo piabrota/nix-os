@@ -41,7 +41,7 @@ fallback provider: if the Go relay fails, the turn fails.
 
 | Model | Does |
 |---|---|
-| `glm-5.3-flash` | The one model, for everything: it plans, writes, reviews and decides. It also does compression, the dangerous-command approval and the post-turn review, the read-only fan-out subagents and the three side tasks (session titles, skill matching and the `/goal` judge). It is the Go catalog's cheap fast tier, with a 1,000,000-token window. It runs a single grep, list or fetch itself. |
+| `deepseek-v4.1-flash` | The one model, for everything: it plans, writes, reviews and decides. It also does compression, the dangerous-command approval and the post-turn review, the read-only fan-out subagents and the three side tasks (session titles, skill matching and the `/goal` judge). It is the Go catalog's cheap fast tier, with a 1,000,000-token window. It runs a single grep, list or fetch itself. |
 
 Subagents: at most 2 at a time, 50 iterations each, one level deep.
 

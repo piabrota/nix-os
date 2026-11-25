@@ -23,7 +23,7 @@ O que existe para o Hermes, e o que esta máquina usa: [`AWESOME-HERMES.ptBR.md`
 | Modo | Nativo: um serviço systemd no host, com o sandbox do módulo (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Não o modo container, que pediria Docker ou Podman. |
 | Host | piabrota2 (KVM 4), a segunda VPS, desde a mudança do piabrota (KVM 1) no [MIGRATION-KVM4.md](MIGRATION-KVM4.md). O `hermes.nix` define o que não depende da máquina e deixa o resto nos padrões do upstream: o pacote `full`, 10 subagentes de cada vez, 128 agentes em cache, sem limite de jobs de cron em paralelo, 4 kernels, mídia de 128 MiB. O `hosts/piabrota2` limita o gateway a `MemoryMax=8G` e `CPUWeight=50`. |
 | Pacote | O padrão do flake, `full`, uns 700 MB a mais (voz, Bedrock, Modal e afins). Ele soma os extras `messaging` (Telegram, Discord, Slack), `mcp` e `ddgs`. O modelo roda no OpenCode Go, cujo relay fala o protocolo da OpenAI, e o SDK `openai` já vem nas dependências base do pacote, então nenhum extra de modelo é preciso. |
-| Modelo | `glm-5.3-flash` pelo provedor `opencode-go`, para a conversa principal, os subagentes e as três tarefas laterais baratas igualmente (veja "Ajustes de execução"), com a assinatura do dono: `OPENCODE_GO_API_KEY` no arquivo de segredos. O plano Go tem janelas de 5 horas, semanais e mensais. |
+| Modelo | `deepseek-v4.1-flash` pelo provedor `opencode-go`, para a conversa principal, os subagentes e as três tarefas laterais baratas igualmente (veja "Ajustes de execução"), com a assinatura do dono: `OPENCODE_GO_API_KEY` no arquivo de segredos. O plano Go tem janelas de 5 horas, semanais e mensais. |
 | Segredos | `/var/lib/hermes-secrets/hermes.env`, escrito à mão na máquina, só root lê. Nunca no repositório nem na store. |
 | Limites | `MemoryMax=8G` (metade de 16 GB) e `CPUWeight=50` (metade da fatia das outras unidades) no gateway, para o sshd e um deploy terem espaço. A unidade do painel tem `MemoryMax=2G` ("O painel web"). |
 | Estado | `/var/lib/hermes` (`HERMES_HOME` é `/var/lib/hermes/.hermes`): a configuração, a memória, as sessões e o `.env`. |
@@ -61,14 +61,14 @@ assinatura. A pesquisa de cada chave no commit fixado está em
 
 | Ajuste | Valor | Por quê |
 |---|---|---|
-| `fallback_providers` (principal e `delegation`) | Beam Free (XHigh), depois Qwen 3.6 Plus | Só modelos do OpenCode Go. Quando o GLM 5.3 Flash falha, o Hermes tenta o Beam Free (nível gratuito, raciocínio XHigh) naquele turno e depois o Qwen 3.6 Plus. Cada mensagem nova começa de novo no GLM. |
-| `model.default` | `glm-5.3-flash` | Um modelo para tudo: planeja, escreve, revisa e decide. É o nível rápido e barato do catálogo do Go, com a mesma janela de 1.000.000 de tokens dos modelos grandes do relay. |
-| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `glm-5.3-flash` | O mesmo modelo também cuida dos subagentes de leitura em paralelo e das três tarefas laterais baratas (títulos, escolha de skill, o juiz do `/goal`). O Hermes não tem roteador por chamada: o modelo decide delegar, e o `hermes/SOUL.md` diz quando. Ele roda sozinho um grep, uma lista ou uma busca, e só delega três ou mais tarefas de leitura, ou a leitura de mais de uns 20 arquivos. A compressão, a aprovação de comandos perigosos e a revisão pós-turno rodam nele também. |
+| `fallback_providers` (principal e `delegation`) | Beam Free (XHigh), depois Qwen 3.6 Plus | Só modelos do OpenCode Go. Quando o DeepSeek V4.1 Flash falha, o Hermes tenta o Beam Free (nível gratuito, raciocínio XHigh) naquele turno e depois o Qwen 3.6 Plus. Cada mensagem nova começa de novo no GLM. |
+| `model.default` | `deepseek-v4.1-flash` | Um modelo para tudo: planeja, escreve, revisa e decide. É o nível rápido e barato do catálogo do Go, com a mesma janela de 1.000.000 de tokens dos modelos grandes do relay. |
+| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `deepseek-v4.1-flash` | O mesmo modelo também cuida dos subagentes de leitura em paralelo e das três tarefas laterais baratas (títulos, escolha de skill, o juiz do `/goal`). O Hermes não tem roteador por chamada: o modelo decide delegar, e o `hermes/SOUL.md` diz quando. Ele roda sozinho um grep, uma lista ou uma busca, e só delega três ou mais tarefas de leitura, ou a leitura de mais de uns 20 arquivos. A compressão, a aprovação de comandos perigosos e a revisão pós-turno rodam nele também. |
 | `delegation` | até 2 filhos, 50 iterações cada, um nível | Pouca ramificação, para uma vCPU e a cota. |
 | `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, ligado | Um limite por execução e uma parada firme em laços de ferramentas. |
 | `agent.api_max_retries` | 0 | Sem tentativas em erros transitórios do provedor antes de cair para os provedores de fallback, para que um GLM instável passe ao Beam Free na hora, em vez de repetir tentativas. |
 | `goals.max_turns` | 6 (padrão 20) | O `/goal` é o loop Ralph do Hermes: ele continua uma tarefa sozinho até o juiz dizer que acabou. Cada turno pode usar até 60 chamadas ao modelo, então 6 turnos mantêm um objetivo dentro da cota; o `/goal resume` dá mais 6. |
-| `compression.threshold` | 0,40 (padrão 0,50) | O Hermes comprime a conversa quando o prompt chega a essa fração da janela de contexto. O `glm-5.3-flash` tem 1.000.000 de tokens (models.dev, `opencode-go`), então 0,40 são cerca de 400.000 tokens. O Hermes só impõe o piso de 0,75 a janelas abaixo de 512 mil tokens, então um valor menor vale aqui. Cada compressão reescreve uma vez o prefixo do prompt em cache; todo turno seguinte custa menos, porque o contexto é menor. Mude o valor no `hermes.nix`. Uma segunda rede, a higiene de sessão, age em 85 % e não é configurável. O núcleo não zera sessões ociosas; o plugin da comunidade `hermes-session-reset-policy` zera, e ele não está instalado. |
+| `compression.threshold` | 0,40 (padrão 0,50) | O Hermes comprime a conversa quando o prompt chega a essa fração da janela de contexto. O `deepseek-v4.1-flash` tem 1.000.000 de tokens (models.dev, `opencode-go`), então 0,40 são cerca de 400.000 tokens. O Hermes só impõe o piso de 0,75 a janelas abaixo de 512 mil tokens, então um valor menor vale aqui. Cada compressão reescreve uma vez o prefixo do prompt em cache; todo turno seguinte custa menos, porque o contexto é menor. Mude o valor no `hermes.nix`. Uma segunda rede, a higiene de sessão, age em 85 % e não é configurável. O núcleo não zera sessões ociosas; o plugin da comunidade `hermes-session-reset-policy` zera, e ele não está instalado. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h no chat (as pessoas pausam), 5 min no cron e nos subagentes. |
 | `mcp.auto_reload_on_config_change` | desligado | Mudar a configuração não recarrega os servidores MCP (o que derrubaria o cache do prompt); só um deploy muda a configuração. |
 | `agent.agent_cache.max_size` | 16 | Menos agentes em cache, para poupar RAM. |
@@ -115,7 +115,7 @@ termina, o wrapper inicia o próprio gateway. O `SIGTERM` encerra a espera na ho
 
 ## Quem ele é
 
-O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no GLM 5.3 Flash. O arquivo diz o
+O `hermes/SOUL.md` é a identidade dele: piabrota-hermes, nesta VPS, no DeepSeek V4.1 Flash. O arquivo diz o
 que ele tem e o que não tem, e traz regras tiradas do dogma do piabrota (`piabrota/mu`, `DOGMA.md`):
 ele nunca lê nem repete um segredo, nunca dá push nem faz merge, só aceita alertas de fontes
 oficiais e cita o que afirma. Ele tem uma regra fixa do dono: toda mensagem com notícia boa (uma melhoria, um conserto que
@@ -247,7 +247,7 @@ pull request. O omp nunca faz push. Como ver e ajustar cada camada:
 - **Memória.** O omp roda no cgroup do Hermes (`MemoryMax=8G`). O LSP, os kernels de Python e JS,
   o backend de memória, o advisor e o navegador estão desligados. O wrapper inicia o omp com
   `choom -n 500`, então o OOM killer do kernel para o omp antes do gateway.
-- **Modelos.** O `glm-5.3-flash` pelo `opencode-go` para o trabalho, para os subagentes (`task`) e
+- **Modelos.** O `deepseek-v4.1-flash` pelo `opencode-go` para o trabalho, para os subagentes (`task`) e
   para os papéis laterais (`smol`, `commit`, `tiny`, `memory`, `advisor`, `judge`) — o mesmo modelo
   e o mesmo plano do gateway do Hermes. O nível de raciocínio fica fixo em `high`. Não há fallback,
   então nenhum papel chega a outro provedor ou a um modelo local.

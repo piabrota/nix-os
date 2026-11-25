@@ -23,7 +23,7 @@ What exists for Hermes, and what this box takes from it: [`AWESOME-HERMES.md`](A
 | Mode | Native: a systemd service on the host, with the module's sandbox (`ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`). Not container mode, which would need Docker or Podman. |
 | Host | piabrota2 (KVM 4), the second VPS, since the move from piabrota (KVM 1) in [MIGRATION-KVM4.md](MIGRATION-KVM4.md). `hermes.nix` sets what does not depend on the machine and leaves the rest at upstream's defaults: the `full` package, 10 subagents at a time, 128 cached agents, no limit on parallel cron jobs, 4 kernels, 128 MiB media. `hosts/piabrota2` caps the gateway at `MemoryMax=8G` and `CPUWeight=50`. |
 | Package | The flake's default, `full`, about 700 MB more (voice, Bedrock, Modal and the like). It adds the extras `messaging` (Telegram, Discord, Slack), `mcp` and `ddgs`. The model runs on OpenCode Go, whose relay speaks the OpenAI wire, and the `openai` SDK is already in the package's base dependencies, so no model extra is needed. |
-| Model | `glm-5.3-flash` through the `opencode-go` provider, for the main conversation, the subagents and the three cheap side tasks alike (see "Run settings"), on the owner's subscription: `OPENCODE_GO_API_KEY` in the secrets file. The Go plan has 5-hour, weekly and monthly windows. |
+| Model | `deepseek-v4.1-flash` through the `opencode-go` provider, for the main conversation, the subagents and the three cheap side tasks alike (see "Run settings"), on the owner's subscription: `OPENCODE_GO_API_KEY` in the secrets file. The Go plan has 5-hour, weekly and monthly windows. |
 | Secrets | `/var/lib/hermes-secrets/hermes.env`, written by hand on the box, readable by root only. Never in the repository or the store. |
 | Limits | `MemoryMax=8G` (half of 16 GB) and `CPUWeight=50` (half the share of other units) on the gateway, so sshd and a deploy keep room. The dashboard's unit has `MemoryMax=2G` ("The web dashboard"). |
 | State | `/var/lib/hermes` (`HERMES_HOME` is `/var/lib/hermes/.hermes`): the configuration, the memory, the sessions and the `.env`. |
@@ -60,14 +60,14 @@ quota. The survey of each key at the pinned commit is in [`AWESOME-HERMES.md`](A
 
 | Setting | Value | Why |
 |---|---|---|
-| `fallback_providers` (main and `delegation`) | Beam Free (XHigh), then Qwen 3.6 Plus | OpenCode Go models only. When GLM 5.3 Flash fails, Hermes tries Beam Free (free tier, XHigh reasoning) for that turn, then Qwen 3.6 Plus. Each new message starts with GLM again. |
-| `model.default` | `glm-5.3-flash` | One model for everything: it plans, writes, reviews and decides. It is the Go catalog's cheap fast tier, with the same 1,000,000-token window as the big models on the relay. |
-| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `glm-5.3-flash` | The same model also takes the subagents for read-only fan-out and three cheap side tasks (titles, skill matching, the `/goal` judge). Hermes has no per-call router: the model decides to delegate, and `hermes/SOUL.md` says when. It runs a single grep, list or fetch itself and delegates only three or more read-only tasks, or a read of more than about 20 files. Compression, the dangerous-command approval and the post-turn review run on it too. |
+| `fallback_providers` (main and `delegation`) | Beam Free (XHigh), then Qwen 3.6 Plus | OpenCode Go models only. When DeepSeek V4.1 Flash fails, Hermes tries Beam Free (free tier, XHigh reasoning) for that turn, then Qwen 3.6 Plus. Each new message starts with GLM again. |
+| `model.default` | `deepseek-v4.1-flash` | One model for everything: it plans, writes, reviews and decides. It is the Go catalog's cheap fast tier, with the same 1,000,000-token window as the big models on the relay. |
+| `delegation.model`, `auxiliary.title_generation`, `auxiliary.skills_hub`, `auxiliary.goal_judge` | `deepseek-v4.1-flash` | The same model also takes the subagents for read-only fan-out and three cheap side tasks (titles, skill matching, the `/goal` judge). Hermes has no per-call router: the model decides to delegate, and `hermes/SOUL.md` says when. It runs a single grep, list or fetch itself and delegates only three or more read-only tasks, or a read of more than about 20 files. Compression, the dangerous-command approval and the post-turn review run on it too. |
 | `delegation` | at most 2 children, 50 iterations each, one level deep | Small fan-out, for one vCPU and the quota. |
 | `agent.max_turns`, `tool_loop_guardrails.hard_stop_enabled` | 60, on | A bound on a run, and a hard stop on tool loops. |
 | `agent.api_max_retries` | 0 | No retries on transient provider errors before failing over to the fallback providers, so a flaky GLM hands off to Beam Free immediately instead of churning retries. |
 | `goals.max_turns` | 6 (default 20) | `/goal` is Hermes's Ralph loop: it continues a task on its own until the judge says done. Each turn can use up to 60 model calls, so 6 turns keep one goal within the quota; `/goal resume` gives 6 more. |
-| `compression.threshold` | 0.40 (default 0.50) | Hermes compresses the conversation when the prompt reaches this share of the context window. `glm-5.3-flash` has 1,000,000 tokens (models.dev, `opencode-go`), so 0.40 is about 400,000 tokens. Hermes floors the ratio at 0.75 only for windows under 512K tokens, so a lower value holds here. Each compression rewrites the cached prompt prefix once; every later turn costs less because the context is smaller. Change the value in `hermes.nix`. A second net, session hygiene, fires at 85 % and is not configurable. Core does not reset idle sessions; the community plugin `hermes-session-reset-policy` does, and it is not installed. |
+| `compression.threshold` | 0.40 (default 0.50) | Hermes compresses the conversation when the prompt reaches this share of the context window. `deepseek-v4.1-flash` has 1,000,000 tokens (models.dev, `opencode-go`), so 0.40 is about 400,000 tokens. Hermes floors the ratio at 0.75 only for windows under 512K tokens, so a lower value holds here. Each compression rewrites the cached prompt prefix once; every later turn costs less because the context is smaller. Change the value in `hermes.nix`. A second net, session hygiene, fires at 85 % and is not configurable. Core does not reset idle sessions; the community plugin `hermes-session-reset-policy` does, and it is not installed. |
 | `prompt_caching.cache_ttl` | `auto` | 1 h for chat (people pause), 5 min for cron and subagents. |
 | `mcp.auto_reload_on_config_change` | off | A config change does not reload the MCP servers (which would drop the prompt cache); only a deploy changes the config. |
 | Qwen Code CLI | on PATH, YOLO approval mode | `pkgs.qwen-code` ships in Hermes's `extraPackages`; `/var/lib/hermes/.qwen/settings.json` is written on activation with `tools.approvalMode: "yolo"`, so Qwen Code never prompts for file edits or shell commands. |
@@ -124,7 +124,7 @@ wrapper starts its own gateway. `SIGTERM` ends the wait at once. The test is
 
 ## Who it is
 
-`hermes/SOUL.md` is its identity: piabrota-hermes, on this VPS, on GLM 5.3 Flash, with what it has
+`hermes/SOUL.md` is its identity: piabrota-hermes, on this VPS, on DeepSeek V4.1 Flash, with what it has
 and does not have, and rules taken from piabrota's dogma (`piabrota/mu`, `DOGMA.md`): it never
 reads or repeats a secret, never pushes or merges, takes alerts from official sources only, and
 cites what it claims. It has one hard rule from the owner: every message with good news (an improvement, a fix
@@ -256,7 +256,7 @@ and tune each layer: [HERMES-OMP.md](HERMES-OMP.md).
 - **Memory.** omp runs in Hermes's cgroup (`MemoryMax=8G`). LSP, the Python and JS kernels, the
   memory backend, the advisor and the browser are off. The wrapper starts omp with
   `choom -n 500`, so the kernel's OOM killer stops omp before the gateway.
-- **Models.** `glm-5.3-flash` through `opencode-go` for the work, for the subagents (`task`) and
+- **Models.** `deepseek-v4.1-flash` through `opencode-go` for the work, for the subagents (`task`) and
   for the side roles (`smol`, `commit`, `tiny`, `memory`, `advisor`,
   `judge`) — the same model and plan as the Hermes gateway. The thinking level is pinned to
   `high`. There is no fallback, so no role reaches

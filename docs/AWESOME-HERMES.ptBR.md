@@ -8,7 +8,7 @@ uma máquina pequena, em produção, e contra os objetivos do dono, e diz por qu
 testar ou por que ficou de fora. Como o Hermes roda aqui está no [`HERMES.ptBR.md`](HERMES.ptBR.md).
 
 **A régua.** Uma Hostinger KVM 1 (1 vCPU, 4 GB de RAM, o Hermes limitado a 1 GB), NixOS com tudo
-declarado no `hermes.nix`, o `glm-5.3-flash` pela assinatura do OpenCode Go do dono e nenhum outro
+declarado no `hermes.nix`, o `deepseek-v4.1-flash` pela assinatura do OpenCode Go do dono e nenhum outro
 provedor, o
 Telegram e o Discord como chats, um token do GitHub só de leitura. Fica de fora: o que pede Node, Go,
 Docker ou navegador na máquina, uma API paga ou um painel web, o que manda dados para fora, e o que
@@ -75,9 +75,9 @@ Cada uma está no `hermes.nix`, com o motivo do lado.
 
 | Configuração | Aqui | Padrão | Por quê |
 |---|---|---|---|
-| `model.provider`, `model.default` | `opencode-go`, `glm-5.3-flash` | | GLM 5.3 Flash pela assinatura do OpenCode Go |
+| `model.provider`, `model.default` | `opencode-go`, `deepseek-v4.1-flash` | | DeepSeek V4.1 Flash pela assinatura do OpenCode Go |
 | `fallback_providers`, `delegation.fallback_providers` | `[ ]` | | Só OpenCode Go: nenhum outro provedor, nunca |
-| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `glm-5.3-flash` | | O mesmo modelo para subagentes, as três tarefas laterais baratas e todo o resto |
+| `delegation.model`, `auxiliary.title_generation.model`, `auxiliary.skills_hub.model`, `auxiliary.goal_judge.model` | `deepseek-v4.1-flash` | | O mesmo modelo para subagentes, as três tarefas laterais baratas e todo o resto |
 | `delegation.max_concurrent_children`, `max_iterations`, `max_spawn_depth` | 2, 50, 1 | 10, 250, 1 | Poucos subagentes, para uma vCPU e a cota |
 | `agent.max_turns` | 60 | sem limite | Uma execução não fica em loop para sempre |
 | `goals.max_turns` | 6 | 20 | Um `/goal` (o loop Ralph) para depois de 6 turnos, até o `/goal resume` |
