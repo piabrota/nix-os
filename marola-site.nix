@@ -75,6 +75,12 @@ in
       defaultText = lib.literalExpression "pkgs.callPackage ./marola-site { }";
       description = "marola-site's package: bin/marola-server and share/marola/dist.";
     };
+    embedFrom = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "https://cantodasaguas.org" ];
+      description = "The origins whose pages may frame /embed, one per line (MAROLA_EMBED_FROM). Empty: frame-ancestors 'none', so nobody frames the map. A partner asks to be added; never a wildcard.";
+    };
     port = mkOption {
       type = types.port;
       default = 8095;
@@ -167,6 +173,9 @@ in
       } // optionalAttrs (cfg.github.clientId != null) {
         MAROLA_GITHUB_CLIENT_ID = cfg.github.clientId;
         MAROLA_GITHUB_CLIENT_SECRET_FILE = "%d/github-client-secret";
+      } // optionalAttrs (cfg.embedFrom != [ ]) {
+        # One origin per line; systemd reads \n in Environment= as a newline.
+        MAROLA_EMBED_FROM = lib.concatStringsSep "\\n" cfg.embedFrom;
       };
       serviceConfig = {
         ExecStart = "${cfg.package}/bin/marola-server";

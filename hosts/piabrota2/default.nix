@@ -110,6 +110,9 @@
     # after midnight local time; the other runs keep the same minute (04:01, 10:01, 16:01 UTC).
     # Brazil has no DST, so the UTC times hold all year (the owner, 2026-11-17).
     boards.build.calendar = "*-*-* 04,10,16,22:01:00 UTC";
+    # The first partner of the embeddable map (ADR 0008): Canto das Águas may frame /embed, and
+    # nobody else. marola-site's docs/4-reference.md, "Embedding the map".
+    embedFrom = [ "https://cantodasaguas.org" ];
   };
   # tyler-durden-bot, off until the owner has made the App, written /var/lib/tyler-durden-secrets/app.env
   # and WEBHOOK_SECRET in hermes.env, and pointed tyler.piabrota.art here (docs/TYLER-DURDEN.md).
