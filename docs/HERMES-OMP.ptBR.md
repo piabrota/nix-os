@@ -173,7 +173,7 @@ Hermes não conseguem afrouxá-lo. Uma lista no overlay substitui a lista de uma
 - **Um modelo mais forte ou mais barato para um trabalho.** Mude `modelRoles.<papel>` no
   `hermes/omp.yml`. Os papéis `default`, `slow` e `plan` levam o trabalho principal. O papel `task` é
   o papel dos subagentes que editam código. Os papéis `smol`, `tiny`, `commit`, `memory`, `advisor` e
-  `judge` são papéis laterais e baratos. Hoje todo papel usa `opencode-go/glm-5.3-flash`. Use só
+  `judge` são papéis laterais e baratos. Hoje todo papel usa `opencode-go/deepseek-v4.1-flash`. Use só
   modelos `opencode-go/...`: o seu plano do OpenCode Go é o único provedor.
 - **Resultado melhor em um repositório.** Escreva `.omp/RULES.md` (regras curtas e rígidas) e
   `.omp/AGENTS.md` (contexto) nesse repositório.
