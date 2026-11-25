@@ -15,7 +15,7 @@ contract: read it before you change one.
 | `marola-boards.timer` | Every 3 hours, when `boards.mirrorFrom` is set: copies each area's `latest.json` and boards from that URL into `/var/lib/marola-boards` (`MAROLA_DATA`). An area whose copy fails keeps its old boards. |
 | `marola-boards-build.timer` | Four times a day (01:01, 07:01, 13:01 and 19:01 America/Sao_Paulo; the first run of a day is at 01:01 local, so the board's `today` is right after midnight), when `boards.build.enable` is set (on at piabrota2): runs the app image that the pinned marola-site commit names in `marola-image` with podman, `--site` over its `site/areas.json`, as marola-site's `site.yml` does, and puts each area it built into `/var/lib/marola-boards`. An area it did not build keeps its old boards. The beach lists stay in `/var/lib/marola-boards-build/site/beaches`, so Overpass is asked only for an area with none. piabrota2 is in Brazil (LACNIC: `BR`), which INEA and INEMA require. Use it or the mirror, not both. |
 | `marola-tiles` | The base map's tiles file, `/var/lib/marola/tiles/marola.pmtiles` (`MAROLA_TILES`, about 216 MB; marola-site's docs/5-hosting.md, "The base map"). Cut on the box by marola-site's own `scripts/basemap_extract.sh` (pmtiles, tile-join, node) from the Protomaps build its `site/basemap.version` pins, for the areas of its `site/areas.json`; written beside the live file, then renamed. `/var/lib/marola/tiles/.stamp` holds a hash of the pin and the areas: a run that finds the same stamp does nothing. `marola-tiles-kick` starts it (without waiting) on the first deploy and on every deploy that changes the pin or the areas. Protomaps keeps about a week of daily builds: a pin older than that fails here, the old file stays, and marola-site moves its pin. Without the file the map page shows its beach list and "the map did not load". |
-| `marola-boards-build-kick` | Starts `marola-boards-build` (without waiting for it) on the first deploy with the build on and on every deploy that moves `boards.build.image`, so a new image builds at once instead of at the next timer run. |
+| `marola-boards-build-kick` | Starts `marola-boards-build` (without waiting for it) on the first deploy with the build on and on every deploy that moves `boards.build.image` or the pin's `site/areas.json`, so a new image or a new area builds at once instead of waiting for the timer |
 | `marola-boards.yml` (GitHub Actions) | Every 6 hours, from outside: `piabrota marola-boards-check` (`scala/scripts/MarolaBoardsCheck.scala`) reads each area's `latest.json` and fails when one is older than 12 hours, so two failed builds in a row mail the owner. The build stays on the box: INEA and INEMA refuse GitHub's US runners. |
 | `marola-backup.timer` | Daily: `marola.db` (SQLite's `.backup`), `csrf.key` and `studies/` into `/var/backups/marola`; database copies older than 14 days are deleted. Same disk: copy it off the box if the studies matter. |
 | nginx | `domain` and each name in `aliases` (the same site, a vhost and a certificate each) over HTTPS, HSTS, 1 MB bodies except 21 MB on `/submit`, `/en/submit` and `/api/v1/studies` (not buffered); `X-Forwarded-For` replaced with `$remote_addr`. Each name in `redirects` answers 301 to `domain`. |
@@ -51,10 +51,11 @@ Each name needs its A record at piabrota2 before the deploy that serves it, or i
 
 The `ecc34e3` pin (2026-11-25) adds the `complexo-lagunar` area to `site/areas.json` and the
 `ecomonitoramento` page. The areas change makes `marola-tiles` re-cut the file on the first deploy
-after the pin; the next `marola-boards-build` timer run builds the CL boards. The map's CL selector
-answers before the boards exist (the area list is static), but the beaches and water points appear
-only after that run. The board build does not start on this pin itself: the `marola-image` file did
-not move, so `marola-boards-build-kick` does nothing and the timer is the one that runs.
+after the pin, and `marola-boards-build-kick` starts a board build on that deploy too, because the
+kick's stamp covers the areas file: the CL boards and the CL entry in the served `data/areas.json`
+follow within the build's 45 minutes, not at the next timer run. The map's picker reads the areas
+list from that served file, so `CL` appears beside `FL`, `RJ` and `BA` only after the build writes
+it.
 
 Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
 default server of `configuration.nix` refuses names with no vhost.
