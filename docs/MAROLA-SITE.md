@@ -43,9 +43,18 @@ Each name needs its A record at piabrota2 before the deploy that serves it, or i
    TTL (60 s) makes a rollback fast.
 3. Wait until `dig +short marola.dev www.marola.dev` answers `187.41.117.18`, then merge. The deploy
    orders the two certificates.
-4. Check `https://marola.dev/`, `/about.html`, `/en/studies`, `/api/v1/skill.md`,
-   `/data/floripa/latest.json`, `https://www.marola.dev/` (301) and `https://marola.piabrota.art/`. On the
-   box (as `observer`): `systemctl status marola-site nginx`, `journalctl -u acme-order-renew-marola.dev`.
+4. Check `https://marola.dev/`, `/about.html`, `/partners.html`, `/ecomonitoramento.html`,
+   `/en/ecomonitoramento.html`, `/en/studies`, `/api/v1/skill.md`, `/data/floripa/latest.json`,
+   `/data/complexo-lagunar/latest.json`, `https://www.marola.dev/` (301) and
+   `https://marola.piabrota.art/`. On the box (as `observer`): `systemctl status marola-site nginx`,
+   `journalctl -u acme-order-renew-marola.dev`.
+
+The `ecc34e3` pin (2026-11-25) adds the `complexo-lagunar` area to `site/areas.json` and the
+`ecomonitoramento` page. The areas change makes `marola-tiles` re-cut the file on the first deploy
+after the pin; the next `marola-boards-build` timer run builds the CL boards. The map's CL selector
+answers before the boards exist (the area list is static), but the beaches and water points appear
+only after that run. The board build does not start on this pin itself: the `marola-image` file did
+not move, so `marola-boards-build-kick` does nothing and the timer is the one that runs.
 
 Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
 default server of `configuration.nix` refuses names with no vhost.
