@@ -58,6 +58,15 @@ not move and the old kick watched only the image, so the timer was the one that 
 watches `site/areas.json` too: a deploy that adds an area (such as `complexo-lagunar`) starts the
 build at once.
 
+The `d48f391` pin (2026-11-25, marola-site#241) brings the Complexo Lagunar view — the camera fits
+its lagoons, the Canto das Águas pin links to the institute, and CL opens on the bathing-water layer
+with IMA/SC's 31 points — and `/embed`, the chrome-less map a partner frames. The areas file changed,
+so `marola-tiles` re-cuts the file on the first deploy after this pin, and the board kick starts a
+build at once. The embed's `frame-ancestors` comes from `embedFrom` (`MAROLA_EMBED_FROM`, one origin
+per line, empty: `'none'`); the host sets Canto das Águas, so only that site may frame the map. After
+the deploy, `curl -sI https://marola.dev/embed | grep -i frame-ancestors` answers
+`https://cantodasaguas.org`, and `https://marola.dev/` still answers `'none'`.
+
 Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
 default server of `configuration.nix` refuses names with no vhost.
 
