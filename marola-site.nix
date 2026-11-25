@@ -304,11 +304,11 @@ in
     };
 
     systemd.services.marola-boards-build-kick = mkIf bcfg.enable {
-      description = "Start a board build when the app image changes";
+      description = "Start a board build when the app image or the areas change";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      restartTriggers = [ bcfg.image ];
+      restartTriggers = [ bcfg.image cfg.package.areas ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
