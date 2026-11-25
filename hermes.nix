@@ -501,6 +501,8 @@ in
     # ast-grep for the skill of that name, yt-dlp for pirsig-videos (captions only: the light
     # build has no ffmpeg, and the plugin never downloads a video or its audio).
     # omp is the wrapper above, for the hermes-omp skill.
+    # dsh is the wrapper above, for the hermes-dsh skill (DeepSeek Flash); dsh-stream
+    # and dsh-run are its console.
     # kvm4-health is the skill of that name (hermes/skills/kvm4-health).
     # omp-stream filters omp's JSON output for the hermes-omp skill (scala/hermes/OmpStream.scala),
     # and omp-run runs and stops a background omp through it.
