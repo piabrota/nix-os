@@ -45,7 +45,7 @@ Each name needs its A record at piabrota2 before the deploy that serves it, or i
    orders the two certificates.
 4. Check `https://marola.dev/`, `/about.html`, `/partners.html`, `/ecomonitoramento.html`,
    `/en/ecomonitoramento.html`, `/en/studies`, `/api/v1/skill.md`, `/data/floripa/latest.json`,
-   `/data/complexo-lagunar/latest.json`, `https://www.marola.dev/` (301) and
+   `/data/complexo-lagunar/latest.json`, `/data/parana/latest.json`, `https://www.marola.dev/` (301) and
    `https://marola.piabrota.art/`. On the box (as `observer`): `systemctl status marola-site nginx`,
    `journalctl -u acme-order-renew-marola.dev`.
 
@@ -66,6 +66,15 @@ build at once. The embed's `frame-ancestors` comes from `embedFrom` (`MAROLA_EMB
 per line, empty: `'none'`); the host sets Canto das Águas, so only that site may frame the map. After
 the deploy, `curl -sI https://marola.dev/embed | grep -i frame-ancestors` answers
 `https://cantodasaguas.org`, and `https://marola.dev/` still answers `'none'`.
+
+The `57c25dc` pin (2026-11-26, the squash merge of marola-site#278, after #276 and #277) adds the Litoral do Paraná — the Ilha do Mel view,
+IAT/PR's 59 bathing-water points and 67 OpenStreetMap trails — the saturated light base-map palette,
+and the full-size Spotify player. `site/areas.json` changed, so `marola-tiles` re-cuts the file on the
+first deploy after this pin, with the new area's box at zoom 10 to 15 (Brazil at zoom 7 to 9 already
+covers it), and `marola-boards-build-kick` starts a board build at once. The area selector answers
+before the boards exist; its beaches appear after that run, and its water points come from the site's
+own `data/water/parana.json`, not from the board. The host's `MAROLA_TILES` file is the only host-side
+piece; the rest is in the pinned site.
 
 Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
 default server of `configuration.nix` refuses names with no vhost.
