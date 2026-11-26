@@ -76,6 +76,20 @@ before the boards exist; its beaches appear after that run, and its water points
 own `data/water/parana.json`, not from the board. The host's `MAROLA_TILES` file is the only host-side
 piece; the rest is in the pinned site.
 
+The `605cac5` pin (2026-11-26, the squash merge of marola-site#279) keeps the Paraná map on the
+Litoral at Ilha do Mel and adds the state-wide data behind it: IAT/PR's 76 points (59 Litoral, 16
+Costa Oeste, 1 Norte), 247 OpenStreetMap trails in 18 groups with T1–T6 difficulty labels, the
+committed 46-beach snapshot, the three highest peaks (Pico Paraná, Pico Caratuva and Pico Itapiroca)
+and the scuba layer with the two Florianópolis dive sites. Water samples are drawn once and enrich
+the beaches; the footer names IAT/PR when the board has no water source. The about page links five
+Archify HTML figures at `/architecture`, `/data-flow`, `/studies-flow`, `/deploy-flow` and
+`/develop-flow`, and the contact nav opens `mailto:admin@marola.dev`. `site/areas.json` changed (the
+Litoral bounds and the peak pins), so `marola-tiles` re-cuts the file and
+`marola-boards-build-kick` starts a board build at once. The Paraná board is deterministic now: the
+build reads `site/beaches/m25.5345_m48.3107_r70.0_n80.json`, the 46 named beaches of the state,
+instead of an Overpass query. The figures are static HTML in the pinned site; the server serves them
+from `/`.
+
 Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
 default server of `configuration.nix` refuses names with no vhost.
 
