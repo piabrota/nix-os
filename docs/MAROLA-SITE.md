@@ -91,6 +91,14 @@ build copies the pinned `site/beaches` into its work folder and reads
 query. The figures are static HTML in the pinned site; the server serves them
 from `/`.
 
+The `15fcbe8` pin (2026-11-26, the head of marola-site#282; if the PR is squash-merged, move the pin
+to the merge commit) adds Minas Gerais as **MG**, pinned at Wberdiver in Uberlândia with its
+32-beach snapshot, and makes the bathing-water layer and the scuba toggle independent: water and
+the dive sites can be on together. `site/areas.json` changed, so `marola-tiles` re-cuts the file and
+`marola-boards-build-kick` starts a board build at once; the MG board reads
+`site/beaches/m18.9537_m48.2495_r80.0_n80.json`. The state has no coastal water agency, so the area
+opens on the plain map.
+
 Between step 2 and the end of the deploy (a few minutes), marola.dev answers with no site: the
 default server of `configuration.nix` refuses names with no vhost.
 
