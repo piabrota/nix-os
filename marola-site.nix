@@ -255,6 +255,7 @@ in
           bcfg.registryUser
           bcfg.memory
           "${cfg.package.areas}"
+          "${cfg.package.beaches}"
           boards
         ];
         StateDirectory = [ "marola-boards-build" "marola-boards" ];

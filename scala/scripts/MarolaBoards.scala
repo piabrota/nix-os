@@ -77,20 +77,26 @@ object MarolaBoards:
       0
     case _ => die("usage: piabrota marola-tiles TILES STAMP BASEMAP_VERSION AREAS BASEMAP_EXTRACT", 2)
 
-  /** `piabrota marola-boards-build IMAGE REGISTRY_USER MEMORY AREAS OUT`: builds the boards as
+  /** `piabrota marola-boards-build IMAGE REGISTRY_USER MEMORY AREAS BEACHES OUT`: builds the boards as
     * marola-site's site.yml does, with its app image IMAGE (pulled with the credential ghcr-token
     * when the unit has one), `--site` over AREAS, no LLM, then copies area by area what the build
     * wrote into OUT. Two tries: INEA, INEMA and Overpass time out now and then. A failed run keeps
     * the areas it wrote before it failed, so the copy always runs; the exit code is the build's.
     */
   def build(args: List[String]): Int = args match
-    case List(image, registryUser, memory, areas, outDir) =>
+    case List(image, registryUser, memory, areas, beaches, outDir) =>
       val config = BoardsBuildConfig(env(EnvNames.credentialsDirectory).map(os.Path(_)),
         env("RUNTIME_DIRECTORY").map(os.Path(_)))
       val out = os.Path(outDir, os.pwd)
       val site = MarolaPaths.boardsBuild / "site"
       val owner = Seq("-o", Owner.marola.user, "-g", Owner.marola.group)
       step(Seq("install", "-d") ++ owner ++ Seq(site.toString, (site / "beaches").toString))
+      // The pinned site's committed beach lists go into the persistent work folder first: a new area
+      // ships its list with the pin instead of waiting for an Overpass query that may fail.
+      val beachDir = os.Path(beaches, os.pwd)
+      if os.isDir(beachDir) then
+        step("cp", "-r", s"$beaches/.", (site / "beaches").toString)
+        step("chown", "-R", Owner.marola.render, (site / "beaches").toString)
       step(Seq("install", "-m", "0644") ++ owner ++ Seq(areas, (site / Boards.areasFile).toString))
       os.remove.all(site / "dist")
       step(Seq("install", "-d") ++ owner :+ (site / "dist").toString)
@@ -120,7 +126,7 @@ object MarolaBoards:
       // Old image versions, after a pin moves.
       Sh.ok("podman", "image", "prune", "-f")
       if built then 0 else 1
-    case _ => die("usage: piabrota marola-boards-build IMAGE REGISTRY_USER MEMORY AREAS OUT", 2)
+    case _ => die("usage: piabrota marola-boards-build IMAGE REGISTRY_USER MEMORY AREAS BEACHES OUT", 2)
 
   private def pull(config: BoardsBuildConfig, image: String, registryUser: String): Unit =
     config.ghcrToken match

@@ -18,6 +18,7 @@ in
   passthru = (old.passthru or { }) // {
     marolaImage = lib.fileContents "${src}/marola-image";
     areas = "${src}/site/areas.json";
+    beaches = "${src}/site/beaches";
     basemapVersion = "${src}/site/basemap.version";
     basemapExtract = "${src}/scripts/basemap_extract.sh";
   };
