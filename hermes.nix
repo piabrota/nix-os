@@ -7,8 +7,8 @@
 # KVM 1's, hosts/piabrota/hermes.nix, removed when Hermes moved to piabrota2).
 { config, lib, pkgs, utils, hermes-agent, ... }:
 let
-  # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.1 is 3b42157.
-  hermesVersion = "0.23.1";
+  # The release tag of the pinned hermes-agent input (flake.nix, flake.lock): v0.23.4 is 8fc03744.
+  hermesVersion = "0.23.4";
   # Skills from the project's optional catalog (optional-skills/ at the pinned commit), as one
   # read-only directory in skills.external_dirs: they move with the flake input, never by hand.
   # Copied, not linked: a link into the input keeps its whole source (234 MiB) in the closure, and

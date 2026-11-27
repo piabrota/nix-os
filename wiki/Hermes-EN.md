@@ -22,7 +22,7 @@ reads them from the evaluated system, so the page changes with every merge that 
 | | |
 |---|---|
 | Unit | `hermes-agent`, a systemd service from the NixOS module of Hermes's flake (the input `hermes-agent`, pinned in `flake.lock`). Native mode, not a container. |
-| Version | The release v0.23.1 (commit `3b42157`, 2026-11-09), pinned by tag in `flake.nix` and by commit in `flake.lock`. |
+| Version | The release v0.23.4 (commit `8fc03744`, 2026-11-24), pinned by tag in `flake.nix` and by commit in `flake.lock`. |
 | Host | `piabrota2`, the KVM 4 VPS (`hosts/piabrota2/default.nix`). |
 | Package | `full`, the default of Hermes's flake, plus the extras `messaging`, `mcp` and `ddgs`. The model runs on OpenCode Go, whose relay speaks the OpenAI wire, and the `openai` SDK is already in the package's base dependencies. |
 | Limits | `MemoryMax=8G` (half the RAM) and `CPUWeight=50`: when the four cores are busy, sshd and the other units get twice Hermes's CPU share. |
